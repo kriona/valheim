@@ -4,6 +4,7 @@ Each subdirectory is a BepInEx plugin project built with `dotnet build <Project>
 
 ## Project Structure
 - `Directory.Build.props` in the root holds the settings and references shared by every project - a `.csproj` only lists references beyond those, and the assembly name and namespace come from the project file's name
+- Start a new plugin by copying QuickFill, renaming the `.csproj` and renaming QuickFill to the new name in `Plugin.cs` and `.vscode/tasks.json`, then add it with `dotnet sln Valheim.slnx add <Name>\<Name>.csproj` and to the table in `README.md`
 - Each mod has a `README.md` (also used as the Nexus Mods description) and a `CHANGELOG.md` with a `## <version>` section per release - `build-release.ps1 <Name>` packages the zip, and `-Publish` uses that section as the GitHub release notes
 - `Plugin.cs` holds the `BaseUnityPlugin` with the GUID `kriona.<Name>`, the display name and a version starting at `1.0.0`, and calls `harmony.PatchAll()`
 - Harmony patches go in a separate `*Patches.cs` file, one static class per patch
