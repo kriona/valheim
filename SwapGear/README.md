@@ -9,6 +9,8 @@ Look at an armor stand and press Y to swap what you're wearing with what's on th
 - Press Esc to stop a swap partway through
 - Respects wards - stands you don't have access to can't be swapped with
 
+<img src="images/SwapGear.jpg" alt="Hovering an armor stand shows the swap gear key" width="750">
+
 ## Configuration
 
 `BepInEx\config\kriona.SwapGear.cfg` is created on first run:
