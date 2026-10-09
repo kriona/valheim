@@ -5,6 +5,8 @@ Shows your current and maximum carry weight on the HUD, just below the minimap.
 - Moves to the top-right corner when the minimap is hidden
 - Hides along with the rest of the HUD
 
+<img src="images/WeightDisplay.jpg" alt="Your carrying capacity being shown under the minimap">
+
 ## Configuration
 
 `BepInEx\config\kriona.WeightDisplay.cfg` is created the first time the game runs with the mod.

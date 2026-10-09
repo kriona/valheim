@@ -5,6 +5,16 @@ Lists the other players on the server when you join, in a popup like the one for
 - Shown once per connection, the first time you spawn - not on respawns after death
 - Only runs on servers hosted by someone else
 
+## Screenshots
+
+### When another play is online
+
+<img src="images/kriona.jpg" alt="When another play is online" width="750">
+
+### When no one else is online
+
+<img src="images/Alone.jpg" alt="When no one else is online" width="750">
+
 ## Installation
 
 1. Install [BepInExPack for Valheim](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/)

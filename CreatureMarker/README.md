@@ -26,6 +26,16 @@ Every creature also gets its own line, `Prefab = inherit/true/false ## Name`. `i
 
 Colors can be `#RRGGBB` or a color name like `red`, `yellow`, `green`, `cyan` or `magenta`.
 
+## Screenshots
+
+### An arrow appearing above a Deathsquito
+
+<img src="images/Deathsquito.jpg" alt="An arrow appearing above a Deathsquito" width="1000">
+
+### Showing names and distances
+
+<img src="images/AllSettings.jpg" alt="Showing names and distances" width="1000">
+
 ## Installation
 
 1. Install [BepInExPack for Valheim](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/)
