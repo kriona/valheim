@@ -4,7 +4,10 @@ A library of Valheim mods I've made.
 
 ## Download
 
-Download the zips from [Releases](../../releases) or from each mod's Nexus Mods page. Each mod is tagged and released separately, e.g. `ModName-v1.0.0`.
+Download from [Releases](../../releases) or from each mod's Nexus Mods page. Each mod is tagged and released separately, e.g. `ModName-v1.0.0`, with two downloads:
+
+- `<Mod>.dll` - copy it into `BepInEx\plugins`
+- `<Mod>-<Version>.zip` - for mod managers, or extract it into your Valheim folder
 
 ## Building
 
@@ -25,4 +28,4 @@ Each DLL is written to `<Mod>\bin\Release\netstandard2.1\`.
 .\build-release.ps1 ModName -Publish
 ```
 
-Builds the mod and writes `release\<Mod>-<Version>.zip`, with the version read from the mod's `Plugin.cs`. `-Publish` also creates a GitHub release tagged `<Mod>-v<Version>` from the current commit, using that version's section of the mod's `CHANGELOG.md` as the notes - commit and push first.
+Builds the mod and writes `release\<Mod>-<Version>.zip`, with the version read from the mod's `Plugin.cs`. `-Publish` also creates a GitHub release tagged `<Mod>-v<Version>` from the current commit with the zip and the DLL attached, using that version's section of the mod's `CHANGELOG.md` as the notes - commit and push first.
