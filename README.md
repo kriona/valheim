@@ -8,8 +8,8 @@ A library of Valheim mods I've made.
 | --- | --- | --- |
 | [Chest Peek](ChestPeek) | Hover over a chest to see what's inside without opening it | [Mod 4341](https://www.nexusmods.com/valheim/mods/4341) |
 | [Creature Marker](CreatureMarker) | Puts a colored arrow above nearby creatures, or at the edge of the screen when they're off-screen | [Mod 4342](https://www.nexusmods.com/valheim/mods/4342) |
-| [Quick Fill](QuickFill) | Hold Ctrl and press E to fill a smelter, kiln, oven or fire in one go | [Mod 4343](https://www.nexusmods.com/valheim/mods/4343) |
-| [Swap Gear](SwapGear) | Swap what you're wearing with what's on an armor stand at the press of a key | [Mod 4344](https://www.nexusmods.com/valheim/mods/4344) |
+| [Quick Fill](QuickFill) | Hold Shift and press E to fill a smelter, kiln, oven or fire in one go | [Mod 4343](https://www.nexusmods.com/valheim/mods/4343) |
+| [Swap Gear](SwapGear) | Swap what you're wearing with what's on an armor stand | [Mod 4344](https://www.nexusmods.com/valheim/mods/4344) |
 | [Too Low](TooLow) | Shows a "Too low" message when your pickaxe hits the 8m digging limit | [Mod 4345](https://www.nexusmods.com/valheim/mods/4345) |
 | [Weight Display](WeightDisplay) | Shows your current and maximum carry weight under the minimap | [Mod 4346](https://www.nexusmods.com/valheim/mods/4346) |
 | [Who's Online](WhosOnline) | Lists the other players on the server when you join | [Mod 4347](https://www.nexusmods.com/valheim/mods/4347) |
