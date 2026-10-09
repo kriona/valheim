@@ -4,9 +4,9 @@ Builds a mod in Release and packages it as a zip ready for GitHub Releases and N
 
 .DESCRIPTION
 Reads the version from the mod's Plugin.cs, builds it and writes release\<Mod>-<Version>.zip with the DLL at
-BepInEx\plugins\<Mod>\<Mod>.dll. With -Publish, also creates a GitHub release tagged <Mod>-v<Version> from the
-current commit with the zip and the DLL attached, using that version's section of the mod's CHANGELOG.md as the
-release notes
+BepInEx\plugins\<Mod>\<Mod>.dll, and runs build-bbcode.ps1 to write release\<Mod>.bbcode for every mod. With
+-Publish, also creates a GitHub release tagged <Mod>-v<Version> from the current commit with the zip and the DLL
+attached, using that version's section of the mod's CHANGELOG.md as the release notes
 
 .PARAMETER mod
 The mod's folder name, e.g. ModName
@@ -131,6 +131,8 @@ finally
 	$zip.Dispose()
 }
 Write-Host ('Packaged ' + $zipPath)
+
+& (Join-Path $root 'build-bbcode.ps1')
 
 if (-not $publish)
 {

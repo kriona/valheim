@@ -38,7 +38,7 @@ Colors can be `#RRGGBB` or a color name like `red`, `yellow`, `green`, `cyan` or
 
 ## Installation
 
-1. Install [BepInExPack for Valheim](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/)
+1. Install [BepInExPack for Valheim](https://www.nexusmods.com/valheim/mods/3605)
 2. Extract the zip into your Valheim folder, or copy `CreatureMarker.dll` into `BepInEx\plugins`
 
 Client-side only - other players and the server don't need it.
