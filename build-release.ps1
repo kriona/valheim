@@ -5,7 +5,8 @@ Builds a mod in Release and packages it as a zip ready for GitHub Releases and N
 .DESCRIPTION
 Reads the version from the mod's Plugin.cs, builds it and writes release\<Mod>-<Version>.zip with the DLL at
 BepInEx\plugins\<Mod>\<Mod>.dll. With -Publish, also creates a GitHub release tagged <Mod>-v<Version> from the
-current commit, using that version's section of the mod's CHANGELOG.md as the release notes
+current commit with the zip and the DLL attached, using that version's section of the mod's CHANGELOG.md as the
+release notes
 
 .PARAMETER mod
 The mod's folder name, e.g. ModName
@@ -147,7 +148,7 @@ try
 {
 	[System.IO.File]::WriteAllText($notesFile, $notes)
 	$commit = (git -C $root rev-parse HEAD).Trim()
-	gh release create $tag $zipPath --target $commit --title ($displayName + ' ' + $version) --notes-file $notesFile
+	gh release create $tag $zipPath $dll --target $commit --title ($displayName + ' ' + $version) --notes-file $notesFile
 	if ($LASTEXITCODE -ne 0)
 	{
 		throw ('gh release create failed for ' + $tag)
