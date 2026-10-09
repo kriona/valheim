@@ -1,0 +1,53 @@
+<Project>
+
+	<!-- Shared by every mod project below this folder - each .csproj only adds the references it needs on top of these -->
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+		<!-- The game DLLs reference newer System.* versions than netstandard2.1 ships; Unity resolves them at runtime -->
+		<MSBuildWarningsAsMessages>MSB3277</MSBuildWarningsAsMessages>
+		<!-- Override with -p:ValheimPath=... or a ValheimPath environment variable when the game is installed elsewhere -->
+		<ValheimPath Condition="'$(ValheimPath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Valheim</ValheimPath>
+		<ManagedPath>$(ValheimPath)\valheim_Data\Managed</ManagedPath>
+		<BepInExPath>$(ValheimPath)\BepInEx</BepInExPath>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3" PrivateAssets="all" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="BepInEx">
+			<HintPath>$(BepInExPath)\core\BepInEx.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="0Harmony">
+			<HintPath>$(BepInExPath)\core\0Harmony.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="assembly_valheim" Publicize="true">
+			<HintPath>$(ManagedPath)\assembly_valheim.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="assembly_utils">
+			<HintPath>$(ManagedPath)\assembly_utils.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="assembly_guiutils">
+			<HintPath>$(ManagedPath)\assembly_guiutils.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine">
+			<HintPath>$(ManagedPath)\UnityEngine.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.CoreModule">
+			<HintPath>$(ManagedPath)\UnityEngine.CoreModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+</Project>

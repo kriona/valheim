@@ -1,0 +1,14 @@
+# Build output
+bin/
+obj/
+release/
+
+# IDE
+.vs/
+*.user
+*.suo
+**/.vscode/*
+!**/.vscode/tasks.json
+
+# Local files
+*.lnk
