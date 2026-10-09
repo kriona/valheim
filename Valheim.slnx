@@ -4,4 +4,5 @@
   <Project Path="QuickFill/QuickFill.csproj" />
   <Project Path="TooLow/TooLow.csproj" />
   <Project Path="WeightDisplay/WeightDisplay.csproj" />
+  <Project Path="WhosOnline/WhosOnline.csproj" />
 </Solution>
