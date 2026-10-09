@@ -7,12 +7,74 @@ namespace QuickFill
 	internal static class Fill
 	{
 		/// <summary>
-		/// Whether either Ctrl key is held
+		/// Whether the configured modifier key, or its other side for Ctrl, Shift, Alt and Command, is held
 		/// </summary>
-		/// <returns>True when a Ctrl key is held</returns>
+		/// <returns>True when the modifier is held</returns>
 		public static bool IsModifierHeld()
 		{
-			return(ZInput.GetKey(KeyCode.LeftControl, false) || ZInput.GetKey(KeyCode.RightControl, false));
+			KeyCode key = Plugin.ModifierKey.Value.MainKey;
+			if (key == KeyCode.None)
+			{
+				return(false);
+			}
+			KeyCode otherSide = GetOtherSide(key);
+			return(ZInput.GetKey(key, false) || (otherSide != KeyCode.None && ZInput.GetKey(otherSide, false)));
+		}
+
+		/// <summary>
+		/// The matching key on the other side of the keyboard for a left or right modifier key
+		/// </summary>
+		/// <param name="key">The key to match</param>
+		/// <returns>The other side's key, or KeyCode.None if the key has no other side</returns>
+		private static KeyCode GetOtherSide(KeyCode key)
+		{
+			switch (key)
+			{
+				case KeyCode.LeftControl:
+					return(KeyCode.RightControl);
+				case KeyCode.RightControl:
+					return(KeyCode.LeftControl);
+				case KeyCode.LeftShift:
+					return(KeyCode.RightShift);
+				case KeyCode.RightShift:
+					return(KeyCode.LeftShift);
+				case KeyCode.LeftAlt:
+					return(KeyCode.RightAlt);
+				case KeyCode.RightAlt:
+					return(KeyCode.LeftAlt);
+				case KeyCode.LeftCommand:
+					return(KeyCode.RightCommand);
+				case KeyCode.RightCommand:
+					return(KeyCode.LeftCommand);
+				default:
+					return(KeyCode.None);
+			}
+		}
+
+		/// <summary>
+		/// The name of the modifier key as shown in hover text, with left and right modifiers shortened to one name
+		/// </summary>
+		/// <returns>The key's display name</returns>
+		public static string GetModifierName()
+		{
+			KeyCode key = Plugin.ModifierKey.Value.MainKey;
+			switch (key)
+			{
+				case KeyCode.LeftControl:
+				case KeyCode.RightControl:
+					return("Ctrl");
+				case KeyCode.LeftShift:
+				case KeyCode.RightShift:
+					return("Shift");
+				case KeyCode.LeftAlt:
+				case KeyCode.RightAlt:
+					return("Alt");
+				case KeyCode.LeftCommand:
+				case KeyCode.RightCommand:
+					return("Cmd");
+				default:
+					return(key.ToString());
+			}
 		}
 
 		/// <summary>
@@ -37,7 +99,7 @@ namespace QuickFill
 	}
 
 	/// <summary>
-	/// Ctrl + E on the ore / fuel switch of a smelter, kiln, blast furnace, etc. or the fuel switch of an oven fills it
+	/// Modifier + E on the ore / fuel switch of a smelter, kiln, blast furnace, etc. or the fuel switch of an oven fills it
 	/// </summary>
 	/// <remarks>
 	/// Free space is measured before adding anything because the station's state only updates once its owner
@@ -47,7 +109,7 @@ namespace QuickFill
 	public static class SwitchInteractPatch
 	{
 		/// <summary>
-		/// Fills the station when Ctrl is held on a fillable switch that has space
+		/// Fills the station when the modifier key is held on a fillable switch that has space
 		/// </summary>
 		/// <param name="__instance">The switch being used</param>
 		/// <param name="character">The character using it</param>
@@ -103,7 +165,7 @@ namespace QuickFill
 	}
 
 	/// <summary>
-	/// Ctrl + E on a campfire, bonfire, hearth, torch, etc. adds fuel until it is full
+	/// Modifier + E on a campfire, bonfire, hearth, torch, etc. adds fuel until it is full
 	/// </summary>
 	/// <remarks>
 	/// The fill runs the game's Interact with alt set, which is the path that adds fuel - without alt, fires that
@@ -118,12 +180,12 @@ namespace QuickFill
 		private static bool filling;
 
 		/// <summary>
-		/// Adds fuel until the fire is full when Ctrl is held
+		/// Adds fuel until the fire is full when the modifier key is held
 		/// </summary>
 		/// <param name="__instance">The fire being used</param>
 		/// <param name="user">The character using it</param>
 		/// <param name="hold">Whether the use key is being held down rather than pressed</param>
-		/// <param name="alt">Whether the alternate action is used, set when Ctrl is held</param>
+		/// <param name="alt">Whether the alternate action is used, set when the modifier key is held</param>
 		/// <param name="__result">Set to whether any fuel was added when the fill runs</param>
 		/// <returns>False to skip the game's single-fuel interact when the fill runs</returns>
 		private static bool Prefix(Fireplace __instance, Humanoid user, bool hold, ref bool alt, ref bool __result)
@@ -132,7 +194,7 @@ namespace QuickFill
 			{
 				return(true);
 			}
-			// Keeps Ctrl + E on a full fire from turning it off
+			// Keeps modifier + E on a full fire from turning it off
 			alt = true;
 			if (!__instance.m_canRefill || __instance.m_infiniteFuel || !__instance.m_nview.IsValid())
 			{

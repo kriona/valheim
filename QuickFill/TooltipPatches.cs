@@ -1,4 +1,5 @@
 using HarmonyLib;
+using UnityEngine;
 
 namespace QuickFill
 {
@@ -8,10 +9,14 @@ namespace QuickFill
 		/// Builds the hover line for the fill shortcut, formatted like the game's own key hints
 		/// </summary>
 		/// <param name="action">Text after the key, may contain $ localization tokens</param>
-		/// <returns>The localized line, starting with a line break</returns>
+		/// <returns>The localized line, starting with a line break, or an empty string when the fill is turned off</returns>
 		public static string FillLine(string action)
 		{
-			return(Localization.instance.Localize("\n[<color=yellow><b>Ctrl + $KEY_Use</b></color>] " + action));
+			if (Plugin.ModifierKey.Value.MainKey == KeyCode.None)
+			{
+				return("");
+			}
+			return(Localization.instance.Localize("\n[<color=yellow><b>" + Fill.GetModifierName() + " + $KEY_Use</b></color>] " + action));
 		}
 	}
 
