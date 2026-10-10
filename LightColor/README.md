@@ -15,9 +15,7 @@ Hover over an object that gives off light (e.g., sconce, campfire, portal) and p
 
 ## Multiplayer Servers
 
-An object's color / brightness / range is stored on the object and saved with the world. The server does not need this mod installed in order to save the color, except for portals.
-
-The game saves portals separately from everything else, and only when a portal is built, removed or connected. Install the mod on a dedicated server so it saves portal colors as soon as they change - without it, a portal's color is only saved the next time any portal in the world is built, removed or connected, and is lost if the server restarts first. Single player worlds and worlds hosted from the game save portal colors without anything extra.
+An object's color / brightness / range is stored on the object and saved with the world. The server does not need this mod installed in order to save the color.
 
 Colors are shared with everyone who uses this mod, and changes are seen by all players.
 

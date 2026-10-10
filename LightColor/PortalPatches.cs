@@ -100,31 +100,6 @@ namespace LightColor
 	}
 
 	/// <summary>
-	/// Saves the portals again when a player changes a portal's color, which the server receives as new portal data
-	/// </summary>
-	/// <remarks>
-	/// The game saves portals in a file of their own and only writes it again when a portal is built, removed or
-	/// connected, so any other change to a portal is lost unless the file is marked as changed. AddIfPortal runs for
-	/// every new object and every object the server receives newer data for
-	/// </remarks>
-	[HarmonyPatch(typeof(ZDOMan), nameof(ZDOMan.AddIfPortal))]
-	public static class ZDOManAddIfPortalPatch
-	{
-		/// <summary>
-		/// Marks the portals as changed when the object is a portal
-		/// </summary>
-		/// <param name="__instance">The ZDO manager</param>
-		/// <param name="prefabHash">The object's prefab</param>
-		private static void Postfix(ZDOMan __instance, int prefabHash)
-		{
-			if (Game.instance.PortalPrefabHash.Contains(prefabHash))
-			{
-				__instance.SetDirtyPortals();
-			}
-		}
-	}
-
-	/// <summary>
 	/// Marks the portal the player is going through and the portal at the far end, so the swirl on the loading screen
 	/// can fade from one's color to the other's
 	/// </summary>
