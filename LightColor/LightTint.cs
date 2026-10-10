@@ -128,7 +128,13 @@ namespace LightColor
 				text = "";
 			}
 			nview.ClaimOwnership();
-			nview.GetZDO().Set(ColorHash, text);
+			ZDO zdo = nview.GetZDO();
+			zdo.Set(ColorHash, text);
+			// Portals are saved in a file of their own, which the game only writes again when it's marked as changed
+			if (Game.instance.PortalPrefabHash.Contains(zdo.GetPrefab()))
+			{
+				ZDOMan.instance.SetDirtyPortals();
+			}
 			Refresh();
 		}
 
