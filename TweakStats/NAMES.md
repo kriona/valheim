@@ -1,4 +1,4 @@
-# Tweak Stats Names
+# Tweak Stats - Names
 
 Every item, recipe, creature, build piece and status effect in, with its name in game and the section that changes it in `kriona.TweakStats.cfg`
 
