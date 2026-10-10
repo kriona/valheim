@@ -42,7 +42,7 @@ Each DLL is written to `<Mod>\bin\Release\netstandard2.1\`.
 .\build-release.ps1 ModName -Publish
 ```
 
-Builds the mod and writes `release\packages\<Mod>-<Version>.zip`, with the version read from the mod's `Plugin.cs`. `-Publish` also creates a GitHub release tagged `<Mod>-v<Version>` from the current commit with the zip and the DLL attached, using that version's section of the mod's `CHANGELOG.md` as the notes - commit and push first.
+Builds the mod and writes `release\packages\<Mod>-<Version>.zip`, with the version read from the mod's `Plugin.cs`. `-Publish` also creates a GitHub release tagged `<Mod>-v<Version>` from the current commit with the zip and the DLL attached, using that version's section of the mod's `CHANGELOG.md` as the notes - commit and push first. It then removes the mod's older GitHub releases, keeping their tags, so the Releases page only lists the newest version of each mod - older downloads stay on Nexus Mods.
 
 ```
 .\build-bbcode.ps1

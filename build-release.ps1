@@ -6,13 +6,15 @@ Builds a mod in Release and packages it as a zip ready for GitHub Releases and N
 Reads the version from the mod's Plugin.cs, builds it and writes release\packages\<Mod>-<Version>.zip with the DLL at
 BepInEx\plugins\<Mod>\<Mod>.dll, and runs build-bbcode.ps1 to write release\bbcode\<Mod>.bbcode for every mod. With
 -Publish, also creates a GitHub release tagged <Mod>-v<Version> from the current commit with the zip and the DLL
-attached, using that version's section of the mod's CHANGELOG.md as the release notes
+attached, using that version's section of the mod's CHANGELOG.md as the release notes, then removes the mod's older
+GitHub releases while keeping their tags
 
 .PARAMETER mod
 The mod's folder name, e.g. ModName
 
 .PARAMETER publish
-Creates the GitHub release after packaging - the current commit must already be pushed
+Creates the GitHub release after packaging and removes the mod's older releases - the current commit must already be
+pushed
 
 .EXAMPLE
 .\build-release.ps1 ModName
@@ -159,4 +161,24 @@ try
 finally
 {
 	Remove-Item $notesFile
+}
+
+# Only the newest release of each mod stays on the Releases page - the older ones' tags are kept, so every version can
+# still be found in the history
+$releaseTags = gh release list --limit 1000 --json tagName --jq '.[].tagName'
+if ($LASTEXITCODE -ne 0)
+{
+	throw ('gh release list failed, so older ' + $mod + ' releases were not removed')
+}
+foreach ($oldTag in $releaseTags)
+{
+	if ($oldTag.StartsWith($mod + '-v') -and $oldTag -ne $tag)
+	{
+		gh release delete $oldTag --yes
+		if ($LASTEXITCODE -ne 0)
+		{
+			throw ('gh release delete failed for ' + $oldTag)
+		}
+		Write-Host ('Removed release ' + $oldTag + ', keeping its tag')
+	}
 }
