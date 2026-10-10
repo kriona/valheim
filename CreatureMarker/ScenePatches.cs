@@ -9,12 +9,14 @@ namespace CreatureMarker
 	public static class ZNetSceneAwakePatch
 	{
 		/// <summary>
-		/// Passes the scene's prefabs to the creature list
+		/// Passes the scene's prefabs to the creature list, then has the watcher take the file it writes as already read
+		/// so it isn't reported as a reload
 		/// </summary>
 		/// <param name="__instance">The scene that just started</param>
 		private static void Postfix(ZNetScene __instance)
 		{
 			CreatureConfig.Load(__instance);
+			Plugin.Watcher?.Remember();
 		}
 	}
 }

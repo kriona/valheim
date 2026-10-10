@@ -11,7 +11,7 @@ namespace QuickFill
 	{
 		public const string PluginGuid = "kriona.QuickFill";
 		public const string PluginName = "Quick Fill";
-		public const string PluginVersion = "1.3.0";
+		public const string PluginVersion = "1.3.1";
 
 		/// <summary>
 		/// A KeyboardShortcut rather than a KeyCode so BepInEx doesn't write every KeyCode name into the config file
@@ -28,7 +28,7 @@ namespace QuickFill
 		private void Awake()
 		{
 			ModifierKey = Config.Bind("General", "ModifierKey", new KeyboardShortcut(KeyCode.LeftShift),"Key to hold while pressing the use key to fill a station - a Unity KeyCode name, e.g. LeftShift, LeftControl or LeftAlt. Either side of Ctrl, Shift, Alt and Command counts, and None turns the fill off");
-			watcher = new ConfigWatcher(Config.ConfigFilePath, Config.Reload, Logger);
+			watcher = new ConfigWatcher(Config, Logger, PluginName);
 			harmony = new Harmony(PluginGuid);
 			harmony.PatchAll();
 			Logger.LogInfo(PluginName + " " + PluginVersion + " loaded");

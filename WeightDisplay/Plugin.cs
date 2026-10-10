@@ -32,7 +32,7 @@ namespace WeightDisplay
 			margin = Config.Bind("Display", "Margin", 6, "Gap between the minimap (or the screen corner when there is no minimap) and the text");
 			warnings = new WarningSettings(Config);
 			Config.SettingChanged += OnSettingChanged;
-			watcher = new ConfigWatcher(Config.ConfigFilePath, Config.Reload, Logger);
+			watcher = new ConfigWatcher(Config, Logger, PluginName);
 			harmony = new Harmony(PluginGuid);
 			harmony.PatchAll();
 			Logger.LogInfo(PluginName + " " + PluginVersion + " loaded");

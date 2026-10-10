@@ -10,20 +10,24 @@ namespace CreatureMarker
 	{
 		public const string PluginGuid = "kriona.CreatureMarker";
 		public const string PluginName = "Creature Marker";
-		public const string PluginVersion = "1.2.0";
+		public const string PluginVersion = "1.2.1";
 
 		private readonly MarkerHud markers = new MarkerHud();
 		private readonly MapMarkers mapMarkers = new MapMarkers();
 		private readonly List<Character> marked = new List<Character>();
 		private Harmony harmony;
-		private ConfigWatcher watcher;
+
+		/// <summary>
+		/// Watches the config file, which the creature list also writes when the scene starts
+		/// </summary>
+		internal static ConfigWatcher Watcher;
 
 		/// <summary>
 		/// Watches the config file for changes and applies the patches
 		/// </summary>
 		private void Awake()
 		{
-			watcher = new ConfigWatcher(CreatureConfig.FilePath, CreatureConfig.Reload, Logger);
+			Watcher = new ConfigWatcher(CreatureConfig.FilePath, CreatureConfig.Reload, Logger, PluginName);
 			harmony = new Harmony(PluginGuid);
 			harmony.PatchAll();
 			Logger.LogInfo(PluginName + " " + PluginVersion + " loaded");
@@ -34,7 +38,7 @@ namespace CreatureMarker
 		/// </summary>
 		private void Update()
 		{
-			watcher.Update();
+			Watcher.Update();
 		}
 
 		/// <summary>
@@ -59,7 +63,7 @@ namespace CreatureMarker
 		{
 			markers.Destroy();
 			mapMarkers.Destroy();
-			watcher?.Dispose();
+			Watcher?.Dispose();
 			harmony?.UnpatchSelf();
 		}
 	}
