@@ -15,8 +15,9 @@ namespace CreatureMarker
 	/// <remarks>
 	/// BepInEx's config format spends several lines on every entry, so the mod keeps its own file. The file is read
 	/// and rewritten when a world's ZNetScene starts, which adds every creature the game knows about, including ones
-	/// added by other mods, while keeping the values already set. Lines for creatures that are no longer loaded are
-	/// kept so their values survive a mod being removed for a while
+	/// added by other mods, while keeping the values already set, and read again whenever it is saved while a world is
+	/// loaded. Lines for creatures that are no longer loaded are kept so their values survive a mod being removed for a
+	/// while
 	/// </remarks>
 	internal static class CreatureConfig
 	{
@@ -45,7 +46,7 @@ namespace CreatureMarker
 		private static readonly string[] header =
 		{
 			"## " + Plugin.PluginName,
-			"## Changes are read when a world loads",
+			"## Changes take effect as soon as this file is saved",
 			"## Colors are #RRGGBB or a color name like red, yellow, green, cyan or magenta",
 			"",
 		};
@@ -99,12 +100,31 @@ namespace CreatureMarker
 		private static readonly Dictionary<int, bool> overrides = new Dictionary<int, bool>();
 
 		/// <summary>
+		/// The config file's full path
+		/// </summary>
+		public static string FilePath => Path.Combine(Paths.ConfigPath, FileName);
+
+		/// <summary>
+		/// Reads the config file again when a world is loaded - without one, the file is read when the next world loads
+		/// </summary>
+		/// <remarks>
+		/// Writing the file back changes it again, which reads it once more, finds nothing new and leaves it alone
+		/// </remarks>
+		public static void Reload()
+		{
+			if (ZNetScene.instance != null)
+			{
+				Load(ZNetScene.instance);
+			}
+		}
+
+		/// <summary>
 		/// Reads the config file, adds any prefabs with a Character component other than the player and writes it back
 		/// </summary>
 		/// <param name="scene">The scene holding the prefab list</param>
 		public static void Load(ZNetScene scene)
 		{
-			string path = Path.Combine(Paths.ConfigPath, FileName);
+			string path = FilePath;
 			Dictionary<string, string> values;
 			try
 			{

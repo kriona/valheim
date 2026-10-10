@@ -2,7 +2,7 @@
 
 Hover over an object that gives off light (e.g., sconce, campfire, portal) and press L to enter a color for its light, brightness, and range.
 
-- Type a color name like `red`, `orange`, `yellow`, `lime`, `cyan`, `blue`, `purple` or `magenta`, or a hex color like `#0F0` or `#002B49`
+- Type a color name like `red`, `yellow`, or `purple`, or a hex color like `#0F0` or `#002B49`
 - Add a brightness and range after the color, like `blue 150% 20m` - see [Brightness and Range](#brightness-and-range)
 - Works on item stands too - the color applies to the mounted Dverger circlet, torch or anything else that glows, and the color stays with the stand when you swap the item
 - Traveling through a colored portal turns the swirl on the loading screen to the portal's color, then fades it ring by ring from the center outward to the color of the portal you arrive at
@@ -129,7 +129,7 @@ Typing one of these colors instead of `default` or blank gets you the same light
 
 ## Configuration
 
-`BepInEx\config\kriona.LightColor.cfg` is created on first run, and changes are read each time you join a world. You do not need to restart Valheim.
+`BepInEx\config\kriona.LightColor.cfg` is created on first run, and changes take effect as soon as the file is saved. You do not need to restart Valheim or rejoin the world.
 
 - `ColorKey` - the key to press while looking at a light, optionally with modifiers, e.g. `L` or `LeftControl + L` (default `L`)
 - `Helmet` - the color, brightness and range for the light on your equipped Dverger circlet. Seen by other players with this mod (default blank, which keeps the circlet's own light)

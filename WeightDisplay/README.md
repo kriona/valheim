@@ -9,7 +9,7 @@ Shows your current and maximum carry weight on the HUD, just below the minimap.
 
 ## Configuration
 
-`BepInEx\config\kriona.WeightDisplay.cfg` is created on first run, and changes are read each time you join a world. You do not need to restart Valheim.
+`BepInEx\config\kriona.WeightDisplay.cfg` is created on first run, and changes take effect as soon as the file is saved. You do not need to restart Valheim or rejoin the world.
 
 | Setting | Default | Description |
 | --- | --- | --- |

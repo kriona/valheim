@@ -1,6 +1,7 @@
 using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
+using Kriona.Shared;
 using UnityEngine;
 
 namespace LightColor
@@ -10,7 +11,7 @@ namespace LightColor
 	{
 		public const string PluginGuid = "kriona.LightColor";
 		public const string PluginName = "Light Color";
-		public const string PluginVersion = "1.1.0";
+		public const string PluginVersion = "1.2.0";
 
 		public static ConfigEntry<KeyboardShortcut> ColorKey;
 		public static ConfigEntry<string> Helmet;
@@ -18,9 +19,10 @@ namespace LightColor
 		private Harmony harmony;
 
 		/// <summary>
-		/// The loaded plugin, for reloading its config file from a patch
+		/// Reads the config file again once it has been saved - settings whose value changed fire their change events,
+		/// which checks a new Helmet setting so it is stored on the player
 		/// </summary>
-		private static Plugin instance;
+		private ConfigWatcher watcher;
 
 		/// <summary>
 		/// The Helmet setting once checked, blank when it is blank, "default" or can't be read
@@ -34,26 +36,27 @@ namespace LightColor
 		private string storedText;
 
 		/// <summary>
-		/// Binds the settings and applies the patches
+		/// Binds the settings, watches the config file for changes and applies the patches
 		/// </summary>
 		private void Awake()
 		{
-			instance = this;
 			ColorKey = Config.Bind("General", "ColorKey", new KeyboardShortcut(KeyCode.L), "Key to press while looking at a light to type its color - a Unity KeyCode name, optionally with modifiers, e.g. L or LeftControl + L");
 			Helmet = Config.Bind("General", "Helmet", "", "Color, brightness and range for the light on your equipped helmet, like the Dverger circlet, typed the same way as on a light, e.g. blue 150% 20m - other players with the mod see it too, and blank keeps the helmet's own light");
 			Helmet.SettingChanged += (sender, args) => CheckHelmetText();
 			CheckHelmetText();
+			watcher = new ConfigWatcher(Config.ConfigFilePath, Config.Reload, Logger);
 			harmony = new Harmony(PluginGuid);
 			harmony.PatchAll();
 			Logger.LogInfo(PluginName + " " + PluginVersion + " loaded");
 		}
 
 		/// <summary>
-		/// Stores the Helmet setting on the local player and opens the color input for the light being looked at when
-		/// the key is pressed
+		/// Reads the config file again once it has been saved, stores the Helmet setting on the local player and opens
+		/// the color input for the light being looked at when the key is pressed
 		/// </summary>
 		private void Update()
 		{
+			watcher.Update();
 			StoreHelmetSettings();
 			if (!IsColorKeyDown())
 			{
@@ -74,18 +77,6 @@ namespace LightColor
 			{
 				tint.RequestColor();
 			}
-		}
-
-		/// <summary>
-		/// Reads the config file again, so changes made to it while the game is running take effect
-		/// </summary>
-		/// <remarks>
-		/// Settings whose value changed fire their change events, which checks a new Helmet setting so it is stored
-		/// on the player once they spawn
-		/// </remarks>
-		public static void ReloadConfig()
-		{
-			instance?.Config.Reload();
 		}
 
 		/// <summary>
@@ -148,10 +139,11 @@ namespace LightColor
 		}
 
 		/// <summary>
-		/// Removes the patches when the plugin unloads
+		/// Stops watching the config file and removes the patches when the plugin unloads
 		/// </summary>
 		private void OnDestroy()
 		{
+			watcher?.Dispose();
 			harmony?.UnpatchSelf();
 		}
 	}

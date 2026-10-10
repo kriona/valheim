@@ -19,6 +19,11 @@
 		<PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3" PrivateAssets="all" />
 	</ItemGroup>
 
+	<!-- Code shared by every mod, compiled into each one so nothing extra has to be installed -->
+	<ItemGroup>
+		<Compile Include="$(MSBuildThisFileDirectory)Shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<Reference Include="BepInEx">
 			<HintPath>$(BepInExPath)\core\BepInEx.dll</HintPath>
