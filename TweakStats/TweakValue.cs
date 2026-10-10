@@ -93,7 +93,8 @@ namespace TweakStats
 					error = "it needs a number, not \"" + Text + "\"";
 					return(false);
 				}
-				double number = Convert.ToDouble(current, CultureInfo.InvariantCulture);
+				double original = Convert.ToDouble(current, CultureInfo.InvariantCulture);
+				double number = original;
 				if (Operation == TweakOperation.Add)
 				{
 					number += Number;
@@ -106,7 +107,12 @@ namespace TweakStats
 				{
 					number = Number;
 				}
-				return(TryConvertNumber(number, type, out result, out error));
+				if (double.IsNaN(number))
+				{
+					error = "the result isn't a number the game can use";
+					return(false);
+				}
+				return(TryConvertNumber(Limits.ClampMagnitude(number, original), type, out result, out error));
 			}
 			if (Operation != TweakOperation.Set)
 			{
@@ -219,7 +225,8 @@ namespace TweakStats
 		}
 
 		/// <summary>
-		/// Converts a worked out number to the stat's type, rounding for whole-number stats
+		/// Converts a worked out number to the stat's type, rounding for whole-number stats and refusing a number too
+		/// large to store
 		/// </summary>
 		/// <param name="number">The number</param>
 		/// <param name="type">The stat's type</param>
@@ -230,6 +237,11 @@ namespace TweakStats
 		{
 			result = null;
 			error = null;
+			if (double.IsInfinity(number) || (type == typeof(float) && float.IsInfinity((float)number)))
+			{
+				error = "the result is too large for the game to use";
+				return(false);
+			}
 			if (type == typeof(float))
 			{
 				result = (float)number;

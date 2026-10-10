@@ -218,6 +218,7 @@ namespace TweakStats
 					{
 						return(false);
 					}
+					result = Limits.Clamp(field, result);
 				}
 				else if (IsUniformGroup(type))
 				{
@@ -228,7 +229,7 @@ namespace TweakStats
 						{
 							return(false);
 						}
-						member.SetValue(result, memberResult);
+						member.SetValue(result, Limits.Clamp(member, memberResult));
 					}
 				}
 				else
@@ -343,7 +344,7 @@ namespace TweakStats
 						{
 							return(false);
 						}
-						Write(entry, field, fieldResult);
+						Write(entry, field, Limits.Clamp(field, fieldResult));
 					}
 					else if (!TryApplyToField(entry, parts, index + 1, value, out error))
 					{

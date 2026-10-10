@@ -304,16 +304,21 @@ namespace TweakStats
 				Dictionary<string, List<string>> errors = new Dictionary<string, List<string>>();
 				foreach (Target target in targets)
 				{
-					if (target.TryApply(line.Path, line.Value, out string error) || error == null)
+					bool applied = target.TryApply(line.Path, line.Value, out string error);
+					List<string> messages = Limits.TakeNotes();
+					if (!applied && error != null)
 					{
-						continue;
+						messages.Add(error);
 					}
-					if (!errors.TryGetValue(error, out List<string> names))
+					foreach (string message in messages)
 					{
-						names = new List<string>();
-						errors.Add(error, names);
+						if (!errors.TryGetValue(message, out List<string> names))
+						{
+							names = new List<string>();
+							errors.Add(message, names);
+						}
+						names.Add(target.Header);
 					}
-					names.Add(target.Header);
 				}
 				foreach (KeyValuePair<string, List<string>> error in errors)
 				{

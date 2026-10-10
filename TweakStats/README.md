@@ -19,12 +19,6 @@ Three places help you work out what to write in the config file:
 ## Examples
 
 ```ini
-# Stone axes get knockback
-[AxeStone]
-attackForce = 10
-```
-
-```ini
 # Every item that uses the Axes skill becomes an insta-kill omni-tool
 [Skill:Axes]
 damages.slash = 10000
@@ -108,6 +102,22 @@ Stats that are whole numbers, like `maxStackSize`, are rounded after adding or m
 - `true` or `false`, e.g. `teleportable = true`
 - One of a list of choices, e.g. `skillType = Axes` or `damageModifiers.Fire = Resistant`
 - The name of an item, status effect or crafting station, e.g. `attackStatusEffect = Burning` or `craftingStation = forge`, or `none` to remove it
+
+### Limits
+
+Extreme values are allowed, but a few are kept inside what the game can handle without freezing, crashing or damaging your save. A value outside a limit is changed to the nearest value inside it, and the log says so.
+
+| Stat | Limit | Why |
+| --- | --- | --- |
+| Any number | -1,000,000,000 to 1,000,000,000 | Larger numbers overflow the game's math |
+| `maxStackSize` | 1 to 65,535 | The game can't add items to a stack of 0, and saves stack sizes as numbers up to 65,535 |
+| `amount` on a recipe | 0 to 1,000 | The game makes each crafted stack separately, all at once |
+| `attack.projectiles` | 0 to 100 | The game makes every projectile of a shot at once |
+| `attack.attackAngle` | -360 to 360 | The game checks for hits every 4 degrees of a swing |
+| `width`, `height` on a chest | 1 to 100 | The game makes a slot in the window for each slot in the chest |
+| `maxHoney` on a beehive, `maxLevel` on a sap collector | 0 to 1,000 | The game drops each one separately, all at once |
+
+An item's durability is also saved as no more than 21,000,000, the most the game can save.
 
 ### Stat Names
 
