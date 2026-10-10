@@ -21,7 +21,7 @@ namespace CreatureMarker
 		private const float LabelGap = 2f;
 		private const float LabelFontSize = 16f;
 		private static readonly Vector2 ArrowSize = new Vector2(24f, 32f);
-		private static readonly Color OutlineColor = new Color(0.1f, 0.1f, 0.1f, 1f);
+		internal static readonly Color OutlineColor = new Color(0.1f, 0.1f, 0.1f, 1f);
 
 		/// <summary>
 		/// One creature's arrow and name label
@@ -56,14 +56,15 @@ namespace CreatureMarker
 		private Sprite sprite;
 
 		/// <summary>
-		/// Shows an arrow for each living marked creature within range of the local player and hides the spare ones
+		/// Shows an arrow for each marked creature when Show On Screen is on and hides the spare ones
 		/// </summary>
-		public void Update()
+		/// <param name="marked">The living marked creatures within range</param>
+		/// <param name="player">The local player</param>
+		public void Update(List<Character> marked, Player player)
 		{
 			EnemyHud enemyHud = EnemyHud.instance;
-			Player player = Player.m_localPlayer;
 			Camera camera = Utils.GetMainCamera();
-			if (enemyHud == null || player == null || camera == null)
+			if (enemyHud == null || camera == null)
 			{
 				return;
 			}
@@ -74,38 +75,32 @@ namespace CreatureMarker
 				markers.Clear();
 			}
 			int used = 0;
-			float maxDistance = CreatureConfig.MaxDistance;
-			bool showName = CreatureConfig.ShowName;
-			bool showDistance = CreatureConfig.ShowDistance;
-			bool showLabel = (showName || showDistance);
-			Vector3 playerPosition = player.transform.position;
-			foreach (Character character in Character.GetAllCharacters())
+			if (CreatureConfig.ShowOnScreen)
 			{
-				if (Vector3.SqrMagnitude(character.transform.position - playerPosition) > maxDistance * maxDistance)
+				bool showName = CreatureConfig.ShowName;
+				bool showDistance = CreatureConfig.ShowDistance;
+				bool showLabel = (showName || showDistance);
+				Vector3 playerPosition = player.transform.position;
+				foreach (Character character in marked)
 				{
-					continue;
-				}
-				if (character.IsDead() || !CreatureConfig.IsMarked(character, player))
-				{
-					continue;
-				}
-				Marker marker = GetMarker(used, enemyHud);
-				used++;
-				Color color = CreatureConfig.GetColor(character, player);
-				marker.arrow.color = color;
-				Vector2 pointing = Place(marker.arrow.rectTransform, camera, character.GetTopPoint() + Vector3.up * HeadOffset);
-				SetActive(marker.label.gameObject, showLabel);
-				if (showLabel)
-				{
-					if (marker.character != character)
+					Marker marker = GetMarker(used, enemyHud);
+					used++;
+					Color color = CreatureConfig.GetColor(character, player);
+					marker.arrow.color = color;
+					Vector2 pointing = Place(marker.arrow.rectTransform, camera, character.GetTopPoint() + Vector3.up * HeadOffset);
+					SetActive(marker.label.gameObject, showLabel);
+					if (showLabel)
 					{
-						marker.character = character;
-						marker.name = Localization.instance.Localize(character.GetHoverName());
+						if (marker.character != character)
+						{
+							marker.character = character;
+							marker.name = Localization.instance.Localize(character.GetHoverName());
+						}
+						int distance = (showDistance ? Mathf.RoundToInt(Vector3.Distance(character.transform.position, playerPosition)) : -1);
+						SetLabelText(marker, (showName ? marker.name : null), distance);
+						marker.label.color = color;
+						PlaceLabel(marker, pointing);
 					}
-					int distance = (showDistance ? Mathf.RoundToInt(Vector3.Distance(character.transform.position, playerPosition)) : -1);
-					SetLabelText(marker, (showName ? marker.name : null), distance);
-					marker.label.color = color;
-					PlaceLabel(marker, pointing);
 				}
 			}
 			for (int i = used; i < markers.Count; i++)
@@ -258,7 +253,7 @@ namespace CreatureMarker
 		/// </summary>
 		/// <param name="go">The object</param>
 		/// <param name="active">Whether it should be active</param>
-		private static void SetActive(GameObject go, bool active)
+		internal static void SetActive(GameObject go, bool active)
 		{
 			if (go.activeSelf != active)
 			{

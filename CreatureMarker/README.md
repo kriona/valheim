@@ -4,6 +4,7 @@ Puts a colored arrow above nearby creatures. Creatures that are off-screen get a
 
 - Separate colors for passive creatures, hostile creatures and bosses
 - Optional name and distance label on each marker
+- A matching colored dot on the minimap and the large map for each marked creature
 - Choose which creatures are marked - all of them, only hostile ones, or creature by creature
 - Includes creatures added by other mods
 
@@ -13,6 +14,8 @@ Puts a colored arrow above nearby creatures. Creatures that are off-screen get a
 
 | Setting | Default | Description |
 | --- | --- | --- |
+| Show On Screen | true | Shows an arrow above each marked creature, pinned to the screen edge when it is off-screen |
+| Show On Map | true | Shows a dot on the minimap and the large map for each marked creature, except while you are in a dungeon |
 | Max Distance | 50 | How far away, in meters, a creature can be and still get a marker (5 - 500) |
 | Show Name | false | Shows the creature's name with its marker |
 | Show Distance | false | Shows the creature's distance with its marker |

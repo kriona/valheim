@@ -24,6 +24,8 @@ namespace CreatureMarker
 		private const string Comment = "##";
 		private const string Inherit = "inherit";
 
+		private const string ShowOnScreenKey = "Show On Screen";
+		private const string ShowOnMapKey = "Show On Map";
 		private const string MaxDistanceKey = "Max Distance";
 		private const string ShowNameKey = "Show Name";
 		private const string ShowDistanceKey = "Show Distance";
@@ -56,6 +58,16 @@ namespace CreatureMarker
 			"## inherit follows the All switches, while true or false always shows or hides that creature's marker",
 			"",
 		};
+
+		/// <summary>
+		/// Whether marked creatures get an arrow on screen
+		/// </summary>
+		public static bool ShowOnScreen { get; private set; } = true;
+
+		/// <summary>
+		/// Whether marked creatures get a dot on the minimap and the large map
+		/// </summary>
+		public static bool ShowOnMap { get; private set; } = true;
 
 		/// <summary>
 		/// Furthest a creature can be from the player, in meters, and still get a marker
@@ -145,6 +157,30 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
+		/// Fills the list with the living marked creatures within Max Distance of the player
+		/// </summary>
+		/// <param name="player">The local player</param>
+		/// <param name="marked">The list to fill, cleared first</param>
+		public static void GetMarked(Player player, List<Character> marked)
+		{
+			marked.Clear();
+			Vector3 playerPosition = player.transform.position;
+			float maxDistanceSquared = MaxDistance * MaxDistance;
+			foreach (Character character in Character.GetAllCharacters())
+			{
+				if (Vector3.SqrMagnitude(character.transform.position - playerPosition) > maxDistanceSquared)
+				{
+					continue;
+				}
+				if (character.IsDead() || !IsMarked(character, player))
+				{
+					continue;
+				}
+				marked.Add(character);
+			}
+		}
+
+		/// <summary>
 		/// Whether the creature should get a marker, from its own line when that is true or false, or else from the All switches
 		/// </summary>
 		/// <param name="character">The creature to check</param>
@@ -225,6 +261,8 @@ namespace CreatureMarker
 			allHostile = (ParseState(TakeValue(values, AllHostileKey)) ?? true);
 			ShowName = (ParseState(TakeValue(values, ShowNameKey)) ?? false);
 			ShowDistance = (ParseState(TakeValue(values, ShowDistanceKey)) ?? false);
+			ShowOnScreen = (ParseState(TakeValue(values, ShowOnScreenKey)) ?? true);
+			ShowOnMap = (ParseState(TakeValue(values, ShowOnMapKey)) ?? true);
 		}
 
 		/// <summary>
@@ -345,6 +383,9 @@ namespace CreatureMarker
 		{
 			StringBuilder builder = new StringBuilder();
 			AppendLines(builder, header);
+			AppendLine(builder, ShowOnScreenKey, FormatState(ShowOnScreen), "Show an arrow above each marked creature, pinned to the screen edge when it is off-screen, default true");
+			AppendLine(builder, ShowOnMapKey, FormatState(ShowOnMap), "Show a dot on the minimap and the large map for each marked creature, default true");
+			builder.Append("\r\n");
 			AppendLine(builder, MaxDistanceKey, MaxDistance.ToString(CultureInfo.InvariantCulture), "Meters, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultMaxDistance);
 			AppendLine(builder, ShowNameKey, FormatState(ShowName), "Show the creature's name with its marker, default false");
 			AppendLine(builder, ShowDistanceKey, FormatState(ShowDistance), "Show the creature's distance in meters with its marker, after the name when Show Name is on, default false");
