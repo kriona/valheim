@@ -78,7 +78,7 @@ namespace TweakStats
 		}
 
 		/// <summary>
-		/// Every build piece prefab - anything with a Piece
+		/// Every build piece prefab - anything with a Piece, except graves, which TweakStats never changes
 		/// </summary>
 		/// <returns>The prefabs, or none before the world's prefabs are loaded</returns>
 		public static List<GameObject> Pieces()
@@ -90,7 +90,7 @@ namespace TweakStats
 			}
 			foreach (GameObject prefab in ZNetScene.instance.m_prefabs)
 			{
-				if (prefab != null && prefab.GetComponent<Piece>() != null)
+				if (prefab != null && prefab.GetComponent<Piece>() != null && prefab.GetComponentInChildren<TombStone>(true) == null)
 				{
 					pieces.Add(prefab);
 				}

@@ -16,6 +16,13 @@ namespace TweakStats
 	{
 		private static readonly FieldInfo characterHealth = typeof(Character).GetField(nameof(Character.m_health));
 		private static readonly FieldInfo pieceHealth = typeof(WearNTear).GetField(nameof(WearNTear.m_health));
+		private static readonly FieldInfo containerWidth = typeof(Container).GetField(nameof(Container.m_width));
+		private static readonly FieldInfo containerHeight = typeof(Container).GetField(nameof(Container.m_height));
+
+		/// <summary>
+		/// The world data key marking a container the config has resized
+		/// </summary>
+		private static readonly int resizedKey = "kriona.TweakStats.resized".GetStableHashCode();
 
 		/// <summary>
 		/// The fields tweaked on each prefab component by the current apply
@@ -139,7 +146,8 @@ namespace TweakStats
 		}
 
 		/// <summary>
-		/// Copies fields from a prefab's component to a copy of it in the world, then brings the copy's health in line
+		/// Copies fields from a prefab's component to a copy of it in the world, then brings the copy's health and
+		/// inventory size in line
 		/// </summary>
 		/// <param name="prefabComponent">The component on the prefab</param>
 		/// <param name="instance">The same component on the copy</param>
@@ -157,6 +165,10 @@ namespace TweakStats
 			if (ContainsField(fields, pieceHealth) && instance is WearNTear piece)
 			{
 				ScalePieceHealth(piece);
+			}
+			if ((ContainsField(fields, containerWidth) || ContainsField(fields, containerHeight)) && instance is Container container)
+			{
+				ResizeInventory(container);
 			}
 		}
 
@@ -212,6 +224,112 @@ namespace TweakStats
 			if (piece.m_nview != null && piece.m_nview.IsValid())
 			{
 				piece.m_healthPercentage = Mathf.Clamp01(piece.m_nview.GetZDO().GetFloat(ZDOVars.s_health, piece.m_health) / piece.m_health);
+			}
+		}
+
+		/// <summary>
+		/// Gives a container's inventory its new width and height, dropping the items in the slots it loses on the
+		/// ground - the inventory is made with the container's size when it appears, and an open inventory window follows
+		/// its size
+		/// </summary>
+		/// <param name="container">The container</param>
+		private static void ResizeInventory(Container container)
+		{
+			if (container.m_inventory == null || IsGrave(container))
+			{
+				return;
+			}
+			container.m_inventory.m_width = container.m_width;
+			container.m_inventory.m_height = container.m_height;
+			MarkResized(container);
+			DropItemsOutside(container);
+		}
+
+		/// <summary>
+		/// Whether a container keeps to its own height when it loads, dropping the items in rows past it rather than
+		/// adding rows to fit them - true for containers the config resizes or has resized before
+		/// </summary>
+		/// <param name="container">The container in the world</param>
+		/// <returns>True when its height is kept</returns>
+		public static bool KeepsSize(Container container)
+		{
+			if (IsGrave(container))
+			{
+				return(false);
+			}
+			return(IsResized(container) || (container.m_nview != null && container.m_nview.IsValid() && container.m_nview.GetZDO().GetBool(resizedKey)));
+		}
+
+		/// <summary>
+		/// Saves a mark in a container's world data when the config resizes it and this game owns it, so it keeps to its
+		/// own height after the config stops resizing it, rather than adding rows for the items left in rows the config
+		/// gave it
+		/// </summary>
+		/// <param name="container">The container in the world</param>
+		public static void MarkResized(Container container)
+		{
+			if (IsGrave(container) || container.m_nview == null || !container.m_nview.IsValid() || !container.m_nview.IsOwner() || !IsResized(container))
+			{
+				return;
+			}
+			ZDO zdo = container.m_nview.GetZDO();
+			if (zdo.GetBool(resizedKey))
+			{
+				return;
+			}
+			zdo.Set(resizedKey, true);
+			container.m_lastRevision = zdo.DataRevision;
+		}
+
+		/// <summary>
+		/// Whether the config changes the width or height of a container's prefab
+		/// </summary>
+		/// <param name="container">The container in the world</param>
+		/// <returns>True when the current config resizes it</returns>
+		private static bool IsResized(Container container)
+		{
+			if (ZNetScene.instance == null)
+			{
+				return(false);
+			}
+			GameObject prefab = ZNetScene.instance.GetPrefab(Utils.GetPrefabName(container.gameObject));
+			Container prefabContainer = ((prefab != null) ? prefab.GetComponent<Container>() : null);
+			if (prefabContainer == null || !touched.TryGetValue(prefabContainer, out HashSet<FieldInfo> fields))
+			{
+				return(false);
+			}
+			return(ContainsField(fields, containerWidth) || ContainsField(fields, containerHeight));
+		}
+
+		/// <summary>
+		/// Whether a container is a player's grave, which holds everything the player carried by growing to fit it
+		/// </summary>
+		/// <param name="container">The container</param>
+		/// <returns>True for a grave</returns>
+		public static bool IsGrave(Container container)
+		{
+			return(container.GetComponentInParent<TombStone>() != null || (container.m_nview != null && container.m_nview.GetComponent<TombStone>() != null));
+		}
+
+		/// <summary>
+		/// Drops the items outside a container's inventory size on the ground beside it, when this game owns it - the
+		/// owner saves the container, so the items leave it for everyone. Graves are left alone
+		/// </summary>
+		/// <param name="container">The container</param>
+		public static void DropItemsOutside(Container container)
+		{
+			if (IsGrave(container) || container.m_nview == null || !container.m_nview.IsValid() || !container.m_nview.IsOwner())
+			{
+				return;
+			}
+			Inventory inventory = container.m_inventory;
+			List<ItemDrop.ItemData> outside = inventory.GetAllItems().FindAll(item => item.m_gridPos.x >= inventory.GetWidth() || item.m_gridPos.y >= inventory.GetHeight());
+			foreach (ItemDrop.ItemData item in outside)
+			{
+				Vector3 position = container.transform.position + Vector3.up * 0.5f + Random.insideUnitSphere * 0.3f;
+				Quaternion rotation = Quaternion.Euler(0f, Random.Range(0, 360), 0f);
+				ItemDrop.DropItem(item, 0, position, rotation);
+				inventory.RemoveItem(item);
 			}
 		}
 	}

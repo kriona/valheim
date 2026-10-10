@@ -250,7 +250,7 @@ These belong to the pieces that have them.
 
 | Stat | Is |
 | --- | --- |
-| `width`, `height` | A chest's size, in slots - making a chest smaller deletes the items in the slots it loses, and a chest only changes size when it's loaded again |
+| `width`, `height` | A chest's size, in slots - making a chest smaller drops the items in the slots it loses on the ground beside it |
 | `maxFuel` | Most fuel a fire, smelter or kiln holds |
 | `secPerFuel` | Seconds a fire burns one piece of fuel |
 | `infiniteFuel` | Whether a fire never runs out |

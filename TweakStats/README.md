@@ -56,6 +56,19 @@ equipStatusEffect = BeltStrength
 addMaxCarryWeight = 600
 ```
 
+```ini
+# A real menace
+[Creature:Greyling]
+health = 5000
+```
+
+```ini
+# Capitalism
+[Piece:wood_stepladder]
+resources.Wood = 0
+resources.Coins = 10
+```
+
 ## Configuration
 
 `BepInEx\config\kriona.TweakStats.cfg` is created on first run with an explanation and examples, all commented out. Remove the `#` from the start of a line to use it.
@@ -67,7 +80,7 @@ Each `[section]` names what to change, and each line under it is `stat = value`.
 | Section | Changes |
 | --- | --- |
 | `[SwordIron]` | An item, by its prefab name |
-| `[SwordIron, AxeIron]` | Several items |
+| `[SwordIron, AxeIron]` | Multiple items |
 | `[Sword*]` | Items whose prefab name matches - `*` matches any text and `?` any one letter |
 | `[Skill:Swords]` | Every item that uses a skill - see [Skills](STATS.md#skills) |
 | `[Type:Shield]` | Every item of a type - see [Item Types](STATS.md#item-types) |
