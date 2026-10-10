@@ -13,7 +13,7 @@ Look at an armor stand and press Y to swap what you're wearing with what's on th
 
 ## Configuration
 
-`BepInEx\config\kriona.SwapGear.cfg` is created on first run:
+`BepInEx\config\kriona.SwapGear.cfg` is created on first run, and changes are read each time you join a world. You do not need to restart Valheim.
 
 - `SwapKey` - the key that starts a swap, optionally with modifiers, e.g. `LeftControl + Y` (default `Y`)
 - `PickupTimeout` - seconds to wait for the stand's items to be picked up before giving up on equipping them (default `10`)
