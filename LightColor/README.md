@@ -1,10 +1,10 @@
 # Light Color
 
-Look at an object that gives off light (sconce, campfire, portal) and press L to type a color for its light, the same way you type on a sign.
+Hover over an object that gives off light (e.g., sconce, campfire, portal) and press L to enter a color for its light, brightness, and range.
 
 - Type a color name like `red`, `orange`, `yellow`, `lime`, `cyan`, `blue`, `purple` or `magenta`, or a hex color like `#0F0` or `#002B49`
 - Add a brightness and range after the color, like `blue 150% 20m` - see [Brightness and Range](#brightness-and-range)
-- Works on item stands too - color the stand to recolor a mounted Dverger circlet, torch or anything else that glows, and the color stays with the stand when you swap the item
+- Works on item stands too - the color applies to the mounted Dverger circlet, torch or anything else that glows, and the color stays with the stand when you swap the item
 - Set the `Helmet` setting to color the Dverger circlet you're wearing - see [Configuration](#configuration)
 - Type `default` or blank to go revert to the original color
 - The hover text shows the key on every object it works with
@@ -16,19 +16,29 @@ Look at an object that gives off light (sconce, campfire, portal) and press L to
 
 An object's color / brightness / range is stored on the object and saved with the world. The server does not need this mod installed in order to save the color.
 
-Light colors are shared with everyone who uses this mod, and changes are seen by all players.
+Colors are shared with everyone who uses this mod, and changes are seen by all players.
 
-The `Helmet` setting is stored on your character, so other players with this mod see your Dverger circlet in the color you set. Players without it see the circlet's normal light.
+The `Helmet` setting is copied to your character; other players with this mod see your Dverger circlet in the color you set.
 
 ## Screenshots
 
-### A purple Dverger circlet
+### A mounted purple Dverger circlet
 
 <img src="images/purple-dverger-circlet.jpg" alt="A purple Dverger circlet" width="750">
 
 ### Blue campfires and sconce
 
 <img src="images/blue-campfire-sconce.jpg" alt="Blue campfires and sconce" width="750">
+
+### Cosplaying as Cyclops from the X-Men
+
+The `Helmet` setting set to `#F00 500% 50m`.
+
+<img src="images/cyclops.jpg" alt="Cosplaying as Cyclops from the X-Men" width="750">
+
+### Portal hub with multiple colors
+
+<img src="images/portal-hub.jpg" alt="Portal hub with multiple colors" width="750">
 
 ## Color Brightness
 
