@@ -10,6 +10,7 @@ Each subdirectory is a BepInEx plugin project built with `dotnet build <Project>
 - Harmony patches go in a separate `*Patches.cs` file, one static class per patch
 - `assembly_valheim` is referenced with `Publicize="true"`, so private game members can be patched and used directly without reflection
 - Look up game code by decompiling into the scratchpad: `ilspycmd -t <Class> "C:\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\assembly_valheim.dll"`
+- Look up how a prefab is built - its hierarchy, components, lights, particle colors, materials and textures - with `python -P tools/prefab-dump.py find|tree|materials|particles <name>`, which finds the prefab's asset bundle itself. It needs UnityPy (`python -m pip install --user UnityPy`), and `-P` rather than `-I` so the user install is found
 
 ## Line Endings
 - All files use LF, set by `.gitattributes` and `.editorconfig`
