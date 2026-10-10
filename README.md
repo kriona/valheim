@@ -8,7 +8,7 @@ A library of Valheim mods I've made.
 | --- | --- | --- |
 | [Chest Peek](ChestPeek) | Hover over a chest to see what's inside without opening it | [Mod 4341](https://www.nexusmods.com/valheim/mods/4341) |
 | [Creature Marker](CreatureMarker) | Puts a colored arrow above nearby creatures, or at the edge of the screen when they're off-screen | [Mod 4342](https://www.nexusmods.com/valheim/mods/4342) |
-| [Light Color](LightColor) | Press L while looking at a sconce, lantern, mounted Dverger circlet or other light to type a color for it | |
+| [Light Color](LightColor) | Press L while looking at a sconce, mounted Dverger circlet, portal or other light to set its color, brightness and range. It also works on a worn Dverger circlet | [Mod 4352](https://www.nexusmods.com/valheim/mods/4352) |
 | [Quick Fill](QuickFill) | Hold Shift and press E to fill a smelter, kiln, oven or fire in one go | [Mod 4343](https://www.nexusmods.com/valheim/mods/4343) |
 | [Swap Gear](SwapGear) | Swap what you're wearing with what's on an armor stand | [Mod 4344](https://www.nexusmods.com/valheim/mods/4344) |
 | [Too Low](TooLow) | Shows a "Too low" message when your pickaxe hits the 8m digging limit | [Mod 4345](https://www.nexusmods.com/valheim/mods/4345) |

@@ -120,14 +120,14 @@ A campfire set to 500% brightness and a 50m range.
 | Wisp Torch | `#7BC8FF` | |
 | Yule Tree | `#FFAD31` | |
 
-Typing one of colors instead of `default` or blank these gets you the same light, but the flame comes out paler than the original.
+Typing one of these colors instead of `default` or blank gets you the same light, but the flame comes out paler than the original.
 
 ## Configuration
 
 `BepInEx\config\kriona.LightColor.cfg` is created on first run, and changes are read each time you join a world. You do not need to restart Valheim.
 
 - `ColorKey` - the key to press while looking at a light, optionally with modifiers, e.g. `L` or `LeftControl + L` (default `L`)
-- `Helmet` - the color, brightness and range for the light on your equipped Dverger circlet, typed the same way as on a light, e.g. `blue 150% 20m` (default blank, which keeps the circlet's own light)
+- `Helmet` - the color, brightness and range for the light on your equipped Dverger circlet. Seen by other players with this mod (default blank, which keeps the circlet's own light)
 
 ## Installation
 
