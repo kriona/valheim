@@ -36,6 +36,14 @@ The text with BBCode tags
 #>
 function Convert-Inline([string]$text, [string]$baseUrl)
 {
+	# Code spans are set aside first, so the link, bold and italic rules don't change the text inside them, like the *
+	# in `[Sword*]`
+	$codeSpans = New-Object System.Collections.Generic.List[string]
+	$text = [regex]::Replace($text, '`([^`]+)`', {
+		param($match)
+		$codeSpans.Add($match.Groups[1].Value)
+		return([char]0 + ($codeSpans.Count - 1) + [char]0)
+	})
 	$text = [regex]::Replace($text, '\[([^\]]+)\]\(([^)]+)\)', {
 		param($match)
 		$url = $match.Groups[2].Value
@@ -47,7 +55,10 @@ function Convert-Inline([string]$text, [string]$baseUrl)
 	})
 	$text = [regex]::Replace($text, '\*\*([^*]+)\*\*', '[b]$1[/b]')
 	$text = [regex]::Replace($text, '(?<![\w*])\*([^*]+)\*(?![\w*])', '[i]$1[/i]')
-	$text = [regex]::Replace($text, '`([^`]+)`', '[font=Courier New]$1[/font]')
+	$text = [regex]::Replace($text, ([char]0 + '(\d+)' + [char]0), {
+		param($match)
+		return('[font=Courier New]' + $codeSpans[[int]$match.Groups[1].Value] + '[/font]')
+	})
 	return($text)
 }
 
@@ -92,7 +103,11 @@ function Convert-Table([string[]]$rows, [string]$baseUrl)
 	foreach ($row in ($rows | Select-Object -Skip 2))
 	{
 		$cells = Split-TableRow $row
-		$item = '[*][b]' + $cells[0] + '[/b]'
+		for ($i = 0; $i -lt $cells.Count; $i++)
+		{
+			$cells[$i] = Convert-Inline $cells[$i] $baseUrl
+		}
+		$item = '[b]' + $cells[0] + '[/b]'
 		$labeled = @()
 		$description = ''
 		for ($i = 1; $i -lt $cells.Count; $i++)
@@ -118,7 +133,7 @@ function Convert-Table([string[]]$rows, [string]$baseUrl)
 		{
 			$item += ' - ' + $description
 		}
-		$output.Add((Convert-Inline $item $baseUrl))
+		$output.Add('[*]' + $item)
 	}
 	$output.Add('[/list]')
 	return($output)
@@ -184,26 +199,22 @@ function Get-ModList([string]$readmeFile)
 
 <#
 .SYNOPSIS
-Converts a mod's README.md to BBCode
+Converts Markdown lines to BBCode, leaving out a "# " title and the blank line after it
 
-.PARAMETER readmeFile
-Path to README.md
+.PARAMETER lines
+The Markdown lines
 
 .PARAMETER rawUrl
 URL of the mod's folder for raw file downloads, used for images
 
 .PARAMETER treeUrl
-URL of the mod's folder on GitHub, used for relative links and the source link
-
-.PARAMETER otherMods
-The other mods to link to from an "Other Mods" section, from Get-ModList - the section is left out when empty
+URL of the mod's folder on GitHub, used for relative links
 
 .OUTPUTS
-The BBCode text
+The BBCode lines
 #>
-function Convert-Readme([string]$readmeFile, [string]$rawUrl, [string]$treeUrl, [object[]]$otherMods)
+function Convert-Markdown([string[]]$lines, [string]$rawUrl, [string]$treeUrl)
 {
-	$lines = @(Get-Content $readmeFile -Encoding UTF8)
 	$output = New-Object System.Collections.Generic.List[string]
 	$listTag = ''
 	$i = 0
@@ -226,7 +237,19 @@ function Convert-Readme([string]$readmeFile, [string]$rawUrl, [string]$treeUrl, 
 			$listTag = ''
 		}
 
-		if ($line -match '^# ')
+		if ($line -match '^\s*```')
+		{
+			# A fenced code block's lines are kept as they are, with the language after the fence dropped
+			$code = @()
+			$i++
+			while ($i -lt $lines.Count -and $lines[$i] -notmatch '^\s*```')
+			{
+				$code += $lines[$i]
+				$i++
+			}
+			$output.Add('[code]' + ($code -join "`r`n") + '[/code]')
+		}
+		elseif ($line -match '^# ')
 		{
 			# The title is skipped along with the blank line after it
 			if ($i + 1 -lt $lines.Count -and $lines[$i + 1].Trim() -eq '')
@@ -281,6 +304,47 @@ function Convert-Readme([string]$readmeFile, [string]$rawUrl, [string]$treeUrl, 
 	if ($listTag -ne '')
 	{
 		$output.Add('[/list]')
+	}
+	return(,$output)
+}
+
+<#
+.SYNOPSIS
+Converts a mod's README.md to BBCode, followed by its CHANGELOG.md when it has one
+
+.PARAMETER readmeFile
+Path to README.md
+
+.PARAMETER rawUrl
+URL of the mod's folder for raw file downloads, used for images
+
+.PARAMETER treeUrl
+URL of the mod's folder on GitHub, used for relative links and the source link
+
+.PARAMETER otherMods
+The other mods to link to from an "Other Mods" section, from Get-ModList - the section is left out when empty
+
+.OUTPUTS
+The BBCode text
+#>
+function Convert-Readme([string]$readmeFile, [string]$rawUrl, [string]$treeUrl, [object[]]$otherMods)
+{
+	$output = Convert-Markdown @(Get-Content $readmeFile -Encoding UTF8) $rawUrl $treeUrl
+
+	$changelogFile = Join-Path (Split-Path $readmeFile) 'CHANGELOG.md'
+	if (Test-Path $changelogFile)
+	{
+		# Each heading moves down a level, so the "# Changelog" title becomes a section like the README's and each
+		# version a heading within it
+		$changelog = @(Get-Content $changelogFile -Encoding UTF8 | ForEach-Object {
+			if ($_ -match '^#')
+			{
+				return('#' + $_)
+			}
+			return($_)
+		})
+		$output.Add('')
+		$output.AddRange([string[]](Convert-Markdown $changelog $rawUrl $treeUrl))
 	}
 
 	if ($otherMods.Count -gt 0)

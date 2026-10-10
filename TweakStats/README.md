@@ -16,15 +16,15 @@ Ex: crafting a stone axe that does 10,000 damage, using coins:
 
 ### NAMES.md
 
-[NAMES.md](NAMES.md) - the name of every item, recipe, creature, build piece and status effect, next to its in-game name
+[NAMES.md](NAMES.md) - the name of every item, recipe, creature, build piece and status effect, next to its in-game name.
 
 ### STATS.md
 
-[STATS.md](STATS.md) - every stat you can change, from weapon damage to armor to food to crafting costs, plus the damage types, damage modifiers, skills and item types they use
+[STATS.md](STATS.md) - every stat you can change, from weapon damage to armor to food to crafting costs, plus the damage types, damage modifiers, skills and item types they use.
 
 ### Console
 
-The [`tweakstats` console command](#console-commands) - looks up names in game or lists the items you're carrying and writes out every stat an item has
+The [`tweakstats` console command](#console-commands) - looks up names in game or lists the items you're carrying and writes out every stat an item has.
 
 ## Examples
 
@@ -69,7 +69,7 @@ health = 5000
 ```
 
 ```ini
-# Capitalism
+# Climbing the corporate ladder
 [Piece:wood_stepladder]
 resources.Wood = 0
 resources.Coins = 10

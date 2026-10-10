@@ -525,7 +525,7 @@ def main():
 	document.heading(2, 'Status Effects')
 	document.table(['Section', 'Name', 'Kind'], sorted(effects, key=lambda row: sortKey(row[0])))
 
-	lines = ['# Tweak Stats Names', '']
+	lines = ['# Tweak Stats - Names', '']
 	lines.append('Every item, recipe, creature, build piece and status effect in Valheim ' + gameVersion + ', with its name in game and the section that changes it in `kriona.TweakStats.cfg`. Generated on ' + datetime.date.today().isoformat() + ' by `tools/tweakstats-names.py`.')
 	lines.append('')
 	lines.append('Items and mods\' additions can also be looked up in game with the `tweakstats find` console command - see the [README](README.md#console-commands).')
