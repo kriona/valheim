@@ -129,7 +129,7 @@ Typing one of these colors instead of `default` or blank gets you the same light
 
 ## Configuration
 
-`BepInEx\config\kriona.LightColor.cfg` is created on first run, and changes are read each time you join a world. You do not need to restart Valheim.
+`BepInEx\config\kriona.LightColor.cfg` is created on first run, and changes take effect as soon as the file is saved. You do not need to restart Valheim or rejoin the world.
 
 - `ColorKey` - the key to press while looking at a light, optionally with modifiers, e.g. `L` or `LeftControl + L` (default `L`)
 - `Helmet` - the color, brightness and range for the light on your equipped Dverger circlet. Seen by other players with this mod (default blank, which keeps the circlet's own light)

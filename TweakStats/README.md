@@ -94,7 +94,9 @@ attack.attackRange = 100
 
 ## Configuration
 
-`BepInEx\config\kriona.TweakStats.cfg` is created on first run with an explanation and examples, all commented out. Remove the `#` from the start of a line to use it.
+`BepInEx\config\kriona.TweakStats.cfg` is created when you first load a world with the mod, and changes take effect as soon as the file is saved. You do not need to restart Valheim or rejoin the world.
+
+All examples are commented out - remove the `#` from the start of a line to use it.
 
 Each `[section]` names what to change, and each line under it is `stat = value`. Lines starting with `#` are comments and are ignored.
 

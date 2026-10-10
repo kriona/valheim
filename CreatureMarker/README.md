@@ -10,7 +10,7 @@ Puts a colored arrow above nearby creatures. Creatures that are off-screen get a
 
 ## Configuration
 
-`BepInEx\config\kriona.CreatureMarker.cfg` is created when you first load a world with the mod, and changes are read each time you join a world. You do not need to restart Valheim.
+`BepInEx\config\kriona.CreatureMarker.cfg` is created when you first load a world with the mod, and changes take effect as soon as the file is saved. You do not need to restart Valheim or rejoin the world.
 
 | Setting | Default | Description |
 | --- | --- | --- |

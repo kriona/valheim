@@ -11,7 +11,7 @@ Hold Shift and press the use key (E) to fill a station in one go instead of addi
 
 ## Configuration
 
-`BepInEx\config\kriona.QuickFill.cfg` is created on first run, and changes are read each time you join a world. You do not need to restart Valheim.
+`BepInEx\config\kriona.QuickFill.cfg` is created on first run, and changes take effect as soon as the file is saved. You do not need to restart Valheim or rejoin the world.
 
 - `ModifierKey` - the key to hold while pressing the use key, e.g. `LeftControl` or `LeftAlt` - either side of Ctrl, Shift and Alt counts, and `None` turns the fill off (default `LeftShift`)
 
