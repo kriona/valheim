@@ -3,8 +3,8 @@
 Builds a mod in Release and packages it as a zip ready for GitHub Releases and Nexus Mods
 
 .DESCRIPTION
-Reads the version from the mod's Plugin.cs, builds it and writes release\<Mod>-<Version>.zip with the DLL at
-BepInEx\plugins\<Mod>\<Mod>.dll, and runs build-bbcode.ps1 to write release\<Mod>.bbcode for every mod. With
+Reads the version from the mod's Plugin.cs, builds it and writes release\packages\<Mod>-<Version>.zip with the DLL at
+BepInEx\plugins\<Mod>\<Mod>.dll, and runs build-bbcode.ps1 to write release\bbcode\<Mod>.bbcode for every mod. With
 -Publish, also creates a GitHub release tagged <Mod>-v<Version> from the current commit with the zip and the DLL
 attached, using that version's section of the mod's CHANGELOG.md as the release notes
 
@@ -110,9 +110,9 @@ if ($LASTEXITCODE -ne 0)
 }
 
 $dll = Join-Path $modDir ('bin\Release\netstandard2.1\' + $mod + '.dll')
-$releaseDir = Join-Path $root 'release'
-New-Item -ItemType Directory -Force $releaseDir | Out-Null
-$zipPath = Join-Path $releaseDir ($mod + '-' + $version + '.zip')
+$packagesDir = Join-Path $root 'release\packages'
+New-Item -ItemType Directory -Force $packagesDir | Out-Null
+$zipPath = Join-Path $packagesDir ($mod + '-' + $version + '.zip')
 if (Test-Path $zipPath)
 {
 	Remove-Item $zipPath
