@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BepInEx;
 using HarmonyLib;
 
@@ -8,9 +9,11 @@ namespace CreatureMarker
 	{
 		public const string PluginGuid = "kriona.CreatureMarker";
 		public const string PluginName = "Creature Marker";
-		public const string PluginVersion = "1.0.0";
+		public const string PluginVersion = "1.1.0";
 
 		private readonly MarkerHud markers = new MarkerHud();
+		private readonly MapMarkers mapMarkers = new MapMarkers();
+		private readonly List<Character> marked = new List<Character>();
 		private Harmony harmony;
 
 		/// <summary>
@@ -28,7 +31,14 @@ namespace CreatureMarker
 		/// </summary>
 		private void LateUpdate()
 		{
-			markers.Update();
+			Player player = Player.m_localPlayer;
+			if (player == null)
+			{
+				return;
+			}
+			CreatureConfig.GetMarked(player, marked);
+			markers.Update(marked, player);
+			mapMarkers.Update(marked, player);
 		}
 
 		/// <summary>
@@ -37,6 +47,7 @@ namespace CreatureMarker
 		private void OnDestroy()
 		{
 			markers.Destroy();
+			mapMarkers.Destroy();
 			harmony?.UnpatchSelf();
 		}
 	}
