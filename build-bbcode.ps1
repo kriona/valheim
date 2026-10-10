@@ -72,8 +72,8 @@ function Split-TableRow([string]$line)
 Converts a Markdown table to a BBCode list, one item per row
 
 .DESCRIPTION
-Each item is the first cell in bold, the middle cells as "Header: value" in brackets and the last cell after a dash,
-e.g. "[b]Max Distance[/b] (Default: 50) - How far away..."
+Each item is the first cell in bold, the other cells as "Header: value" in brackets and a Description column after a
+dash, e.g. "[b]Max Distance[/b] (Default: 50) - How far away...". Empty cells are left out
 
 .PARAMETER rows
 The table's lines, including the header and separator rows
@@ -93,18 +93,30 @@ function Convert-Table([string[]]$rows, [string]$baseUrl)
 	{
 		$cells = Split-TableRow $row
 		$item = '[*][b]' + $cells[0] + '[/b]'
-		if ($cells.Count -gt 2)
+		$labeled = @()
+		$description = ''
+		for ($i = 1; $i -lt $cells.Count; $i++)
 		{
-			$middle = @()
-			for ($i = 1; $i -lt $cells.Count - 1; $i++)
+			if ($cells[$i] -eq '')
 			{
-				$middle += ($headers[$i] + ': ' + $cells[$i])
+				continue
 			}
-			$item += ' (' + ($middle -join ', ') + ')'
+			if ($i -eq $cells.Count - 1 -and $headers[$i] -eq 'Description')
+			{
+				$description = $cells[$i]
+			}
+			else
+			{
+				$labeled += ($headers[$i] + ': ' + $cells[$i])
+			}
 		}
-		if ($cells.Count -gt 1)
+		if ($labeled.Count -gt 0)
 		{
-			$item += ' - ' + $cells[$cells.Count - 1]
+			$item += ' (' + ($labeled -join ', ') + ')'
+		}
+		if ($description -ne '')
+		{
+			$item += ' - ' + $description
 		}
 		$output.Add((Convert-Inline $item $baseUrl))
 	}
