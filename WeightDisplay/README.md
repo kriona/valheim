@@ -2,8 +2,8 @@
 
 Shows your current and maximum carry weight, followed by how many inventory slots are in use, on the HUD just below the minimap.
 
-- The weight turns yellow at 80% of your maximum and red when you're overburdened
-- The slot count turns yellow when every slot is in use. Optional: it can warn you when you're close
+- Weight turns yellow at 80% of your maximum and red when you're overburdened
+- Slot count turns yellow when every slot is in use. Optional: it can warn you when you're close to full
 - All of the colors and warning thresholds can be changed, and either the weight or the slot count can be turned off
 - Moves to the top-right corner when the minimap is hidden
 - Hides along with the rest of the HUD

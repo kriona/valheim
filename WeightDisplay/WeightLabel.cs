@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace WeightDisplay
 {
@@ -7,11 +8,20 @@ namespace WeightDisplay
 	/// HUD text showing the local player's current / max carry weight
 	/// </summary>
 	/// <remarks>
-	/// The text lives under the HUD root, so it hides along with the rest of the HUD
+	/// The text lives under the HUD root, so it hides along with the rest of the HUD. The weight is marked with the
+	/// inventory screen's weight icon, or the word "Weight" when that icon can't be found
 	/// </remarks>
 	public class WeightLabel
 	{
+		/// <summary>
+		/// Name of the sprite the inventory screen shows next to the player's weight
+		/// </summary>
+		private const string WeightIconName = "weight_icon_32";
+
 		private TextMeshProUGUI text;
+		private Image icon;
+		private Sprite weightSprite;
+		private bool iconSearched;
 		private int shownWeight = -1;
 		private int shownMax = -1;
 		private int shownUsedSlots = -1;
@@ -37,6 +47,12 @@ namespace WeightDisplay
 			if (text == null)
 			{
 				Create(hud);
+			}
+			if (!iconSearched && InventoryGui.instance != null)
+			{
+				iconSearched = true;
+				weightSprite = FindWeightSprite(InventoryGui.instance);
+				Refresh();
 			}
 			bool show = (showWeight || showSlots) && !InventoryGui.IsVisible() && !Minimap.IsOpen();
 			if (text.gameObject.activeSelf != show)
@@ -93,7 +109,34 @@ namespace WeightDisplay
 			rect.anchorMax = new Vector2(1f, 1f);
 			rect.pivot = new Vector2(1f, 1f);
 			rect.sizeDelta = new Vector2(200f, 30f);
+			GameObject iconObject = new GameObject("WeightIcon", typeof(RectTransform));
+			iconObject.transform.SetParent(go.transform, false);
+			iconObject.SetActive(false);
+			icon = iconObject.AddComponent<Image>();
+			icon.preserveAspect = true;
+			icon.raycastTarget = false;
+			RectTransform iconRect = icon.rectTransform;
+			iconRect.anchorMin = new Vector2(1f, 1f);
+			iconRect.anchorMax = new Vector2(1f, 1f);
+			iconRect.pivot = new Vector2(1f, 0.5f);
 			Refresh();
+		}
+
+		/// <summary>
+		/// Finds the weight icon among the inventory screen's images, including the hidden ones
+		/// </summary>
+		/// <param name="gui">The inventory screen</param>
+		/// <returns>The weight icon sprite, or null when the inventory screen has none</returns>
+		private static Sprite FindWeightSprite(InventoryGui gui)
+		{
+			foreach (Image image in gui.GetComponentsInChildren<Image>(true))
+			{
+				if (image.sprite != null && image.sprite.name == WeightIconName)
+				{
+					return(image.sprite);
+				}
+			}
+			return(null);
 		}
 
 		/// <summary>
@@ -119,8 +162,9 @@ namespace WeightDisplay
 			shownMax = max;
 			shownUsedSlots = usedSlots;
 			shownSlots = slots;
-			string weightText = "Weight " + ColorWeight(weight, max, warnings) + "/" + max;
-			string slotsText = "Slots " + ColorSlots(usedSlots, slots, warnings) + "/" + slots;
+			bool useIcon = showWeight && weightSprite != null;
+			string weightText = (useIcon ? "" : "Weight ") + ColorWeight(weight, max, warnings) + "/" + max;
+			string slotsText = "⬜ " + ColorSlots(usedSlots, slots, warnings) + "/" + slots;
 			if (showWeight && showSlots)
 			{
 				text.text = weightText + "  " + slotsText;
@@ -128,6 +172,38 @@ namespace WeightDisplay
 			else
 			{
 				text.text = (showWeight ? weightText : slotsText);
+			}
+			PlaceIcon(useIcon);
+		}
+
+		/// <summary>
+		/// Shows the weight icon just left of the text, sized to the font, or hides it
+		/// </summary>
+		/// <remarks>
+		/// The text is right-aligned, so its left edge moves as the numbers change and is measured from the rendered
+		/// text after each change
+		/// </remarks>
+		/// <param name="useIcon">Whether the icon is shown</param>
+		private void PlaceIcon(bool useIcon)
+		{
+			if (!useIcon)
+			{
+				if (icon.gameObject.activeSelf)
+				{
+					icon.gameObject.SetActive(false);
+				}
+				return;
+			}
+			icon.sprite = weightSprite;
+			text.ForceMeshUpdate();
+			Bounds bounds = text.textBounds;
+			float size = text.fontSize;
+			RectTransform rect = icon.rectTransform;
+			rect.sizeDelta = new Vector2(size, size);
+			rect.anchoredPosition = new Vector2(bounds.min.x - size * 0.2f, bounds.center.y);
+			if (!icon.gameObject.activeSelf)
+			{
+				icon.gameObject.SetActive(true);
 			}
 		}
 
