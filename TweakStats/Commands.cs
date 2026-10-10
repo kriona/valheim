@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using BepInEx;
+using UnityEngine;
 
 namespace TweakStats
 {
@@ -60,17 +61,18 @@ namespace TweakStats
 			}
 			else
 			{
-				args.Context.AddString("tweakstats find <text> - finds items whose name or prefab name contains the text, e.g. tweakstats find iron sword");
+				args.Context.AddString("tweakstats find <text> - finds the sections for items, creatures, build pieces and status effects whose name contains the text, e.g. tweakstats find troll");
 				args.Context.AddString("tweakstats inventory - lists the items you're carrying with their section names and main stats");
 				args.Context.AddString("tweakstats world - shows the world's name and ID and the server you're on, for [Worlds: ...] groups");
 				args.Context.AddString("tweakstats dump <section> - writes every stat of what a section names to " + DumpFileName() + ", e.g. tweakstats dump SwordIron");
-				args.Context.AddString("tweakstats list - writes every item and recipe name to " + ListFileName());
+				args.Context.AddString("tweakstats list - writes every item, recipe, creature, build piece and status effect name to " + ListFileName());
 				args.Context.AddString("tweakstats reload - reads " + Path.GetFileName(Plugin.ConfigPath) + " again");
 			}
 		}
 
 		/// <summary>
-		/// Prints the items whose display name or prefab name contains some text
+		/// Prints the sections for the items, creatures, build pieces and status effects whose name in game or prefab
+		/// name contains some text
 		/// </summary>
 		/// <param name="terminal">The console to print to</param>
 		/// <param name="text">The text to search for</param>
@@ -79,17 +81,24 @@ namespace TweakStats
 			List<string> found = new List<string>();
 			foreach (ItemDrop item in Prefabs.Items())
 			{
-				string prefabName = item.gameObject.name;
-				string displayName = Prefabs.DisplayName(item);
-				if (prefabName.IndexOf(text, StringComparison.OrdinalIgnoreCase) >= 0 || displayName.IndexOf(text, StringComparison.OrdinalIgnoreCase) >= 0)
-				{
-					found.Add(prefabName + " - " + displayName);
-				}
+				AddIfFound(found, text, "", item.gameObject.name, item.m_itemData.m_shared.m_name);
+			}
+			foreach (GameObject creature in Prefabs.Creatures())
+			{
+				AddIfFound(found, text, "Creature:", creature.name, creature.GetComponent<Character>().m_name);
+			}
+			foreach (GameObject piece in Prefabs.Pieces())
+			{
+				AddIfFound(found, text, "Piece:", piece.name, piece.GetComponent<Piece>().m_name);
+			}
+			foreach (StatusEffect effect in Prefabs.Effects())
+			{
+				AddIfFound(found, text, "Effect:", effect.name, effect.m_name);
 			}
 			found.Sort(StringComparer.OrdinalIgnoreCase);
 			if (found.Count == 0)
 			{
-				terminal.AddString("No items match \"" + text + "\"");
+				terminal.AddString("Nothing matches \"" + text + "\"" + ((ZNetScene.instance == null) ? " - join a world to search creatures and build pieces too" : ""));
 				return;
 			}
 			for (int i = 0; i < found.Count && i < MaxFound; i++)
@@ -99,6 +108,23 @@ namespace TweakStats
 			if (found.Count > MaxFound)
 			{
 				terminal.AddString("...and " + (found.Count - MaxFound) + " more - search for more of the name to narrow it down");
+			}
+		}
+
+		/// <summary>
+		/// Adds a "[section] - name" line when a prefab's name or its name in game contains the searched text
+		/// </summary>
+		/// <param name="found">The lines found so far</param>
+		/// <param name="text">The searched text</param>
+		/// <param name="kind">The section's prefix, e.g. Creature:, or empty for an item</param>
+		/// <param name="prefabName">The prefab's name</param>
+		/// <param name="gameName">The game's name for it, e.g. $enemy_troll</param>
+		private static void AddIfFound(List<string> found, string text, string kind, string prefabName, string gameName)
+		{
+			string displayName = Prefabs.Localize(gameName);
+			if (prefabName.IndexOf(text, StringComparison.OrdinalIgnoreCase) >= 0 || displayName.IndexOf(text, StringComparison.OrdinalIgnoreCase) >= 0)
+			{
+				found.Add("[" + kind + prefabName + "]" + ((displayName != "") ? " - " + displayName : ""));
 			}
 		}
 
@@ -304,10 +330,10 @@ namespace TweakStats
 			Tweaks.WithoutTweaks(() =>
 			{
 				List<string> selectors = new List<string>(header.Split(','));
-				foreach (Target target in Targets.Resolve(selectors.ConvertAll(selector => selector.Trim()), problems))
+				foreach (Target target in Targets.Resolve(selectors.ConvertAll(selector => selector.Trim()), problems, null))
 				{
 					List<string> lines = new List<string>();
-					StatPath.List(target.Root, lines);
+					target.List(lines);
 					text.Append("\n[" + target.Header + "]\n");
 					foreach (string line in lines)
 					{
@@ -333,7 +359,7 @@ namespace TweakStats
 		}
 
 		/// <summary>
-		/// Writes a Markdown list of every item and recipe the config file can name
+		/// Writes a Markdown list of every item, recipe, creature, build piece and status effect the config file can name
 		/// </summary>
 		/// <param name="terminal">The console to print to</param>
 		private static void List(Terminal terminal)
@@ -361,9 +387,38 @@ namespace TweakStats
 				string station = (recipe.m_craftingStation != null) ? recipe.m_craftingStation.gameObject.name : "none";
 				text.Append("| `[Recipe:" + recipe.m_item.gameObject.name + "]` | " + Prefabs.DisplayName(recipe.m_item) + " x" + recipe.m_amount + " | " + station + " |\n");
 			}
+			List<GameObject> creatures = Prefabs.Creatures();
+			AppendNames(text, "Creatures", "Creature:", creatures.ConvertAll(creature => (creature.name, creature.GetComponent<Character>().m_name)));
+			List<GameObject> pieces = Prefabs.Pieces();
+			AppendNames(text, "Build Pieces", "Piece:", pieces.ConvertAll(piece => (piece.name, piece.GetComponent<Piece>().m_name)));
+			List<StatusEffect> effects = Prefabs.Effects();
+			AppendNames(text, "Status Effects", "Effect:", effects.ConvertAll(effect => (effect.name, effect.m_name)));
 			if (WriteFile(terminal, ListFileName(), text.ToString()))
 			{
-				terminal.AddString("Wrote " + items.Count + " items and " + recipes.Count + " recipes to " + Path.Combine(Paths.ConfigPath, ListFileName()));
+				terminal.AddString("Wrote " + items.Count + " items, " + recipes.Count + " recipes, " + creatures.Count + " creatures, " + pieces.Count + " build pieces and " + effects.Count + " status effects to " + Path.Combine(Paths.ConfigPath, ListFileName()));
+				if (ZNetScene.instance == null)
+				{
+					terminal.AddString("Join a world to list creatures and build pieces too");
+				}
+			}
+		}
+
+		/// <summary>
+		/// Adds a Markdown table of sections and names in game, sorted by prefab name
+		/// </summary>
+		/// <param name="text">The file being written</param>
+		/// <param name="heading">The table's heading</param>
+		/// <param name="kind">The section prefix, e.g. Creature:</param>
+		/// <param name="entries">Each prefab's name and the game's name for it</param>
+		private static void AppendNames(StringBuilder text, string heading, string kind, List<(string prefabName, string gameName)> entries)
+		{
+			entries.Sort((a, b) => string.Compare(a.prefabName, b.prefabName, StringComparison.OrdinalIgnoreCase));
+			text.Append("\n## " + heading + "\n\n");
+			text.Append("| Section | Name |\n");
+			text.Append("| --- | --- |\n");
+			foreach ((string prefabName, string gameName) in entries)
+			{
+				text.Append("| `[" + kind + prefabName + "]` | " + Prefabs.Localize(gameName) + " |\n");
 			}
 		}
 

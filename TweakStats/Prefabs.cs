@@ -57,6 +57,99 @@ namespace TweakStats
 		}
 
 		/// <summary>
+		/// Every creature prefab - anything with a Character other than the player
+		/// </summary>
+		/// <returns>The prefabs, or none before the world's prefabs are loaded</returns>
+		public static List<GameObject> Creatures()
+		{
+			List<GameObject> creatures = new List<GameObject>();
+			if (ZNetScene.instance == null)
+			{
+				return(creatures);
+			}
+			foreach (GameObject prefab in ZNetScene.instance.m_prefabs)
+			{
+				if (prefab != null && prefab.GetComponent<Character>() != null && prefab.GetComponent<Player>() == null)
+				{
+					creatures.Add(prefab);
+				}
+			}
+			return(creatures);
+		}
+
+		/// <summary>
+		/// Every build piece prefab - anything with a Piece
+		/// </summary>
+		/// <returns>The prefabs, or none before the world's prefabs are loaded</returns>
+		public static List<GameObject> Pieces()
+		{
+			List<GameObject> pieces = new List<GameObject>();
+			if (ZNetScene.instance == null)
+			{
+				return(pieces);
+			}
+			foreach (GameObject prefab in ZNetScene.instance.m_prefabs)
+			{
+				if (prefab != null && prefab.GetComponent<Piece>() != null)
+				{
+					pieces.Add(prefab);
+				}
+			}
+			return(pieces);
+		}
+
+		/// <summary>
+		/// Every status effect
+		/// </summary>
+		/// <returns>The status effects</returns>
+		public static List<StatusEffect> Effects()
+		{
+			List<StatusEffect> effects = new List<StatusEffect>();
+			if (ObjectDB.instance == null)
+			{
+				return(effects);
+			}
+			foreach (StatusEffect effect in ObjectDB.instance.m_StatusEffects)
+			{
+				if (effect != null)
+				{
+					effects.Add(effect);
+				}
+			}
+			return(effects);
+		}
+
+		/// <summary>
+		/// The status effects that can land on creatures, whose stats are used by the game that owns the creature -
+		/// effects weapons and creature attacks give what they hit, and burning, poison, frost and harpooning
+		/// </summary>
+		/// <returns>The effects</returns>
+		public static HashSet<StatusEffect> HitEffects()
+		{
+			HashSet<StatusEffect> effects = new HashSet<StatusEffect>();
+			if (ObjectDB.instance == null)
+			{
+				return(effects);
+			}
+			foreach (GameObject prefab in ObjectDB.instance.m_items)
+			{
+				ItemDrop item = (prefab != null) ? prefab.GetComponent<ItemDrop>() : null;
+				if (item != null && item.m_itemData.m_shared.m_attackStatusEffect != null)
+				{
+					effects.Add(item.m_itemData.m_shared.m_attackStatusEffect);
+				}
+			}
+			foreach (StatusEffect effect in Effects())
+			{
+				if (effect is SE_Burning || effect is SE_Poison || effect is SE_Frost || effect is SE_Harpooned)
+				{
+					effects.Add(effect);
+				}
+			}
+			return(effects);
+		}
+
+		/// <summary>
 		/// The name the config file uses for an object
 		/// </summary>
 		/// <param name="unityObject">An object, or a component on a prefab</param>

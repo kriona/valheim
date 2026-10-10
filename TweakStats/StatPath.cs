@@ -73,6 +73,15 @@ namespace TweakStats
 				RemoveWhenZero = false,
 				Key = entry => ((HitData.DamageModPair)entry).m_type.ToString(),
 				Create = CreateDamageModPair
+			},
+			new ListEntry
+			{
+				ElementType = typeof(CharacterDrop.Drop),
+				KeyField = "m_prefab",
+				DefaultField = "m_chance",
+				RemoveWhenZero = true,
+				Key = entry => ((CharacterDrop.Drop)entry).m_prefab?.name,
+				Create = CreateDrop
 			}
 		};
 
@@ -155,7 +164,7 @@ namespace TweakStats
 		/// <param name="type">The type holding the field</param>
 		/// <param name="name">The name from the path</param>
 		/// <returns>The field, or null</returns>
-		private static FieldInfo FindField(Type type, string name)
+		public static FieldInfo FindField(Type type, string name)
 		{
 			foreach (FieldInfo field in GetFields(type))
 			{
@@ -485,7 +494,7 @@ namespace TweakStats
 		/// <returns>True for serializable classes and structs that aren't Unity objects, lists or single values</returns>
 		private static bool IsGroup(Type type)
 		{
-			if (type.IsPrimitive || type.IsEnum || type == typeof(string) || IsList(type) || typeof(UnityEngine.Object).IsAssignableFrom(type))
+			if (type.IsPrimitive || type.IsEnum || type == typeof(string) || IsList(type) || typeof(UnityEngine.Object).IsAssignableFrom(type) || typeof(Delegate).IsAssignableFrom(type))
 			{
 				return(false);
 			}
@@ -538,14 +547,28 @@ namespace TweakStats
 		/// <returns>" - did you mean ...?", or empty when nothing is close</returns>
 		private static string Suggest(Type type, string name)
 		{
+			return(Suggest(new Type[] { type }, name));
+		}
+
+		/// <summary>
+		/// Suggests stats with names close to one that doesn't exist, from any of several types
+		/// </summary>
+		/// <param name="types">The types that were searched</param>
+		/// <param name="name">The name that wasn't found</param>
+		/// <returns>" - did you mean ...?", or empty when nothing is close</returns>
+		public static string Suggest(IEnumerable<Type> types, string name)
+		{
 			List<string> close = new List<string>();
-			foreach (FieldInfo field in GetFields(type))
+			foreach (Type type in types)
 			{
-				string fieldName = PathName(field);
-				bool contains = name.Length >= 3 && fieldName.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0;
-				if (contains || Distance(fieldName.ToLowerInvariant(), name.ToLowerInvariant()) <= 2)
+				foreach (FieldInfo field in GetFields(type))
 				{
-					close.Add(fieldName);
+					string fieldName = PathName(field);
+					bool contains = name.Length >= 3 && fieldName.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0;
+					if ((contains || Distance(fieldName.ToLowerInvariant(), name.ToLowerInvariant()) <= 2) && !close.Contains(fieldName))
+					{
+						close.Add(fieldName);
+					}
 				}
 			}
 			if (close.Count == 0 || close.Count > 5)
@@ -637,6 +660,28 @@ namespace TweakStats
 				m_recover = true
 			};
 			return((requirement, null));
+		}
+
+		/// <summary>
+		/// Makes a new creature drop of one of a prefab, which always drops until its chance is set
+		/// </summary>
+		/// <param name="name">The dropped prefab's name, e.g. TrollHide</param>
+		/// <returns>The new drop, or an error when there's no such prefab</returns>
+		private static (object entry, string error) CreateDrop(string name)
+		{
+			GameObject prefab = (GameObject)Prefabs.Find(name, typeof(GameObject));
+			if (prefab == null)
+			{
+				return((null, "there's no item or prefab named \"" + name + "\""));
+			}
+			CharacterDrop.Drop drop = new CharacterDrop.Drop
+			{
+				m_prefab = prefab,
+				m_amountMin = 1,
+				m_amountMax = 1,
+				m_chance = 1f
+			};
+			return((drop, null));
 		}
 
 		/// <summary>

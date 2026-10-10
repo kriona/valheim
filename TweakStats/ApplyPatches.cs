@@ -35,6 +35,22 @@ namespace TweakStats
 	}
 
 	/// <summary>
+	/// Applies the tweaks once the world's creature and build piece prefabs are loaded
+	/// </summary>
+	[HarmonyPatch(typeof(ZNetScene), nameof(ZNetScene.Awake))]
+	public static class ZNetSceneAwakePatch
+	{
+		/// <summary>
+		/// Applies the tweaks after the prefab list starts
+		/// </summary>
+		[HarmonyPriority(Priority.Last)]
+		private static void Postfix()
+		{
+			Tweaks.Apply();
+		}
+	}
+
+	/// <summary>
 	/// Applies the world's tweaks when a world starts as single player, the host or a dedicated server
 	/// </summary>
 	[HarmonyPatch(typeof(ZNet), nameof(ZNet.Awake))]
@@ -81,11 +97,13 @@ namespace TweakStats
 	public static class ZNetOnDestroyPatch
 	{
 		/// <summary>
-		/// Forgets the world and applies the tweaks that apply everywhere
+		/// Forgets the world and any server's config, and applies the tweaks that apply everywhere
 		/// </summary>
 		private static void Postfix()
 		{
 			Tweaks.CurrentWorld = null;
+			Tweaks.ClearServerConfig();
+			ServerSync.Clear();
 			Tweaks.Apply();
 		}
 	}

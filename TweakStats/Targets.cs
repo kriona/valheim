@@ -1,16 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using UnityEngine;
 
 namespace TweakStats
 {
 	/// <summary>
-	/// An object a section changes, e.g. an item's shared data or a recipe
+	/// An object a section changes, e.g. an item's shared data, a recipe or a status effect
 	/// </summary>
 	public class Target
 	{
 		/// <summary>
-		/// The object stat paths start from
+		/// The object stat paths start from, which also tells targets apart
 		/// </summary>
 		public object Root;
 
@@ -18,6 +19,33 @@ namespace TweakStats
 		/// The section header that names only this object, e.g. SwordIron or Recipe:SwordIron
 		/// </summary>
 		public string Header;
+
+		/// <summary>
+		/// Whether changing the object needs every player to use the same config - it only applies when this game runs
+		/// the world or uses the server's config, since another player's game may run the object with its own values
+		/// </summary>
+		public bool NeedsServer;
+
+		/// <summary>
+		/// Changes the stat at a path
+		/// </summary>
+		/// <param name="path">The stat's dotted path</param>
+		/// <param name="value">The value to apply</param>
+		/// <param name="error">Why the stat couldn't be changed, or null</param>
+		/// <returns>True when nothing went wrong</returns>
+		public virtual bool TryApply(string path, TweakValue value, out string error)
+		{
+			return(StatPath.TryApply(Root, path, value, out error));
+		}
+
+		/// <summary>
+		/// Lists every stat with its current value, as config lines
+		/// </summary>
+		/// <param name="lines">The list to add "path = value" lines to</param>
+		public virtual void List(List<string> lines)
+		{
+			StatPath.List(Root, lines);
+		}
 	}
 
 	/// <summary>
@@ -30,13 +58,20 @@ namespace TweakStats
 		/// </summary>
 		/// <param name="selectors">The selectors, e.g. SwordIron, Sword*, Skill:Swords or Recipe:SwordIron</param>
 		/// <param name="problems">A message for each selector that names nothing</param>
+		/// <param name="skipped">Each creature or build piece selector left out because this game doesn't run the
+		/// world, or null to look them up anyway</param>
 		/// <returns>The objects</returns>
-		public static List<Target> Resolve(List<string> selectors, List<string> problems)
+		public static List<Target> Resolve(List<string> selectors, List<string> problems, List<string> skipped)
 		{
 			List<Target> targets = new List<Target>();
 			HashSet<object> seen = new HashSet<object>(ReferenceComparer.Instance);
 			foreach (string selector in selectors)
 			{
+				if (skipped != null && !Tweaks.WorldTweaksApply && IsWorldKind(selector))
+				{
+					skipped.Add(selector);
+					continue;
+				}
 				List<Target> found = Resolve(selector, out string error);
 				foreach (Target target in found)
 				{
@@ -130,11 +165,73 @@ namespace TweakStats
 					error = (IsWildcard(name) ? "no recipes match \"" + name + "\"" : "there's no recipe for \"" + name + "\"");
 				}
 			}
+			else if (kind.Equals("Creature", StringComparison.OrdinalIgnoreCase))
+			{
+				Regex pattern = Pattern(name);
+				foreach (GameObject prefab in Prefabs.Creatures())
+				{
+					if (pattern.IsMatch(prefab.name))
+					{
+						targets.Add(new PrefabTarget(prefab, "Creature:" + prefab.name));
+					}
+				}
+				if (targets.Count == 0)
+				{
+					error = (IsWildcard(name) ? "no creatures match \"" + name + "\"" : "there's no creature named \"" + name + "\"");
+				}
+			}
+			else if (kind.Equals("Piece", StringComparison.OrdinalIgnoreCase))
+			{
+				Regex pattern = Pattern(name);
+				foreach (GameObject prefab in Prefabs.Pieces())
+				{
+					if (pattern.IsMatch(prefab.name))
+					{
+						targets.Add(new PrefabTarget(prefab, "Piece:" + prefab.name));
+					}
+				}
+				if (targets.Count == 0)
+				{
+					error = (IsWildcard(name) ? "no build pieces match \"" + name + "\"" : "there's no build piece named \"" + name + "\"");
+				}
+			}
+			else if (kind.Equals("Effect", StringComparison.OrdinalIgnoreCase))
+			{
+				Regex pattern = Pattern(name);
+				HashSet<StatusEffect> hitEffects = Prefabs.HitEffects();
+				foreach (StatusEffect effect in Prefabs.Effects())
+				{
+					if (pattern.IsMatch(effect.name))
+					{
+						targets.Add(new Target
+						{
+							Root = effect,
+							Header = "Effect:" + effect.name,
+							NeedsServer = hitEffects.Contains(effect)
+						});
+					}
+				}
+				if (targets.Count == 0)
+				{
+					error = (IsWildcard(name) ? "no status effects match \"" + name + "\"" : "there's no status effect named \"" + name + "\"");
+				}
+			}
 			else
 			{
-				error = "\"" + kind + ":\" isn't something TweakStats can change - use an item name, Skill:, Type: or Recipe:";
+				error = "\"" + kind + ":\" isn't something TweakStats can change - use an item name, Skill:, Type:, Recipe:, Creature:, Piece: or Effect:";
 			}
 			return(targets);
+		}
+
+		/// <summary>
+		/// Whether a selector names creatures or build pieces, whose tweaks need every player to use the same config
+		/// </summary>
+		/// <param name="selector">The selector</param>
+		/// <returns>True for Creature: and Piece: selectors</returns>
+		private static bool IsWorldKind(string selector)
+		{
+			string trimmed = selector.TrimStart();
+			return(trimmed.StartsWith("Creature:", StringComparison.OrdinalIgnoreCase) || trimmed.StartsWith("Piece:", StringComparison.OrdinalIgnoreCase));
 		}
 
 		/// <summary>

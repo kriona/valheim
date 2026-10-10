@@ -60,10 +60,12 @@ namespace TweakStats
 		}
 
 		/// <summary>
-		/// Reads the config file again and applies it once it has stopped changing
+		/// Reads the config file again and applies it once it has stopped changing, and shows any message waiting for
+		/// the player
 		/// </summary>
 		private void Update()
 		{
+			Tweaks.ShowPendingMessage();
 			if (fileChanged)
 			{
 				fileChanged = false;

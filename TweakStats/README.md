@@ -1,12 +1,12 @@
 # Tweak Stats
 
-Change the stats of any item or recipe - weapon damage, attack stamina, armor, block power, food, durability, weight, stack sizes, crafting costs and more.
+Change the stats of any item, recipe, creature, build piece or status effect - weapon damage, attack stamina, armor, block power, food, durability, weight, stack sizes, crafting costs, creature health and drops, building health and more.
 
 - Set a stat to a number, add to it or multiply it - `weight = 5`, `weight = +5` or `weight = 1.5x`
 - Change one item, several items, every item matching a name like `Sword*` or `*Bow*`, or every item of a skill (e.g., `[Skill:Axes]`) or type (e.g., `[Type:Shield]`)
 - Limit tweaks to certain worlds, e.g. single player (`[Worlds: SinglePlayer][/Worlds]`) or a specific multiplayer server (e.g., `[Worlds: Midgard][/Worlds]`)
 - Changes take effect as soon as the config file is saved - there's no need to restart Valheim or rejoin the world
-- Works with items and recipes added by other mods
+- Works with items, recipes, creatures and build pieces added by other mods
 
 ## Items and Stats
 
@@ -33,7 +33,7 @@ damages.pickaxe = 10000
 ```
 
 ```ini
-# Stone axes are free to craft on my single-player world
+# Stone axes are free to craft on your single-player world
 [Worlds: SinglePlayer]
 [Recipe:AxeStone]
 resources.Wood = 0
@@ -45,7 +45,15 @@ resources.Stone = 0
 # ZOOOOM (fall damage will probably kill you, but enemies can't)
 [ArmorRagsChest]
 armor = 1000
-movementModifier = 3  # +300% speed
+movementModifier = 3  # triple speed
+```
+
+```ini
+# Powerlifter pants
+[ArmorRagsLegs]
+equipStatusEffect = BeltStrength
+[Effect:BeltStrength]
+addMaxCarryWeight = 600
 ```
 
 ## Configuration
@@ -64,6 +72,11 @@ Each `[section]` names what to change, and each line under it is `stat = value`.
 | `[Skill:Swords]` | Every item that uses a skill - see [Skills](STATS.md#skills) |
 | `[Type:Shield]` | Every item of a type - see [Item Types](STATS.md#item-types) |
 | `[Recipe:SwordIron]` | The recipe that makes an item - wildcards work here too |
+| `[Creature:Troll]` | A creature - its health, speed, resistances, AI, drops and attacks |
+| `[Piece:woodwall]` | A build piece - its health, resistances and building cost, and things like a chest's size or a fire's fuel |
+| `[Effect:Rested]` | A status effect, from food and meads to set bonuses and burning |
+
+Creature and Piece sections, and Effect sections for effects that land on creatures like `Burning` and `Poison`, only apply in single player, when hosting, or on a server that has Tweak Stats - see [Multiplayer Servers](#multiplayer-servers).
 
 Names ignore case. Items are named by their prefab name, like `SwordIron`, rather than the name shown in game, like "Iron sword". [NAMES.md](NAMES.md) lists every item, recipe, creature, build piece and status effect with its name in game, and the [`tweakstats find`](#console-commands) command looks them up in game.
 
@@ -85,12 +98,14 @@ Stats that are whole numbers, like `maxStackSize`, are rounded after adding or m
 
 ### Stat Names
 
-A stat's name is the game's own name for it without the `m_`, so `m_attackStamina` is `attackStamina`. Names ignore case.
+A stat's name is the game's name without the `m_`, so `m_attackStamina` is `attackStamina`. Names ignore case.
 
-Dots go into a group of stats:
+Example attack and damage stats:
 
-- `attack.attackStamina` - the attack's stamina cost
-- `damages.slash` - the slash part of the damage
+- `attack.attackStamina` - the normal attack's stamina cost
+- `attack.attackRange` - the normal attack's reach, in meters
+- `damages.slash` - slash damage
+- `damages.fire` - fire damage
 
 A group of damage types can be changed all at once - `damages = 1.5x` multiplies slash, fire, chop and every other damage type.
 
@@ -154,9 +169,35 @@ Press F5 to open the console.
 
 ## Multiplayer Servers
 
-Tweaks apply to you only. Other players without the mod see the game's own values, and the server doesn't need the mod.
+When the server has Tweak Stats, every player who joins uses the server's config file, and their own `kriona.TweakStats.cfg` is ignored while they're on it. When the server's config file changes, it's sent to everyone again. Hosting a world from the start menu counts as a server: your config is sent to the players who join you.
 
-Your weapon's damage is worked out by your game, so a stronger weapon also hits harder in PvP.
+When the server doesn't have Tweak Stats, each player uses their own config:
+
+- Item, recipe and most status effect tweaks apply to you only, and other players see the game's own values. Your weapon's damage is worked out by your game, so a stronger weapon also hits harder in PvP
+- Creature and Piece sections, and Effect sections for effects that land on creatures like `Burning` and `Poison`, are skipped. A message says how many when you join, and the log lists them
+
+### Requiring the Mod
+
+A server can refuse players who don't have Tweak Stats, or who have a different version - the first two numbers have to match, so 1.2.0 and 1.2.3 can play together. It's set in the server's config file:
+
+```ini
+[Settings]
+requireMod = auto
+```
+
+| Value | Does |
+| --- | --- |
+| `auto` | Requires the mod when the config has Creature, Piece or Effect sections - the default |
+| `true` | Always requires the mod |
+| `false` | Lets anyone join |
+
+A refused player sees the game's "incompatible version" message, and a player with a different version of the mod also gets the reason in their log.
+
+With `requireMod = false`, a player without the mod runs the creatures and build pieces near them with the game's own values, so the same creature can have different stats depending on who's near it.
+
+### Stack Sizes
+
+When a chest or inventory loads, each stack is cut down to the item's current `maxStackSize`, and the rest is deleted. Raising a stack size is safe, but lowering it again - or removing the tweak - deletes whatever is over the new size. On a server, a chest is loaded by every player near it, so a player without your tweak can cut your stacks down the next time the chest changes. Only raise stack sizes on a server when every player uses the same config.
 
 ## Installation
 

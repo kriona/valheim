@@ -46,6 +46,19 @@ namespace TweakStats
 		public List<TweakSection> Sections = new List<TweakSection>();
 
 		/// <summary>
+		/// The values set in the [Settings] section, by name ignoring case
+		/// </summary>
+		public Dictionary<string, string> Settings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+		/// <summary>
+		/// The settings the [Settings] section can hold, with the values each can be set to
+		/// </summary>
+		private static readonly Dictionary<string, string[]> settingValues = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+		{
+			{ "requireMod", new string[] { "auto", "true", "false" } }
+		};
+
+		/// <summary>
 		/// Lines that couldn't be read, as messages that start with the line number
 		/// </summary>
 		public List<string> Problems = new List<string>();
@@ -61,6 +74,7 @@ namespace TweakStats
 			TweakSection section = null;
 			List<string> worlds = null;
 			int worldsLine = 0;
+			bool inSettings = false;
 			string[] lines = text.Split('\n');
 			for (int i = 0; i < lines.Length; i++)
 			{
@@ -72,6 +86,7 @@ namespace TweakStats
 				}
 				if (line.StartsWith("["))
 				{
+					inSettings = false;
 					if (!line.EndsWith("]"))
 					{
 						file.AddProblem(lineNumber, "\"" + line + "\" starts with [ but doesn't end with ]");
@@ -102,6 +117,15 @@ namespace TweakStats
 						worldsLine = lineNumber;
 						section = null;
 					}
+					else if (header.Equals("Settings", StringComparison.OrdinalIgnoreCase))
+					{
+						if (worlds != null)
+						{
+							file.AddProblem(lineNumber, "[Settings] can't be inside a [Worlds: ...] group, so its settings apply everywhere");
+						}
+						inSettings = true;
+						section = null;
+					}
 					else
 					{
 						section = new TweakSection
@@ -125,6 +149,11 @@ namespace TweakStats
 				if (equals < 0)
 				{
 					file.AddProblem(lineNumber, "\"" + line + "\" needs to be stat = value");
+					continue;
+				}
+				if (inSettings)
+				{
+					file.ReadSetting(lineNumber, line.Substring(0, equals).Trim(), line.Substring(equals + 1).Trim());
 					continue;
 				}
 				if (section == null)
@@ -155,6 +184,30 @@ namespace TweakStats
 				file.AddProblem(worldsLine, "[Worlds: ...] has no [/Worlds] to end it, so it runs to the end of the file");
 			}
 			return(file);
+		}
+
+		/// <summary>
+		/// Stores a line of the [Settings] section, when it names a setting and one of its values
+		/// </summary>
+		/// <param name="lineNumber">The line's number</param>
+		/// <param name="name">The setting's name</param>
+		/// <param name="value">The setting's value</param>
+		private void ReadSetting(int lineNumber, string name, string value)
+		{
+			if (!settingValues.TryGetValue(name, out string[] values))
+			{
+				AddProblem(lineNumber, "there's no setting \"" + name + "\" - use one of " + string.Join(", ", settingValues.Keys));
+				return;
+			}
+			foreach (string allowed in values)
+			{
+				if (allowed.Equals(value, StringComparison.OrdinalIgnoreCase))
+				{
+					Settings[name] = allowed;
+					return;
+				}
+			}
+			AddProblem(lineNumber, name + " needs one of " + string.Join(", ", values) + ", not \"" + value + "\"");
 		}
 
 		/// <summary>
