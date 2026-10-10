@@ -2,23 +2,19 @@
 
 Look at an object that gives off light (sconce, campfire, portal) and press L to type a color for its light, the same way you type on a sign.
 
+- Type a color name like `red`, `orange`, `yellow`, `lime`, `cyan`, `blue`, `purple` or `magenta`, or a hex color like `#0F0` or `#002B49`
 - Works on item stands too - color the stand to recolor a mounted Dverger circlet, torch or anything else that glows, and the color stays with the stand when you swap the item
-- Type a color name like `red`, `orange`, `yellow`, `lime`, `cyan`, `blue`, `purple` or `magenta`, or a hex color like `#FF8000`
-- Leave it blank or type `default` to go back to the light's own color
-- The hover text shows the key on every piece it works with
-- Colors are saved with the world, so they're still there after logging out or restarting the server
-- Other players with the mod see the same colors, while players without it see the normal light
+- Type `default` or blank to go revert to the original color
+- The hover text shows the key on every object it works with
 - Respects wards - you can't change lights inside a ward you don't have access to
-
-The flame, sparks and glow on the piece change color too, keeping their own shading - a red sconce gets a flame that goes from bright red to dark red, while its smoke stays gray. The light the piece casts is the exact color you typed.
 
 <img src="images/white-portal.jpg" alt="A white portal" width="750">
 
 ## Multiplayer Servers
 
-An object's color is stored on the object, and the server does not need this mod installed to save the color.
+An object's color is stored on the object and saved with the world. The server does not need this mod installed to save the color.
 
-This means that light colors are shared with everyone who uses this mod.
+Light colors are shared with everyone who uses this mod, and changes are seen by all players.
 
 ## Screenshots
 
@@ -34,7 +30,7 @@ This means that light colors are shared with everyone who uses this mod.
 
 The game treats black as "no light". If you set an object's color to black, it does not emit light.
 
-The game respects brightness for most light sources. #111 (dark gray) emits very little light, while #FFF (white) emits a lot of light.
+The game respects brightness for most light sources. `#111` (dark gray) emits very little light, while `#FFF` (white) emits a lot of light.
 
 ### Portals
 
@@ -44,9 +40,9 @@ Portals are an exception. The markings on the portal are the same brightness, no
 
 ## Default Colors
 
-`default` puts back each piece's own color, which isn't the same for every piece. Fires that burn low when they run out of fuel switch to a smaller, dimmer light, and pieces with more than one light have one of each color listed - the color you type is used for all of them:
+`default` or blank reverts an object to its original color. Fires that burn low when they run out of fuel switch to a smaller, dimmer light. Objects with more than one light have one of each color listed - the color you type is used for all of them.
 
-| Piece | Light color | Low on fuel |
+| Object | Light color | Low on fuel |
 | --- | --- | --- |
 | Artisan Table | `#87DCFF` | |
 | Battering Ram | `#FF7A00` | |
@@ -97,7 +93,7 @@ Portals are an exception. The markings on the portal are the same brightness, no
 | Wisp Torch | `#7BC8FF` | |
 | Yule Tree | `#FFAD31` | |
 
-Typing one of these gets you the same light, but the flame comes out paler than the original, since these colors are only partly saturated - use blank or `default` to get the flame back exactly as it was.
+Typing one of colors instead of `default` or blank these gets you the same light, but the flame comes out paler than the original.
 
 ## Configuration
 
