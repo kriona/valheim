@@ -14,6 +14,11 @@ namespace LightColor
 	internal static class Recolor
 	{
 		private const float MinSaturation = 0.1f;
+
+		/// <summary>
+		/// The weakest a replaced glow gets, for a black or nearly black color - 5 out of F
+		/// </summary>
+		private const float MinReplaceStrength = 5f / 15f;
 		private const int MaxTextureSize = 512;
 		private const string EmissionKeyword = "_EMISSION";
 
@@ -53,16 +58,22 @@ namespace LightColor
 		}
 
 		/// <summary>
-		/// Replaces a glow color with the target color at the glow's brightness, for glows that are white or gray
-		/// to begin with, like the stone portal's, which Shift would leave alone
+		/// Replaces a glow color with the target color's hue, at a strength set by how bright the target is, for glows
+		/// that are white or gray to begin with, like the stone portal's, which Shift would leave alone
 		/// </summary>
+		/// <remarks>
+		/// The target's brightest channel, from 0 to F, is mapped onto 5 to F, so a dark target like #010 still glows
+		/// like #050 rather than looking black, while #0F0 gets the glow's full strength. Black has no hue, so it glows gray
+		/// </remarks>
 		/// <param name="glow">The glow color, which may be HDR</param>
 		/// <param name="target">The color to use</param>
-		/// <returns>The target scaled so its brightest channel matches the glow's, with the glow's alpha</returns>
+		/// <returns>The new glow, with the glow's alpha</returns>
 		public static Color Replace(Color glow, Color target)
 		{
 			float targetMax = target.maxColorComponent;
-			Color replaced = ((targetMax > 0f) ? target * (glow.maxColorComponent / targetMax) : Color.black);
+			Color hue = ((targetMax > 0f) ? target / targetMax : Color.white);
+			float strength = MinReplaceStrength + (1f - MinReplaceStrength) * Mathf.Clamp01(targetMax);
+			Color replaced = hue * (strength * glow.maxColorComponent);
 			replaced.a = glow.a;
 			return(replaced);
 		}

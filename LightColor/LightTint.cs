@@ -13,11 +13,10 @@ namespace LightColor
 	public class LightTint : MonoBehaviour, TextReceiver
 	{
 		/// <summary>
-		/// ZDO key holding the color text as typed, blank for the light's own color
+		/// ZDO key holding the settings text as typed, like "blue 150% 20m", blank for the piece's own settings
 		/// </summary>
 		private static readonly int ColorHash = "kriona.LightColor".GetStableHashCode();
 
-		private const string DefaultText = "default";
 		private const int CharacterLimit = 32;
 
 		private ZNetView nview;
@@ -30,19 +29,14 @@ namespace LightColor
 		private bool checkedRevision;
 
 		/// <summary>
-		/// The color text currently shown on the lights, or null when the lights haven't been set since they were scanned
+		/// The settings text currently shown on the lights, or null when the lights haven't been set since they were scanned
 		/// </summary>
 		private string applied = "";
 
 		/// <summary>
-		/// Whether the piece is showing a stored color rather than its own colors
+		/// The stored settings the piece is showing
 		/// </summary>
-		public bool HasColor { get; private set; }
-
-		/// <summary>
-		/// The stored color the piece is showing, opaque, when HasColor is true
-		/// </summary>
-		public Color Color { get; private set; }
+		public LightSettings Settings { get; private set; } = LightSettings.Default;
 
 		/// <summary>
 		/// Whether the piece has anything left to color - a light, a particle system or a recolorable material
@@ -72,7 +66,7 @@ namespace LightColor
 		/// </summary>
 		public void Rescan()
 		{
-			tintable.Apply(false, Color.white);
+			tintable.Apply(LightSettings.Default);
 			tintable = new Tintable(gameObject);
 			applied = null;
 			checkedRevision = false;
@@ -88,7 +82,7 @@ namespace LightColor
 		}
 
 		/// <summary>
-		/// Opens the text input for typing the light's color
+		/// Opens the text input for typing the light's color, brightness and range
 		/// </summary>
 		public void RequestColor()
 		{
@@ -96,13 +90,13 @@ namespace LightColor
 			{
 				return;
 			}
-			TextInput.instance.RequestText(this, "Light color - a name or #RRGGBB, blank for default", CharacterLimit);
+			TextInput.instance.RequestText(this, "Light - a color, brightness % and range m, e.g. blue 150% 20m", CharacterLimit);
 		}
 
 		/// <summary>
-		/// The stored color text, shown in the text input when it opens
+		/// The stored settings text, shown in the text input when it opens
 		/// </summary>
-		/// <returns>The color text, blank for the light's own color</returns>
+		/// <returns>The settings text, blank for the piece's own settings</returns>
 		public string GetText()
 		{
 			if (nview == null || !nview.IsValid())
@@ -113,7 +107,8 @@ namespace LightColor
 		}
 
 		/// <summary>
-		/// Stores the typed color, or clears it for blank or "default", leaving it unchanged when the text isn't a color
+		/// Stores the typed settings, or clears them when they change nothing, like blank or "default", leaving them
+		/// unchanged and showing why when the text can't be read
 		/// </summary>
 		/// <param name="text">The text from the text input</param>
 		public void SetText(string text)
@@ -123,14 +118,14 @@ namespace LightColor
 				return;
 			}
 			text = text.Trim();
-			if (text.Equals(DefaultText, System.StringComparison.OrdinalIgnoreCase))
+			if (!LightSettings.TryParse(text, out LightSettings settings, out string error))
+			{
+				Player.m_localPlayer?.Message(MessageHud.MessageType.Center, error);
+				return;
+			}
+			if (settings.IsDefault())
 			{
 				text = "";
-			}
-			if (text.Length > 0 && !ColorUtility.TryParseHtmlString(text, out Color _))
-			{
-				Player.m_localPlayer?.Message(MessageHud.MessageType.Center, "Couldn't read the color " + text);
-				return;
 			}
 			nview.ClaimOwnership();
 			nview.GetZDO().Set(ColorHash, text);
@@ -138,7 +133,7 @@ namespace LightColor
 		}
 
 		/// <summary>
-		/// Applies the stored color when the ZDO has changed since the last check
+		/// Applies the stored settings when the ZDO has changed since the last check
 		/// </summary>
 		private void Refresh()
 		{
@@ -159,13 +154,10 @@ namespace LightColor
 				return;
 			}
 			applied = text;
-			// Text that doesn't parse, which only another version of the mod could have stored, shows the light's own color
-			Color color = Color.white;
-			bool hasColor = (text.Length > 0 && ColorUtility.TryParseHtmlString(text, out color));
-			color.a = 1f;
-			HasColor = hasColor;
-			Color = color;
-			tintable.Apply(hasColor, color);
+			// Text that can't be read, which only another version of the mod could have stored, leaves the piece as it is
+			LightSettings.TryParse(text, out LightSettings settings, out string _);
+			Settings = settings;
+			tintable.Apply(settings);
 		}
 	}
 }

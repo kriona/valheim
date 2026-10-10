@@ -13,8 +13,8 @@ namespace LightColor
 		private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
 		/// <summary>
-		/// Replaces the glow the portal just set with the stored color at the same brightness, leaving the portal's
-		/// own glow when there is no stored color
+		/// Replaces the glow the portal just set with the stored color at the glow's strength, then scales it by the
+		/// stored brightness, leaving the portal's own glow when there are no stored settings
 		/// </summary>
 		/// <param name="__instance">The portal</param>
 		private static void Postfix(TeleportWorld __instance)
@@ -24,12 +24,16 @@ namespace LightColor
 				return;
 			}
 			LightTint tint = __instance.GetComponent<LightTint>();
-			if (tint == null || !tint.HasColor)
+			if (tint == null || (!tint.Settings.HasColor && tint.Settings.Brightness == 1f))
 			{
 				return;
 			}
 			Color glow = Color.Lerp(__instance.m_colorUnconnected, __instance.m_colorTargetfound, __instance.m_colorAlpha);
-			__instance.m_model.material.SetColor(EmissionColorId, Recolor.Replace(glow, tint.Color));
+			Color emission = (tint.Settings.HasColor ? Recolor.Replace(glow, tint.Settings.Color) : glow);
+			float alpha = emission.a;
+			emission *= tint.Settings.Brightness;
+			emission.a = alpha;
+			__instance.m_model.material.SetColor(EmissionColorId, emission);
 		}
 	}
 
@@ -56,8 +60,8 @@ namespace LightColor
 		private static void Prefix(TeleportWorld __instance)
 		{
 			LightTint tint = __instance.GetComponent<LightTint>();
-			Active = (tint != null && tint.HasColor);
-			Color = ((tint != null) ? tint.Color : Color.white);
+			Active = (tint != null && tint.Settings.HasColor);
+			Color = ((tint != null) ? tint.Settings.Color : Color.white);
 		}
 
 		/// <summary>
@@ -89,7 +93,7 @@ namespace LightColor
 			{
 				if (effect != null)
 				{
-					new Tintable(effect).Apply(true, TeleportWorldUpdatePortalPatch.Color);
+					new Tintable(effect).Apply(LightSettings.ColorOnly(TeleportWorldUpdatePortalPatch.Color));
 				}
 			}
 		}

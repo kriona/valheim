@@ -3,6 +3,7 @@
 Look at an object that gives off light (sconce, campfire, portal) and press L to type a color for its light, the same way you type on a sign.
 
 - Type a color name like `red`, `orange`, `yellow`, `lime`, `cyan`, `blue`, `purple` or `magenta`, or a hex color like `#0F0` or `#002B49`
+- Add a brightness and range after the color, like `blue 150% 20m` - see [Brightness and Range](#brightness-and-range)
 - Works on item stands too - color the stand to recolor a mounted Dverger circlet, torch or anything else that glows, and the color stays with the stand when you swap the item
 - Type `default` or blank to go revert to the original color
 - The hover text shows the key on every object it works with
@@ -12,7 +13,7 @@ Look at an object that gives off light (sconce, campfire, portal) and press L to
 
 ## Multiplayer Servers
 
-An object's color is stored on the object and saved with the world. The server does not need this mod installed to save the color.
+An object's color / brightness / range is stored on the object and saved with the world. The server does not need this mod installed to save the color.
 
 Light colors are shared with everyone who uses this mod, and changes are seen by all players.
 
@@ -28,15 +29,28 @@ Light colors are shared with everyone who uses this mod, and changes are seen by
 
 ## Color Brightness
 
-The game treats black as "no light". If you set an object's color to black, it does not emit light.
+The game treats black as "no light". If you set an object's color to black, it does not emit light. `#111` (dark gray) emits very little light, while `#FFF` (white) emits a lot of light.
 
-The game respects brightness for most light sources. `#111` (dark gray) emits very little light, while `#FFF` (white) emits a lot of light.
+The left portal is set to `#0F0` (bright green) while the right portal is set to `#010` (dark green).
 
-### Portals
+<img src="images/green-portals.jpg" alt="Bright and dark green portals" width="750">
 
-Portals are an exception. The markings on the portal are the same brightness, no matter what brightness level you use. The brightness level only impacts the effects of a portal you are standing near.
+## Brightness and Range
 
-<img src="images/green-portals.jpg" alt="Green portals with different brightness" width="750">
+Add a brightness ending in `%` or a range ending in `m` after the color. Both are optional, and work without a color too:
+
+- `blue 150%` - blue, and one and a half times as bright
+- `blue 150% 20m` - blue, brighter, and lights up 20 meters around it
+- `50%` - the object's original color at half brightness
+- `0%` - turns the light off, while the flame or glow stays
+
+Brightness can be from 0% to 500%, and range from 1m to 50m. The range sets the size of the object's largest light, and its other lights are scaled to match, so a fire that runs low on fuel still shrinks. Flames and glowing parts only change color - their size stays the same.
+
+Bigger lights light up more of the world around them, which costs more performance when there are a lot of them.
+
+A campfire set to 500% brightness and a 50m range.
+
+<img src="images/apocalypse.jpg" alt="An apocalyptically bright campfire" width="750">
 
 ## Default Colors
 

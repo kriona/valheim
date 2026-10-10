@@ -35,6 +35,13 @@ namespace LightColor
 
 		private readonly Light[] lights;
 		private readonly Color[] originalColors;
+		private readonly float[] originalIntensities;
+		private readonly float[] originalRanges;
+
+		/// <summary>
+		/// The range of the largest light, which a typed range is measured against
+		/// </summary>
+		private readonly float largestRange;
 		private readonly List<ParticleColors> particles = new List<ParticleColors>();
 		private readonly List<RendererMaterials> renderers = new List<RendererMaterials>();
 
@@ -47,9 +54,14 @@ namespace LightColor
 		{
 			lights = root.GetComponentsInChildren<Light>(true);
 			originalColors = new Color[lights.Length];
+			originalIntensities = new float[lights.Length];
+			originalRanges = new float[lights.Length];
 			for (int i = 0; i < lights.Length; i++)
 			{
 				originalColors[i] = lights[i].color;
+				originalIntensities[i] = GetBaseIntensity(lights[i]);
+				originalRanges[i] = GetBaseRange(lights[i]);
+				largestRange = Mathf.Max(largestRange, originalRanges[i]);
 			}
 			foreach (ParticleSystem system in root.GetComponentsInChildren<ParticleSystem>(true))
 			{
@@ -129,20 +141,26 @@ namespace LightColor
 		}
 
 		/// <summary>
-		/// Sets everything recorded to the color, or back to its own colors
+		/// Sets everything recorded to the settings, putting back anything the settings leave out
 		/// </summary>
 		/// <remarks>
-		/// Lights get the exact color, while particles and materials are shifted toward it so they keep their own shading
+		/// Lights get the exact color, brightness and range, while particles and materials are only shifted toward the
+		/// color so they keep their own shading. A range sets the largest light and scales the others to match, so a
+		/// fire's low-fuel light stays smaller
 		/// </remarks>
-		/// <param name="hasColor">Whether to use the color rather than restore the own colors</param>
-		/// <param name="color">The opaque color</param>
-		public void Apply(bool hasColor, Color color)
+		/// <param name="settings">The settings to show</param>
+		public void Apply(LightSettings settings)
 		{
+			bool hasColor = settings.HasColor;
+			Color color = settings.Color;
+			float rangeScale = ((settings.Range > 0f && largestRange > 0f) ? settings.Range / largestRange : 1f);
 			for (int i = 0; i < lights.Length; i++)
 			{
 				if (lights[i] != null)
 				{
 					lights[i].color = (hasColor ? color : originalColors[i]);
+					SetIntensity(lights[i], originalIntensities[i] * settings.Brightness);
+					SetRange(lights[i], originalRanges[i] * rangeScale);
 				}
 			}
 			foreach (ParticleColors colors in particles)
@@ -153,6 +171,106 @@ namespace LightColor
 			{
 				ApplyMaterials(entry, hasColor, color);
 			}
+		}
+
+		/// <summary>
+		/// A light's brightness before flickering or fading
+		/// </summary>
+		/// <remarks>
+		/// A flickering or fading light sets its brightness every frame from the base it read when it woke, and has
+		/// dimmed the light itself - a fade starts it at 0, and a flicker does for the reduced flashing setting - so the
+		/// base is read once it has woken. Lights on inactive objects haven't woken yet
+		/// </remarks>
+		/// <param name="light">The light</param>
+		/// <returns>The base brightness</returns>
+		private static float GetBaseIntensity(Light light)
+		{
+			LightFlicker flicker = light.GetComponent<LightFlicker>();
+			if (flicker != null && flicker.m_light != null)
+			{
+				return(flicker.m_baseIntensity);
+			}
+			EffectFade fade = GetFade(light);
+			if (fade != null)
+			{
+				return(fade.m_lightBaseIntensity);
+			}
+			return(light.intensity);
+		}
+
+		/// <summary>
+		/// The woken fade that sets a light's brightness every frame, like the one on a portal's glow
+		/// </summary>
+		/// <remarks>
+		/// A fade sits on a parent of its light and reads the light's brightness as its base when it wakes, the same way a flicker does
+		/// </remarks>
+		/// <param name="light">The light</param>
+		/// <returns>The fade, or null when the light has none or it hasn't woken</returns>
+		private static EffectFade GetFade(Light light)
+		{
+			EffectFade fade = light.GetComponentInParent<EffectFade>(true);
+			return(((fade != null && fade.m_light == light) ? fade : null));
+		}
+
+		/// <summary>
+		/// A light's full range
+		/// </summary>
+		/// <remarks>
+		/// A light with distance fading starts at range 0 when it wakes and grows back to the base range it read, so the
+		/// base is read once it has woken
+		/// </remarks>
+		/// <param name="light">The light</param>
+		/// <returns>The full range</returns>
+		private static float GetBaseRange(Light light)
+		{
+			LightLod lod = light.GetComponent<LightLod>();
+			return(((lod != null && lod.m_light != null) ? lod.m_baseRange : light.range));
+		}
+
+		/// <summary>
+		/// Sets a light's brightness, through its flicker or fade when it has one so they don't undo it
+		/// </summary>
+		/// <param name="light">The light</param>
+		/// <param name="intensity">The brightness before flickering</param>
+		private static void SetIntensity(Light light, float intensity)
+		{
+			LightFlicker flicker = light.GetComponent<LightFlicker>();
+			if (flicker != null && flicker.m_light != null)
+			{
+				flicker.m_baseIntensity = intensity;
+				return;
+			}
+			EffectFade fade = GetFade(light);
+			if (fade != null)
+			{
+				fade.m_lightBaseIntensity = intensity;
+				return;
+			}
+			// A flicker or fade that hasn't woken reads this as its base when it does
+			light.intensity = intensity;
+		}
+
+		/// <summary>
+		/// Sets a light's range, through its distance fading when it has it so the fading grows the light to the new range
+		/// </summary>
+		/// <param name="light">The light</param>
+		/// <param name="range">The full range</param>
+		private static void SetRange(Light light, float range)
+		{
+			LightLod lod = light.GetComponent<LightLod>();
+			if (lod != null && lod.m_light != null)
+			{
+				lod.m_baseRange = range;
+				// The fading only grows a light that is on toward its base range and never shrinks it, so a light
+				// that is on gets the new range straight away
+				if (light.enabled && light.range > 0f)
+				{
+					light.range = range;
+				}
+				return;
+			}
+			// Distance fading that hasn't woken reads this as its base when it does
+			light.range = range;
 		}
 
 		/// <summary>
