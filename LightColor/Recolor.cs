@@ -34,9 +34,14 @@ namespace LightColor
 		private static readonly Dictionary<long, Material> materials = new Dictionary<long, Material>();
 
 		/// <summary>
-		/// Recolored copies of emission textures, by original texture and target color
+		/// Recolored copies of emission and sprite textures, by original texture and target color
 		/// </summary>
 		private static readonly Dictionary<long, Texture2D> textures = new Dictionary<long, Texture2D>();
+
+		/// <summary>
+		/// Recolored copies of UI sprites, by original sprite and target color
+		/// </summary>
+		private static readonly Dictionary<long, Sprite> sprites = new Dictionary<long, Sprite>();
 
 		/// <summary>
 		/// Shifts a color to the target's hue, leaving grays unchanged
@@ -246,6 +251,34 @@ namespace LightColor
 		}
 
 		/// <summary>
+		/// A copy of a sprite drawn from a shifted copy of its texture, made once per sprite and color
+		/// </summary>
+		/// <remarks>
+		/// The sprite's rectangle, pivot, border and size on screen are kept, scaled to match when the texture copy
+		/// is smaller than the original
+		/// </remarks>
+		/// <param name="sprite">The original sprite, which must not be tightly packed into an atlas</param>
+		/// <param name="target">The color to shift toward</param>
+		/// <returns>The shared recolored copy</returns>
+		public static Sprite GetSprite(Sprite sprite, Color target)
+		{
+			long key = GetKey(sprite, target);
+			if (sprites.TryGetValue(key, out Sprite copy) && copy != null)
+			{
+				return(copy);
+			}
+			Texture2D texture = GetTexture(sprite.texture, target);
+			float scale = (float)texture.width / sprite.texture.width;
+			Rect source = sprite.textureRect;
+			Rect rect = new Rect(source.x * scale, source.y * scale, source.width * scale, source.height * scale);
+			Vector2 pivot = new Vector2(sprite.pivot.x / sprite.rect.width, sprite.pivot.y / sprite.rect.height);
+			copy = Sprite.Create(texture, rect, pivot, sprite.pixelsPerUnit * scale, 0, SpriteMeshType.FullRect, sprite.border * scale);
+			copy.name = sprite.name + " (" + Plugin.PluginName + ")";
+			sprites[key] = copy;
+			return(copy);
+		}
+
+		/// <summary>
 		/// A copy of a texture with every pixel shifted, made once per texture and color
 		/// </summary>
 		/// <remarks>
@@ -294,7 +327,7 @@ namespace LightColor
 		/// <summary>
 		/// A cache key combining an object and a color
 		/// </summary>
-		/// <param name="obj">The material or texture</param>
+		/// <param name="obj">The material, texture or sprite</param>
 		/// <param name="target">The target color</param>
 		/// <returns>The object's instance ID in the high half and the color's RGBA bytes in the low half</returns>
 		private static long GetKey(Object obj, Color target)

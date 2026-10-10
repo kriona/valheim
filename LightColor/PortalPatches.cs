@@ -98,4 +98,66 @@ namespace LightColor
 			}
 		}
 	}
+
+	/// <summary>
+	/// Marks the color of the portal the player is going through, so the swirl on the loading screen can be colored
+	/// </summary>
+	[HarmonyPatch(typeof(TeleportWorld), nameof(TeleportWorld.Teleport))]
+	public static class TeleportWorldTeleportPatch
+	{
+		/// <summary>
+		/// Whether the player is going through a colored portal
+		/// </summary>
+		public static bool Active;
+
+		/// <summary>
+		/// The color of the portal the player is going through, while Active is true
+		/// </summary>
+		public static Color Color;
+
+		/// <summary>
+		/// Marks the portal's color when it has one
+		/// </summary>
+		/// <param name="__instance">The portal</param>
+		private static void Prefix(TeleportWorld __instance)
+		{
+			LightTint tint = __instance.GetComponent<LightTint>();
+			Active = (tint != null && tint.Settings.HasColor);
+			Color = ((tint != null) ? tint.Settings.Color : Color.white);
+		}
+
+		/// <summary>
+		/// Clears the mark so teleports started by anything else show the swirl's own colors
+		/// </summary>
+		private static void Finalizer()
+		{
+			Active = false;
+		}
+	}
+
+	/// <summary>
+	/// Colors the swirl on the loading screen when the local player starts a teleport
+	/// </summary>
+	/// <remarks>
+	/// The swirl is set when the teleport starts, so it keeps its color while the loading screen fades out after the
+	/// player arrives
+	/// </remarks>
+	[HarmonyPatch(typeof(Player), nameof(Player.TeleportTo))]
+	public static class PlayerTeleportToPatch
+	{
+		/// <summary>
+		/// Sets the swirl to the color of the portal being used, or to its own colors for an uncolored portal or a
+		/// teleport that isn't through a portal
+		/// </summary>
+		/// <param name="__instance">The player</param>
+		/// <param name="__result">Whether the teleport started</param>
+		private static void Postfix(Player __instance, bool __result)
+		{
+			if (!__result || __instance != Player.m_localPlayer)
+			{
+				return;
+			}
+			TeleportSwirl.Apply((TeleportWorldTeleportPatch.Active ? TeleportWorldTeleportPatch.Color : (Color?)null));
+		}
+	}
 }
