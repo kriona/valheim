@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.0
+- Config changes are read each time you join a world; you don't need to restart Valheim
+
 ## 1.1.0
 - The modifier key can be changed with the `ModifierKey` setting
 - The default modifier key is Shift instead of Ctrl to avoid sneaking

@@ -10,7 +10,7 @@ namespace SwapGear
 	{
 		public const string PluginGuid = "kriona.SwapGear";
 		public const string PluginName = "Swap Gear";
-		public const string PluginVersion = "1.0.0";
+		public const string PluginVersion = "1.1.0";
 
 		public static ConfigEntry<KeyboardShortcut> SwapKey;
 		public static ConfigEntry<float> PickupTimeout;
@@ -20,16 +20,30 @@ namespace SwapGear
 		private Coroutine swap;
 
 		/// <summary>
+		/// The loaded plugin, for reloading its config file from a patch
+		/// </summary>
+		private static Plugin instance;
+
+		/// <summary>
 		/// Binds the settings and applies the patches
 		/// </summary>
 		private void Awake()
 		{
+			instance = this;
 			SwapKey = Config.Bind("General", "SwapKey", new KeyboardShortcut(KeyCode.Y), "Key to press while looking at an armor stand to swap your gear with what's on it - a Unity KeyCode name, optionally with modifiers, e.g. Y or LeftControl + Y");
 			PickupTimeout = Config.Bind("General", "PickupTimeout", 10f, "Seconds to wait for the armor stand's items to be picked up before giving up on equipping them");
 			InstantEquip = Config.Bind("General", "InstantEquip", false, "Unequip and equip gear instantly instead of taking as long as it does from the inventory");
 			harmony = new Harmony(PluginGuid);
 			harmony.PatchAll();
 			Logger.LogInfo(PluginName + " " + PluginVersion + " loaded");
+		}
+
+		/// <summary>
+		/// Reads the config file again, so changes made to it while the game is running take effect
+		/// </summary>
+		public static void ReloadConfig()
+		{
+			instance?.Config.Reload();
 		}
 
 		/// <summary>

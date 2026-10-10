@@ -5,6 +5,7 @@ Look at an object that gives off light (sconce, campfire, portal) and press L to
 - Type a color name like `red`, `orange`, `yellow`, `lime`, `cyan`, `blue`, `purple` or `magenta`, or a hex color like `#0F0` or `#002B49`
 - Add a brightness and range after the color, like `blue 150% 20m` - see [Brightness and Range](#brightness-and-range)
 - Works on item stands too - color the stand to recolor a mounted Dverger circlet, torch or anything else that glows, and the color stays with the stand when you swap the item
+- Set the `Helmet` setting to color the Dverger circlet you're wearing - see [Configuration](#configuration)
 - Type `default` or blank to go revert to the original color
 - The hover text shows the key on every object it works with
 - Respects wards - you can't change lights inside a ward you don't have access to
@@ -13,9 +14,11 @@ Look at an object that gives off light (sconce, campfire, portal) and press L to
 
 ## Multiplayer Servers
 
-An object's color / brightness / range is stored on the object and saved with the world. The server does not need this mod installed to save the color.
+An object's color / brightness / range is stored on the object and saved with the world. The server does not need this mod installed in order to save the color.
 
 Light colors are shared with everyone who uses this mod, and changes are seen by all players.
+
+The `Helmet` setting is stored on your character, so other players with this mod see your Dverger circlet in the color you set. Players without it see the circlet's normal light.
 
 ## Screenshots
 
@@ -111,9 +114,10 @@ Typing one of colors instead of `default` or blank these gets you the same light
 
 ## Configuration
 
-`BepInEx\config\kriona.LightColor.cfg` is created on first run:
+`BepInEx\config\kriona.LightColor.cfg` is created on first run, and changes are read each time you join a world. You do not need to restart Valheim.
 
 - `ColorKey` - the key to press while looking at a light, optionally with modifiers, e.g. `L` or `LeftControl + L` (default `L`)
+- `Helmet` - the color, brightness and range for the light on your equipped Dverger circlet, typed the same way as on a light, e.g. `blue 150% 20m` (default blank, which keeps the circlet's own light)
 
 ## Installation
 

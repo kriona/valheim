@@ -30,7 +30,7 @@ namespace LightColor
 	}
 
 	/// <summary>
-	/// Keeps the color of the item shown on an item stand, like a mounted Dvergr circlet, in step with the stand's stored color
+	/// Keeps the color of the item shown on an item stand, like a mounted Dverger circlet, in step with the stand's stored color
 	/// </summary>
 	/// <remarks>
 	/// The stand calls SetVisualItem every few seconds, and it only replaces the shown item when the item has changed

@@ -224,7 +224,7 @@ namespace LightColor
 			}
 			copy = new Material(material);
 			copy.name = material.name + " (" + Plugin.PluginName + ")";
-			// Glowing gems like the Dvergr circlet's are tinted through their base color as well as their glow, and
+			// Glowing gems like the Dverger circlet's are tinted through their base color as well as their glow, and
 			// particle materials through any of the three
 			foreach (int id in ColorIds)
 			{
