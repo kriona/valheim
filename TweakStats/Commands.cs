@@ -19,6 +19,11 @@ namespace TweakStats
 		private const int MaxFound = 30;
 
 		/// <summary>
+		/// Most characters of a section header put in a dump's file name
+		/// </summary>
+		private const int MaxDumpNameLength = 100;
+
+		/// <summary>
 		/// Adds the tweakstats command to the console
 		/// </summary>
 		public static void Register()
@@ -64,7 +69,7 @@ namespace TweakStats
 				args.Context.AddString("tweakstats find <text> - finds the sections for items, creatures, build pieces and status effects whose name contains the text, e.g. tweakstats find troll");
 				args.Context.AddString("tweakstats inventory - lists the items you're carrying with their section names and main stats");
 				args.Context.AddString("tweakstats world - shows the world's name and ID and the server you're on, for [Worlds: ...] groups");
-				args.Context.AddString("tweakstats dump <section> - writes every stat of what a section names to " + DumpFileName() + ", e.g. tweakstats dump SwordIron");
+				args.Context.AddString("tweakstats dump <section> - writes every stat of what a section names to " + DumpFileName("SwordIron") + ", e.g. tweakstats dump SwordIron");
 				args.Context.AddString("tweakstats list - writes every item, recipe, creature, build piece and status effect name to " + ListFileName());
 				args.Context.AddString("tweakstats reload - reads " + Path.GetFileName(Plugin.ConfigPath) + " again");
 			}
@@ -327,6 +332,7 @@ namespace TweakStats
 			List<string> problems = new List<string>();
 			StringBuilder text = new StringBuilder();
 			int count = 0;
+			string fileHeader = header;
 			Tweaks.WithoutTweaks(() =>
 			{
 				List<string> selectors = new List<string>(header.Split(','));
@@ -340,6 +346,7 @@ namespace TweakStats
 						text.Append("# " + line + "\n");
 					}
 					count++;
+					fileHeader = ((count == 1) ? target.Header : header);
 				}
 			});
 			foreach (string problem in problems)
@@ -352,9 +359,10 @@ namespace TweakStats
 			}
 			string intro = "# " + Plugin.PluginName + " dump of [" + header + "] from Valheim " + global::Version.GetVersionString() + " on " + DateTime.Now.ToString("yyyy-MM-dd HH:mm") + "\n" +
 				"# These are the game's values before any tweaks. Copy the lines you want into " + Path.GetFileName(Plugin.ConfigPath) + " and remove the # to use them\n";
-			if (WriteFile(terminal, DumpFileName(), intro + text))
+			string fileName = DumpFileName(fileHeader);
+			if (WriteFile(terminal, fileName, intro + text))
 			{
-				terminal.AddString("Wrote " + count + ((count == 1) ? " section" : " sections") + " to " + Path.Combine(Paths.ConfigPath, DumpFileName()));
+				terminal.AddString("Wrote " + count + ((count == 1) ? " section" : " sections") + " to " + Path.Combine(Paths.ConfigPath, fileName));
 			}
 		}
 
@@ -445,12 +453,37 @@ namespace TweakStats
 		}
 
 		/// <summary>
-		/// The name of the file dump writes
+		/// The name of the file dump writes for a section
 		/// </summary>
-		/// <returns>The file name</returns>
-		private static string DumpFileName()
+		/// <param name="header">The section's header, e.g. SwordIron or Recipe:SwordIron</param>
+		/// <returns>The file name, with the header's characters that can't be in a file name changed to _, e.g.
+		/// kriona.TweakStats.dump.Recipe_SwordIron.txt</returns>
+		private static string DumpFileName(string header)
 		{
-			return(Plugin.PluginGuid + ".dump.txt");
+			StringBuilder name = new StringBuilder();
+			char[] invalid = Path.GetInvalidFileNameChars();
+			foreach (char character in header)
+			{
+				bool replace = (Array.IndexOf(invalid, character) >= 0 || character == ',' || char.IsWhiteSpace(character));
+				if (!replace)
+				{
+					name.Append(character);
+				}
+				else if (name.Length > 0 && name[name.Length - 1] != '_')
+				{
+					name.Append('_');
+				}
+			}
+			string text = name.ToString().TrimEnd('_');
+			if (text == "")
+			{
+				text = "all";
+			}
+			if (text.Length > MaxDumpNameLength)
+			{
+				text = text.Substring(0, MaxDumpNameLength);
+			}
+			return(Plugin.PluginGuid + ".dump." + text + ".txt");
 		}
 
 		/// <summary>

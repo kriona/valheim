@@ -211,6 +211,29 @@ def findComponent(prefabDump, gameObject, classNames):
 	return((None, None))
 
 
+def countResources(resources, words, counts, column):
+	"""
+	Counts the items a recipe or build piece costs
+
+	@param resources The recipe's or piece's m_resources list
+	@param words English text by key
+	@param counts Rows by item prefab name - each row is [stat, name, recipes, pieces]
+	@param column The row index to count in, 2 for recipes or 3 for build pieces
+	"""
+	used = set()
+	for requirement in resources:
+		itemObject = deref(requirement.m_resItem)
+		if itemObject is None:
+			continue
+		item = itemObject.read(check_read=False)
+		prefabName = gameObjectName(item)
+		if prefabName in used:
+			continue
+		used.add(prefabName)
+		row = counts.setdefault(prefabName, ['`resources.' + prefabName + '`', localize(words, item.m_itemData.m_shared.m_name), 0, 0])
+		row[column] += 1
+
+
 def gameObjectName(componentData):
 	"""
 	The name of the GameObject a component is on
@@ -395,6 +418,7 @@ def main():
 			pieceTables.append((localize(words, shared.m_name), buildPieces.read(check_read=False)))
 
 	recipes = []
+	resources = {}
 	for pointer in objectDB.m_recipes:
 		recipeObject = deref(pointer)
 		if recipeObject is None:
@@ -417,6 +441,7 @@ def main():
 		if not recipe.m_enabled:
 			makes += ' (disabled)'
 		recipes.append(['`[Recipe:' + gameObjectName(item) + ']`', recipe.m_Name, makes, station])
+		countResources(recipe.m_resources, words, resources, 2)
 
 	creatures = []
 	for pointer in zNetScene.m_prefabs:
@@ -446,6 +471,7 @@ def main():
 			stationObject = deref(piece.m_craftingStation)
 			station = ('`' + gameObjectName(stationObject.read(check_read=False)) + '`') if stationObject is not None else ''
 			pieces.append(['`[Piece:' + prefabName + ']`', localize(words, piece.m_name), pieceCategories.get(piece.m_category, str(piece.m_category)), station])
+			countResources(piece.m_resources, words, resources, 3)
 		piecesByTool.append((toolName, pieces))
 
 	effects = []
@@ -482,6 +508,11 @@ def main():
 
 	document.heading(2, 'Recipes')
 	document.table(['Section', 'Recipe', 'Makes', 'Station'], sorted(recipes, key=lambda row: sortKey(row[0] + row[1])))
+
+	document.heading(2, 'Resources')
+	document.text('Every item a recipe or build piece costs, with the stat that changes how many it needs, e.g. `resources.Wood = 5` - and how many recipes and build pieces use it. Any other item can be added to a cost the same way.')
+	resourceRows = [[row[0], row[1], str(row[2]) if row[2] > 0 else '', str(row[3]) if row[3] > 0 else ''] for row in resources.values()]
+	document.table(['Stat', 'Name', 'Recipes', 'Build Pieces'], sorted(resourceRows, key=lambda row: sortKey(row[0])))
 
 	document.heading(2, 'Creatures')
 	document.table(['Section', 'Name', 'Faction', 'Boss'], sorted(creatures, key=lambda row: sortKey(row[0])))

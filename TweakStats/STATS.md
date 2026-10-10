@@ -2,24 +2,26 @@
 
 The stats Tweak Stats can change, and the values they take. See the [README](README.md#configuration) for how to write them in the config file, and [NAMES.md](NAMES.md) for the names of every item, recipe, creature, build piece and status effect.
 
-These are the most common stats - the [`tweakstats dump`](README.md#console-commands) console command lists every one something has, with its value.
+*(data from Valheim 1.0.17, generated on 10/10/2026 by `tools/tweakstats-names.py`)*
+
+These are the most common stats - the [`tweakstats dump`](README.md#console-commands) console command lists every stat something has, along with its value.
 
 - [Item Stats](#item-stats)
-  - [Weapon Damage](#weapon-damage)
+  - [Armor](#armor)
   - [Attacks](#attacks)
   - [Blocking](#blocking)
-  - [Armor](#armor)
-  - [Equipment Modifiers](#equipment-modifiers)
   - [Durability](#durability)
+  - [Equipment Modifiers](#equipment-modifiers)
   - [Food and Meads](#food-and-meads)
+  - [Weapon Damage](#weapon-damage)
   - [Other](#other)
 - [Recipe Stats](#recipe-stats)
 - [Creature Stats](#creature-stats)
-  - [Body](#body)
   - [Behavior](#behavior)
-  - [Taming](#taming)
-  - [Drops](#drops)
+  - [Body](#body)
   - [Creature Attacks](#creature-attacks)
+  - [Drops](#drops)
+  - [Taming](#taming)
 - [Build Piece Stats](#build-piece-stats)
   - [Building](#building)
   - [Chests, Fires and Stations](#chests-fires-and-stations)
@@ -31,18 +33,16 @@ These are the most common stats - the [`tweakstats dump`](README.md#console-comm
 
 ## Item Stats
 
-### Weapon Damage
+### Armor
 
 | Stat | Is |
 | --- | --- |
-| `damages` | The damage of each type, e.g. `damages.slash` - see [Damage Types](#damage-types). An item whose damage adds up to more than 10000 is marked as a cheated item when it loads, which is saved with it and shown in its tooltip |
-| `damagesPerLevel` | Damage added by each upgrade, of each type |
-| `attackForce` | Knockback |
-| `backstabBonus` | Damage multiplier for sneak attacks on unaware enemies |
-| `toolTier` | Which trees and ores the item can harvest |
-| `attackStatusEffect` | A status effect the item gives what it hits, e.g. `Burning` |
-| `attackStatusEffectChance` | The chance of giving that status effect, from 0 to 1 |
-| `skillType` | The skill the item uses and raises - see [Skills](#skills) |
+| `armor` | Armor |
+| `armorPerLevel` | Armor added by each upgrade |
+| `damageModifiers` | Resistances and weaknesses, e.g. `damageModifiers.Frost = Resistant` - see [Damage Modifiers](#damage-modifiers) |
+| `equipStatusEffect` | A status effect while worn, e.g. the Wolf fur cape's frost resistance |
+| `setStatusEffect` | The set bonus's status effect |
+| `setSize` | How many pieces of the set give the bonus |
 
 ### Attacks
 
@@ -78,16 +78,16 @@ These are the most common stats - the [`tweakstats dump`](README.md#console-comm
 | `deflectionForce` | Knockback on attackers when blocking |
 | `timedBlockBonus` | Block power multiplier for a parry |
 
-### Armor
+### Durability
 
 | Stat | Is |
 | --- | --- |
-| `armor` | Armor |
-| `armorPerLevel` | Armor added by each upgrade |
-| `damageModifiers` | Resistances and weaknesses, e.g. `damageModifiers.Frost = Resistant` - see [Damage Modifiers](#damage-modifiers) |
-| `equipStatusEffect` | A status effect while worn, e.g. the Wolf fur cape's frost resistance |
-| `setStatusEffect` | The set bonus's status effect |
-| `setSize` | How many pieces of the set give the bonus |
+| `maxDurability` | Durability |
+| `durabilityPerLevel` | Durability added by each upgrade |
+| `useDurabilityDrain` | Durability used by each attack or use |
+| `durabilityDrain` | Durability used per second while equipped, e.g. torches |
+| `canBeReparied` | Whether the item can be repaired - spelled this way in the game |
+| `destroyBroken` | Whether the item is destroyed when its durability runs out |
 
 ### Equipment Modifiers
 
@@ -106,17 +106,6 @@ Fractions added while the item is worn, so `-0.05` is -5% and `0.1` is +10%.
 | `sneakStaminaModifier` | Stamina used sneaking |
 | `swimStaminaModifier` | Stamina used swimming |
 
-### Durability
-
-| Stat | Is |
-| --- | --- |
-| `maxDurability` | Durability |
-| `durabilityPerLevel` | Durability added by each upgrade |
-| `useDurabilityDrain` | Durability used by each attack or use |
-| `durabilityDrain` | Durability used per second while equipped, e.g. torches |
-| `canBeReparied` | Whether the item can be repaired - spelled this way in the game |
-| `destroyBroken` | Whether the item is destroyed when its durability runs out |
-
 ### Food and Meads
 
 | Stat | Is |
@@ -127,6 +116,19 @@ Fractions added while the item is worn, so `-0.05` is -5% and `0.1` is +10%.
 | `foodBurnTime` | Seconds the food lasts |
 | `foodRegen` | Health regained every 10 seconds |
 | `consumeStatusEffect` | The status effect a mead gives |
+
+### Weapon Damage
+
+| Stat | Is |
+| --- | --- |
+| `damages` | The damage of each type, e.g. `damages.slash` - see [Damage Types](#damage-types). An item whose damage adds up to more than 10000 is marked as a cheated item when it loads, which is saved with it and shown in its tooltip |
+| `damagesPerLevel` | Damage added by each upgrade, of each type |
+| `attackForce` | Knockback |
+| `backstabBonus` | Damage multiplier for sneak attacks on unaware enemies |
+| `toolTier` | Which trees and ores the item can harvest |
+| `attackStatusEffect` | A status effect the item gives what it hits, e.g. `Burning` |
+| `attackStatusEffectChance` | The chance of giving that status effect, from 0 to 1 |
+| `skillType` | The skill the item uses and raises - see [Skills](#skills) |
 
 ### Other
 
@@ -159,6 +161,22 @@ For `[Creature:...]` sections, which only apply in single player, when hosting, 
 
 A creature's stats are spread over several parts - its body, its AI, its taming and its drops - and a stat's name finds it in whichever part has it. When two parts have a stat with the same name, put the part's name in front to choose, e.g. `MonsterAI.viewRange`; `tweakstats dump` writes the names this way when it's needed.
 
+### Behavior
+
+| Stat | Is |
+| --- | --- |
+| `viewRange` | How far it sees, in meters |
+| `viewAngle` | How wide it sees, in degrees |
+| `hearRange` | How far it hears, in meters |
+| `alertRange` | How far away it alerts others of its kind |
+| `maxChaseDistance` | How far it chases before giving up |
+| `minAttackInterval` | Fewest seconds between attacks |
+| `fleeIfLowHealth` | Flees below this fraction of its health, where 0 never flees |
+| `afraidOfFire`, `avoidFire` | Whether it runs from fire, or walks around it |
+| `avoidWater` | Whether it stays out of water |
+| `attackPlayerObjects` | Whether it attacks buildings |
+| `enableHuntPlayer` | Whether it heads for players as soon as it appears, like raid creatures - takes effect on creatures that appear after the change |
+
 ### Body
 
 | Stat | Is |
@@ -179,39 +197,6 @@ A creature's stats are spread over several parts - its body, its AI, its taming 
 | `boss` | Whether it's a boss, with a health bar at the top of the screen |
 | `tolerateWater`, `tolerateFire`, `tolerateSmoke`, `tolerateTar` | Whether water, fire, smoke or tar don't hurt it |
 
-### Behavior
-
-| Stat | Is |
-| --- | --- |
-| `viewRange` | How far it sees, in meters |
-| `viewAngle` | How wide it sees, in degrees |
-| `hearRange` | How far it hears, in meters |
-| `alertRange` | How far away it alerts others of its kind |
-| `maxChaseDistance` | How far it chases before giving up |
-| `minAttackInterval` | Fewest seconds between attacks |
-| `fleeIfLowHealth` | Flees below this fraction of its health, where 0 never flees |
-| `afraidOfFire`, `avoidFire` | Whether it runs from fire, or walks around it |
-| `avoidWater` | Whether it stays out of water |
-| `attackPlayerObjects` | Whether it attacks buildings |
-| `enableHuntPlayer` | Whether it heads for players as soon as it appears, like raid creatures - takes effect on creatures that appear after the change |
-
-### Taming
-
-| Stat | Is |
-| --- | --- |
-| `tamingTime` | Seconds of feeding to tame it |
-| `fedDuration` | Seconds it stays fed after eating |
-| `commandable` | Whether a tamed one follows you when told to |
-
-### Drops
-
-| Stat | Is |
-| --- | --- |
-| `drops.<Item>` | The chance it drops an item, from 0 to 1, e.g. `drops.TrollHide = 0.5` - `0` removes the drop, and naming an item it doesn't drop adds it |
-| `drops.<Item>.amountMin`, `drops.<Item>.amountMax` | How many it drops |
-| `drops.<Item>.onePerPlayer` | Whether each nearby player gets one |
-| `drops.<Item>.levelMultiplier` | Whether each star multiplies the amount |
-
 ### Creature Attacks
 
 A creature's attacks are hidden weapons, with the same stats as [items](#item-stats).
@@ -222,6 +207,23 @@ A creature's attacks are hidden weapons, with the same stats as [items](#item-st
 | `attacks.<attack>.<stat>` | A stat of one of its weapons, e.g. `attacks.troll_groundslam.damages = 2x` - `tweakstats dump` lists a creature's weapons |
 
 Some weapons are shared, like a bite used by several kinds of wolf, so changing one changes it for every creature that uses it.
+
+### Drops
+
+| Stat | Is |
+| --- | --- |
+| `drops.<Item>` | The chance it drops an item, from 0 to 1, e.g. `drops.TrollHide = 0.5` - `0` removes the drop, and naming an item it doesn't drop adds it |
+| `drops.<Item>.amountMin`, `drops.<Item>.amountMax` | How many it drops |
+| `drops.<Item>.onePerPlayer` | Whether each nearby player gets one |
+| `drops.<Item>.levelMultiplier` | Whether each star multiplies the amount |
+
+### Taming
+
+| Stat | Is |
+| --- | --- |
+| `tamingTime` | Seconds of feeding to tame it |
+| `fedDuration` | Seconds it stays fed after eating |
+| `commandable` | Whether a tamed one follows you when told to |
 
 ## Build Piece Stats
 

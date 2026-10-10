@@ -1,6 +1,8 @@
 # Tweak Stats Names
 
-Every item, recipe, creature, build piece and status effect in Valheim 1.0.17, with its name in game and the section that changes it in `kriona.TweakStats.cfg`. Generated on 2026-10-10 by `tools/tweakstats-names.py`.
+Every item, recipe, creature, build piece and status effect in, with its name in game and the section that changes it in `kriona.TweakStats.cfg`
+
+*(data from Valheim 1.0.17, generated on 10/10/2026 by `tools/tweakstats-names.py`)*
 
 Items and mods' additions can also be looked up in game with the `tweakstats find` console command - see the [README](README.md#console-commands).
 
@@ -40,6 +42,7 @@ A name shown as a code like `$item_iceshoes` has no English name in the game's f
   - [Miscellaneous](#miscellaneous)
   - [Trophies](#trophies)
 - [Recipes](#recipes)
+- [Resources](#resources)
 - [Creatures](#creatures)
 - [Build Pieces](#build-pieces)
   - [Cultivator](#cultivator)
@@ -1804,6 +1807,427 @@ Also `[Type:Trophy]` for all of them.
 | `[Recipe:WolfJerky]` | Recipe_WolfJerky | Wolf Jerky x2 | `piece_cauldron` (Cauldron) level 3 |
 | `[Recipe:WolfMeatSkewer]` | Recipe_WolfSkewer | Wolf Skewer | `piece_cauldron` (Cauldron) level 3 |
 | `[Recipe:YggdrasilPorridge]` | Recipe_YggdrasilPorridge | Yggdrasil Porridge | `piece_cauldron` (Cauldron) level 5 |
+
+## Resources
+
+Every item a recipe or build piece costs, with the stat that changes how many it needs, e.g. `resources.Wood = 5` - and how many recipes and build pieces use it. Any other item can be added to a cost the same way.
+
+| Stat | Name | Recipes | Build Pieces |
+| --- | --- | --- | --- |
+| `resources.Acorn` | Acorns |  | 2 |
+| `resources.AmberPearl` | Amber Pearl | 1 |  |
+| `resources.AncientSeed` | Ancient Seed | 1 |  |
+| `resources.AskBladder` | Asksvin Bladder | 2 |  |
+| `resources.AskHide` | Asksvin Hide | 20 | 2 |
+| `resources.AsksvinCarrionNeck` | Asksvin Neck |  | 1 |
+| `resources.AsksvinCarrionPelvic` | Asksvin Pelvis |  | 1 |
+| `resources.AsksvinCarrionRibcage` | Asksvin Ribcage |  | 1 |
+| `resources.AsksvinCarrionSkull` | Asksvin Skull |  | 1 |
+| `resources.AsksvinMeat` | Asksvin Tail | 3 |  |
+| `resources.AtgeirGold` | Nord Atgeir | 2 |  |
+| `resources.AxeBerzerkr` | Berserkir Axes | 3 |  |
+| `resources.AxeGold` | Nord Axe | 2 |  |
+| `resources.AxeHead1` | Curious Axe Head | 1 |  |
+| `resources.AxeHead2` | Mysterious Axe Head | 1 |  |
+| `resources.BakedPoteitr` | Baked Poteitr |  | 1 |
+| `resources.BarberKit` | Barber Kit |  | 1 |
+| `resources.BarkaBranch` | Frozen Branch | 4 |  |
+| `resources.Barley` | Barley | 2 | 2 |
+| `resources.BarleyFlour` | Barley Flour | 7 |  |
+| `resources.BarleyWine` | Fire Resistance Barley Wine |  | 1 |
+| `resources.BarrelRings` | Barrel Hoops |  | 1 |
+| `resources.BattleaxeGold` | Nord Greataxe | 2 |  |
+| `resources.BeechSeeds` | Beech Seeds |  | 1 |
+| `resources.BellFragment` | Bell Fragment | 1 |  |
+| `resources.Bilebag` | Bilebag | 2 |  |
+| `resources.BirchSeeds` | Birch Seeds |  | 1 |
+| `resources.BjornHide` | Bear Hide | 9 | 1 |
+| `resources.BjornPaw` | Bear Paw | 2 | 1 |
+| `resources.BlackCore` | Black Core | 1 | 3 |
+| `resources.BlackMarble` | Black Marble | 1 | 26 |
+| `resources.BlackMetal` | Black Metal | 15 | 9 |
+| `resources.BlackSoup` | Black Soup |  | 1 |
+| `resources.Blackwood` | Ashwood | 11 | 39 |
+| `resources.BlobVial` | Corked Vial | 6 |  |
+| `resources.Bloodbag` | Bloodbag | 5 | 1 |
+| `resources.BloodPudding` | Blood Pudding |  | 1 |
+| `resources.Blueberries` | Blueberries | 12 | 5 |
+| `resources.BoarJerky` | Boar Jerky |  | 1 |
+| `resources.BoneFragments` | Bone Fragments | 15 | 4 |
+| `resources.BonemawSerpentTooth` | Bonemaw Tooth | 3 |  |
+| `resources.BowAshlands` | Ash Fang | 3 |  |
+| `resources.BowGold` | Nord Bow | 2 |  |
+| `resources.Bread` | Bread | 1 | 1 |
+| `resources.BreadDough` | Bread Dough | 1 |  |
+| `resources.Bronze` | Bronze | 20 | 9 |
+| `resources.BronzeNails` | Bronze Nails |  | 8 |
+| `resources.BugMeat` | Seeker Meat | 2 |  |
+| `resources.CandleWick` | Candle Wick |  | 1 |
+| `resources.Carapace` | Carapace | 9 |  |
+| `resources.Carrot` | Carrot | 7 | 4 |
+| `resources.CarrotSeeds` | Carrot Seeds |  | 1 |
+| `resources.CarrotSoup` | Carrot Soup |  | 1 |
+| `resources.CelestialFeather` | Celestial Feather | 2 | 1 |
+| `resources.CeramicPlate` | Ceramic Plate | 1 | 1 |
+| `resources.Chain` | Chain | 3 | 5 |
+| `resources.CharcoalResin` | Charcoal Resin |  | 3 |
+| `resources.CharredBone` | Charred Bone | 11 | 2 |
+| `resources.CharredCogwheel` | Charred Cogwheel |  | 1 |
+| `resources.Charredskull` | Charred Skull |  | 2 |
+| `resources.ChickenEgg` | Egg | 4 |  |
+| `resources.ChickenMeat` | Chicken Meat | 1 |  |
+| `resources.Chitin` | Chitin | 3 |  |
+| `resources.Cloudberry` | Cloudberries | 8 | 5 |
+| `resources.Coal` | Coal | 4 | 9 |
+| `resources.Coins` | Coins |  | 3 |
+| `resources.CookedAsksvinMeat` | Cooked Asksvin Tail | 1 | 1 |
+| `resources.CookedBjornMeat` | Cooked Bear Meat | 1 | 1 |
+| `resources.CookedBoneMawSerpentMeat` | Cooked Bonemaw Meat |  | 1 |
+| `resources.CookedBugMeat` | Cooked Seeker Meat | 1 | 1 |
+| `resources.CookedChickenMeat` | Cooked Chicken Meat |  | 1 |
+| `resources.CookedDeerMeat` | Cooked Deer Meat | 2 | 1 |
+| `resources.CookedEgg` | Cooked Egg |  | 1 |
+| `resources.CookedHareMeat` | Cooked Hare Meat |  | 1 |
+| `resources.CookedLoxMeat` | Cooked Lox Meat |  | 1 |
+| `resources.CookedMeat` | Cooked Boar Meat | 1 | 1 |
+| `resources.CookedMooseMeat` | Cooked Moose Meat | 1 | 1 |
+| `resources.CookedSealBlubber` | Cooked Seal Blubber |  | 1 |
+| `resources.CookedVoltureMeat` | Cooked Volture Meat |  | 1 |
+| `resources.CookedWolfMeat` | Cooked Wolf Meat |  | 1 |
+| `resources.Copper` | Copper | 3 | 19 |
+| `resources.CrossbowGold` | Nord Crossbow | 2 |  |
+| `resources.CrossbowRipper` | Ripper | 3 |  |
+| `resources.CrownJewel` | Crown Jewel | 1 |  |
+| `resources.Crystal` | Crystal | 4 | 1 |
+| `resources.CuredSquirrelHamstring` | Cured Squirrel Hamstring | 1 |  |
+| `resources.Dandelion` | Dandelion | 7 | 5 |
+| `resources.DeerHide` | Deer Hide | 53 | 9 |
+| `resources.DeerStew` | Deer Stew | 1 | 1 |
+| `resources.DragonTear` | Dragon Tear |  | 1 |
+| `resources.DvergrKeyFragment` | Sealbreaker Fragment | 1 |  |
+| `resources.DvergrNeedle` | Dvergr Extractor |  | 1 |
+| `resources.DyrnwynBladeFragment` | Dyrnwyn Blade Fragment | 1 |  |
+| `resources.DyrnwynHiltFragment` | Dyrnwyn Hilt Fragment | 1 |  |
+| `resources.DyrnwynTipFragment` | Dyrnwyn Tip Fragment | 1 |  |
+| `resources.Ectoplasm` | Ectoplasm | 1 | 1 |
+| `resources.Eitr` | Refined Eitr | 29 | 4 |
+| `resources.ElakingHairBundle` | Elaking Hair Bundle | 4 |  |
+| `resources.ElderBark` | Ancient Bark | 12 | 3 |
+| `resources.Entrails` | Entrails | 1 |  |
+| `resources.Eyescream` | Eyescream |  | 1 |
+| `resources.FaderDrop` | Kindled Ribs |  | 1 |
+| `resources.FaderEmber` | Embers | 2 |  |
+| `resources.FeastAshlands_Material` | Ashlands Gourmet Bowl |  | 1 |
+| `resources.FeastBlackforest_Material` | Black Forest Buffet Platter |  | 1 |
+| `resources.FeastDeepNorth_Material` | Northern Morning Fare |  | 1 |
+| `resources.FeastMeadows_Material` | Whole Roasted Meadow Boar |  | 1 |
+| `resources.FeastMistlands_Material` | Mushrooms Galore á la Mistlands |  | 1 |
+| `resources.FeastMountains_Material` | Hearty Mountain Logger's Stew |  | 1 |
+| `resources.FeastOceans_Material` | Sailor's Bounty |  | 1 |
+| `resources.FeastPlains_Material` | Plains Pie Picnic |  | 1 |
+| `resources.FeastSwamps_Material` | Swamp Dweller's Delight |  | 1 |
+| `resources.Feathers` | Feathers | 23 | 1 |
+| `resources.Fiddleheadfern` | Fiddlehead | 6 | 1 |
+| `resources.FierySvinstew` | Fiery Svinstew |  | 1 |
+| `resources.FineWood` | Finewood | 33 | 63 |
+| `resources.FirCone` | Fir Cone |  | 2 |
+| `resources.FirConeFrost` | Timberwood Cone |  | 1 |
+| `resources.FireworksRocket_White` | Basic Fireworks | 6 |  |
+| `resources.Fish10` | Northern Salmon | 2 |  |
+| `resources.Fish11` | Magmafish | 2 |  |
+| `resources.Fish12` | Pufferfish | 2 |  |
+| `resources.Fish1` | Perch | 3 |  |
+| `resources.Fish2` | Pike | 2 |  |
+| `resources.Fish3` | Tuna | 2 |  |
+| `resources.Fish4_cave` | Tetra | 2 |  |
+| `resources.Fish5` | Trollfish | 3 |  |
+| `resources.Fish6` | Giant Herring | 2 |  |
+| `resources.Fish7` | Grouper | 3 |  |
+| `resources.Fish8` | Coral Cod | 2 |  |
+| `resources.Fish9` | Anglerfish | 3 |  |
+| `resources.FishAndBread` | Fish 'n' Bread |  | 1 |
+| `resources.FishCooked` | Cooked Fish | 2 | 1 |
+| `resources.FishingBait` | Fishing Bait | 8 |  |
+| `resources.FishRaw` | Raw Fish | 2 |  |
+| `resources.FishSoup` | Fish Soup |  | 1 |
+| `resources.FishWraps` | Fish Wraps |  | 1 |
+| `resources.FistGold` | Nord Knucklechains | 2 |  |
+| `resources.FlametalNew` | Flametal | 43 | 14 |
+| `resources.Flax` | Flax |  | 2 |
+| `resources.Flint` | Flint | 4 | 3 |
+| `resources.FragrantBundle` | Fragrant Bundle | 1 |  |
+| `resources.FreezeGland` | Freeze Gland | 4 |  |
+| `resources.FreshSeaweed` | Fresh Seaweed | 1 |  |
+| `resources.FrostCore` | Frostcore |  | 2 |
+| `resources.Frostwood` | Timberwood | 31 | 45 |
+| `resources.GemstoneBlue` | Iolite | 7 |  |
+| `resources.GemstoneGreen` | Jade | 8 |  |
+| `resources.GemstoneRed` | Bloodstone | 11 | 1 |
+| `resources.GiantBloodSack` | Blood Clot | 3 |  |
+| `resources.GlowWorm` | Luminous Larva |  | 1 |
+| `resources.Gold` | Bloodgold | 84 | 5 |
+| `resources.Grausten` | Grausten | 1 | 30 |
+| `resources.GreydwarfEye` | Greydwarf Eye | 4 | 5 |
+| `resources.Guck` | Guck | 2 | 2 |
+| `resources.HardAntler` | Hard Antler | 1 |  |
+| `resources.HareMeat` | Hare Meat | 2 |  |
+| `resources.Honey` | Honey | 19 | 1 |
+| `resources.HoneyGlazedChicken` | Honey Glazed Chicken |  | 1 |
+| `resources.Hook` | Hook | 1 |  |
+| `resources.Ice` | Ice | 8 | 2 |
+| `resources.Iron` | Iron | 40 | 34 |
+| `resources.IronNails` | Iron Nails |  | 12 |
+| `resources.Ironpit` | Iron Pit |  | 1 |
+| `resources.JuteBlue` | Blue Jute |  | 3 |
+| `resources.JuteRed` | Red Jute |  | 4 |
+| `resources.Kale` | Kale | 7 | 1 |
+| `resources.KaleChips` | Kale Chips |  | 1 |
+| `resources.KaleSeeds` | Kale Seeds |  | 2 |
+| `resources.KnifeGold` | Nord Dagger | 2 |  |
+| `resources.Lantern` | Dvergr Lantern |  | 2 |
+| `resources.LeatherScraps` | Leather Scraps | 32 | 19 |
+| `resources.Leatherstraps` | Leather Straps | 6 |  |
+| `resources.LinenThread` | Linen Thread | 26 |  |
+| `resources.Lingonberry` | Lingonberries | 5 | 1 |
+| `resources.Lingondricka` | Lingonberry Juice |  | 1 |
+| `resources.LoxMeat` | Lox Meat | 2 |  |
+| `resources.LoxPelt` | Lox Pelt | 8 | 2 |
+| `resources.LoxPie` | Lox Meat Pie | 1 | 1 |
+| `resources.MaceEldner` | Flametal Mace | 3 |  |
+| `resources.MaceGold` | Nord Mace | 2 |  |
+| `resources.MagicallyStuffedShroom` | Stuffed Mushroom |  | 1 |
+| `resources.Mandible` | Mandible | 5 |  |
+| `resources.MarinatedGreens` | Marinated Greens |  | 1 |
+| `resources.MashedMeat` | Mashed Meat |  | 1 |
+| `resources.MeadBugRepellent` | Anti-Sting Concoction |  | 1 |
+| `resources.MeadBzerker` | Berserkir Mead |  | 1 |
+| `resources.MeadEitrLingering` | Lingering Eitr Mead |  | 1 |
+| `resources.MeadEitrMinor` | Minor Eitr Mead |  | 1 |
+| `resources.MeadFrostResist` | Frost Resistance Mead |  | 1 |
+| `resources.MeadHasty` | Tonic of Ratatosk |  | 1 |
+| `resources.MeadHealthLingering` | Lingering Healing Mead |  | 1 |
+| `resources.MeadHealthMajor` | Major Healing Mead |  | 1 |
+| `resources.MeadHealthMedium` | Medium Healing Mead |  | 1 |
+| `resources.MeadHealthMinor` | Minor Healing Mead |  | 1 |
+| `resources.MeadLightfoot` | Lightfoot Mead |  | 1 |
+| `resources.MeadPoisonResist` | Poison Resistance Mead |  | 1 |
+| `resources.MeadStaminaLingering` | Lingering Stamina Mead |  | 1 |
+| `resources.MeadStaminaMedium` | Medium Stamina Mead |  | 1 |
+| `resources.MeadStaminaMinor` | Minor Stamina Mead |  | 1 |
+| `resources.MeadStrength` | Mead of Troll Endurance |  | 1 |
+| `resources.MeadSwimmer` | Draught of Vananidir |  | 1 |
+| `resources.MeadTamer` | Brew of Animal Whispers |  | 1 |
+| `resources.MeadTasty` | Tasty Mead |  | 1 |
+| `resources.MeadTrollPheromones` | Love Potion |  | 1 |
+| `resources.MeatballsMashedPoteitr` | Meatballs and Poteitr |  | 1 |
+| `resources.MeatPlatter` | Meat Platter |  | 1 |
+| `resources.MechanicalSpring` | Mechanical Spring |  | 3 |
+| `resources.MinceMeatSauce` | Minced Meat Sauce |  | 1 |
+| `resources.MisthareSupreme` | Misthare Supreme | 1 | 1 |
+| `resources.MoldArmorGoldChest` | Mould: Breastplate of the Protector | 2 |  |
+| `resources.MoldArmorGoldHelmet` | Mould: Helmet of the Protector | 2 |  |
+| `resources.MoldArmorGoldLegs` | Mould: Trousers of the Protector | 2 |  |
+| `resources.MoldArmorMageChest` | Mould: Robes of the Caller | 2 |  |
+| `resources.MoldArmorMageHelmet` | Mould: Headdress of the Caller | 2 |  |
+| `resources.MoldArmorMageLegs` | Mould: Trousers of the Caller | 2 |  |
+| `resources.MoldArmormediumChest` | Mould: Chestpiece of the Vanguard | 2 |  |
+| `resources.MoldArmorMediumHelmet` | Mould: Hood of the Vanguard | 2 |  |
+| `resources.MoldArmorMediumLegs` | Mould: Trousers of the Vanguard | 2 |  |
+| `resources.MoldAtgeir` | Mould: Nord Atgeir | 2 |  |
+| `resources.MoldAxe2H` | Mould: Nord Greataxe | 2 |  |
+| `resources.MoldAxe` | Mould: Nord Axe | 2 |  |
+| `resources.MoldBow` | Mould: Nord Bow | 2 |  |
+| `resources.MoldCrossbow` | Mould: Nord Crossbow | 2 |  |
+| `resources.MoldFistweapon` | Mould: Nord Knucklechains | 2 |  |
+| `resources.MoldKeys` | Mould: Intricate Key | 1 |  |
+| `resources.MoldKnife` | Mould: Nord Dagger | 2 |  |
+| `resources.MoldMace2H` | Mould: Nord Sledge | 2 |  |
+| `resources.MoldMace` | Mould: Nord Mace | 2 |  |
+| `resources.MoldShieldBuckler` | Mould: Nord Buckler | 2 |  |
+| `resources.MoldShieldRound` | Mould: Nord Shield | 2 |  |
+| `resources.MoldShieldTower` | Mould: Nord Greatshield | 2 |  |
+| `resources.MoldSpear` | Mould: Nord Spear | 2 |  |
+| `resources.MoldStafffrostorbs` | Mould: Northern Vengeance | 1 |  |
+| `resources.MoldStaffOrbofAhri` | Mould: Echo Spike | 1 |  |
+| `resources.MoldStaffspiritcaller` | Mould: Spirit Caller | 1 |  |
+| `resources.MoldStaffthunderblood` | Mould: Lightning Strike | 1 |  |
+| `resources.MoldSword2H` | Mould: Nord Greatsword | 2 |  |
+| `resources.MoldSword` | Mould: Nord Sword | 2 |  |
+| `resources.MoleClaws` | Long Claws | 2 |  |
+| `resources.MoltenCore` | Molten Core | 1 | 1 |
+| `resources.MooseHide` | Moose Hide | 13 | 4 |
+| `resources.MooseKebab` | Meat In Bread |  | 1 |
+| `resources.MooseMeat` | Moose Meat | 4 |  |
+| `resources.MooseSinew` | Moose Sinew | 5 | 1 |
+| `resources.MorgenHeart` | Morgen Heart | 1 |  |
+| `resources.MorgenSinew` | Morgen Sinew | 5 | 1 |
+| `resources.Mushroom` | Mushroom | 5 | 2 |
+| `resources.MushroomBzerker` | Toadstool | 1 | 1 |
+| `resources.MushroomJotunPuffs` | Jotun Puffs | 7 | 2 |
+| `resources.MushroomMagecap` | Magecap | 7 | 2 |
+| `resources.MushroomOmelette` | Mushroom Omelette |  | 1 |
+| `resources.MushroomSmokePuff` | Smoke Puff | 5 | 1 |
+| `resources.MushroomYellow` | Yellow Mushroom | 4 | 1 |
+| `resources.NeckTail` | Neck Tail | 2 |  |
+| `resources.NeckTailGrilled` | Grilled Neck Tail |  | 1 |
+| `resources.Needle` | Needle | 2 |  |
+| `resources.NornThread` | Nornathread | 16 | 1 |
+| `resources.Oat` | Oats | 2 | 1 |
+| `resources.OatFlour` | Oat Flour | 5 |  |
+| `resources.OatmealLingonberryJam` | Oatmeal |  | 1 |
+| `resources.OatMilk` | Oat Milk | 2 | 1 |
+| `resources.OatSeeds` | Oat Seeds |  | 1 |
+| `resources.Obsidian` | Obsidian | 3 | 1 |
+| `resources.Onion` | Onion | 5 | 2 |
+| `resources.OnionSeeds` | Onion Seeds |  | 1 |
+| `resources.OnionSoup` | Onion Soup | 1 | 1 |
+| `resources.Ooze` | Ooze | 3 |  |
+| `resources.OozeMork` | Dead Pulp | 1 |  |
+| `resources.OrbFrostFire` | Frostfire Essence | 14 |  |
+| `resources.OrbThunderBlood` | Thunderblood Essence | 14 |  |
+| `resources.OvenPancake` | Oven Pancake |  | 1 |
+| `resources.Pancakes` | Pancakes |  | 1 |
+| `resources.PineCone` | Pine Cone |  | 3 |
+| `resources.PiquantPie` | Piquant Pie |  | 1 |
+| `resources.Pot_Shard_Green` | Pot Shard |  | 3 |
+| `resources.Poteitr` | Poteitr | 5 | 1 |
+| `resources.PoteitrSeeds` | Seed Poteitr |  | 1 |
+| `resources.PowderedDragonEgg` | Powdered Dragon Eggshells | 1 |  |
+| `resources.ProustitePowder` | Proustite Powder | 5 | 1 |
+| `resources.Pukeberries` | Bukeperries |  | 1 |
+| `resources.PulledBear` | Pulled Bear |  | 1 |
+| `resources.PungentPebbles` | Pungent Pebbles | 1 |  |
+| `resources.QueenBee` | Queen Bee |  | 1 |
+| `resources.QueenDrop` | Majestic Carapace |  | 1 |
+| `resources.QueensJam` | Queen's Jam | 1 | 1 |
+| `resources.Raspberry` | Raspberries | 8 | 6 |
+| `resources.RawMeat` | Boar Meat | 4 |  |
+| `resources.Resin` | Resin | 11 | 9 |
+| `resources.RoastedCrustPie` | Roasted Crust Pie |  | 1 |
+| `resources.Root` | Root | 6 |  |
+| `resources.RottenMeat` | Rotten Meat |  | 1 |
+| `resources.RoundLog` | Corewood | 15 | 14 |
+| `resources.RoyalJelly` | Royal Jelly | 3 | 1 |
+| `resources.Ruby` | Ruby | 1 | 1 |
+| `resources.Salad` | Salad |  | 1 |
+| `resources.Sap` | Sap | 9 | 1 |
+| `resources.Sausages` | Sausages | 1 | 1 |
+| `resources.ScaleHide` | Scale Hide | 11 | 2 |
+| `resources.ScorchingMedley` | Scorching Medley | 1 | 1 |
+| `resources.ScytheHandle` | Scythe Handle | 1 |  |
+| `resources.SealBlubber` | Seal Blubber | 2 |  |
+| `resources.SealHide` | Seal Pelt | 7 | 1 |
+| `resources.SealSoup` | Seal Meat Soup |  | 1 |
+| `resources.SeekerAspic` | Seeker Aspic |  | 1 |
+| `resources.SerpentMeatCooked` | Cooked Serpent Meat | 2 | 1 |
+| `resources.SerpentScale` | Serpent Scale | 2 |  |
+| `resources.SerpentStew` | Serpent Stew |  | 1 |
+| `resources.SharpeningStone` | Sharpening Stone |  | 1 |
+| `resources.ShieldCore` | Shield Core |  | 1 |
+| `resources.ShocklateSmoothie` | Muckshake |  | 1 |
+| `resources.Silver` | Silver | 20 | 4 |
+| `resources.SilverNecklace` | Silver Necklace |  | 1 |
+| `resources.SizzlingBerryBroth` | Sizzling Berry Broth |  | 1 |
+| `resources.SledgeGold` | Nord Sledge | 2 |  |
+| `resources.SmokedFish` | Smoked Fish |  | 1 |
+| `resources.SmokedMooseMeat` | Smoked Moose Meat |  | 1 |
+| `resources.Snowball` | Snowball |  | 1 |
+| `resources.SparklingShroomshake` | Sparkling Shroomshake |  | 1 |
+| `resources.SpearGold` | Nord Spear | 2 |  |
+| `resources.SpearSplitner` | Splitnir | 3 |  |
+| `resources.SpiceAshlands` | Fiery Spice Powder | 1 |  |
+| `resources.SpiceDeepNorth` | Seasoning of the Gourd | 1 |  |
+| `resources.SpiceForests` | Woodland Herb Blend | 3 |  |
+| `resources.SpiceMistlands` | Herbs of the Hidden Hills | 1 |  |
+| `resources.SpiceMountains` | Mountain Peak Pepper Powder | 1 |  |
+| `resources.SpiceOceans` | Seafarer's Herbs | 1 |  |
+| `resources.SpicePlains` | Grasslands Herbalist Harvest | 1 |  |
+| `resources.SpicyMarmalade` | Spicy Marmalade |  | 1 |
+| `resources.Stone` | Stone | 5 | 29 |
+| `resources.StoneRock` | Rock |  | 1 |
+| `resources.SulfurStone` | Sulfur | 4 | 1 |
+| `resources.SurtlingCore` | Surtling Core | 3 | 8 |
+| `resources.SwordGold` | Nord Sword | 2 |  |
+| `resources.SwordNiedhogg` | Nidhögg | 3 |  |
+| `resources.Tar` | Tar | 1 | 32 |
+| `resources.Thistle` | Thistle | 6 | 4 |
+| `resources.THSwordGold` | Nord Greatsword | 2 |  |
+| `resources.THSwordSlayer` | Slayer | 3 |  |
+| `resources.Thunderstone` | Thunder Stone |  | 1 |
+| `resources.Tin` | Tin | 3 | 3 |
+| `resources.TrollHide` | Troll Hide | 6 | 1 |
+| `resources.TrophyAbomination` | Abomination Trophy | 1 |  |
+| `resources.TrophyAsksvin` | Asksvin Trophy |  | 1 |
+| `resources.TrophyBjorn` | Bear Trophy | 2 | 1 |
+| `resources.TrophyBjornUndead` | Vile Trophy | 1 |  |
+| `resources.TrophyBlob_Morkhalla` | Pulp Trophy | 1 |  |
+| `resources.TrophyBlob` | Blob Trophy | 2 |  |
+| `resources.TrophyCharredMelee` | Warrior Trophy | 1 | 1 |
+| `resources.TrophyCultist` | Cultist Trophy | 1 |  |
+| `resources.TrophyDeer` | Deer Trophy | 2 |  |
+| `resources.TrophyDraugrElite` | Draugr Elite Trophy | 1 |  |
+| `resources.TrophyFallenValkyrie` | Fallen Valkyrie Trophy | 1 |  |
+| `resources.TrophyFenring` | Fenring Trophy | 2 |  |
+| `resources.TrophyFrostTroll` | Troll Trophy | 2 |  |
+| `resources.TrophyGjall` | Gjall Trophy | 1 |  |
+| `resources.TrophyGoblin` | Fuling Trophy | 1 |  |
+| `resources.TrophyGoblinBrute` | Fuling Berserker Trophy | 1 |  |
+| `resources.TrophyGreydwarfShaman` | Greydwarf Shaman Trophy | 1 |  |
+| `resources.TrophyGrowth` | Growth Trophy | 1 |  |
+| `resources.TrophyHatchling` | Drake Trophy | 3 |  |
+| `resources.TrophyJotunWitch` | Hexen Trophy | 3 |  |
+| `resources.TrophyLeech` | Leech Trophy | 1 |  |
+| `resources.TrophyLox` | Lox Trophy | 2 |  |
+| `resources.TrophyMoose` | Moose Trophy | 5 | 1 |
+| `resources.TrophyMorgen` | Morgen Trophy | 1 |  |
+| `resources.TrophySeeker` | Seeker Trophy | 1 |  |
+| `resources.TrophySerpent` | Serpent Trophy | 2 |  |
+| `resources.TrophySGolem` | Stone Golem Trophy | 1 |  |
+| `resources.TrophySkeleton` | Skeleton Trophy | 2 | 1 |
+| `resources.TrophySurtling` | Surtling Trophy | 1 |  |
+| `resources.TrophyWolf` | Wolf Trophy | 1 | 1 |
+| `resources.Turnip` | Turnip | 4 | 3 |
+| `resources.TurnipSeeds` | Turnip Seeds |  | 1 |
+| `resources.TurnipStew` | Turnip Stew | 1 | 1 |
+| `resources.UndeadBjornRibcage` | Vile Ribcage | 3 |  |
+| `resources.Upgrader0Armor` | Wooden Protection Idol | 43 |  |
+| `resources.Upgrader0Weapon` | Wooden Battle Idol | 13 |  |
+| `resources.Upgrader1Armor` | Bronze Protection Idol | 14 |  |
+| `resources.Upgrader1Weapon` | Bronze Battle Idol | 19 |  |
+| `resources.Upgrader2Armor` | Iron Protection Idol | 12 |  |
+| `resources.Upgrader2Weapon` | Iron Battle Idol | 11 |  |
+| `resources.Upgrader3Armor` | Silver Protection Idol | 9 |  |
+| `resources.Upgrader3Weapon` | Silver Battle Idol | 8 |  |
+| `resources.Upgrader4Armor` | Black Metal Protection Idol | 13 |  |
+| `resources.Upgrader4Weapon` | Black Metal Battle Idol | 12 |  |
+| `resources.Upgrader5Armor` | Black Marble Protection Idol | 10 |  |
+| `resources.Upgrader5Weapon` | Black Marble Battle Idol | 16 |  |
+| `resources.Upgrader6Armor` | Flametal Protection Idol | 13 |  |
+| `resources.Upgrader6Weapon` | Flametal Battle Idol | 29 |  |
+| `resources.Upgrader7Armor` | Bloodgold Protection Idol | 13 |  |
+| `resources.Upgrader7Weapon` | Bloodgold Battle Idol | 36 |  |
+| `resources.VikingCupcake` | Frosted Sweetbread |  | 1 |
+| `resources.Vineberry` | Vineberry Cluster | 9 | 1 |
+| `resources.VineberrySeeds` | Vineberry Seeds |  | 1 |
+| `resources.VineGreenSeeds` | Ivy Seeds |  | 1 |
+| `resources.Voidplasm` | Ectoplasm | 1 |  |
+| `resources.VoltureEgg` | Volture Egg | 1 |  |
+| `resources.VoltureMeat` | Volture Meat | 1 |  |
+| `resources.Wisp` | Wisp | 2 | 1 |
+| `resources.WitheredBone` | Withered Bone | 1 |  |
+| `resources.WolfClaw` | Fenris Claw | 1 | 2 |
+| `resources.WolfFang` | Wolf Fang | 3 |  |
+| `resources.WolfHairBundle` | Fenris Hair | 4 |  |
+| `resources.WolfJerky` | Wolf Jerky |  | 1 |
+| `resources.WolfMeat` | Wolf Meat | 2 |  |
+| `resources.WolfMeatSkewer` | Wolf Skewer | 1 | 1 |
+| `resources.WolfPelt` | Wolf Pelt | 7 | 3 |
+| `resources.Wood` | Wood | 53 | 97 |
+| `resources.WrithanRoots` | Writhan Roots | 2 | 1 |
+| `resources.YagluthDrop` | Torn Spirit |  | 1 |
+| `resources.YggdrasilPorridge` | Yggdrasil Porridge | 1 | 1 |
+| `resources.YggdrasilWood` | Yggdrasil Wood | 10 | 14 |
+| `resources.YmirRemains` | Ymir Flesh | 2 |  |
 
 ## Creatures
 

@@ -8,13 +8,23 @@ Change the stats of any item, recipe, creature, build piece or status effect - w
 - Changes take effect as soon as the config file is saved - there's no need to restart Valheim or rejoin the world
 - Works with items, recipes, creatures and build pieces added by other mods
 
-## Items and Stats
+Ex: crafting a stone axe that does 10,000 damage, using coins:
 
-Three places help you work out what to write in the config file:
+<img src="images/crafting.jpg" alt="Changing item values" width="500">
 
-- [NAMES.md](NAMES.md) - the name of every item, recipe, creature, build piece and status effect, next to its in-game name
-- [STATS.md](STATS.md) - every stat you can change, from weapon damage to armor to food to crafting costs, plus the damage types, damage modifiers, skills and item types they use
-- The [`tweakstats` console command](#console-commands) - looks up names in game or lists the items you're carrying and writes out every stat an item has
+## Documentation
+
+### NAMES.md
+
+[NAMES.md](NAMES.md) - the name of every item, recipe, creature, build piece and status effect, next to its in-game name
+
+### STATS.md
+
+[STATS.md](STATS.md) - every stat you can change, from weapon damage to armor to food to crafting costs, plus the damage types, damage modifiers, skills and item types they use
+
+### Console
+
+The [`tweakstats` console command](#console-commands) - looks up names in game or lists the items you're carrying and writes out every stat an item has
 
 ## Examples
 
@@ -29,6 +39,8 @@ damages.pickaxe = 10000
 ```ini
 # Stone axes are free to craft on your single-player world
 [Worlds: SinglePlayer]
+[AxeStone]
+description = Once upon a time, there was a sturdy stone axe. Little did it know, it was actually <color=purple>Mjolnir</color> in disguise and not really an axe at all 🔨
 [Recipe:AxeStone]
 resources.Wood = 0
 resources.Stone = 0
@@ -39,7 +51,7 @@ resources.Stone = 0
 # ZOOOOM (fall damage will probably kill you, but enemies can't)
 [ArmorRagsChest]
 armor = 1000
-movementModifier = 3  # triple speed
+movementModifier = 10  # tenfold
 ```
 
 ```ini
@@ -61,6 +73,23 @@ health = 5000
 [Piece:wood_stepladder]
 resources.Wood = 0
 resources.Coins = 10
+```
+
+```ini
+# Clubs do fire damage
+[Club]
+damages.Blunt = 1
+damages.Fire = 10
+damagesPerLevel.Blunt = 1
+damagesPerLevel.Fire = 20
+[Recipe:Club]
+resources.BoneFragments.amountPerLevel = 0
+```
+
+```ini
+# Working remotely
+[KnifeWood]
+attack.attackRange = 100
 ```
 
 ## Configuration
@@ -105,7 +134,7 @@ Stats that are whole numbers, like `maxStackSize`, are rounded after adding or m
 
 ### Limits
 
-Extreme values are allowed, but a few are kept inside what the game can handle without freezing, crashing or damaging your save. A value outside a limit is changed to the nearest value inside it, and the log says so.
+Extreme values are allowed, but a few are kept inside what the game can handle without freezing, crashing or damaging your save. A value outside a limit is changed to the nearest value inside it (and logged).
 
 | Stat | Limit | Why |
 | --- | --- | --- |
@@ -184,7 +213,7 @@ Press F5 to open the console.
 | `tweakstats find iron sword` | Lists the items whose name or prefab name contains the text, e.g. `SwordIron - Iron sword` |
 | `tweakstats inventory` | Lists the items you're carrying with their section names and main stats - damage, armor, block power, food, durability and weight - including your tweaks and each item's upgrade level, e.g. `[SwordIron] Iron sword - level 2, equipped, damages slash 55, durability 180/250, weight 1.5` |
 | `tweakstats world` | Shows the world's name and ID, whether you're playing alone, hosting or on a server - with the server's address, Steam ID or PlayFab ID - and the `[Worlds: ...]` groups that apply to it |
-| `tweakstats dump SwordIron` | Writes every stat of a section with its value to `BepInEx\config\kriona.TweakStats.dump.txt`, ready to copy into the config file. Any section works, e.g. `tweakstats dump Skill:Swords` or `tweakstats dump Recipe:SwordIron` |
+| `tweakstats dump SwordIron` | Writes every stat of a section with its value to a file named after the section, e.g. `BepInEx\config\kriona.TweakStats.dump.SwordIron.txt`, ready to copy into the config file. Any section works, e.g. `tweakstats dump Skill:Swords` or `tweakstats dump Recipe:SwordIron` |
 | `tweakstats list` | Writes every item and recipe name to `BepInEx\config\kriona.TweakStats.names.md`. **Only needed** if you are using a mod that adds new items / recipes |
 | `tweakstats reload` | Reads the config file again (this **should** be automatic) |
 

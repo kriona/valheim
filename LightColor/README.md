@@ -2,7 +2,7 @@
 
 Hover over an object that gives off light (e.g., sconce, campfire, portal) and press L to enter a color for its light, brightness, and range.
 
-- Type a color name like `red`, `orange`, `yellow`, `lime`, `cyan`, `blue`, `purple` or `magenta`, or a hex color like `#0F0` or `#002B49`
+- Type a color name like `red`, `yellow`, or `purple`, or a hex color like `#0F0` or `#002B49`
 - Add a brightness and range after the color, like `blue 150% 20m` - see [Brightness and Range](#brightness-and-range)
 - Works on item stands too - the color applies to the mounted Dverger circlet, torch or anything else that glows, and the color stays with the stand when you swap the item
 - Traveling through a colored portal turns the swirl on the loading screen to the portal's color, then fades it ring by ring from the center outward to the color of the portal you arrive at
