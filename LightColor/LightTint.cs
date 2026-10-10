@@ -50,6 +50,17 @@ namespace LightColor
 		}
 
 		/// <summary>
+		/// The settings stored on an object that may not be loaded, like the portal at the far end of a teleport
+		/// </summary>
+		/// <param name="zdo">The object's ZDO</param>
+		/// <returns>The stored settings, or the default settings when there are none or they can't be read</returns>
+		public static LightSettings GetStoredSettings(ZDO zdo)
+		{
+			LightSettings.TryParse(zdo.GetString(ColorHash), out LightSettings settings, out string _);
+			return(settings);
+		}
+
+		/// <summary>
 		/// Records the piece's lights, particle systems and recolorable renderers with their own colors and applies the stored color
 		/// </summary>
 		/// <param name="view">The piece's network view</param>
@@ -128,7 +139,13 @@ namespace LightColor
 				text = "";
 			}
 			nview.ClaimOwnership();
-			nview.GetZDO().Set(ColorHash, text);
+			ZDO zdo = nview.GetZDO();
+			zdo.Set(ColorHash, text);
+			// Portals are saved in a file of their own, which the game only writes again when it's marked as changed
+			if (Game.instance.PortalPrefabHash.Contains(zdo.GetPrefab()))
+			{
+				ZDOMan.instance.SetDirtyPortals();
+			}
 			Refresh();
 		}
 

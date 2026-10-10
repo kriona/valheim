@@ -98,4 +98,91 @@ namespace LightColor
 			}
 		}
 	}
+
+	/// <summary>
+	/// Marks the portal the player is going through and the portal at the far end, so the swirl on the loading screen
+	/// can fade from one's color to the other's
+	/// </summary>
+	[HarmonyPatch(typeof(TeleportWorld), nameof(TeleportWorld.Teleport))]
+	public static class TeleportWorldTeleportPatch
+	{
+		/// <summary>
+		/// Whether the player is going through a portal
+		/// </summary>
+		public static bool Active;
+
+		/// <summary>
+		/// The color of the portal the player is going through, or null when it has none, while Active is true
+		/// </summary>
+		public static Color? From;
+
+		/// <summary>
+		/// The portal at the far end, or ZDOID.None when it isn't connected, while Active is true
+		/// </summary>
+		public static ZDOID Target;
+
+		/// <summary>
+		/// Marks the portal's color and the portal it is connected to, asking the server for the far portal's
+		/// latest data, since a far portal's data only stays up to date while the player is near it
+		/// </summary>
+		/// <param name="__instance">The portal</param>
+		private static void Prefix(TeleportWorld __instance)
+		{
+			LightTint tint = __instance.GetComponent<LightTint>();
+			Active = true;
+			From = ((tint != null && tint.Settings.HasColor) ? tint.Settings.Color : (Color?)null);
+			Target = ZDOID.None;
+			ZNetView nview = __instance.m_nview;
+			if (nview == null || !nview.IsValid())
+			{
+				return;
+			}
+			Target = nview.GetZDO().GetConnectionZDOID(ZDOExtraData.ConnectionType.Portal);
+			if (Target != ZDOID.None)
+			{
+				ZDOMan.instance.RequestZDO(Target);
+			}
+		}
+
+		/// <summary>
+		/// Clears the mark so teleports started by anything else show the swirl's own colors
+		/// </summary>
+		private static void Finalizer()
+		{
+			Active = false;
+		}
+	}
+
+	/// <summary>
+	/// Colors the swirl on the loading screen when the local player starts a teleport
+	/// </summary>
+	/// <remarks>
+	/// The swirl is set when the teleport starts, so it keeps its colors while the loading screen fades out after the
+	/// player arrives
+	/// </remarks>
+	[HarmonyPatch(typeof(Player), nameof(Player.TeleportTo))]
+	public static class PlayerTeleportToPatch
+	{
+		/// <summary>
+		/// Starts the swirl fading from the color of the portal being used to the color of the far end, or shows its
+		/// own colors for a teleport that isn't through a portal
+		/// </summary>
+		/// <param name="__instance">The player</param>
+		/// <param name="__result">Whether the teleport started</param>
+		private static void Postfix(Player __instance, bool __result)
+		{
+			if (!__result || __instance != Player.m_localPlayer)
+			{
+				return;
+			}
+			if (TeleportWorldTeleportPatch.Active)
+			{
+				TeleportSwirl.Begin(TeleportWorldTeleportPatch.From, TeleportWorldTeleportPatch.Target);
+			}
+			else
+			{
+				TeleportSwirl.Begin(null, ZDOID.None);
+			}
+		}
+	}
 }
