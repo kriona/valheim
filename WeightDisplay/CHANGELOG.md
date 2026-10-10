@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0
+- Shows how many inventory slots are in use after the weight
+- Add settings to toggle weight / slots
+- Add warning thresholds / colors
+
 ## 1.2.0
 - Config changes take effect as soon as the file is saved; you don't need to restart Valheim or rejoin the world
 
