@@ -42,10 +42,10 @@ Each DLL is written to `<Mod>\bin\Release\netstandard2.1\`.
 .\build-release.ps1 ModName -Publish
 ```
 
-Builds the mod and writes `release\<Mod>-<Version>.zip`, with the version read from the mod's `Plugin.cs`. `-Publish` also creates a GitHub release tagged `<Mod>-v<Version>` from the current commit with the zip and the DLL attached, using that version's section of the mod's `CHANGELOG.md` as the notes - commit and push first.
+Builds the mod and writes `release\packages\<Mod>-<Version>.zip`, with the version read from the mod's `Plugin.cs`. `-Publish` also creates a GitHub release tagged `<Mod>-v<Version>` from the current commit with the zip and the DLL attached, using that version's section of the mod's `CHANGELOG.md` as the notes - commit and push first. It then removes the mod's older GitHub releases, keeping their tags, so the Releases page only lists the newest version of each mod - older downloads stay on Nexus Mods.
 
 ```
 .\build-bbcode.ps1
 ```
 
-Converts every mod's `README.md` to `release\<Mod>.bbcode` for pasting into its Nexus Mods description, with images loaded from GitHub and a link to the mod's source added at the end. Every mod is converted each time, since a new mod's Nexus link goes in every other mod's description - `build-release.ps1` runs it too.
+Converts every mod's `README.md` to `release\bbcode\<Mod>.bbcode` for pasting into its Nexus Mods description, with images loaded from GitHub and a link to the mod's source added at the end. Every mod is converted each time, since a new mod's Nexus link goes in every other mod's description - `build-release.ps1` runs it too.

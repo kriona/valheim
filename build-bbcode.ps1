@@ -3,7 +3,7 @@
 Converts each mod's README.md to BBCode for its Nexus Mods description
 
 .DESCRIPTION
-Writes release\<Mod>.bbcode for every mod folder with a README.md and a .csproj, ready to paste into the Nexus Mods
+Writes release\bbcode\<Mod>.bbcode for every mod folder with a README.md and a .csproj, ready to paste into the Nexus Mods
 description editor. The README's "# Title" line is left out since the mod page shows its name, images point at the
 copies on GitHub and tables become lists. An "Other Mods" section links to every other mod in the root README's
 "## Mods" table that has a Nexus Mods link, followed by a link to the mod's source on GitHub. Every mod is converted
@@ -376,8 +376,8 @@ if ($remote -notmatch 'github\.com[:/]([^/]+)/(.+?)(\.git)?$')
 $owner = $matches[1]
 $repo = $matches[2]
 
-$releaseDir = Join-Path $root 'release'
-New-Item -ItemType Directory -Force $releaseDir | Out-Null
+$bbcodeDir = Join-Path $root 'release\bbcode'
+New-Item -ItemType Directory -Force $bbcodeDir | Out-Null
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 $modList = Get-ModList (Join-Path $root 'README.md')
 
@@ -393,7 +393,7 @@ foreach ($dir in Get-ChildItem $root -Directory)
 	$treeUrl = 'https://github.com/' + $owner + '/' + $repo + '/tree/' + $branch + '/' + $dir.Name
 	$otherMods = @($modList | Where-Object { $_.Folder -ne $dir.Name -and $_.NexusUrl -ne '' })
 	$bbcode = Convert-Readme $readmeFile $rawUrl $treeUrl $otherMods
-	$outFile = Join-Path $releaseDir ($dir.Name + '.bbcode')
+	$outFile = Join-Path $bbcodeDir ($dir.Name + '.bbcode')
 	[System.IO.File]::WriteAllText($outFile, $bbcode, $utf8)
 	Write-Host ('Wrote ' + $outFile)
 }

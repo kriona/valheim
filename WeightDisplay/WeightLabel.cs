@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace WeightDisplay
 {
@@ -7,13 +8,24 @@ namespace WeightDisplay
 	/// HUD text showing the local player's current / max carry weight
 	/// </summary>
 	/// <remarks>
-	/// The text lives under the HUD root, so it hides along with the rest of the HUD
+	/// The text lives under the HUD root, so it hides along with the rest of the HUD. The weight is marked with the
+	/// inventory screen's weight icon, or the word "Weight" when that icon can't be found
 	/// </remarks>
 	public class WeightLabel
 	{
+		/// <summary>
+		/// Name of the sprite the inventory screen shows next to the player's weight
+		/// </summary>
+		private const string WeightIconName = "weight_icon_32";
+
 		private TextMeshProUGUI text;
+		private Image icon;
+		private Sprite weightSprite;
+		private bool iconSearched;
 		private int shownWeight = -1;
 		private int shownMax = -1;
+		private int shownUsedSlots = -1;
+		private int shownSlots = -1;
 
 		/// <summary>
 		/// Creates the label once the HUD exists, hides it while the inventory or large map is open and otherwise
@@ -21,7 +33,10 @@ namespace WeightDisplay
 		/// </summary>
 		/// <param name="fontSize">Size of the weight text</param>
 		/// <param name="margin">Gap between the minimap or screen corner and the text</param>
-		public void Update(int fontSize, int margin)
+		/// <param name="showWeight">Whether to show the weight</param>
+		/// <param name="showSlots">Whether to show the slot count</param>
+		/// <param name="warnings">When the weight and slot count change color and which colors they take</param>
+		public void Update(int fontSize, int margin, bool showWeight, bool showSlots, WarningSettings warnings)
 		{
 			Player player = Player.m_localPlayer;
 			Hud hud = Hud.instance;
@@ -33,7 +48,13 @@ namespace WeightDisplay
 			{
 				Create(hud);
 			}
-			bool show = !InventoryGui.IsVisible() && !Minimap.IsOpen();
+			if (!iconSearched && InventoryGui.instance != null)
+			{
+				iconSearched = true;
+				weightSprite = FindWeightSprite(InventoryGui.instance);
+				Refresh();
+			}
+			bool show = (showWeight || showSlots) && !InventoryGui.IsVisible() && !Minimap.IsOpen();
 			if (text.gameObject.activeSelf != show)
 			{
 				text.gameObject.SetActive(show);
@@ -43,8 +64,19 @@ namespace WeightDisplay
 				return;
 			}
 			text.fontSize = fontSize;
-			SetText(player);
+			SetText(player, showWeight, showSlots, warnings);
 			Position(margin);
+		}
+
+		/// <summary>
+		/// Makes the next update rebuild the text, for when a setting it depends on changes
+		/// </summary>
+		public void Refresh()
+		{
+			shownWeight = -1;
+			shownMax = -1;
+			shownUsedSlots = -1;
+			shownSlots = -1;
 		}
 
 		/// <summary>
@@ -77,26 +109,157 @@ namespace WeightDisplay
 			rect.anchorMax = new Vector2(1f, 1f);
 			rect.pivot = new Vector2(1f, 1f);
 			rect.sizeDelta = new Vector2(200f, 30f);
-			shownWeight = -1;
-			shownMax = -1;
+			GameObject iconObject = new GameObject("WeightIcon", typeof(RectTransform));
+			iconObject.transform.SetParent(go.transform, false);
+			iconObject.SetActive(false);
+			icon = iconObject.AddComponent<Image>();
+			icon.preserveAspect = true;
+			icon.raycastTarget = false;
+			RectTransform iconRect = icon.rectTransform;
+			iconRect.anchorMin = new Vector2(1f, 1f);
+			iconRect.anchorMax = new Vector2(1f, 1f);
+			iconRect.pivot = new Vector2(1f, 0.5f);
+			Refresh();
 		}
 
 		/// <summary>
-		/// Rounds the same way as the inventory screen and only rebuilds the string when a number changes
+		/// Finds the weight icon among the inventory screen's images, including the hidden ones
+		/// </summary>
+		/// <param name="gui">The inventory screen</param>
+		/// <returns>The weight icon sprite, or null when the inventory screen has none</returns>
+		private static Sprite FindWeightSprite(InventoryGui gui)
+		{
+			foreach (Image image in gui.GetComponentsInChildren<Image>(true))
+			{
+				if (image.sprite != null && image.sprite.name == WeightIconName)
+				{
+					return(image.sprite);
+				}
+			}
+			return(null);
+		}
+
+		/// <summary>
+		/// Shows the weight and/or used inventory slots, rounding the weight the same way as the inventory screen and only
+		/// rebuilding the string when a number changes
 		/// </summary>
 		/// <param name="player">The local player</param>
-		private void SetText(Player player)
+		/// <param name="showWeight">Whether to show the weight</param>
+		/// <param name="showSlots">Whether to show the slot count</param>
+		/// <param name="warnings">When the weight and slot count change color and which colors they take</param>
+		private void SetText(Player player, bool showWeight, bool showSlots, WarningSettings warnings)
 		{
-			int weight = Mathf.CeilToInt(player.GetInventory().GetTotalWeight());
+			Inventory inventory = player.GetInventory();
+			int weight = Mathf.CeilToInt(inventory.GetTotalWeight());
 			int max = Mathf.CeilToInt(player.GetMaxCarryWeight());
-			if (weight == shownWeight && max == shownMax)
+			int usedSlots = inventory.NrOfItems();
+			int slots = inventory.GetWidth() * inventory.GetHeight();
+			if (weight == shownWeight && max == shownMax && usedSlots == shownUsedSlots && slots == shownSlots)
 			{
 				return;
 			}
 			shownWeight = weight;
 			shownMax = max;
-			string weightText = ((weight > max) ? "<color=red>" + weight + "</color>" : weight.ToString());
-			text.text = "Weight " + weightText + "/" + max;
+			shownUsedSlots = usedSlots;
+			shownSlots = slots;
+			bool useIcon = showWeight && weightSprite != null;
+			string weightText = (useIcon ? "" : "Weight ") + ColorWeight(weight, max, warnings) + "/" + max;
+			string slotsText = "⬜ " + ColorSlots(usedSlots, slots, warnings) + "/" + slots;
+			if (showWeight && showSlots)
+			{
+				text.text = weightText + "  " + slotsText;
+			}
+			else
+			{
+				text.text = (showWeight ? weightText : slotsText);
+			}
+			PlaceIcon(useIcon);
+		}
+
+		/// <summary>
+		/// Shows the weight icon just left of the text, sized to the font, or hides it
+		/// </summary>
+		/// <remarks>
+		/// The text is right-aligned, so its left edge moves as the numbers change and is measured from the rendered
+		/// text after each change
+		/// </remarks>
+		/// <param name="useIcon">Whether the icon is shown</param>
+		private void PlaceIcon(bool useIcon)
+		{
+			if (!useIcon)
+			{
+				if (icon.gameObject.activeSelf)
+				{
+					icon.gameObject.SetActive(false);
+				}
+				return;
+			}
+			icon.sprite = weightSprite;
+			text.ForceMeshUpdate();
+			Bounds bounds = text.textBounds;
+			float size = text.fontSize;
+			RectTransform rect = icon.rectTransform;
+			rect.sizeDelta = new Vector2(size, size);
+			rect.anchoredPosition = new Vector2(bounds.min.x - size * 0.2f, bounds.center.y);
+			if (!icon.gameObject.activeSelf)
+			{
+				icon.gameObject.SetActive(true);
+			}
+		}
+
+		/// <summary>
+		/// Colors the weight when overburdened, or when at or above the warning percentage of the maximum
+		/// </summary>
+		/// <param name="weight">Rounded current weight</param>
+		/// <param name="max">Rounded maximum carry weight</param>
+		/// <param name="warnings">When the weight changes color and which colors it takes</param>
+		/// <returns>The weight, wrapped in a color tag when near or over the maximum</returns>
+		private static string ColorWeight(int weight, int max, WarningSettings warnings)
+		{
+			if (weight > max)
+			{
+				return(Colorize(weight, warnings.OverburdenedColor.Value));
+			}
+			else if (weight * 100 >= max * warnings.WeightWarningPercent.Value)
+			{
+				return(Colorize(weight, warnings.WeightWarningColor.Value));
+			}
+			return(weight.ToString());
+		}
+
+		/// <summary>
+		/// Colors the used slot count when every slot is in use, or when the warning number of open slots or fewer are left
+		/// </summary>
+		/// <param name="usedSlots">Number of slots holding an item</param>
+		/// <param name="slots">Total number of inventory slots</param>
+		/// <param name="warnings">When the slot count changes color and which colors it takes</param>
+		/// <returns>The used slot count, wrapped in a color tag when near or at the total</returns>
+		private static string ColorSlots(int usedSlots, int slots, WarningSettings warnings)
+		{
+			if (usedSlots >= slots)
+			{
+				return(Colorize(usedSlots, warnings.FullSlotsColor.Value));
+			}
+			else if (slots - usedSlots <= warnings.SlotWarningOpenSlots.Value)
+			{
+				return(Colorize(usedSlots, warnings.SlotWarningColor.Value));
+			}
+			return(usedSlots.ToString());
+		}
+
+		/// <summary>
+		/// Wraps a number in a color tag, or leaves it uncolored when no color is set
+		/// </summary>
+		/// <param name="number">The number to color</param>
+		/// <param name="color">Color name or #RRGGBB value</param>
+		/// <returns>The number, wrapped in a color tag when a color is set</returns>
+		private static string Colorize(int number, string color)
+		{
+			if (string.IsNullOrWhiteSpace(color))
+			{
+				return(number.ToString());
+			}
+			return("<color=" + color.Trim() + ">" + number + "</color>");
 		}
 
 		/// <summary>

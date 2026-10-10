@@ -55,4 +55,9 @@
 		</Reference>
 	</ItemGroup>
 
+	<!-- A Release build also copies the mod's DLL into release\dlls, beside the packages and bbcode folders the scripts write -->
+	<Target Name="CopyToReleaseFolder" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MSBuildThisFileDirectory)release\dlls" SkipUnchangedFiles="true" />
+	</Target>
+
 </Project>

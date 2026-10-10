@@ -11,7 +11,7 @@ namespace LightColor
 	{
 		public const string PluginGuid = "kriona.LightColor";
 		public const string PluginName = "Light Color";
-		public const string PluginVersion = "1.2.0";
+		public const string PluginVersion = "1.2.1";
 
 		public static ConfigEntry<KeyboardShortcut> ColorKey;
 		public static ConfigEntry<string> Helmet;
@@ -44,7 +44,7 @@ namespace LightColor
 			Helmet = Config.Bind("General", "Helmet", "", "Color, brightness and range for the light on your equipped helmet, like the Dverger circlet, typed the same way as on a light, e.g. blue 150% 20m - other players with the mod see it too, and blank keeps the helmet's own light");
 			Helmet.SettingChanged += (sender, args) => CheckHelmetText();
 			CheckHelmetText();
-			watcher = new ConfigWatcher(Config.ConfigFilePath, Config.Reload, Logger);
+			watcher = new ConfigWatcher(Config, Logger, PluginName);
 			harmony = new Harmony(PluginGuid);
 			harmony.PatchAll();
 			Logger.LogInfo(PluginName + " " + PluginVersion + " loaded");

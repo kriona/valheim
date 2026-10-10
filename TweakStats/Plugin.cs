@@ -37,7 +37,7 @@ namespace TweakStats
 				WriteDefaultConfig();
 			}
 			Tweaks.Load();
-			watcher = new ConfigWatcher(ConfigPath, Tweaks.Reload, Logger);
+			watcher = new ConfigWatcher(ConfigPath, Tweaks.Reload, Logger, null);
 			harmony = new Harmony(PluginGuid);
 			harmony.PatchAll();
 			Logger.LogInfo(PluginName + " " + PluginVersion + " loaded");
