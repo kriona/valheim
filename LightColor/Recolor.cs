@@ -63,22 +63,38 @@ namespace LightColor
 		}
 
 		/// <summary>
+		/// The target color with its brightness raised so it never looks black, for glows that should stay visible
+		/// </summary>
+		/// <remarks>
+		/// The target's brightest channel, from 0 to F, is mapped onto the minimum strength to F - with the default of
+		/// 5, a dark target like #010 comes out like #050, while #0F0 stays #0F0. Black has no hue, so it comes out gray
+		/// </remarks>
+		/// <param name="target">The color to use</param>
+		/// <param name="minStrength">The strength black and nearly black targets get, from 0 to 1</param>
+		/// <returns>The raised color, fully opaque</returns>
+		public static Color Strengthen(Color target, float minStrength = MinReplaceStrength)
+		{
+			float targetMax = target.maxColorComponent;
+			Color hue = ((targetMax > 0f) ? target / targetMax : Color.white);
+			float strength = minStrength + (1f - minStrength) * Mathf.Clamp01(targetMax);
+			Color strengthened = hue * strength;
+			strengthened.a = 1f;
+			return(strengthened);
+		}
+
+		/// <summary>
 		/// Replaces a glow color with the target color's hue, at a strength set by how bright the target is, for glows
 		/// that are white or gray to begin with, like the stone portal's, which Shift would leave alone
 		/// </summary>
 		/// <remarks>
-		/// The target's brightest channel, from 0 to F, is mapped onto 5 to F, so a dark target like #010 still glows
-		/// like #050 rather than looking black, while #0F0 gets the glow's full strength. Black has no hue, so it glows gray
+		/// The strength comes from Strengthen, so a dark target still glows rather than looking black
 		/// </remarks>
 		/// <param name="glow">The glow color, which may be HDR</param>
 		/// <param name="target">The color to use</param>
 		/// <returns>The new glow, with the glow's alpha</returns>
 		public static Color Replace(Color glow, Color target)
 		{
-			float targetMax = target.maxColorComponent;
-			Color hue = ((targetMax > 0f) ? target / targetMax : Color.white);
-			float strength = MinReplaceStrength + (1f - MinReplaceStrength) * Mathf.Clamp01(targetMax);
-			Color replaced = hue * (strength * glow.maxColorComponent);
+			Color replaced = Strengthen(target) * glow.maxColorComponent;
 			replaced.a = glow.a;
 			return(replaced);
 		}

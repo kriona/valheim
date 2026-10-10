@@ -43,6 +43,10 @@ The `Helmet` setting set to `#F00 500% 50m`.
 
 <img src="images/portal-hub.jpg" alt="Portal hub with multiple colors" width="750">
 
+### Going from a yellow portal to a blue portal (mid-transition)
+
+<img src="images/yellow-to-blue-portal.jpg" alt="Going from a yellow portal to a blue portal (mid-transition)" width="750">
+
 ## Color Brightness
 
 The game treats black as "no light". If you set an object's color to black, it does not emit light. `#111` (dark gray) emits very little light, while `#FFF` (white) emits a lot of light.

@@ -32,6 +32,12 @@ namespace LightColor
 		private const float LayerFade = 1.5f;
 
 		/// <summary>
+		/// The weakest the swirl gets, for a black or nearly black color - 7 out of F, brighter than a portal's frame
+		/// glow, since the swirl fills a dark screen
+		/// </summary>
+		private const float MinStrength = 7f / 15f;
+
+		/// <summary>
 		/// One image in the swirl with its overlay and its own sprite and color
 		/// </summary>
 		private class Layer
@@ -151,14 +157,14 @@ namespace LightColor
 		}
 
 		/// <summary>
-		/// A layer's sprite in a color
+		/// A layer's sprite in a color, raised to at least MinStrength so a dark color doesn't turn the swirl black
 		/// </summary>
 		/// <param name="layer">The layer</param>
 		/// <param name="color">The color to shift the sprite toward, or null for its own colors</param>
 		/// <returns>The recolored copy, or the layer's own sprite</returns>
 		private static Sprite GetSprite(Layer layer, Color? color)
 		{
-			return((color.HasValue ? Recolor.GetSprite(layer.Original, color.Value) : layer.Original));
+			return((color.HasValue ? Recolor.GetSprite(layer.Original, Recolor.Strengthen(color.Value, MinStrength)) : layer.Original));
 		}
 
 		/// <summary>
