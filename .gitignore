@@ -3,6 +3,9 @@ bin/
 obj/
 release/
 
+# Python bytecode caches
+__pycache__/
+
 # IDE
 .vs/
 *.user

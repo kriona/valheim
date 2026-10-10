@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<EmbeddedResource Include="DefaultConfig.cfg" LogicalName="DefaultConfig.cfg" />
+	</ItemGroup>
+
+</Project>

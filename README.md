@@ -12,6 +12,7 @@ A library of Valheim mods I've made.
 | [Quick Fill](QuickFill) | Hold Shift and press E to fill a smelter, kiln, oven or fire in one go | [Mod 4343](https://www.nexusmods.com/valheim/mods/4343) |
 | [Swap Gear](SwapGear) | Swap what you're wearing with what's on an armor stand | [Mod 4344](https://www.nexusmods.com/valheim/mods/4344) |
 | [Too Low](TooLow) | Shows a "Too low" message when your pickaxe hits the 8m digging limit | [Mod 4345](https://www.nexusmods.com/valheim/mods/4345) |
+| [Tweak Stats](TweakStats) | Change the stats of any item or recipe from one config file - damage, armor, food, durability, weight, stack sizes, crafting costs and more | |
 | [Weight Display](WeightDisplay) | Shows your current and maximum carry weight under the minimap | [Mod 4346](https://www.nexusmods.com/valheim/mods/4346) |
 | [Who's Online](WhosOnline) | Lists the other players on the server when you join | [Mod 4347](https://www.nexusmods.com/valheim/mods/4347) |
 
