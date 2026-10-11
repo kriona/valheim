@@ -39,6 +39,16 @@ namespace LightColor
 		private static readonly Dictionary<long, Texture2D> textures = new Dictionary<long, Texture2D>();
 
 		/// <summary>
+		/// Gray copies of glow textures, by original texture
+		/// </summary>
+		private static readonly Dictionary<int, Texture2D> grayTextures = new Dictionary<int, Texture2D>();
+
+		/// <summary>
+		/// The textures the gray copies were made from, by gray copy
+		/// </summary>
+		private static readonly Dictionary<int, Texture> grayOriginals = new Dictionary<int, Texture>();
+
+		/// <summary>
 		/// Recolored copies of UI sprites, by original sprite and target color
 		/// </summary>
 		private static readonly Dictionary<long, Sprite> sprites = new Dictionary<long, Sprite>();
@@ -297,10 +307,6 @@ namespace LightColor
 		/// <summary>
 		/// A copy of a texture with every pixel shifted, made once per texture and color
 		/// </summary>
-		/// <remarks>
-		/// Game textures can't be read directly, so the texture is drawn into a render texture and read back, scaled
-		/// down to at most MaxTextureSize on its longest side
-		/// </remarks>
 		/// <param name="texture">The original texture</param>
 		/// <param name="target">The color to shift toward</param>
 		/// <returns>The shared recolored copy</returns>
@@ -311,6 +317,59 @@ namespace LightColor
 			{
 				return(copy);
 			}
+			copy = CopyTexture(texture, (pixel) => Shift(pixel, target));
+			textures[key] = copy;
+			return(copy);
+		}
+
+		/// <summary>
+		/// A gray copy of a texture, each pixel as bright as its brightest channel, made once per texture
+		/// </summary>
+		/// <remarks>
+		/// For glow textures that carry a color of their own, like the stone portal's red runes, which would otherwise
+		/// filter out any glow color set on top of them
+		/// </remarks>
+		/// <param name="texture">The original texture</param>
+		/// <returns>The shared gray copy</returns>
+		public static Texture2D GetGrayTexture(Texture texture)
+		{
+			int id = texture.GetInstanceID();
+			if (grayTextures.TryGetValue(id, out Texture2D copy) && copy != null)
+			{
+				return(copy);
+			}
+			copy = CopyTexture(texture, (pixel) =>
+			{
+				byte value = (byte)Mathf.Max(pixel.r, pixel.g, pixel.b);
+				return(new Color32(value, value, value, pixel.a));
+			});
+			grayTextures[id] = copy;
+			grayOriginals[copy.GetInstanceID()] = texture;
+			return(copy);
+		}
+
+		/// <summary>
+		/// The texture a gray copy was made from
+		/// </summary>
+		/// <param name="texture">The texture, which may or may not be a gray copy</param>
+		/// <returns>The original texture, or the texture itself when it isn't a gray copy</returns>
+		public static Texture GetOriginalTexture(Texture texture)
+		{
+			return(((texture != null && grayOriginals.TryGetValue(texture.GetInstanceID(), out Texture original)) ? original : texture));
+		}
+
+		/// <summary>
+		/// A readable copy of a texture with every pixel passed through a function
+		/// </summary>
+		/// <remarks>
+		/// Game textures can't be read directly, so the texture is drawn into a render texture and read back, scaled
+		/// down to at most MaxTextureSize on its longest side
+		/// </remarks>
+		/// <param name="texture">The original texture</param>
+		/// <param name="map">Returns the new color for each pixel</param>
+		/// <returns>The new texture</returns>
+		private static Texture2D CopyTexture(Texture texture, System.Func<Color32, Color32> map)
+		{
 			int width = texture.width;
 			int height = texture.height;
 			while (width > MaxTextureSize || height > MaxTextureSize)
@@ -322,21 +381,20 @@ namespace LightColor
 			RenderTexture previous = RenderTexture.active;
 			Graphics.Blit(texture, render);
 			RenderTexture.active = render;
-			copy = new Texture2D(width, height, TextureFormat.RGBA32, true);
+			Texture2D copy = new Texture2D(width, height, TextureFormat.RGBA32, true);
 			copy.ReadPixels(new Rect(0f, 0f, width, height), 0, 0);
 			RenderTexture.active = previous;
 			RenderTexture.ReleaseTemporary(render);
 			Color32[] pixels = copy.GetPixels32();
 			for (int i = 0; i < pixels.Length; i++)
 			{
-				pixels[i] = Shift(pixels[i], target);
+				pixels[i] = map(pixels[i]);
 			}
 			copy.SetPixels32(pixels);
 			copy.wrapMode = texture.wrapMode;
 			copy.filterMode = texture.filterMode;
 			copy.name = texture.name + " (" + Plugin.PluginName + ")";
 			copy.Apply(true, true);
-			textures[key] = copy;
 			return(copy);
 		}
 

@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.2
+- The runes on a stone portal's frame take the portal's color, the way the carvings on a wood portal do
+
 ## 1.2.1
 - Saving the config file no longer triggers the mod to write it back, so an editor with it open doesn't report it as changed
 - Shows a message when the config file is reloaded
