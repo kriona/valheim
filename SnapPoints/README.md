@@ -10,7 +10,7 @@ Gives chests, resource stacks, tables, benches, banners, armor stands and item s
 - Armor stands snap 1m apart with room for the armor, as well as close together by their bodies
 - Item stands line up in rows and grids on walls and floors, and snap to the corners of walls and floors
 - Cycle through the corners by hand with the game's snap point key (E) to pick which corner snaps
-	- You can disable snap points (hold Shift) to let you free-place a piece.
+	- You can disable snap points (hold Left Shift) to let you free-place a piece.
 
 <img src="images/chests-row.jpg" alt="Chests snapped next to each other" width="750">
 
