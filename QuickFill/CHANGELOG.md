@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.4.0
+- Looking anywhere on a smelter, kiln, blast furnace, refinery, etc. targets the ore or fuel opening on that side, and an oven's top half targets food and its bottom half wood
+
 ## 1.3.1
 - Saving the config file no longer triggers the mod to write it back, so an editor with it open doesn't report it as changed
 - Shows a message when the config file is reloaded
