@@ -1,3 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+	<ItemGroup>
+		<Reference Include="UnityEngine.PhysicsModule">
+			<HintPath>$(ManagedPath)\UnityEngine.PhysicsModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
 </Project>

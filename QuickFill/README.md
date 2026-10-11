@@ -7,6 +7,8 @@ Hold Shift and press the use key (E) to fill a station in one go instead of addi
 - Campfires, bonfires, hearths, torches, etc. - fills fuel without turning the fire off
 - The hover text shows the shortcut on everything it works with
 
+You don't have to aim at the small ore and fuel openings either. Each half of a smelter, kiln, blast furnace, refinery, etc. targets the opening on that side, and an oven's top half adds food while its bottom half adds wood.
+
 <img src="images/QuickFill.jpg" alt="Offering to quick fill a charcoal kiln" width="750">
 
 ## Configuration
