@@ -38,7 +38,8 @@ namespace LightColor
 				Piece piece = tint.GetComponent<Piece>();
 				text = ((piece != null) ? piece.m_name : "");
 			}
-			__instance.m_hoverName.text = Localization.instance.Localize(text + "\n[<color=yellow><b>" + shortcut + "</b></color>] Set light color");
+			string action = (tint.IsSign ? "Set text glow" : "Set light color");
+			__instance.m_hoverName.text = Localization.instance.Localize(text + "\n[<color=yellow><b>" + shortcut + "</b></color>] " + action);
 			__instance.m_crosshair.color = Color.yellow;
 		}
 	}

@@ -1,14 +1,25 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 namespace LightColor
 {
 	/// <summary>
-	/// The lights, particle systems and glowing materials under an object, with their own colors, so they can be set
-	/// to a color and put back
+	/// The lights, particle systems, glowing materials and sign text under an object, with their own colors, so they
+	/// can be set to a color and put back
 	/// </summary>
 	public class Tintable
 	{
+		/// <summary>
+		/// A sign's text with its own material and color
+		/// </summary>
+		private class SignText
+		{
+			public TMP_Text text;
+			public Material material;
+			public Color color;
+		}
+
 		/// <summary>
 		/// A particle system's own color settings
 		/// </summary>
@@ -44,10 +55,11 @@ namespace LightColor
 		private readonly float largestRange;
 		private readonly List<ParticleColors> particles = new List<ParticleColors>();
 		private readonly List<RendererMaterials> renderers = new List<RendererMaterials>();
+		private readonly List<SignText> signs = new List<SignText>();
 
 		/// <summary>
-		/// Records the lights, particle systems and recolorable renderers under an object, including inactive ones,
-		/// with their own colors
+		/// Records the lights, particle systems, recolorable renderers and sign text under an object, including
+		/// inactive ones, with their own colors
 		/// </summary>
 		/// <param name="root">The object to search</param>
 		public Tintable(GameObject root)
@@ -103,15 +115,23 @@ namespace LightColor
 					}
 				}
 			}
+			foreach (Sign sign in root.GetComponentsInChildren<Sign>(true))
+			{
+				if (sign.m_textWidget != null)
+				{
+					SignText entry = new SignText();
+					entry.text = sign.m_textWidget;
+					entry.material = sign.m_textWidget.fontSharedMaterial;
+					entry.color = sign.m_textWidget.color;
+					signs.Add(entry);
+				}
+			}
 		}
 
 		/// <summary>
-		/// Whether anything recorded is left to color - a light, a particle system or a recolorable material
+		/// Whether any light recorded is left, which a typed range is set on
 		/// </summary>
-		/// <remarks>
-		/// Checks for destroyed objects, since an item stand destroys its shown item when the item is taken off
-		/// </remarks>
-		public bool HasEffects
+		public bool HasLights
 		{
 			get
 			{
@@ -121,6 +141,42 @@ namespace LightColor
 					{
 						return(true);
 					}
+				}
+				return(false);
+			}
+		}
+
+		/// <summary>
+		/// Whether any sign text recorded is left, which typed text styles are shown on
+		/// </summary>
+		public bool HasSigns
+		{
+			get
+			{
+				foreach (SignText entry in signs)
+				{
+					if (entry.text != null)
+					{
+						return(true);
+					}
+				}
+				return(false);
+			}
+		}
+
+		/// <summary>
+		/// Whether anything recorded is left to color - a light, a particle system, a recolorable material or sign text
+		/// </summary>
+		/// <remarks>
+		/// Checks for destroyed objects, since an item stand destroys its shown item when the item is taken off
+		/// </remarks>
+		public bool HasEffects
+		{
+			get
+			{
+				if (HasLights || HasSigns)
+				{
+					return(true);
 				}
 				foreach (ParticleColors colors in particles)
 				{
@@ -170,6 +226,10 @@ namespace LightColor
 			foreach (RendererMaterials entry in renderers)
 			{
 				ApplyMaterials(entry, hasColor, color);
+			}
+			foreach (SignText entry in signs)
+			{
+				ApplySign(entry, settings);
 			}
 		}
 
@@ -354,6 +414,29 @@ namespace LightColor
 				materials[i] = (Recolor.ShouldRecolor(material, entry.particles) ? Recolor.GetMaterial(material, color) : material);
 			}
 			entry.renderer.sharedMaterials = materials;
+		}
+
+		/// <summary>
+		/// Gives a sign's text a glowing material and, for lit letters, the glow color, or puts back its own material
+		/// and color when the settings change nothing
+		/// </summary>
+		/// <param name="entry">The sign's text and its own material and color</param>
+		/// <param name="settings">The settings to show</param>
+		private static void ApplySign(SignText entry, LightSettings settings)
+		{
+			if (entry.text == null)
+			{
+				return;
+			}
+			Material material = (settings.IsDefault() ? null : TextGlow.GetMaterial(entry.material, settings));
+			if (material == null)
+			{
+				entry.text.fontSharedMaterial = entry.material;
+				entry.text.color = entry.color;
+				return;
+			}
+			entry.text.fontSharedMaterial = material;
+			entry.text.color = (((TextGlow.GetStyles(settings) & TextStyle.Lit) != 0) ? TextGlow.GetColor(settings) : entry.color);
 		}
 	}
 }

@@ -11,7 +11,7 @@ namespace LightColor
 	{
 		public const string PluginGuid = "kriona.LightColor";
 		public const string PluginName = "Light Color";
-		public const string PluginVersion = "1.2.2";
+		public const string PluginVersion = "1.3.0";
 
 		public static ConfigEntry<KeyboardShortcut> ColorKey;
 		public static ConfigEntry<string> Helmet;
@@ -89,6 +89,10 @@ namespace LightColor
 			{
 				Logger.LogWarning("Couldn't read the Helmet setting \"" + text + "\": " + error);
 				text = "";
+			}
+			else if (settings.Styles != TextStyle.None)
+			{
+				Logger.LogWarning("Halo, lit and outline in the Helmet setting \"" + text + "\" only work on signs, so they're ignored");
 			}
 			else if (settings.IsDefault())
 			{
