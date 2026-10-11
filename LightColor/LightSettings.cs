@@ -4,7 +4,32 @@ using UnityEngine;
 namespace LightColor
 {
 	/// <summary>
-	/// The color, brightness and range typed for a piece, like "blue 150% 20m"
+	/// The ways a sign's text can glow, which can be combined
+	/// </summary>
+	[System.Flags]
+	public enum TextStyle
+	{
+		None = 0,
+
+		/// <summary>
+		/// A soft glow in the color behind the letters
+		/// </summary>
+		Halo = 1,
+
+		/// <summary>
+		/// Letters drawn in the color and lit from within
+		/// </summary>
+		Lit = 2,
+
+		/// <summary>
+		/// A crisp edge in the color around the letters
+		/// </summary>
+		Outline = 4
+	}
+
+	/// <summary>
+	/// The color, brightness and range typed for a piece, like "blue 150% 20m", or the color, brightness and text
+	/// styles typed for a sign, like "blue 150% halo lit"
 	/// </summary>
 	public class LightSettings
 	{
@@ -41,6 +66,11 @@ namespace LightColor
 		public float Range { get; private set; }
 
 		/// <summary>
+		/// The text styles typed for a sign, None when none were typed
+		/// </summary>
+		public TextStyle Styles { get; private set; }
+
+		/// <summary>
 		/// Settings with only a color, for effects that take a piece's color but not its brightness or range
 		/// </summary>
 		/// <param name="color">The opaque color</param>
@@ -54,8 +84,8 @@ namespace LightColor
 		}
 
 		/// <summary>
-		/// Reads settings from text made of a color, a brightness ending in % and a range ending in m, in any order and
-		/// all optional, separated by spaces or commas
+		/// Reads settings from text made of a color, a brightness ending in %, a range ending in m and the text styles
+		/// halo, lit and outline, in any order and all optional, separated by spaces or commas
 		/// </summary>
 		/// <param name="text">The text, where blank or "default" means the piece's own settings</param>
 		/// <param name="settings">The settings read, or Default when the text can't be read</param>
@@ -71,6 +101,11 @@ namespace LightColor
 				string token = part.ToLowerInvariant();
 				if (token == DefaultText)
 				{
+					continue;
+				}
+				if (TryParseStyle(token, out TextStyle style))
+				{
+					parsed.Styles |= style;
 					continue;
 				}
 				if (token.EndsWith("%"))
@@ -114,10 +149,34 @@ namespace LightColor
 		/// <summary>
 		/// Whether the settings change anything about a piece
 		/// </summary>
-		/// <returns>True when a color, brightness or range was typed</returns>
+		/// <returns>True when a color, brightness, range or text style was typed</returns>
 		public bool IsDefault()
 		{
-			return(!HasColor && Brightness == 1f && Range == 0f);
+			return(!HasColor && Brightness == 1f && Range == 0f && Styles == TextStyle.None);
+		}
+
+		/// <summary>
+		/// Reads a text style name
+		/// </summary>
+		/// <param name="token">The lowercase word</param>
+		/// <param name="style">The style, or None when the word isn't one</param>
+		/// <returns>True when the word is a text style</returns>
+		private static bool TryParseStyle(string token, out TextStyle style)
+		{
+			switch (token)
+			{
+				case "halo":
+					style = TextStyle.Halo;
+					return(true);
+				case "lit":
+					style = TextStyle.Lit;
+					return(true);
+				case "outline":
+					style = TextStyle.Outline;
+					return(true);
+			}
+			style = TextStyle.None;
+			return(false);
 		}
 
 		/// <summary>

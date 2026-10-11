@@ -4,14 +4,14 @@ using UnityEngine;
 namespace LightColor
 {
 	/// <summary>
-	/// Adds a LightTint to every built piece that has lights
+	/// Adds a LightTint to every built piece that has lights or is a sign
 	/// </summary>
 	[HarmonyPatch(typeof(Piece), nameof(Piece.Awake))]
 	public static class PieceAwakePatch
 	{
 		/// <summary>
-		/// Adds the tint when the piece is a networked object with at least one light, leaving out placement ghosts
-		/// and pieces that already have one
+		/// Adds the tint when the piece is a networked object with at least one light or sign, leaving out placement
+		/// ghosts and pieces that already have one
 		/// </summary>
 		/// <param name="__instance">The piece that just woke</param>
 		private static void Postfix(Piece __instance)
@@ -21,7 +21,7 @@ namespace LightColor
 			{
 				return;
 			}
-			if (__instance.GetComponentInChildren<Light>(true) == null)
+			if (__instance.GetComponentInChildren<Light>(true) == null && __instance.GetComponentInChildren<Sign>(true) == null)
 			{
 				return;
 			}

@@ -1,11 +1,12 @@
 # Light Color
 
-Hover over an object that gives off light (e.g., sconce, campfire, portal) and press L to enter a color for its light, brightness, and range.
+Hover over an object that gives off light (e.g., sconce, campfire, portal) and press L to enter a color for its light, brightness, and range. It makes the text on signs glow with a colored halo, lit letters or an outline.
 
 - Type a color name like `red`, `yellow`, or `purple`, or a hex color like `#0F0` or `#002B49`
 - Add a brightness and range after the color, like `blue 150% 20m` - see [Brightness and Range](#brightness-and-range)
 - Works on item stands too - the color applies to the mounted Dverger circlet, torch or anything else that glows, and the color stays with the stand when you swap the item
 - Traveling through a colored portal turns the swirl on the loading screen to the portal's color, then fades it ring by ring from the center outward to the color of the portal you arrive at
+- Works on signs too - the text glows in the color so it's easy to read, even at night - see [Signs](#signs)
 - Set the `Helmet` setting to color the Dverger circlet you're wearing - see [Configuration](#configuration)
 - Type `default` or blank to go revert to the original color
 - The hover text shows the key on every object it works with
@@ -69,6 +70,24 @@ Bigger lights light up more of the world around them, which costs more performan
 A campfire set to 500% brightness and a 50m range.
 
 <img src="images/apocalypse.jpg" alt="An apocalyptically bright campfire" width="750">
+
+## Signs
+
+Hover over a sign and press L to make its text glow. Type a color, a brightness, and any of these styles:
+
+- `halo` - a soft glow in the color behind the letters
+- `lit` - the letters are drawn in the color and lit from within
+- `outline` - a crisp edge in the color around the letters
+
+`white` gives a white halo, `lit` white letters, and `yellow 200% halo outline` a bright yellow halo and outline. Default style is halo, and default color is white. High brightness values quickly become glowing orbs of light instead of text.
+
+Glowing text isn't shaded by the light around it, so it reads the same by day and night. Colors typed into the sign's text with `<color=...>` still show (though `lit` might wash them out).
+
+<img src="images/sign-effects.jpg" alt="The different sign effects" width="750">
+
+<img src="images/sign-effects-extreme.jpg" alt="Some sign effects turned up to 11" width="750">
+
+<img src="images/gosh-its-dark.jpg" alt="Gosh it's dark" width="750">
 
 ## Default Colors
 

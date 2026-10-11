@@ -3,8 +3,8 @@ using UnityEngine;
 namespace LightColor
 {
 	/// <summary>
-	/// Added to every built piece with lights, keeping their color in step with the color text stored on the piece
-	/// and letting the player type a new one, like the text on a sign
+	/// Added to every built piece with lights and every sign, keeping their color in step with the color text stored
+	/// on the piece and letting the player type a new one, like the text on a sign
 	/// </summary>
 	/// <remarks>
 	/// The color is stored in the piece's ZDO, which the server saves with the world and sends to other players
@@ -93,7 +93,19 @@ namespace LightColor
 		}
 
 		/// <summary>
-		/// Opens the text input for typing the light's color, brightness and range
+		/// Whether the piece is a sign, whose text glows rather than giving off light
+		/// </summary>
+		public bool IsSign
+		{
+			get
+			{
+				return(tintable.HasSigns && !tintable.HasLights);
+			}
+		}
+
+		/// <summary>
+		/// Opens the text input for typing the light's color, brightness and range, or the sign's color, brightness
+		/// and text styles
 		/// </summary>
 		public void RequestColor()
 		{
@@ -101,7 +113,8 @@ namespace LightColor
 			{
 				return;
 			}
-			TextInput.instance.RequestText(this, "Light - a color, brightness % and range m, e.g. blue 150% 20m", CharacterLimit);
+			string prompt = (IsSign ? "Text glow - a color, brightness % and halo, lit or outline, e.g. blue 150% lit" : "Light - a color, brightness % and range m, e.g. blue 150% 20m");
+			TextInput.instance.RequestText(this, prompt, CharacterLimit);
 		}
 
 		/// <summary>
@@ -132,6 +145,16 @@ namespace LightColor
 			if (!LightSettings.TryParse(text, out LightSettings settings, out string error))
 			{
 				Player.m_localPlayer?.Message(MessageHud.MessageType.Center, error);
+				return;
+			}
+			if (settings.Styles != TextStyle.None && !tintable.HasSigns)
+			{
+				Player.m_localPlayer?.Message(MessageHud.MessageType.Center, "Halo, lit and outline only work on signs");
+				return;
+			}
+			if (settings.Range > 0f && IsSign)
+			{
+				Player.m_localPlayer?.Message(MessageHud.MessageType.Center, "Signs don't have a range");
 				return;
 			}
 			if (settings.IsDefault())
