@@ -10,7 +10,7 @@ namespace SnapPoints
 	{
 		public const string PluginGuid = "kriona.SnapPoints";
 		public const string PluginName = "Snap Points";
-		public const string PluginVersion = "1.0.0";
+		public const string PluginVersion = "1.1.0";
 
 		/// <summary>
 		/// The plugin's log, for the classes outside the plugin

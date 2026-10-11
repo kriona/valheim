@@ -35,11 +35,11 @@ namespace SnapPoints
 			"## - false takes away all of the piece's snap points, so it never snaps",
 			"## - inherit leaves the piece's snap points as the game has them",
 			"",
-			"## Chests, resource stacks and piles, tables, benches, banners, armor stands and item stands start as true, and everything else starts as inherit",
+			"## Chests, resource stacks and piles, tables, benches, banners, armor stands, item stands and portals start as true, and everything else starts as inherit",
 		};
 
 		/// <summary>
-		/// Containers, resource stacks, tables, benches, banners, armor stands and item stands - pieces that are built in rows and stacks, set to true
+		/// Containers, resource stacks, tables, benches, banners, armor stands, item stands and portals - pieces that are built in rows and stacks, set to true
 		/// until the file says otherwise
 		/// </summary>
 		private static readonly HashSet<string> defaultOn = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -52,6 +52,7 @@ namespace SnapPoints
 			"piece_banner01", "piece_banner02", "piece_banner03", "piece_banner04", "piece_banner05", "piece_banner06", "piece_banner07", "piece_banner08", "piece_banner09", "piece_banner10", "piece_banner11",
 			"ArmorStand", "ArmorStand_Female", "ArmorStand_Male",
 			"itemstand", "itemstandh",
+			"portal_wood", "portal_stone", "portal",
 		};
 
 		/// <summary>
