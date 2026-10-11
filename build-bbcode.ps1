@@ -5,9 +5,10 @@ Converts each mod's README.md to BBCode for its Nexus Mods description
 .DESCRIPTION
 Writes release\bbcode\<Mod>.bbcode for every mod folder with a README.md and a .csproj, ready to paste into the Nexus Mods
 description editor. The README's "# Title" line is left out since the mod page shows its name, images point at the
-copies on GitHub and tables become lists. An "Other Mods" section links to every other mod in the root README's
-"## Mods" table that has a Nexus Mods link, followed by a link to the mod's source on GitHub. Every mod is converted
-on each run because adding a mod changes the "Other Mods" section of all the others
+copies on GitHub and tables become lists. An "Other Mods By Me" section links to every other mod in the root README's
+"## Mods" table that has a Nexus Mods link, followed by a link to the mod's source on GitHub and the root README's
+"## Other Mods I Use" section. Every mod is converted on each run because adding a mod changes the "Other Mods By Me"
+section of all the others
 
 .PARAMETER branch
 The branch that images and source links point at
@@ -199,6 +200,45 @@ function Get-ModList([string]$readmeFile)
 
 <#
 .SYNOPSIS
+Reads a section of a Markdown file, from its "## " heading up to the next one
+
+.PARAMETER readmeFile
+Path to the Markdown file
+
+.PARAMETER heading
+The section's heading line, e.g. "## Other Mods I Use"
+
+.OUTPUTS
+The section's lines including the heading, without trailing blank lines - empty when the file has no such section
+#>
+function Get-ReadmeSection([string]$readmeFile, [string]$heading)
+{
+	$section = New-Object System.Collections.Generic.List[string]
+	$inSection = $false
+	foreach ($line in Get-Content $readmeFile -Encoding UTF8)
+	{
+		if ($line -match '^## ')
+		{
+			if ($inSection)
+			{
+				break
+			}
+			$inSection = ($line.Trim() -eq $heading)
+		}
+		if ($inSection)
+		{
+			$section.Add($line)
+		}
+	}
+	while ($section.Count -gt 0 -and $section[$section.Count - 1].Trim() -eq '')
+	{
+		$section.RemoveAt($section.Count - 1)
+	}
+	return(,$section.ToArray())
+}
+
+<#
+.SYNOPSIS
 Converts Markdown lines to BBCode, leaving out a "# " title and the blank line after it
 
 .PARAMETER lines
@@ -322,12 +362,16 @@ URL of the mod's folder for raw file downloads, used for images
 URL of the mod's folder on GitHub, used for relative links and the source link
 
 .PARAMETER otherMods
-The other mods to link to from an "Other Mods" section, from Get-ModList - the section is left out when empty
+The other mods to link to from an "Other Mods By Me" section, from Get-ModList - the section is left out when empty
+
+.PARAMETER usedMods
+BBCode lines added after the source link, from the root README's "## Other Mods I Use" section - nothing is added
+when empty
 
 .OUTPUTS
 The BBCode text
 #>
-function Convert-Readme([string]$readmeFile, [string]$rawUrl, [string]$treeUrl, [object[]]$otherMods)
+function Convert-Readme([string]$readmeFile, [string]$rawUrl, [string]$treeUrl, [object[]]$otherMods, [string[]]$usedMods)
 {
 	$output = Convert-Markdown @(Get-Content $readmeFile -Encoding UTF8) $rawUrl $treeUrl
 
@@ -350,7 +394,7 @@ function Convert-Readme([string]$readmeFile, [string]$rawUrl, [string]$treeUrl, 
 	if ($otherMods.Count -gt 0)
 	{
 		$output.Add('')
-		$output.Add('[size=5][b]Other Mods[/b][/size]')
+		$output.Add('[size=5][b]Other Mods By Me[/b][/size]')
 		$output.Add('')
 		$output.Add('[list]')
 		foreach ($otherMod in $otherMods)
@@ -364,6 +408,12 @@ function Convert-Readme([string]$readmeFile, [string]$rawUrl, [string]$treeUrl, 
 	$output.Add('[size=5][b]Source[/b][/size]')
 	$output.Add('')
 	$output.Add('The source code is on [url=' + $treeUrl + ']GitHub[/url].')
+
+	if ($usedMods.Count -gt 0)
+	{
+		$output.Add('')
+		$output.AddRange($usedMods)
+	}
 	return(($output -join "`r`n").Trim() + "`r`n")
 }
 
@@ -379,7 +429,11 @@ $repo = $matches[2]
 $bbcodeDir = Join-Path $root 'release\bbcode'
 New-Item -ItemType Directory -Force $bbcodeDir | Out-Null
 $utf8 = New-Object System.Text.UTF8Encoding($false)
-$modList = Get-ModList (Join-Path $root 'README.md')
+$rootReadme = Join-Path $root 'README.md'
+$modList = Get-ModList $rootReadme
+$rootTreeUrl = 'https://github.com/' + $owner + '/' + $repo + '/tree/' + $branch
+$rootRawUrl = 'https://raw.githubusercontent.com/' + $owner + '/' + $repo + '/' + $branch
+$usedMods = [string[]](Convert-Markdown (Get-ReadmeSection $rootReadme '## Other Mods I Use') $rootRawUrl $rootTreeUrl)
 
 foreach ($dir in Get-ChildItem $root -Directory)
 {
@@ -392,7 +446,7 @@ foreach ($dir in Get-ChildItem $root -Directory)
 	$rawUrl = 'https://raw.githubusercontent.com/' + $owner + '/' + $repo + '/' + $branch + '/' + $dir.Name
 	$treeUrl = 'https://github.com/' + $owner + '/' + $repo + '/tree/' + $branch + '/' + $dir.Name
 	$otherMods = @($modList | Where-Object { $_.Folder -ne $dir.Name -and $_.NexusUrl -ne '' })
-	$bbcode = Convert-Readme $readmeFile $rawUrl $treeUrl $otherMods
+	$bbcode = Convert-Readme $readmeFile $rawUrl $treeUrl $otherMods $usedMods
 	$outFile = Join-Path $bbcodeDir ($dir.Name + '.bbcode')
 	[System.IO.File]::WriteAllText($outFile, $bbcode, $utf8)
 	Write-Host ('Wrote ' + $outFile)
