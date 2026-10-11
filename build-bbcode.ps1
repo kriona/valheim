@@ -256,25 +256,35 @@ The BBCode lines
 function Convert-Markdown([string[]]$lines, [string]$rawUrl, [string]$treeUrl)
 {
 	$output = New-Object System.Collections.Generic.List[string]
-	$listTag = ''
+	# The open lists, outermost first, each with its items' indent (a tab counting as 4 spaces) and its tag
+	$listStack = New-Object System.Collections.Generic.List[object]
 	$i = 0
 	while ($i -lt $lines.Count)
 	{
 		$line = $lines[$i]
 
 		$listType = ''
-		if ($line -match '^\s*[-*] ')
+		$indent = 0
+		if ($line -match '^(\s*)(?:([-*])|\d+\.) ')
 		{
-			$listType = 'list'
-		}
-		elseif ($line -match '^\s*\d+\. ')
-		{
+			$indent = ($matches[1] -replace "`t", '    ').Length
 			$listType = 'list=1'
+			if ($matches[2])
+			{
+				$listType = 'list'
+			}
 		}
-		if ($listTag -ne '' -and $listType -ne $listTag)
+		# Lists indented deeper than this item, or at its indent but of the other kind, are closed, and a line that
+		# isn't a list item closes them all
+		while ($listStack.Count -gt 0)
 		{
+			$top = $listStack[$listStack.Count - 1]
+			if ($listType -ne '' -and ($top.Indent -lt $indent -or ($top.Indent -eq $indent -and $top.Tag -eq $listType)))
+			{
+				break
+			}
 			$output.Add('[/list]')
-			$listTag = ''
+			$listStack.RemoveAt($listStack.Count - 1)
 		}
 
 		if ($line -match '^\s*```')
@@ -308,10 +318,10 @@ function Convert-Markdown([string[]]$lines, [string]$rawUrl, [string]$treeUrl)
 		}
 		elseif ($listType -ne '')
 		{
-			if ($listTag -eq '')
+			if ($listStack.Count -eq 0 -or $listStack[$listStack.Count - 1].Indent -lt $indent)
 			{
 				$output.Add('[' + $listType + ']')
-				$listTag = $listType
+				$listStack.Add([PSCustomObject]@{ Indent = $indent; Tag = $listType })
 			}
 			$output.Add('[*]' + (Convert-Inline ($line -replace '^\s*([-*]|\d+\.) ', '') $treeUrl))
 		}
@@ -341,7 +351,7 @@ function Convert-Markdown([string[]]$lines, [string]$rawUrl, [string]$treeUrl)
 		}
 		$i++
 	}
-	if ($listTag -ne '')
+	foreach ($list in $listStack)
 	{
 		$output.Add('[/list]')
 	}
