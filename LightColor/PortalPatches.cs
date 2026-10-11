@@ -13,6 +13,11 @@ namespace LightColor
 		private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
 		/// <summary>
+		/// The stone portal's glow texture, which is red where the wood portal's is gray
+		/// </summary>
+		private static readonly int EmissiveTexId = Shader.PropertyToID("_EmissiveTex");
+
+		/// <summary>
 		/// Replaces the glow the portal just set with the stored color at the glow's strength, then scales it by the
 		/// stored brightness, leaving the portal's own glow when there are no stored settings
 		/// </summary>
@@ -24,6 +29,7 @@ namespace LightColor
 				return;
 			}
 			LightTint tint = __instance.GetComponent<LightTint>();
+			SetGlowTexture(__instance.m_model.material, (tint != null && tint.Settings.HasColor));
 			if (tint == null || (!tint.Settings.HasColor && tint.Settings.Brightness == 1f))
 			{
 				return;
@@ -34,6 +40,31 @@ namespace LightColor
 			emission *= tint.Settings.Brightness;
 			emission.a = alpha;
 			__instance.m_model.material.SetColor(EmissionColorId, emission);
+		}
+
+		/// <summary>
+		/// Gives a stone portal's frame a gray copy of its glow texture while it has a color, so the runes take the
+		/// color rather than filtering it through red, and its own texture otherwise
+		/// </summary>
+		/// <param name="material">The frame's material</param>
+		/// <param name="hasColor">Whether the portal has a stored color</param>
+		private static void SetGlowTexture(Material material, bool hasColor)
+		{
+			if (!material.HasProperty(EmissiveTexId))
+			{
+				return;
+			}
+			Texture texture = material.GetTexture(EmissiveTexId);
+			if (texture == null)
+			{
+				return;
+			}
+			Texture original = Recolor.GetOriginalTexture(texture);
+			Texture wanted = (hasColor ? Recolor.GetGrayTexture(original) : original);
+			if (wanted != texture)
+			{
+				material.SetTexture(EmissiveTexId, wanted);
+			}
 		}
 	}
 
