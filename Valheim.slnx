@@ -3,6 +3,7 @@
   <Project Path="CreatureMarker/CreatureMarker.csproj" />
   <Project Path="LightColor/LightColor.csproj" />
   <Project Path="QuickFill/QuickFill.csproj" />
+  <Project Path="SnapPoints/SnapPoints.csproj" />
   <Project Path="SwapGear/SwapGear.csproj" />
   <Project Path="TooLow/TooLow.csproj" />
   <Project Path="TweakStats/TweakStats.csproj" />

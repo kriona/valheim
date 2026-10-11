@@ -46,7 +46,7 @@ namespace CreatureMarker
 		private static readonly string[] header =
 		{
 			"## " + Plugin.PluginName,
-			"## Changes take effect as soon as this file is saved",
+			"## Changes take effect as soon as this file is saved; you don't need to restart Valheim or rejoin the world",
 			"## Colors are #RRGGBB or a color name like red, yellow, green, cyan or magenta",
 			"",
 		};
