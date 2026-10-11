@@ -53,7 +53,7 @@ Converts every mod's `README.md` to `release\bbcode\<Mod>.bbcode` for pasting in
 
 ## Other Mods I Use
 
-- Build Camera by Azumatt - https://old.thunderstore.io/c/valheim/p/Azumatt/Build_Camera_Custom_Hammers_Edition/
-- Quiet Portals by Neobotics - https://www.nexusmods.com/valheim/mods/1981
-- Remember Server Password by MagiCorp - https://old.thunderstore.io/c/valheim/p/MagiCorp/RememberServerPassword/
-- Tools in Water by Lilizzll - https://www.nexusmods.com/valheim/mods/3771
+- [Build Camera](https://old.thunderstore.io/c/valheim/p/Azumatt/Build_Camera_Custom_Hammers_Edition/) by Azumatt
+- [Quiet Portals](https://www.nexusmods.com/valheim/mods/1981) by Neobotics
+- [Remember Server Password](https://old.thunderstore.io/c/valheim/p/MagiCorp/RememberServerPassword/) by MagiCorp
+- [Tools in Water](https://www.nexusmods.com/valheim/mods/3771) by Lilizzll
