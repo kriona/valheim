@@ -1,6 +1,6 @@
 # Snap Points
 
-Gives chests, resource stacks, tables, benches, banners, armor stands and item stands snap points, so they line up with each other the way walls and floors do. Any other build piece can be given snap points (or have its snap points taken away) via config.
+Gives chests, resource stacks, tables, benches, banners, armor stands, item stands and portals snap points, so they line up with each other the way walls and floors do. Any other build piece can be given snap points (or have its snap points taken away) via config.
 
 - A snap point is added at each corner of the build piece - chests can be placed side by side in neat rows
 - The top corners let you stack build pieces that can be built on, like tables and metal bar stacks, or lay a floor over a row of chests. Chests and piles can't be built on each other, so they don't offer to snap on top of one another
@@ -9,6 +9,7 @@ Gives chests, resource stacks, tables, benches, banners, armor stands and item s
 - Banners snap by their wooden hanger as well as their cloth, so the cloths can hang edge to edge
 - Armor stands snap 1m apart with room for the armor, as well as close together by their bodies
 - Item stands line up in rows and grids on walls and floors, and snap to the corners of walls and floors
+- Portals snap side by side by their frames, so a portal hub lines up in a neat row
 - Cycle through the corners by hand with the game's snap point key (E) to pick which corner snaps
 	- You can disable snap points (hold Left Shift) to let you free-place a piece.
 
@@ -44,7 +45,7 @@ piece_chest_private = false ## Personal chest
 - `false` - takes away all of the piece's snap points
 - `inherit` - leaves the piece's snap points as the game's default
 
-Every chest, the resource stacks and piles, the tables, the benches, the banners, the armor stands and the item stands start as `true`, and everything else starts as `inherit`.
+Every chest, the resource stacks and piles, the tables, the benches, the banners, the armor stands, the item stands and the portals start as `true`, and everything else starts as `inherit`.
 
 Build pieces added by other mods are added to the file when Valheim loads.
 
