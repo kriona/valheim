@@ -15,6 +15,17 @@
 		<BepInExPath>$(ValheimPath)\BepInEx</BepInExPath>
 	</PropertyGroup>
 
+	<!-- The DLL's file and product versions come from the PluginVersion constant in Plugin.cs, so Windows shows the mod's real version in the file's properties -->
+	<PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)\Plugin.cs')">
+		<PluginSource>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\Plugin.cs'))</PluginSource>
+		<Version>$([System.Text.RegularExpressions.Regex]::Match($(PluginSource), 'PluginVersion\s*=\s*"([^"]+)"').Result('$1'))</Version>
+		<Product>$([System.Text.RegularExpressions.Regex]::Match($(PluginSource), 'PluginName\s*=\s*"([^"]+)"').Result('$1'))</Product>
+		<AssemblyTitle>$(Product)</AssemblyTitle>
+		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+		<Company>Kriona</Company>
+		<Copyright>Copyright (c) 2026 Kriona Hagen - MIT License</Copyright>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3" PrivateAssets="all" />
 	</ItemGroup>
