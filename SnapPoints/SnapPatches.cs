@@ -29,6 +29,29 @@ namespace SnapPoints
 		private static readonly string[] OuterNames = { "outer corner 1", "outer corner 2", "outer corner 3", "outer corner 4" };
 
 		/// <summary>
+		/// Names of the snap points added at the ends of a piece's lid, in the order from GetLidCorners
+		/// </summary>
+		private static readonly string[] LidNames = { "lid corner 1", "lid corner 2", "lid corner 3", "lid corner 4" };
+
+		/// <summary>
+		/// The farthest the lid corners sit in from the ends of a piece's collider box - two pieces snapped lid to lid
+		/// overlap by twice this, and the game won't place a chest that sinks more than 0.2m into another piece
+		/// </summary>
+		private const float MaxLidInset = 0.09f;
+
+		/// <summary>
+		/// Pieces with a lid narrower than their collider at the short ends, by prefab name, with the path of the lid's
+		/// child - a chest's base flares out below its lid, so chests snapped by their colliders leave a gap between the lids
+		/// </summary>
+		private static readonly Dictionary<string, string> lidParts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+		{
+			{ "piece_chest_wood", "New/woodchesttop_closed" },
+			{ "piece_chest", "New/ironchesttop_closed" },
+			{ "piece_chest_private", "New/privatechesttop_closed" },
+			{ "piece_chest_blackmetal", "New/Closed/blackmetalchesttop_closed" },
+		};
+
+		/// <summary>
 		/// Pieces that hold something wider than their colliders, by prefab name prefix, with half the width of the
 		/// square of snap points around their center - an armor stand's collider is only its body, so stands snapped by
 		/// it stand shoulder to shoulder
@@ -68,6 +91,11 @@ namespace SnapPoints
 		/// Outer square corner positions in each piece's local space by prefab name, null for pieces without one
 		/// </summary>
 		private static readonly Dictionary<string, Vector3[]> outerByPrefab = new Dictionary<string, Vector3[]>();
+
+		/// <summary>
+		/// Lid end corner positions in each piece's local space by prefab name, null for pieces without a lid
+		/// </summary>
+		private static readonly Dictionary<string, Vector3[]> lidByPrefab = new Dictionary<string, Vector3[]>();
 
 		/// <summary>
 		/// Adds or removes corner snap points on every piece prefab, the pieces already in the world and the placement
@@ -156,6 +184,7 @@ namespace SnapPoints
 				cornersByPrefab[prefabName] = corners;
 				innerByPrefab[prefabName] = GetInnerCorners(prefab.transform, prefabName);
 				outerByPrefab[prefabName] = GetOuterCorners(corners, prefabName);
+				lidByPrefab[prefabName] = GetLidCorners(prefab.transform, corners, prefabName);
 				if (corners == null)
 				{
 					Plugin.Log.LogWarning(prefabName + " has no collider to place snap points around");
@@ -176,6 +205,58 @@ namespace SnapPoints
 			{
 				AddSnapPoints(root, OuterNames, outer);
 			}
+			Vector3[] lid = lidByPrefab[prefabName];
+			if (lid != null)
+			{
+				AddSnapPoints(root, LidNames, lid);
+			}
+		}
+
+		/// <summary>
+		/// The four corners at the bottom of a piece's collider box, moved in along its longer side toward the ends of its
+		/// lid, so pieces placed end to end meet lid to lid
+		/// </summary>
+		/// <remarks>
+		/// Each end moves in no farther than MaxLidInset, so a piece with a wide base stops short of its lid rather
+		/// than overlapping too far to be placed
+		/// </remarks>
+		/// <param name="root">The piece prefab's root transform</param>
+		/// <param name="corners">The collider box's corners from GetCorners, or null</param>
+		/// <param name="prefabName">The piece's prefab name</param>
+		/// <returns>The corners, or null when the piece has no lid, no collider or a lid no narrower than its collider</returns>
+		private static Vector3[] GetLidCorners(Transform root, Vector3[] corners, string prefabName)
+		{
+			if (corners == null || !lidParts.TryGetValue(prefabName, out string partName))
+			{
+				return(null);
+			}
+			Transform child = root.Find(partName);
+			MeshFilter filter = (child == null ? null : child.GetComponent<MeshFilter>());
+			if (filter == null || filter.sharedMesh == null)
+			{
+				Plugin.Log.LogWarning(prefabName + " has no lid at " + partName);
+				return(null);
+			}
+			bool any = false;
+			Bounds lid = new Bounds();
+			Encapsulate(ref lid, ref any, filter.sharedMesh.bounds, root.worldToLocalMatrix * child.localToWorldMatrix);
+			// corners[0] is the low corner and corners[6] the high one
+			Vector3 low = corners[0];
+			Vector3 high = corners[6];
+			int axis = ((high.x - low.x) >= (high.z - low.z) ? 0 : 2);
+			if (lid.min[axis] <= low[axis] && lid.max[axis] >= high[axis])
+			{
+				return(null);
+			}
+			low[axis] = Mathf.Min(Mathf.Max(low[axis], lid.min[axis]), low[axis] + MaxLidInset);
+			high[axis] = Mathf.Max(Mathf.Min(high[axis], lid.max[axis]), high[axis] - MaxLidInset);
+			return(new Vector3[]
+			{
+				new Vector3(low.x, low.y, low.z),
+				new Vector3(high.x, low.y, low.z),
+				new Vector3(high.x, low.y, high.z),
+				new Vector3(low.x, low.y, high.z)
+			});
 		}
 
 		/// <summary>
@@ -408,7 +489,7 @@ namespace SnapPoints
 		/// Whether a child is a snap point this mod added
 		/// </summary>
 		/// <param name="child">A direct child of a piece</param>
-		/// <returns>True for a snap point with one of the corner, inner corner or outer corner names</returns>
+		/// <returns>True for a snap point with one of the corner, inner corner, outer corner or lid corner names</returns>
 		public static bool IsOwnSnapPoint(Transform child)
 		{
 			if (!child.CompareTag(SnapPointTag))
@@ -416,7 +497,7 @@ namespace SnapPoints
 				return(false);
 			}
 			string name = child.name;
-			return(Array.IndexOf(CornerNames, name) >= 0 || Array.IndexOf(InnerNames, name) >= 0 || Array.IndexOf(OuterNames, name) >= 0);
+			return(Array.IndexOf(CornerNames, name) >= 0 || Array.IndexOf(InnerNames, name) >= 0 || Array.IndexOf(OuterNames, name) >= 0 || Array.IndexOf(LidNames, name) >= 0);
 		}
 
 		/// <summary>
@@ -427,6 +508,33 @@ namespace SnapPoints
 		public static bool IsOwnTopCorner(Transform child)
 		{
 			return(child.CompareTag(SnapPointTag) && Array.IndexOf(CornerNames, child.name) >= 4);
+		}
+
+		/// <summary>
+		/// Whether a child is one of the lid corner snap points this mod added
+		/// </summary>
+		/// <param name="child">A direct child of a piece</param>
+		/// <returns>True for a snap point with one of the lid corner names</returns>
+		public static bool IsOwnLidCorner(Transform child)
+		{
+			return(child.CompareTag(SnapPointTag) && Array.IndexOf(LidNames, child.name) >= 0);
+		}
+
+		/// <summary>
+		/// Whether a piece has the lid corner snap points this mod adds
+		/// </summary>
+		/// <param name="root">The piece's root transform</param>
+		/// <returns>True when any child is a lid corner</returns>
+		public static bool HasLidCorners(Transform root)
+		{
+			for (int i = 0; i < root.childCount; i++)
+			{
+				if (IsOwnLidCorner(root.GetChild(i)))
+				{
+					return(true);
+				}
+			}
+			return(false);
 		}
 
 		/// <summary>
@@ -533,7 +641,8 @@ namespace SnapPoints
 
 	/// <summary>
 	/// Marks the snap point search for the placement ghost, so only that search leaves out the top corners, and keeps
-	/// a surface piece on the surface it is aimed at when it snaps to a wall or floor
+	/// a surface piece on the surface it is aimed at when it snaps to a wall or floor, and pairs a piece's lid corners
+	/// only with other lid corners
 	/// </summary>
 	[HarmonyPatch(typeof(Player), nameof(Player.FindClosestSnapPoints))]
 	public static class PlayerFindClosestSnapPointsPatch
@@ -549,12 +658,73 @@ namespace SnapPoints
 		private static Transform surfacePoint;
 
 		/// <summary>
-		/// Starts leaving out top corners when the piece being placed can't be built on either
+		/// Starts leaving out top corners when the piece being placed can't be built on either, and runs the search
+		/// itself when the piece has lid corners
 		/// </summary>
+		/// <param name="__instance">The player placing the piece</param>
 		/// <param name="ghost">The placement ghost's transform</param>
-		private static void Prefix(Transform ghost)
+		/// <param name="maxSnapDistance">How far apart two snap points can be to snap</param>
+		/// <param name="a">Set to the ghost's matched snap point</param>
+		/// <param name="b">Set to the matched snap point near the ghost</param>
+		/// <param name="__result">Set to whether a pair was found</param>
+		/// <returns>False when the search was run here, skipping the game's</returns>
+		private static bool Prefix(Player __instance, Transform ghost, float maxSnapDistance, ref Transform a, ref Transform b, ref bool __result)
 		{
 			SkipUnsupportedTops = !Snapping.Supports(ghost.gameObject);
+			if (!Snapping.HasLidCorners(ghost))
+			{
+				return(true);
+			}
+			__result = FindLidPairs(__instance, ghost, maxSnapDistance, out a, out b);
+			return(false);
+		}
+
+		/// <summary>
+		/// The game's search for the closest pair of snap points, pairing lid corners only with lid corners - a lid
+		/// corner snapped to a base corner would put the pieces halfway between base to base and lid to lid
+		/// </summary>
+		/// <param name="player">The player placing the piece</param>
+		/// <param name="ghost">The placement ghost's transform</param>
+		/// <param name="maxSnapDistance">How far apart two snap points can be to snap</param>
+		/// <param name="a">Set to the ghost's matched snap point</param>
+		/// <param name="b">Set to the matched snap point near the ghost</param>
+		/// <returns>Whether a pair was found</returns>
+		private static bool FindLidPairs(Player player, Transform ghost, float maxSnapDistance, out Transform a, out Transform b)
+		{
+			// The game's lists are filled the same way so the snap point picked by hand still indexes the ghost's list
+			List<Transform> own = player.m_tempSnapPoints1;
+			List<Transform> near = player.m_tempSnapPoints2;
+			own.Clear();
+			ghost.GetComponent<Piece>().GetSnapPoints(own);
+			near.Clear();
+			player.m_tempPieces.Clear();
+			Piece.GetSnapPoints(ghost.position, 10f, near, player.m_tempPieces);
+			a = null;
+			b = null;
+			float best = float.MaxValue;
+			for (int i = 0; i < own.Count; i++)
+			{
+				if (player.m_manualSnapPoint >= 0 && i != player.m_manualSnapPoint)
+				{
+					continue;
+				}
+				bool lid = Snapping.IsOwnLidCorner(own[i]);
+				foreach (Transform point in near)
+				{
+					if (Snapping.IsOwnLidCorner(point) != lid)
+					{
+						continue;
+					}
+					float distance = Vector3.Distance(point.position, own[i].position);
+					if (distance <= maxSnapDistance && distance < best)
+					{
+						best = distance;
+						a = own[i];
+						b = point;
+					}
+				}
+			}
+			return(a != null);
 		}
 
 		/// <summary>
