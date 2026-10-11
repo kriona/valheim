@@ -10,6 +10,7 @@ A library of Valheim mods I've made.
 | [Creature Marker](CreatureMarker) | Puts a colored arrow above nearby creatures, or at the edge of the screen when they're off-screen, and a matching dot on the map | [Mod 4342](https://www.nexusmods.com/valheim/mods/4342) |
 | [Light Color](LightColor) | Press L while looking at a sconce, mounted Dverger circlet, portal or other light to set its color, brightness and range. It also works on a worn Dverger circlet | [Mod 4352](https://www.nexusmods.com/valheim/mods/4352) |
 | [Quick Fill](QuickFill) | Hold Shift and press E to fill a smelter, kiln, oven or fire in one go | [Mod 4343](https://www.nexusmods.com/valheim/mods/4343) |
+| [Snap Points](SnapPoints) | Gives chests, resource stacks, tables, benches, banners, armor stands and item stands snap points so they line up in neat rows, and lets you choose which build pieces snap | [Mod 4370](https://www.nexusmods.com/valheim/mods/4370) |
 | [Swap Gear](SwapGear) | Swap what you're wearing with what's on an armor stand | [Mod 4344](https://www.nexusmods.com/valheim/mods/4344) |
 | [Too Low](TooLow) | Shows a "Too low" message when your pickaxe hits the 8m digging limit | [Mod 4345](https://www.nexusmods.com/valheim/mods/4345) |
 | [Tweak Stats](TweakStats) | Change the stats of any item, recipe, creature, build piece or status effect - weapon damage, attack stamina, armor, block power, food, durability, weight, stack sizes, crafting costs, creature health and drops, building health and more | [Mod 4363](https://www.nexusmods.com/valheim/mods/4363) |
