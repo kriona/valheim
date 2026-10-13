@@ -11,7 +11,7 @@ namespace QuickFill
 	{
 		public const string PluginGuid = "kriona.QuickFill";
 		public const string PluginName = "Quick Fill";
-		public const string PluginVersion = "1.4.0";
+		public const string PluginVersion = "1.5.0";
 
 		/// <summary>
 		/// A KeyboardShortcut rather than a KeyCode so BepInEx doesn't write every KeyCode name into the config file

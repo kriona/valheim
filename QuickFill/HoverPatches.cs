@@ -4,13 +4,14 @@ using UnityEngine;
 namespace QuickFill
 {
 	/// <summary>
-	/// Looking at the body of a smelter, kiln, blast furnace, oven, etc. targets one of its switches, so the small
-	/// switch colliders don't have to be hit
+	/// Looking at the body of a smelter, kiln, blast furnace, oven, shield generator, etc. targets one of its switches,
+	/// so the small switch colliders don't have to be hit
 	/// </summary>
 	/// <remarks>
 	/// A smelter's body is split side to side and an oven's top to bottom, at the midpoint between its two switches,
-	/// and each half targets the switch on that side. The hovered object itself is replaced, so the hover text, the
-	/// use key, the fill and using a hotbar item all act on that switch
+	/// and each half targets the switch on that side, while all of a shield generator targets its fuel switch. The
+	/// hovered object itself is replaced, so the hover text, the use key, the fill and using a hotbar item all act on
+	/// that switch
 	/// </remarks>
 	[HarmonyPatch(typeof(Player), nameof(Player.FindHoverObject))]
 	public static class StationHoverPatch
@@ -32,6 +33,7 @@ namespace QuickFill
 			bool vertical;
 			Smelter smelter = hover.GetComponentInParent<Smelter>();
 			CookingStation station = hover.GetComponentInParent<CookingStation>();
+			ShieldGenerator generator = hover.GetComponentInParent<ShieldGenerator>();
 			if (smelter != null && hoverable == null)
 			{
 				first = smelter.m_addOreSwitch;
@@ -43,6 +45,13 @@ namespace QuickFill
 				first = station.m_addFoodSwitch;
 				second = station.m_addFuelSwitch;
 				vertical = true;
+			}
+			else if (generator != null && !generator.m_enableAttack && ReferenceEquals(hoverable, generator))
+			{
+				// A generator whose body is used to attack keeps its body as the target
+				first = generator.m_addFuelSwitch;
+				second = null;
+				vertical = false;
 			}
 			else
 			{

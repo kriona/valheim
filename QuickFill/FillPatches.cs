@@ -99,7 +99,8 @@ namespace QuickFill
 	}
 
 	/// <summary>
-	/// Modifier + E on the ore / fuel switch of a smelter, kiln, blast furnace, etc. or the fuel switch of an oven fills it
+	/// Modifier + E on the ore / fuel switch of a smelter, kiln, blast furnace, etc. or the fuel switch of an oven or
+	/// shield generator fills it
 	/// </summary>
 	/// <remarks>
 	/// Free space is measured before adding anything because the station's state only updates once its owner
@@ -159,6 +160,11 @@ namespace QuickFill
 			if (station != null && station.m_nview.IsValid() && sw == station.m_addFuelSwitch)
 			{
 				return(Mathf.FloorToInt(station.m_maxFuel - station.GetFuel()));
+			}
+			ShieldGenerator generator = sw.GetComponentInParent<ShieldGenerator>();
+			if (generator != null && generator.m_nview.IsValid() && sw == generator.m_addFuelSwitch)
+			{
+				return(Mathf.FloorToInt(generator.m_maxFuel - generator.GetFuel()));
 			}
 			return(0);
 		}

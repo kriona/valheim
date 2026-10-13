@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0
+- A shield generator keeps its color instead of flashing back to its own color
+- A shield generator's dome takes its color
+
 ## 1.3.0
 - Press L on a sign to make its text glow, with a halo, lit letters or an outline in a color, like `white 150% lit`
 
