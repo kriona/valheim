@@ -11,7 +11,7 @@ namespace LightColor
 	{
 		public const string PluginGuid = "kriona.LightColor";
 		public const string PluginName = "Light Color";
-		public const string PluginVersion = "1.3.0";
+		public const string PluginVersion = "1.4.0";
 
 		public static ConfigEntry<KeyboardShortcut> ColorKey;
 		public static ConfigEntry<string> Helmet;

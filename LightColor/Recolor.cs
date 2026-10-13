@@ -404,7 +404,7 @@ namespace LightColor
 		/// <param name="obj">The material, texture or sprite</param>
 		/// <param name="target">The target color</param>
 		/// <returns>The object's instance ID in the high half and the color's RGBA bytes in the low half</returns>
-		private static long GetKey(Object obj, Color target)
+		public static long GetKey(Object obj, Color target)
 		{
 			Color32 color = target;
 			uint packed = ((uint)color.r << 24) | ((uint)color.g << 16) | ((uint)color.b << 8) | color.a;
