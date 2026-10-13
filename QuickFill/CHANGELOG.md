@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.0
+- Add support for shield generators
+
 ## 1.4.0
 - Looking anywhere on a smelter, kiln, blast furnace, refinery, etc. targets the ore or fuel opening on that side, and an oven's top half targets food and its bottom half wood
 

@@ -71,6 +71,22 @@ namespace QuickFill
 	}
 
 	/// <summary>
+	/// Adds the fill shortcut to the hover text of a shield generator's fuel switch
+	/// </summary>
+	[HarmonyPatch(typeof(ShieldGenerator), nameof(ShieldGenerator.OnHoverAddFuel))]
+	public static class ShieldGeneratorFuelTooltipPatch
+	{
+		/// <summary>
+		/// Appends the fill line naming the generator's fuel
+		/// </summary>
+		/// <param name="__result">The hover text built by the game</param>
+		private static void Postfix(ref string __result)
+		{
+			__result += Tooltip.FillLine("Fill with $piece_shieldgenerator_fuelname");
+		}
+	}
+
+	/// <summary>
 	/// Adds the fill shortcut to the hover text of a fire that takes fuel
 	/// </summary>
 	[HarmonyPatch(typeof(Fireplace), nameof(Fireplace.GetHoverText))]
