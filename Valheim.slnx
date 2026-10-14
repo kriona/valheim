@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="ChestPeek/ChestPeek.csproj" />
+  <Project Path="CraftMore/CraftMore.csproj" />
   <Project Path="CreatureMarker/CreatureMarker.csproj" />
   <Project Path="LightColor/LightColor.csproj" />
   <Project Path="QuickFill/QuickFill.csproj" />

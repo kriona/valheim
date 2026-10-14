@@ -7,6 +7,7 @@ A library of Valheim mods I've made.
 | Mod | Description | Nexus Mods |
 | --- | --- | --- |
 | [Chest Peek](ChestPeek) | Hover over a chest to see what's inside without opening it | [Mod 4341](https://www.nexusmods.com/valheim/mods/4341) |
+| [Craft More](CraftMore) | Hold Ctrl to craft a full stack, or Alt to craft as many as you have the materials for. Gain experience for each craft rather than for each batch. | [Mod 4427](https://www.nexusmods.com/valheim/mods/4427) |
 | [Creature Marker](CreatureMarker) | Puts a colored arrow above nearby creatures, or at the edge of the screen when they're off-screen, and a matching dot on the map | [Mod 4342](https://www.nexusmods.com/valheim/mods/4342) |
 | [Light Color](LightColor) | Press L while looking at a sconce, mounted Dverger circlet, portal, a worn Dverger circlet or other light to set its color, brightness and range. It makes the text on signs glow with a colored halo, lit letters or an outline | [Mod 4352](https://www.nexusmods.com/valheim/mods/4352) |
 | [Quick Fill](QuickFill) | Hold Shift and press E to fill a smelter, kiln, oven, fire or shield generator in one go. Mouse target have also been expanded | [Mod 4343](https://www.nexusmods.com/valheim/mods/4343) |
