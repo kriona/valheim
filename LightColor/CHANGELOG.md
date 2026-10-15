@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.4.1
+- A black portal's trim now doesn't glow
+
 ## 1.4.0
 - A shield generator keeps its color instead of flashing back to its own color
 - A shield generator's dome takes its color

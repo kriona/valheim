@@ -16,7 +16,7 @@ namespace LightColor
 		private const float MinSaturation = 0.1f;
 
 		/// <summary>
-		/// The weakest a replaced glow gets, for a black or nearly black color - 5 out of F
+		/// The weakest a replaced glow gets, for a nearly black color - 5 out of F
 		/// </summary>
 		private const float MinReplaceStrength = 5f / 15f;
 		private const int MaxTextureSize = 512;
@@ -97,13 +97,18 @@ namespace LightColor
 		/// that are white or gray to begin with, like the stone portal's, which Shift would leave alone
 		/// </summary>
 		/// <remarks>
-		/// The strength comes from Strengthen, so a dark target still glows rather than looking black
+		/// The strength comes from Strengthen, so a dark target still glows rather than looking black, except for
+		/// black itself, which turns the glow off
 		/// </remarks>
 		/// <param name="glow">The glow color, which may be HDR</param>
 		/// <param name="target">The color to use</param>
 		/// <returns>The new glow, with the glow's alpha</returns>
 		public static Color Replace(Color glow, Color target)
 		{
+			if (target.maxColorComponent <= 0f)
+			{
+				return(new Color(0f, 0f, 0f, glow.a));
+			}
 			Color replaced = Strengthen(target) * glow.maxColorComponent;
 			replaced.a = glow.a;
 			return(replaced);
