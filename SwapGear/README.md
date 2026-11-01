@@ -21,7 +21,11 @@ Look at an armor stand and press Y to swap what you're wearing with what's on th
 
 ## Installation
 
-1. Install [BepInExPack for Valheim](https://www.nexusmods.com/valheim/mods/3605)
+With a mod manager such as r2modman or the Thunderstore Mod Manager, install [Swap Gear](https://thunderstore.io/c/valheim/p/Kriona/SwapGear/) - it installs BepInExPack for Valheim too.
+
+By hand:
+
+1. Install BepInExPack for Valheim from [Thunderstore](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/) or [Nexus Mods](https://www.nexusmods.com/valheim/mods/3605)
 2. Extract the zip into your Valheim folder, or copy `SwapGear.dll` into `BepInEx\plugins`
 
 Client-side only - other players and the server don't need it.

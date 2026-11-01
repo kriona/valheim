@@ -8,19 +8,30 @@ description editor. The README's "# Title" line is left out since the mod page s
 copies on GitHub and tables become lists. An "Other Mods By Me" section links to every other mod in the root README's
 "## Mods" table that has a Nexus Mods link, followed by a link to the mod's source on GitHub and the root README's
 "## Other Mods I Use" section. Every mod is converted on each run because adding a mod changes the "Other Mods By Me"
-section of all the others
+section of all the others. With -Publish, also pushes each mod's summary and description to Nexus Mods when they've
+changed since the last push
 
 .PARAMETER branch
 The branch that images and source links point at
 
+.PARAMETER publish
+Pushes changed summaries and descriptions to Nexus Mods through its API, using NEXUS_API_KEY from the environment or
+.env - the summary is the mod's description in the root README's table
+
 .EXAMPLE
 .\build-bbcode.ps1
+
+.EXAMPLE
+.\build-bbcode.ps1 -Publish
 #>
 param(
-	[string]$branch = 'main'
+	[string]$branch = 'main',
+	[switch]$publish
 )
 
 $ErrorActionPreference = 'Stop'
+
+. (Join-Path $PSScriptRoot 'release-common.ps1')
 
 <#
 .SYNOPSIS
@@ -61,22 +72,6 @@ function Convert-Inline([string]$text, [string]$baseUrl)
 		return('[font=Courier New]' + $codeSpans[[int]$match.Groups[1].Value] + '[/font]')
 	})
 	return($text)
-}
-
-<#
-.SYNOPSIS
-Splits a Markdown table row into its trimmed cells
-
-.PARAMETER line
-The table row, e.g. "| a | b |"
-
-.OUTPUTS
-The cells' text
-#>
-function Split-TableRow([string]$line)
-{
-	$cells = $line.Trim().Trim('|').Split('|')
-	return(,($cells | ForEach-Object { $_.Trim() }))
 }
 
 <#
@@ -138,64 +133,6 @@ function Convert-Table([string[]]$rows, [string]$baseUrl)
 	}
 	$output.Add('[/list]')
 	return($output)
-}
-
-<#
-.SYNOPSIS
-Reads the table under the "## Mods" heading in the root README.md
-
-.DESCRIPTION
-Each row is "| [Name](Folder) | Description | Nexus Mods link |", where the Nexus Mods cell can be empty for a mod
-that has no page yet
-
-.PARAMETER readmeFile
-Path to the root README.md
-
-.OUTPUTS
-An object per mod with Folder, Name, Description and NexusUrl, where NexusUrl is an empty string when the cell has
-no link
-#>
-function Get-ModList([string]$readmeFile)
-{
-	$mods = @()
-	$inSection = $false
-	$rowIndex = 0
-	foreach ($line in Get-Content $readmeFile -Encoding UTF8)
-	{
-		if ($line -match '^## ')
-		{
-			if ($inSection)
-			{
-				break
-			}
-			$inSection = ($line.Trim() -eq '## Mods')
-			continue
-		}
-		if (-not $inSection -or $line -notmatch '^\s*\|')
-		{
-			continue
-		}
-		$rowIndex++
-		# The first two rows are the header and the separator
-		if ($rowIndex -le 2)
-		{
-			continue
-		}
-		$cells = Split-TableRow $line
-		if ($cells[0] -notmatch '^\[([^\]]+)\]\(([^)]+)\)$')
-		{
-			throw ('Expected "[Name](Folder)" in the Mods table: ' + $cells[0])
-		}
-		$name = $matches[1]
-		$folder = $matches[2].Trim('/')
-		$nexusUrl = ''
-		if ($cells.Count -gt 2 -and $cells[2] -match 'https?://[^)\s]+')
-		{
-			$nexusUrl = $matches[0]
-		}
-		$mods += [PSCustomObject]@{ Folder = $folder; Name = $name; Description = $cells[1]; NexusUrl = $nexusUrl }
-	}
-	return(,$mods)
 }
 
 <#
@@ -428,13 +365,18 @@ function Convert-Readme([string]$readmeFile, [string]$rawUrl, [string]$treeUrl, 
 }
 
 $root = $PSScriptRoot
-$remote = (git -C $root remote get-url origin).Trim()
-if ($remote -notmatch 'github\.com[:/]([^/]+)/(.+?)(\.git)?$')
+$gitHub = Get-GitHubRepo $root
+$owner = $gitHub.Owner
+$repo = $gitHub.Repo
+$nexusApiKey = ''
+if ($publish)
 {
-	throw ('The origin remote is not a GitHub repository: ' + $remote)
+	$nexusApiKey = Get-Secret $root 'NEXUS_API_KEY'
+	if ($nexusApiKey -eq '')
+	{
+		throw 'NEXUS_API_KEY is not set in the environment or .env'
+	}
 }
-$owner = $matches[1]
-$repo = $matches[2]
 
 $bbcodeDir = Join-Path $root 'release\bbcode'
 New-Item -ItemType Directory -Force $bbcodeDir | Out-Null
@@ -460,4 +402,10 @@ foreach ($dir in Get-ChildItem $root -Directory)
 	$outFile = Join-Path $bbcodeDir ($dir.Name + '.bbcode')
 	[System.IO.File]::WriteAllText($outFile, $bbcode, $utf8)
 	Write-Host ('Wrote ' + $outFile)
+}
+
+if ($publish)
+{
+	. (Join-Path $root 'release-nexus.ps1')
+	Publish-NexusDescriptions $nexusApiKey $modList $bbcodeDir
 }
