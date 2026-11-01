@@ -255,5 +255,9 @@ When a chest or inventory loads, each stack is cut down to the item's current `m
 
 ## Installation
 
-1. Install [BepInExPack for Valheim](https://www.nexusmods.com/valheim/mods/3605)
+With a mod manager such as r2modman or the Thunderstore Mod Manager, install [Tweak Stats](https://thunderstore.io/c/valheim/p/Kriona/TweakStats/) - it installs BepInExPack for Valheim too.
+
+By hand:
+
+1. Install BepInExPack for Valheim from [Thunderstore](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/) or [Nexus Mods](https://www.nexusmods.com/valheim/mods/3605)
 2. Extract the zip into your Valheim folder, or copy `TweakStats.dll` into `BepInEx\plugins`

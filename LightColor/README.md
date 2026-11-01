@@ -155,7 +155,11 @@ Typing one of these colors instead of `default` or blank gets you the same light
 
 ## Installation
 
-1. Install [BepInExPack for Valheim](https://www.nexusmods.com/valheim/mods/3605)
+With a mod manager such as r2modman or the Thunderstore Mod Manager, install [Light Color](https://thunderstore.io/c/valheim/p/Kriona/LightColor/) - it installs BepInExPack for Valheim too.
+
+By hand:
+
+1. Install BepInExPack for Valheim from [Thunderstore](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/) or [Nexus Mods](https://www.nexusmods.com/valheim/mods/3605)
 2. Extract the zip into your Valheim folder, or copy `LightColor.dll` into `BepInEx\plugins`
 
 Client-side only - the server doesn't need it. Other players only need it to see the colors.

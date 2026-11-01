@@ -53,7 +53,11 @@ Build pieces added by other mods are added to the file when Valheim loads.
 
 ## Installation
 
-1. Install [BepInExPack for Valheim](https://www.nexusmods.com/valheim/mods/3605)
+With a mod manager such as r2modman or the Thunderstore Mod Manager, install [Snap Points](https://thunderstore.io/c/valheim/p/Kriona/SnapPoints/) - it installs BepInExPack for Valheim too.
+
+By hand:
+
+1. Install BepInExPack for Valheim from [Thunderstore](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/) or [Nexus Mods](https://www.nexusmods.com/valheim/mods/3605)
 2. Extract the zip into your Valheim folder, or copy `SnapPoints.dll` into `BepInEx\plugins`
 
 Client-side only - other players and the server don't need it.
