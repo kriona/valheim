@@ -28,6 +28,8 @@ namespace CreatureMarker
 		private const string ShowOnScreenKey = "Show On Screen";
 		private const string ShowOnMapKey = "Show On Map";
 		private const string MaxDistanceKey = "Max Distance";
+		private const string FarDistanceKey = "Far Distance";
+		private const string FarScaleKey = "Far Scale";
 		private const string BobHeightKey = "Bob Height";
 		private const string ShowNameKey = "Show Name";
 		private const string ShowDistanceKey = "Show Distance";
@@ -42,6 +44,9 @@ namespace CreatureMarker
 		private const float DefaultMaxDistance = 50f;
 		private const float MinMaxDistance = 5f;
 		private const float MaxMaxDistance = 500f;
+		private const float DefaultFarDistance = 50f;
+		private const float DefaultFarScale = 0.66f;
+		private const float MinFarScale = 0.2f;
 		private const float DefaultBobHeight = 6f;
 		private const float MaxBobHeight = 30f;
 		private const string DefaultPassiveColor = "#40D940";
@@ -80,6 +85,16 @@ namespace CreatureMarker
 		/// Furthest a creature can be from the player, in meters, and still get a marker
 		/// </summary>
 		public static float MaxDistance { get; private set; } = DefaultMaxDistance;
+
+		/// <summary>
+		/// Distance from the player, in meters, beyond which markers are drawn at Far Scale
+		/// </summary>
+		public static float FarDistance { get; private set; } = DefaultFarDistance;
+
+		/// <summary>
+		/// Size of the arrow and label of a target beyond Far Distance, as a fraction of their full size
+		/// </summary>
+		public static float FarScale { get; private set; } = DefaultFarScale;
 
 		/// <summary>
 		/// How far, in pixels, an on-screen arrow bobs up and down, 0 to keep it still
@@ -300,32 +315,10 @@ namespace CreatureMarker
 		/// <param name="values">Value text by key, as read from the file, left holding only the creature lines</param>
 		private static void LoadSettings(Dictionary<string, string> values)
 		{
-			MaxDistance = DefaultMaxDistance;
-			string text = TakeValue(values, MaxDistanceKey);
-			if (text != null)
-			{
-				if (float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float distance))
-				{
-					MaxDistance = Mathf.Clamp(distance, MinMaxDistance, MaxMaxDistance);
-				}
-				else
-				{
-					Warn(MaxDistanceKey, text);
-				}
-			}
-			BobHeight = DefaultBobHeight;
-			text = TakeValue(values, BobHeightKey);
-			if (text != null)
-			{
-				if (float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float bobHeight))
-				{
-					BobHeight = Mathf.Clamp(bobHeight, 0f, MaxBobHeight);
-				}
-				else
-				{
-					Warn(BobHeightKey, text);
-				}
-			}
+			MaxDistance = TakeFloat(values, MaxDistanceKey, DefaultMaxDistance, MinMaxDistance, MaxMaxDistance);
+			FarDistance = TakeFloat(values, FarDistanceKey, DefaultFarDistance, MinMaxDistance, MaxMaxDistance);
+			FarScale = TakeFloat(values, FarScaleKey, DefaultFarScale, MinFarScale, 1f);
+			BobHeight = TakeFloat(values, BobHeightKey, DefaultBobHeight, 0f, MaxBobHeight);
 			passiveColorText = TakeColor(values, PassiveColorKey, DefaultPassiveColor, out passiveColor);
 			hostileColorText = TakeColor(values, HostileColorKey, DefaultHostileColor, out hostileColor);
 			bossColorText = TakeColor(values, BossColorKey, DefaultBossColor, out bossColor);
@@ -337,6 +330,30 @@ namespace CreatureMarker
 			ShowLevel = (ParseState(TakeValue(values, ShowLevelKey)) ?? false);
 			ShowOnScreen = (ParseState(TakeValue(values, ShowOnScreenKey)) ?? true);
 			ShowOnMap = (ParseState(TakeValue(values, ShowOnMapKey)) ?? true);
+		}
+
+		/// <summary>
+		/// Takes a number setting out of the file values, kept within its range
+		/// </summary>
+		/// <param name="values">Value text by key, as read from the file</param>
+		/// <param name="key">The setting's key</param>
+		/// <param name="defaultValue">Value to use when the setting is missing or doesn't parse</param>
+		/// <param name="min">Lowest allowed value</param>
+		/// <param name="max">Highest allowed value</param>
+		/// <returns>The value</returns>
+		private static float TakeFloat(Dictionary<string, string> values, string key, float defaultValue, float min, float max)
+		{
+			string text = TakeValue(values, key);
+			if (text == null)
+			{
+				return(defaultValue);
+			}
+			if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float value))
+			{
+				Warn(key, text);
+				return(defaultValue);
+			}
+			return(Mathf.Clamp(value, min, max));
 		}
 
 		/// <summary>
@@ -460,11 +477,15 @@ namespace CreatureMarker
 			AppendLine(builder, ShowOnScreenKey, FormatState(ShowOnScreen), "Show an arrow above each marked creature, pinned to the screen edge when it is off-screen, default true");
 			AppendLine(builder, ShowOnMapKey, FormatState(ShowOnMap), "Show a dot on the minimap and the large map for each marked creature, default true");
 			builder.Append("\r\n");
-			AppendLine(builder, MaxDistanceKey, MaxDistance.ToString(CultureInfo.InvariantCulture), "Meters, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultMaxDistance);
-			AppendLine(builder, BobHeightKey, BobHeight.ToString(CultureInfo.InvariantCulture), "Pixels an on-screen arrow bobs up and down, from 0 to keep it still to " + MaxBobHeight + ", default " + DefaultBobHeight);
 			AppendLine(builder, ShowNameKey, FormatState(ShowName), "Show the creature's name with its marker, default false");
-			AppendLine(builder, ShowDistanceKey, FormatState(ShowDistance), "Show the creature's distance in meters with its marker, after the name when Show Name is on, default false");
 			AppendLine(builder, ShowLevelKey, FormatState(ShowLevel), "Show stars after a creature's name and the level after a fish's name, like Perch[3], for those above the lowest level, default false");
+			builder.Append("\r\n");
+			AppendLine(builder, ShowDistanceKey, FormatState(ShowDistance), "Show the creature's distance in meters with its marker, after the name when Show Name is on, default false");
+			AppendLine(builder, MaxDistanceKey, MaxDistance.ToString(CultureInfo.InvariantCulture), "Meters, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultMaxDistance);
+			AppendLine(builder, FarDistanceKey, FarDistance.ToString(CultureInfo.InvariantCulture), "Meters beyond which a marker is drawn at Far Scale, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultFarDistance);
+			AppendLine(builder, FarScaleKey, FarScale.ToString(CultureInfo.InvariantCulture), "Size of a marker beyond Far Distance, from " + MinFarScale.ToString(CultureInfo.InvariantCulture) + " to 1 for no shrinking, default " + DefaultFarScale.ToString(CultureInfo.InvariantCulture));
+			builder.Append("\r\n");
+			AppendLine(builder, BobHeightKey, BobHeight.ToString(CultureInfo.InvariantCulture), "Pixels an on-screen arrow bobs up and down, from 0 to keep it still to " + MaxBobHeight + ", default " + DefaultBobHeight);
 			AppendLine(builder, PassiveColorKey, passiveColorText, "Creatures that won't attack you, default " + DefaultPassiveColor);
 			AppendLine(builder, HostileColorKey, hostileColorText, "Creatures that will attack you, default " + DefaultHostileColor);
 			AppendLine(builder, BossColorKey, bossColorText, "Bosses, default " + DefaultBossColor);

@@ -89,13 +89,20 @@ namespace CreatureMarker
 				bool showDistance = CreatureConfig.ShowDistance;
 				bool showLevel = CreatureConfig.ShowLevel;
 				bool showLabel = (showName || showDistance || showLevel);
+				float farDistanceSquared = CreatureConfig.FarDistance * CreatureConfig.FarDistance;
+				Vector3 farScale = Vector3.one * CreatureConfig.FarScale;
 				Vector3 playerPosition = player.transform.position;
 				foreach (Target target in marked)
 				{
 					Marker marker = GetMarker(used, enemyHud);
 					used++;
+					float distanceSquared = Vector3.SqrMagnitude(target.position - playerPosition);
+					Vector3 scale = ((distanceSquared > farDistanceSquared) ? farScale : Vector3.one);
+					// The label is scaled along with the arrow, so placing it can go by the arrow's scale alone
+					marker.arrow.rectTransform.localScale = scale;
+					marker.label.rectTransform.localScale = scale;
 					marker.arrow.color = target.color;
-					Vector2 pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset);
+					Vector2 pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset, scale.x);
 					SetActive(marker.label.gameObject, showLabel);
 					if (showLabel)
 					{
@@ -104,7 +111,7 @@ namespace CreatureMarker
 							marker.source = target.source;
 							marker.name = Localization.instance.Localize(target.nameToken);
 						}
-						int distance = (showDistance ? Mathf.RoundToInt(Vector3.Distance(target.position, playerPosition)) : -1);
+						int distance = (showDistance ? Mathf.RoundToInt(Mathf.Sqrt(distanceSquared)) : -1);
 						SetLabelText(marker, (showName ? marker.name : null), (showLevel ? target.level : 0), target.fish, target.color, distance);
 						marker.label.color = target.color;
 						PlaceLabel(marker, pointing);
@@ -152,14 +159,15 @@ namespace CreatureMarker
 		/// <param name="arrow">The arrow to move</param>
 		/// <param name="camera">The main camera</param>
 		/// <param name="target">World point the arrow points at</param>
+		/// <param name="size">The marker's scale, which shrinks the bob along with the arrow</param>
 		/// <returns>The screen direction the arrow points in, as a unit vector</returns>
-		private static Vector2 Place(RectTransform arrow, Camera camera, Vector3 target)
+		private static Vector2 Place(RectTransform arrow, Camera camera, Vector3 target, float size)
 		{
 			Vector3 screen = camera.WorldToScreenPointScaled(target);
 			bool onScreen = (screen.z > 0f && screen.x >= 0f && screen.x <= Screen.width && screen.y >= 0f && screen.y <= Screen.height);
 			if (onScreen)
 			{
-				float bob = Mathf.Abs(Mathf.Sin(Time.time * BobSpeed)) * CreatureConfig.BobHeight;
+				float bob = Mathf.Abs(Mathf.Sin(Time.time * BobSpeed)) * CreatureConfig.BobHeight * size;
 				arrow.position = new Vector3(screen.x, screen.y + bob, 0f);
 				arrow.localRotation = Quaternion.identity;
 				return(Vector2.down);
