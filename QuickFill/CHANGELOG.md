@@ -1,7 +1,7 @@
 # Changelog
 
 ## 1.5.0
-- Add support for shield generators
+- Add support for shield generators (suggested by sandyy96)
 
 ## 1.4.0
 - Looking anywhere on a smelter, kiln, blast furnace, refinery, etc. targets the ore or fuel opening on that side, and an oven's top half targets food and its bottom half wood
@@ -17,7 +17,7 @@
 - Config changes are read each time you join a world; you don't need to restart Valheim
 
 ## 1.1.0
-- The modifier key can be changed with the `ModifierKey` setting
+- The modifier key can be changed with the `ModifierKey` setting (suggested by sandyy96)
 - The default modifier key is Shift instead of Ctrl to avoid sneaking
 
 ## 1.0.0

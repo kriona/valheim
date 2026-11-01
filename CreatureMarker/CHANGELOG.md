@@ -1,8 +1,8 @@
 # Changelog
 
 ## 1.3.0
-- Fish can be marked too, each with its own line in the config file and a new Fish Color setting. All Creatures marks them, while All Hostile Creatures leaves them out
-- Added the Show Level setting, off by default, which shows a ⭐ per star after a creature's name, and a fish's level after its name like Perch[3]
+- Fish can be marked too, each with its own line in the config file and a new Fish Color setting. All Creatures marks them, while All Hostile Creatures leaves them out (suggested by DarkFreezer)
+- Added the Show Level setting, off by default, which shows a ⭐ per star after a creature's name, and a fish's level after its name like Perch[3] (suggested by DarkFreezer)
 - Added the Bob Height setting for how far on-screen arrows bob up and down, 0 to keep them still
 
 ## 1.2.1

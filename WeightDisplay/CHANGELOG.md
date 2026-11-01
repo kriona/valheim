@@ -1,10 +1,10 @@
 # Changelog
 
 ## 1.3.0
-- Shows how many inventory slots are in use after the weight
-- The inventory screen's weight icon replaces the word "Weight"
+- Shows how many inventory slots are in use after the weight (suggested by digibluez)
+- The inventory screen's weight icon replaces the word "Weight" (suggested by digibluez)
 - Add settings to toggle weight / slots
-- Add warning thresholds / colors
+- Add warning thresholds / colors (suggested by digibluez)
 - Saving the config file no longer triggers the mod to write it back, so an editor with it open doesn't report it as changed
 - Shows a message when the config file is reloaded
 
