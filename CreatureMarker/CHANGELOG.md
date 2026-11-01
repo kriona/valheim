@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.3.0
+- Fish can be marked too, each with its own line in the config file and a new Fish Color setting. All Creatures marks them, while All Hostile Creatures leaves them out
 ## 1.2.1
 - Shows a message when the config file is reloaded
 

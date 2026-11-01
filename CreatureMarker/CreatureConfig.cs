@@ -33,6 +33,7 @@ namespace CreatureMarker
 		private const string PassiveColorKey = "Passive Color";
 		private const string HostileColorKey = "Hostile Color";
 		private const string BossColorKey = "Boss Color";
+		private const string FishColorKey = "Fish Color";
 		private const string AllCreaturesKey = "All Creatures";
 		private const string AllHostileKey = "All Hostile Creatures";
 
@@ -42,6 +43,7 @@ namespace CreatureMarker
 		private const string DefaultPassiveColor = "#40D940";
 		private const string DefaultHostileColor = "#FFD91A";
 		private const string DefaultBossColor = "#FF3333";
+		private const string DefaultFishColor = "#33CCFF";
 
 		private static readonly string[] header =
 		{
@@ -54,9 +56,9 @@ namespace CreatureMarker
 		private static readonly string[] creatureHeader =
 		{
 			"",
-			"## All Creatures marks every creature, and All Hostile Creatures marks every creature that will attack you",
-			"## Each creature line is: Prefab = inherit/true/false ## Name in game",
-			"## inherit follows the All switches, while true or false always shows or hides that creature's marker",
+			"## All Creatures marks every creature and fish, and All Hostile Creatures marks every creature that will attack you",
+			"## Each creature and fish line is: Prefab = inherit/true/false ## Name in game",
+			"## inherit follows the All switches, while true or false always shows or hides that creature's or fish's marker",
 			"",
 		};
 
@@ -88,9 +90,11 @@ namespace CreatureMarker
 		private static string passiveColorText = DefaultPassiveColor;
 		private static string hostileColorText = DefaultHostileColor;
 		private static string bossColorText = DefaultBossColor;
+		private static string fishColorText = DefaultFishColor;
 		private static Color passiveColor = ParseColor(DefaultPassiveColor, Color.green);
 		private static Color hostileColor = ParseColor(DefaultHostileColor, Color.yellow);
 		private static Color bossColor = ParseColor(DefaultBossColor, Color.red);
+		private static Color fishColor = ParseColor(DefaultFishColor, Color.cyan);
 		private static bool allCreatures;
 		private static bool allHostile = true;
 
@@ -119,7 +123,8 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Reads the config file, adds any prefabs with a Character component other than the player and writes it back
+		/// Reads the config file, adds any prefabs with a Character component other than the player or a Fish
+		/// component and writes it back
 		/// </summary>
 		/// <param name="scene">The scene holding the prefab list</param>
 		public static void Load(ZNetScene scene)
@@ -144,11 +149,16 @@ namespace CreatureMarker
 					continue;
 				}
 				Character character = prefab.GetComponent<Character>();
-				if (character == null || character is Player)
+				if (character != null && !(character is Player))
 				{
+					names[prefab.name] = GetDisplayName(character.m_name);
 					continue;
 				}
-				names[prefab.name] = GetDisplayName(character);
+				Fish fish = prefab.GetComponent<Fish>();
+				if (fish != null)
+				{
+					names[prefab.name] = GetDisplayName(fish.m_name);
+				}
 			}
 			foreach (string key in values.Keys)
 			{
@@ -177,67 +187,79 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Fills the list with the living marked creatures within Max Distance of the player
+		/// Fills the list with the living marked creatures and the marked fish within Max Distance of the player
 		/// </summary>
 		/// <param name="player">The local player</param>
 		/// <param name="marked">The list to fill, cleared first</param>
-		public static void GetMarked(Player player, List<Character> marked)
+		public static void GetMarked(Player player, List<Target> marked)
 		{
 			marked.Clear();
 			Vector3 playerPosition = player.transform.position;
 			float maxDistanceSquared = MaxDistance * MaxDistance;
 			foreach (Character character in Character.GetAllCharacters())
 			{
-				if (Vector3.SqrMagnitude(character.transform.position - playerPosition) > maxDistanceSquared)
+				Vector3 position = character.transform.position;
+				if (Vector3.SqrMagnitude(position - playerPosition) > maxDistanceSquared)
 				{
 					continue;
 				}
-				if (character.IsDead() || !IsMarked(character, player))
+				if (character is Player || character.IsDead())
 				{
 					continue;
 				}
-				marked.Add(character);
+				bool hostile = IsHostile(character, player);
+				if (!IsMarked(character.m_nview, (allCreatures || (allHostile && hostile))))
+				{
+					continue;
+				}
+				Target target = new Target();
+				target.source = character;
+				target.position = position;
+				target.top = character.GetTopPoint();
+				target.nameToken = character.GetHoverName();
+				target.color = (character.IsBoss() ? bossColor : (hostile ? hostileColor : passiveColor));
+				marked.Add(target);
+			}
+			foreach (IMonoUpdater updater in Fish.Instances)
+			{
+				Fish fish = updater as Fish;
+				if (fish == null)
+				{
+					continue;
+				}
+				Vector3 position = fish.transform.position;
+				if (Vector3.SqrMagnitude(position - playerPosition) > maxDistanceSquared)
+				{
+					continue;
+				}
+				if (!IsMarked(fish.m_nview, allCreatures))
+				{
+					continue;
+				}
+				Target target = new Target();
+				target.source = fish;
+				target.position = position;
+				target.top = position;
+				target.nameToken = fish.GetHoverName();
+				target.color = fishColor;
+				marked.Add(target);
 			}
 		}
 
 		/// <summary>
-		/// Whether the creature should get a marker, from its own line when that is true or false, or else from the All switches
+		/// Whether a creature or fish should get a marker, from its own line when that is true or false, or else from
+		/// what the All switches give it
 		/// </summary>
-		/// <param name="character">The creature to check</param>
-		/// <param name="player">The local player, for deciding whether the creature is hostile</param>
+		/// <param name="nview">The creature's or fish's network view, for its prefab</param>
+		/// <param name="inherited">Whether the All switches mark it</param>
 		/// <returns>True when it should get a marker</returns>
-		public static bool IsMarked(Character character, Player player)
+		private static bool IsMarked(ZNetView nview, bool inherited)
 		{
-			if (character is Player)
-			{
-				return(false);
-			}
-			ZNetView nview = character.m_nview;
 			if (nview != null && nview.IsValid() && overrides.TryGetValue(nview.GetZDO().GetPrefab(), out bool value))
 			{
 				return(value);
 			}
-			return(allCreatures || (allHostile && IsHostile(character, player)));
-		}
-
-		/// <summary>
-		/// The marker color for the creature - the boss color for bosses, the hostile color for hostile creatures and
-		/// the passive color for the rest
-		/// </summary>
-		/// <param name="character">The marked creature</param>
-		/// <param name="player">The local player, for deciding whether the creature is hostile</param>
-		/// <returns>The arrow color</returns>
-		public static Color GetColor(Character character, Player player)
-		{
-			if (character.IsBoss())
-			{
-				return(bossColor);
-			}
-			if (IsHostile(character, player))
-			{
-				return(hostileColor);
-			}
-			return(passiveColor);
+			return(inherited);
 		}
 
 		/// <summary>
@@ -277,6 +299,7 @@ namespace CreatureMarker
 			passiveColorText = TakeColor(values, PassiveColorKey, DefaultPassiveColor, out passiveColor);
 			hostileColorText = TakeColor(values, HostileColorKey, DefaultHostileColor, out hostileColor);
 			bossColorText = TakeColor(values, BossColorKey, DefaultBossColor, out bossColor);
+			fishColorText = TakeColor(values, FishColorKey, DefaultFishColor, out fishColor);
 			allCreatures = (ParseState(TakeValue(values, AllCreaturesKey)) ?? false);
 			allHostile = (ParseState(TakeValue(values, AllHostileKey)) ?? true);
 			ShowName = (ParseState(TakeValue(values, ShowNameKey)) ?? false);
@@ -412,6 +435,7 @@ namespace CreatureMarker
 			AppendLine(builder, PassiveColorKey, passiveColorText, "Creatures that won't attack you, default " + DefaultPassiveColor);
 			AppendLine(builder, HostileColorKey, hostileColorText, "Creatures that will attack you, default " + DefaultHostileColor);
 			AppendLine(builder, BossColorKey, bossColorText, "Bosses, default " + DefaultBossColor);
+			AppendLine(builder, FishColorKey, fishColorText, "Fish, default " + DefaultFishColor);
 			AppendLines(builder, creatureHeader);
 			AppendLine(builder, AllCreaturesKey, FormatState(allCreatures), "");
 			AppendLine(builder, AllHostileKey, FormatState(allHostile), "");
@@ -480,13 +504,13 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// The creature's name in the current language, falling back to its name token
+		/// The creature's or fish's name in the current language, falling back to its name token
 		/// </summary>
-		/// <param name="character">The creature prefab's Character</param>
+		/// <param name="token">The prefab's name token</param>
 		/// <returns>The name to show after the value</returns>
-		private static string GetDisplayName(Character character)
+		private static string GetDisplayName(string token)
 		{
-			string name = character.m_name;
+			string name = token;
 			if (Localization.instance != null)
 			{
 				name = Localization.instance.Localize(name);

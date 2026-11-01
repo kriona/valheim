@@ -42,9 +42,9 @@ namespace CreatureMarker
 		/// Shows a dot for each marked creature inside the open map's view and hides the spare ones, showing none
 		/// while the player is in a dungeon
 		/// </summary>
-		/// <param name="marked">The living marked creatures within range</param>
-		/// <param name="player">The local player, for the dot colors</param>
-		public void Update(List<Character> marked, Player player)
+		/// <param name="marked">The living marked creatures and the marked fish within range</param>
+		/// <param name="player">The local player, for whether they are in a dungeon</param>
+		public void Update(List<Target> marked, Player player)
 		{
 			Minimap minimap = Minimap.instance;
 			if (minimap == null)
@@ -53,8 +53,8 @@ namespace CreatureMarker
 			}
 			// Dungeons sit high above their entrances, so their creatures would show on the map around the entrance
 			bool show = (CreatureConfig.ShowOnMap && !player.InInterior());
-			UpdateLayer(small, minimap.m_pinRootSmall, minimap.m_mapImageSmall, (show && minimap.m_mode == Minimap.MapMode.Small), minimap, marked, player);
-			UpdateLayer(large, minimap.m_pinRootLarge, minimap.m_mapImageLarge, (show && minimap.m_mode == Minimap.MapMode.Large), minimap, marked, player);
+			UpdateLayer(small, minimap.m_pinRootSmall, minimap.m_mapImageSmall, (show && minimap.m_mode == Minimap.MapMode.Small), minimap, marked);
+			UpdateLayer(large, minimap.m_pinRootLarge, minimap.m_mapImageLarge, (show && minimap.m_mode == Minimap.MapMode.Large), minimap, marked);
 		}
 
 		/// <summary>
@@ -79,9 +79,8 @@ namespace CreatureMarker
 		/// <param name="map">The map's image, for its view and size</param>
 		/// <param name="show">Whether the map is open and dots are turned on</param>
 		/// <param name="minimap">The minimap, for converting world positions</param>
-		/// <param name="marked">The living marked creatures within range</param>
-		/// <param name="player">The local player, for the dot colors</param>
-		private void UpdateLayer(DotLayer layer, RectTransform root, RawImage map, bool show, Minimap minimap, List<Character> marked, Player player)
+		/// <param name="marked">The living marked creatures and the marked fish within range</param>
+		private void UpdateLayer(DotLayer layer, RectTransform root, RawImage map, bool show, Minimap minimap, List<Target> marked)
 		{
 			if (layer.root != root)
 			{
@@ -92,16 +91,16 @@ namespace CreatureMarker
 			int used = 0;
 			if (show)
 			{
-				foreach (Character character in marked)
+				foreach (Target target in marked)
 				{
-					Vector3 position = character.transform.position;
+					Vector3 position = target.position;
 					if (!minimap.IsPointVisible(position, map))
 					{
 						continue;
 					}
 					Image dot = GetDot(layer, used);
 					used++;
-					dot.color = CreatureConfig.GetColor(character, player);
+					dot.color = target.color;
 					minimap.WorldToMapPoint(position, out float mx, out float my);
 					dot.rectTransform.anchoredPosition = minimap.MapPointToLocalGuiPos(mx, my, map);
 				}

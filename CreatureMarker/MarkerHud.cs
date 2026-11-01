@@ -24,7 +24,7 @@ namespace CreatureMarker
 		internal static readonly Color OutlineColor = new Color(0.1f, 0.1f, 0.1f, 1f);
 
 		/// <summary>
-		/// One creature's arrow and name label
+		/// One creature's or fish's arrow and name label
 		/// </summary>
 		/// <remarks>
 		/// The label is a sibling of the arrow so it stays upright when the arrow rotates at the screen edge
@@ -33,10 +33,10 @@ namespace CreatureMarker
 		{
 			public Image arrow;
 			public TextMeshProUGUI label;
-			public Character character;
+			public Object source;
 
 			/// <summary>
-			/// The creature's localized name, looked up when the marker is given a new creature
+			/// The target's localized name, looked up when the marker is given a new target
 			/// </summary>
 			public string name;
 
@@ -56,11 +56,11 @@ namespace CreatureMarker
 		private Sprite sprite;
 
 		/// <summary>
-		/// Shows an arrow for each marked creature when Show On Screen is on and hides the spare ones
+		/// Shows an arrow for each marked creature and fish when Show On Screen is on and hides the spare ones
 		/// </summary>
-		/// <param name="marked">The living marked creatures within range</param>
+		/// <param name="marked">The living marked creatures and the marked fish within range</param>
 		/// <param name="player">The local player</param>
-		public void Update(List<Character> marked, Player player)
+		public void Update(List<Target> marked, Player player)
 		{
 			EnemyHud enemyHud = EnemyHud.instance;
 			Camera camera = Utils.GetMainCamera();
@@ -81,31 +81,30 @@ namespace CreatureMarker
 				bool showDistance = CreatureConfig.ShowDistance;
 				bool showLabel = (showName || showDistance);
 				Vector3 playerPosition = player.transform.position;
-				foreach (Character character in marked)
+				foreach (Target target in marked)
 				{
 					Marker marker = GetMarker(used, enemyHud);
 					used++;
-					Color color = CreatureConfig.GetColor(character, player);
-					marker.arrow.color = color;
-					Vector2 pointing = Place(marker.arrow.rectTransform, camera, character.GetTopPoint() + Vector3.up * HeadOffset);
+					marker.arrow.color = target.color;
+					Vector2 pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset);
 					SetActive(marker.label.gameObject, showLabel);
 					if (showLabel)
 					{
-						if (marker.character != character)
+						if (marker.source != target.source)
 						{
-							marker.character = character;
-							marker.name = Localization.instance.Localize(character.GetHoverName());
+							marker.source = target.source;
+							marker.name = Localization.instance.Localize(target.nameToken);
 						}
-						int distance = (showDistance ? Mathf.RoundToInt(Vector3.Distance(character.transform.position, playerPosition)) : -1);
+						int distance = (showDistance ? Mathf.RoundToInt(Vector3.Distance(target.position, playerPosition)) : -1);
 						SetLabelText(marker, (showName ? marker.name : null), distance);
-						marker.label.color = color;
+						marker.label.color = target.color;
 						PlaceLabel(marker, pointing);
 					}
 				}
 			}
 			for (int i = used; i < markers.Count; i++)
 			{
-				markers[i].character = null;
+				markers[i].source = null;
 				markers[i].shownName = null;
 				markers[i].shownDistance = -2;
 				SetActive(markers[i].arrow.gameObject, false);

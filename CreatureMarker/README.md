@@ -1,8 +1,8 @@
 # Creature Marker
 
-Puts a colored arrow above nearby creatures. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them.
+Puts a colored arrow above nearby creatures and fish. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them.
 
-- Separate colors for passive creatures, hostile creatures and bosses
+- Separate colors for passive creatures, hostile creatures, bosses and fish
 - Optional name and distance label on each marker
 - A matching colored dot on the minimap and the large map for each marked creature
 - Choose which creatures are marked - all of them, only hostile ones, or creature by creature
@@ -22,10 +22,11 @@ Puts a colored arrow above nearby creatures. Creatures that are off-screen get a
 | Passive Color | #40D940 | Marker color for creatures that won't attack you |
 | Hostile Color | #FFD91A | Marker color for creatures that will |
 | Boss Color | #FF3333 | Marker color for bosses |
-| All Creatures | false | Marks every creature |
+| Fish Color | #33CCFF | Marker color for fish |
+| All Creatures | false | Marks every creature and fish |
 | All Hostile Creatures | true | Marks every creature that will attack you |
 
-Every creature also gets its own line, `Prefab = inherit/true/false ## Name`. `inherit` follows the All switches, while `true` or `false` always shows or hides that creature's marker.
+Every creature and fish also gets its own line, `Prefab = inherit/true/false ## Name`. `inherit` follows the All switches, while `true` or `false` always shows or hides that creature's or fish's marker. To mark fish without marking every passive creature, set the fish's own lines to `true`.
 
 Colors can be `#RRGGBB` or a color name like `red`, `yellow`, `green`, `cyan` or `magenta`.
 
