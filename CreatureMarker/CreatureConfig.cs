@@ -486,7 +486,7 @@ namespace CreatureMarker
 			AppendLine(builder, ShowDistanceKey, FormatState(ShowDistance), "Show the creature's distance in meters with its marker, after the name when Show Name is on, default false");
 			AppendLine(builder, MaxDistanceKey, MaxDistance.ToString(CultureInfo.InvariantCulture), "Meters, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultMaxDistance);
 			AppendLine(builder, FarDistanceKey, FarDistance.ToString(CultureInfo.InvariantCulture), "Meters beyond which a marker is drawn at Far Scale, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultFarDistance);
-			AppendLine(builder, FarScaleKey, FarScale.ToString(CultureInfo.InvariantCulture), "Size of a marker beyond Far Distance, from " + MinFarScale.ToString(CultureInfo.InvariantCulture) + " to 1 for no shrinking, default " + DefaultFarScale.ToString(CultureInfo.InvariantCulture));
+			AppendLine(builder, FarScaleKey, FarScale.ToString(CultureInfo.InvariantCulture), "Size of a marker beyond Far Distance, from " + MinFarScale.ToString(CultureInfo.InvariantCulture) + " to 1 (no shrinking), default " + DefaultFarScale.ToString(CultureInfo.InvariantCulture));
 			builder.Append("\r\n");
 			AppendLine(builder, BobHeightKey, BobHeight.ToString(CultureInfo.InvariantCulture), "Pixels an on-screen arrow bobs up and down, from 0 to keep it still to " + MaxBobHeight + ", default " + DefaultBobHeight);
 			AppendLine(builder, PassiveColorKey, passiveColorText, "Creatures that won't attack you, default " + DefaultPassiveColor);
