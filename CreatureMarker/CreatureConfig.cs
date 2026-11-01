@@ -28,20 +28,32 @@ namespace CreatureMarker
 		private const string ShowOnScreenKey = "Show On Screen";
 		private const string ShowOnMapKey = "Show On Map";
 		private const string MaxDistanceKey = "Max Distance";
+		private const string FarDistanceKey = "Far Distance";
+		private const string FarScaleKey = "Far Scale";
+		private const string BobHeightKey = "Bob Height";
 		private const string ShowNameKey = "Show Name";
 		private const string ShowDistanceKey = "Show Distance";
+		private const string ShowLevelKey = "Show Level";
 		private const string PassiveColorKey = "Passive Color";
 		private const string HostileColorKey = "Hostile Color";
 		private const string BossColorKey = "Boss Color";
+		private const string FishColorKey = "Fish Color";
 		private const string AllCreaturesKey = "All Creatures";
 		private const string AllHostileKey = "All Hostile Creatures";
+		private const string AllFishKey = "All Fish";
 
 		private const float DefaultMaxDistance = 50f;
 		private const float MinMaxDistance = 5f;
 		private const float MaxMaxDistance = 500f;
+		private const float DefaultFarDistance = 50f;
+		private const float DefaultFarScale = 0.66f;
+		private const float MinFarScale = 0.2f;
+		private const float DefaultBobHeight = 6f;
+		private const float MaxBobHeight = 30f;
 		private const string DefaultPassiveColor = "#40D940";
 		private const string DefaultHostileColor = "#FFD91A";
 		private const string DefaultBossColor = "#FF3333";
+		private const string DefaultFishColor = "#33CCFF";
 
 		private static readonly string[] header =
 		{
@@ -54,9 +66,9 @@ namespace CreatureMarker
 		private static readonly string[] creatureHeader =
 		{
 			"",
-			"## All Creatures marks every creature, and All Hostile Creatures marks every creature that will attack you",
-			"## Each creature line is: Prefab = inherit/true/false ## Name in game",
-			"## inherit follows the All switches, while true or false always shows or hides that creature's marker",
+			"## All Creatures marks every creature, All Hostile Creatures marks every creature that will attack you, and All Fish marks every fish",
+			"## Each creature and fish line is: Prefab = inherit/true/false ## Name in game",
+			"## inherit follows the All switches, while true or false always shows or hides that creature's or fish's marker",
 			"",
 		};
 
@@ -76,6 +88,21 @@ namespace CreatureMarker
 		public static float MaxDistance { get; private set; } = DefaultMaxDistance;
 
 		/// <summary>
+		/// Distance from the player, in meters, beyond which markers are drawn at Far Scale
+		/// </summary>
+		public static float FarDistance { get; private set; } = DefaultFarDistance;
+
+		/// <summary>
+		/// Size of the arrow and label of a target beyond Far Distance, as a fraction of their full size
+		/// </summary>
+		public static float FarScale { get; private set; } = DefaultFarScale;
+
+		/// <summary>
+		/// How far, in pixels, an on-screen arrow bobs up and down, 0 disables bobbing
+		/// </summary>
+		public static float BobHeight { get; private set; } = DefaultBobHeight;
+
+		/// <summary>
 		/// Whether the creature's name is shown with its marker
 		/// </summary>
 		public static bool ShowName { get; private set; }
@@ -85,14 +112,22 @@ namespace CreatureMarker
 		/// </summary>
 		public static bool ShowDistance { get; private set; }
 
+		/// <summary>
+		/// Whether the creature's or fish's level is shown with its marker
+		/// </summary>
+		public static bool ShowLevel { get; private set; }
+
 		private static string passiveColorText = DefaultPassiveColor;
 		private static string hostileColorText = DefaultHostileColor;
 		private static string bossColorText = DefaultBossColor;
+		private static string fishColorText = DefaultFishColor;
 		private static Color passiveColor = ParseColor(DefaultPassiveColor, Color.green);
 		private static Color hostileColor = ParseColor(DefaultHostileColor, Color.yellow);
 		private static Color bossColor = ParseColor(DefaultBossColor, Color.red);
+		private static Color fishColor = ParseColor(DefaultFishColor, Color.cyan);
 		private static bool allCreatures;
 		private static bool allHostile = true;
+		private static bool allFish;
 
 		/// <summary>
 		/// The true or false set on creature lines, by prefab hash, leaving out the ones set to inherit
@@ -119,7 +154,8 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Reads the config file, adds any prefabs with a Character component other than the player and writes it back
+		/// Reads the config file, adds any prefabs with a Character component other than the player or a Fish
+		/// component and writes it back
 		/// </summary>
 		/// <param name="scene">The scene holding the prefab list</param>
 		public static void Load(ZNetScene scene)
@@ -144,11 +180,16 @@ namespace CreatureMarker
 					continue;
 				}
 				Character character = prefab.GetComponent<Character>();
-				if (character == null || character is Player)
+				if (character != null && !(character is Player))
 				{
+					names[prefab.name] = GetDisplayName(character.m_name);
 					continue;
 				}
-				names[prefab.name] = GetDisplayName(character);
+				Fish fish = prefab.GetComponent<Fish>();
+				if (fish != null)
+				{
+					names[prefab.name] = GetDisplayName(fish.m_name);
+				}
 			}
 			foreach (string key in values.Keys)
 			{
@@ -177,67 +218,82 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Fills the list with the living marked creatures within Max Distance of the player
+		/// Fills the list with the living marked creatures and the marked fish within Max Distance of the player
 		/// </summary>
 		/// <param name="player">The local player</param>
 		/// <param name="marked">The list to fill, cleared first</param>
-		public static void GetMarked(Player player, List<Character> marked)
+		public static void GetMarked(Player player, List<Target> marked)
 		{
 			marked.Clear();
 			Vector3 playerPosition = player.transform.position;
 			float maxDistanceSquared = MaxDistance * MaxDistance;
 			foreach (Character character in Character.GetAllCharacters())
 			{
-				if (Vector3.SqrMagnitude(character.transform.position - playerPosition) > maxDistanceSquared)
+				Vector3 position = character.transform.position;
+				if (Vector3.SqrMagnitude(position - playerPosition) > maxDistanceSquared)
 				{
 					continue;
 				}
-				if (character.IsDead() || !IsMarked(character, player))
+				if (character is Player || character.IsDead())
 				{
 					continue;
 				}
-				marked.Add(character);
+				bool hostile = IsHostile(character, player);
+				if (!IsMarked(character.m_nview, (allCreatures || (allHostile && hostile))))
+				{
+					continue;
+				}
+				Target target = new Target();
+				target.source = character;
+				target.position = position;
+				target.top = character.GetTopPoint();
+				target.nameToken = character.GetHoverName();
+				target.level = character.GetLevel();
+				target.color = (character.IsBoss() ? bossColor : (hostile ? hostileColor : passiveColor));
+				marked.Add(target);
+			}
+			foreach (IMonoUpdater updater in Fish.Instances)
+			{
+				Fish fish = updater as Fish;
+				if (fish == null)
+				{
+					continue;
+				}
+				Vector3 position = fish.transform.position;
+				if (Vector3.SqrMagnitude(position - playerPosition) > maxDistanceSquared)
+				{
+					continue;
+				}
+				if (!IsMarked(fish.m_nview, allFish))
+				{
+					continue;
+				}
+				Target target = new Target();
+				target.source = fish;
+				target.position = position;
+				target.top = position;
+				target.nameToken = fish.GetHoverName();
+				target.level = ((fish.m_itemDrop != null) ? fish.m_itemDrop.m_itemData.m_quality : 1);
+				target.fish = true;
+				target.color = fishColor;
+				marked.Add(target);
 			}
 		}
 
 		/// <summary>
-		/// Whether the creature should get a marker, from its own line when that is true or false, or else from the All switches
+		/// Whether a creature or fish should get a marker, from its own line when that is true or false, or else from
+		/// what the All switches give it
 		/// </summary>
-		/// <param name="character">The creature to check</param>
-		/// <param name="player">The local player, for deciding whether the creature is hostile</param>
+		/// <param name="nview">The creature's or fish's network view, for its prefab</param>
+		/// <param name="inherited">Whether the All switches mark it</param>
 		/// <returns>True when it should get a marker</returns>
-		public static bool IsMarked(Character character, Player player)
+		private static bool IsMarked(ZNetView nview, bool inherited)
 		{
-			if (character is Player)
-			{
-				return(false);
-			}
-			ZNetView nview = character.m_nview;
 			if (nview != null && nview.IsValid() && overrides.TryGetValue(nview.GetZDO().GetPrefab(), out bool value))
 			{
 				return(value);
 			}
-			return(allCreatures || (allHostile && IsHostile(character, player)));
-		}
-
-		/// <summary>
-		/// The marker color for the creature - the boss color for bosses, the hostile color for hostile creatures and
-		/// the passive color for the rest
-		/// </summary>
-		/// <param name="character">The marked creature</param>
-		/// <param name="player">The local player, for deciding whether the creature is hostile</param>
-		/// <returns>The arrow color</returns>
-		public static Color GetColor(Character character, Player player)
-		{
-			if (character.IsBoss())
-			{
-				return(bossColor);
-			}
-			if (IsHostile(character, player))
-			{
-				return(hostileColor);
-			}
-			return(passiveColor);
+			return(inherited);
 		}
 
 		/// <summary>
@@ -261,28 +317,46 @@ namespace CreatureMarker
 		/// <param name="values">Value text by key, as read from the file, left holding only the creature lines</param>
 		private static void LoadSettings(Dictionary<string, string> values)
 		{
-			MaxDistance = DefaultMaxDistance;
-			string text = TakeValue(values, MaxDistanceKey);
-			if (text != null)
-			{
-				if (float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float distance))
-				{
-					MaxDistance = Mathf.Clamp(distance, MinMaxDistance, MaxMaxDistance);
-				}
-				else
-				{
-					Warn(MaxDistanceKey, text);
-				}
-			}
+			MaxDistance = TakeFloat(values, MaxDistanceKey, DefaultMaxDistance, MinMaxDistance, MaxMaxDistance);
+			FarDistance = TakeFloat(values, FarDistanceKey, DefaultFarDistance, MinMaxDistance, MaxMaxDistance);
+			FarScale = TakeFloat(values, FarScaleKey, DefaultFarScale, MinFarScale, 1f);
+			BobHeight = TakeFloat(values, BobHeightKey, DefaultBobHeight, 0f, MaxBobHeight);
 			passiveColorText = TakeColor(values, PassiveColorKey, DefaultPassiveColor, out passiveColor);
 			hostileColorText = TakeColor(values, HostileColorKey, DefaultHostileColor, out hostileColor);
 			bossColorText = TakeColor(values, BossColorKey, DefaultBossColor, out bossColor);
+			fishColorText = TakeColor(values, FishColorKey, DefaultFishColor, out fishColor);
 			allCreatures = (ParseState(TakeValue(values, AllCreaturesKey)) ?? false);
 			allHostile = (ParseState(TakeValue(values, AllHostileKey)) ?? true);
+			allFish = (ParseState(TakeValue(values, AllFishKey)) ?? false);
 			ShowName = (ParseState(TakeValue(values, ShowNameKey)) ?? false);
 			ShowDistance = (ParseState(TakeValue(values, ShowDistanceKey)) ?? false);
+			ShowLevel = (ParseState(TakeValue(values, ShowLevelKey)) ?? false);
 			ShowOnScreen = (ParseState(TakeValue(values, ShowOnScreenKey)) ?? true);
 			ShowOnMap = (ParseState(TakeValue(values, ShowOnMapKey)) ?? true);
+		}
+
+		/// <summary>
+		/// Takes a number setting out of the file values, kept within its range
+		/// </summary>
+		/// <param name="values">Value text by key, as read from the file</param>
+		/// <param name="key">The setting's key</param>
+		/// <param name="defaultValue">Value to use when the setting is missing or doesn't parse</param>
+		/// <param name="min">Lowest allowed value</param>
+		/// <param name="max">Highest allowed value</param>
+		/// <returns>The value</returns>
+		private static float TakeFloat(Dictionary<string, string> values, string key, float defaultValue, float min, float max)
+		{
+			string text = TakeValue(values, key);
+			if (text == null)
+			{
+				return(defaultValue);
+			}
+			if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float value))
+			{
+				Warn(key, text);
+				return(defaultValue);
+			}
+			return(Mathf.Clamp(value, min, max));
 		}
 
 		/// <summary>
@@ -406,15 +480,23 @@ namespace CreatureMarker
 			AppendLine(builder, ShowOnScreenKey, FormatState(ShowOnScreen), "Show an arrow above each marked creature, pinned to the screen edge when it is off-screen, default true");
 			AppendLine(builder, ShowOnMapKey, FormatState(ShowOnMap), "Show a dot on the minimap and the large map for each marked creature, default true");
 			builder.Append("\r\n");
-			AppendLine(builder, MaxDistanceKey, MaxDistance.ToString(CultureInfo.InvariantCulture), "Meters, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultMaxDistance);
 			AppendLine(builder, ShowNameKey, FormatState(ShowName), "Show the creature's name with its marker, default false");
+			AppendLine(builder, ShowLevelKey, FormatState(ShowLevel), "Show stars after a creature's name and the level after a fish's name, like Perch[3], for those above the lowest level, default false");
+			builder.Append("\r\n");
 			AppendLine(builder, ShowDistanceKey, FormatState(ShowDistance), "Show the creature's distance in meters with its marker, after the name when Show Name is on, default false");
+			AppendLine(builder, MaxDistanceKey, MaxDistance.ToString(CultureInfo.InvariantCulture), "Meters, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultMaxDistance);
+			AppendLine(builder, FarDistanceKey, FarDistance.ToString(CultureInfo.InvariantCulture), "Meters beyond which a marker is drawn at Far Scale, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultFarDistance);
+			AppendLine(builder, FarScaleKey, FarScale.ToString(CultureInfo.InvariantCulture), "Size of a marker beyond Far Distance, from " + MinFarScale.ToString(CultureInfo.InvariantCulture) + " to 1 (no shrinking), default " + DefaultFarScale.ToString(CultureInfo.InvariantCulture));
+			builder.Append("\r\n");
+			AppendLine(builder, BobHeightKey, BobHeight.ToString(CultureInfo.InvariantCulture), "Pixels an on-screen arrow bobs up and down, from 0 (disables bobbing) to " + MaxBobHeight + ", default " + DefaultBobHeight);
 			AppendLine(builder, PassiveColorKey, passiveColorText, "Creatures that won't attack you, default " + DefaultPassiveColor);
 			AppendLine(builder, HostileColorKey, hostileColorText, "Creatures that will attack you, default " + DefaultHostileColor);
 			AppendLine(builder, BossColorKey, bossColorText, "Bosses, default " + DefaultBossColor);
+			AppendLine(builder, FishColorKey, fishColorText, "Fish, default " + DefaultFishColor);
 			AppendLines(builder, creatureHeader);
 			AppendLine(builder, AllCreaturesKey, FormatState(allCreatures), "");
 			AppendLine(builder, AllHostileKey, FormatState(allHostile), "");
+			AppendLine(builder, AllFishKey, FormatState(allFish), "");
 			builder.Append("\r\n");
 			foreach (KeyValuePair<string, string> name in names)
 			{
@@ -480,13 +562,13 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// The creature's name in the current language, falling back to its name token
+		/// The creature's or fish's name in the current language, falling back to its name token
 		/// </summary>
-		/// <param name="character">The creature prefab's Character</param>
+		/// <param name="token">The prefab's name token</param>
 		/// <returns>The name to show after the value</returns>
-		private static string GetDisplayName(Character character)
+		private static string GetDisplayName(string token)
 		{
-			string name = character.m_name;
+			string name = token;
 			if (Localization.instance != null)
 			{
 				name = Localization.instance.Localize(name);

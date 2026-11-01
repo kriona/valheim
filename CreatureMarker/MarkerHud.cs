@@ -16,7 +16,6 @@ namespace CreatureMarker
 	{
 		private const float HeadOffset = 0.4f;
 		private const float EdgeMargin = 40f;
-		private const float BobHeight = 6f;
 		private const float BobSpeed = 5f;
 		private const float LabelGap = 2f;
 		private const float LabelFontSize = 16f;
@@ -24,7 +23,7 @@ namespace CreatureMarker
 		internal static readonly Color OutlineColor = new Color(0.1f, 0.1f, 0.1f, 1f);
 
 		/// <summary>
-		/// One creature's arrow and name label
+		/// One creature's or fish's arrow and name label
 		/// </summary>
 		/// <remarks>
 		/// The label is a sibling of the arrow so it stays upright when the arrow rotates at the screen edge
@@ -33,21 +32,25 @@ namespace CreatureMarker
 		{
 			public Image arrow;
 			public TextMeshProUGUI label;
-			public Character character;
+			public Object source;
 
 			/// <summary>
-			/// The creature's localized name, looked up when the marker is given a new creature
+			/// The target's localized name, looked up when the marker is given a new target
 			/// </summary>
 			public string name;
 
 			/// <summary>
-			/// The name and distance in the label's text, so the text is only rebuilt when one of them changes
+			/// The name, level, star color and distance in the label's text, so the text is only rebuilt when one of
+			/// them changes
 			/// </summary>
 			/// <remarks>
-			/// The name is null when names are hidden and the distance is -1 when distances are hidden, so -2 means
-			/// the text hasn't been set
+			/// The name is null when names are hidden, the level is 0 when levels are hidden and the distance is -1
+			/// when distances are hidden, so a distance of -2 means the text hasn't been set
 			/// </remarks>
 			public string shownName;
+			public int shownLevel;
+			public bool shownFish;
+			public Color shownColor;
 			public int shownDistance = -2;
 		}
 
@@ -56,11 +59,16 @@ namespace CreatureMarker
 		private Sprite sprite;
 
 		/// <summary>
-		/// Shows an arrow for each marked creature when Show On Screen is on and hides the spare ones
+		/// The star shown for each of a creature's stars, set up when the first label is created
 		/// </summary>
-		/// <param name="marked">The living marked creatures within range</param>
+		private readonly LevelStars stars = new LevelStars();
+
+		/// <summary>
+		/// Shows an arrow for each marked creature and fish when Show On Screen is on and hides the spare ones
+		/// </summary>
+		/// <param name="marked">The living marked creatures and the marked fish within range</param>
 		/// <param name="player">The local player</param>
-		public void Update(List<Character> marked, Player player)
+		public void Update(List<Target> marked, Player player)
 		{
 			EnemyHud enemyHud = EnemyHud.instance;
 			Camera camera = Utils.GetMainCamera();
@@ -79,33 +87,40 @@ namespace CreatureMarker
 			{
 				bool showName = CreatureConfig.ShowName;
 				bool showDistance = CreatureConfig.ShowDistance;
-				bool showLabel = (showName || showDistance);
+				bool showLevel = CreatureConfig.ShowLevel;
+				bool showLabel = (showName || showDistance || showLevel);
+				float farDistanceSquared = CreatureConfig.FarDistance * CreatureConfig.FarDistance;
+				Vector3 farScale = Vector3.one * CreatureConfig.FarScale;
 				Vector3 playerPosition = player.transform.position;
-				foreach (Character character in marked)
+				foreach (Target target in marked)
 				{
 					Marker marker = GetMarker(used, enemyHud);
 					used++;
-					Color color = CreatureConfig.GetColor(character, player);
-					marker.arrow.color = color;
-					Vector2 pointing = Place(marker.arrow.rectTransform, camera, character.GetTopPoint() + Vector3.up * HeadOffset);
+					float distanceSquared = Vector3.SqrMagnitude(target.position - playerPosition);
+					Vector3 scale = ((distanceSquared > farDistanceSquared) ? farScale : Vector3.one);
+					// The label is scaled along with the arrow, so placing it can go by the arrow's scale alone
+					marker.arrow.rectTransform.localScale = scale;
+					marker.label.rectTransform.localScale = scale;
+					marker.arrow.color = target.color;
+					Vector2 pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset, scale.x);
 					SetActive(marker.label.gameObject, showLabel);
 					if (showLabel)
 					{
-						if (marker.character != character)
+						if (marker.source != target.source)
 						{
-							marker.character = character;
-							marker.name = Localization.instance.Localize(character.GetHoverName());
+							marker.source = target.source;
+							marker.name = Localization.instance.Localize(target.nameToken);
 						}
-						int distance = (showDistance ? Mathf.RoundToInt(Vector3.Distance(character.transform.position, playerPosition)) : -1);
-						SetLabelText(marker, (showName ? marker.name : null), distance);
-						marker.label.color = color;
+						int distance = (showDistance ? Mathf.RoundToInt(Mathf.Sqrt(distanceSquared)) : -1);
+						SetLabelText(marker, (showName ? marker.name : null), (showLevel ? target.level : 0), target.fish, target.color, distance);
+						marker.label.color = target.color;
 						PlaceLabel(marker, pointing);
 					}
 				}
 			}
 			for (int i = used; i < markers.Count; i++)
 			{
-				markers[i].character = null;
+				markers[i].source = null;
 				markers[i].shownName = null;
 				markers[i].shownDistance = -2;
 				SetActive(markers[i].arrow.gameObject, false);
@@ -114,10 +129,11 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Removes the markers and the generated sprite
+		/// Removes the markers, the generated sprite and the star sprite asset
 		/// </summary>
 		public void Destroy()
 		{
+			stars.Destroy();
 			foreach (Marker marker in markers)
 			{
 				if (marker.arrow != null)
@@ -143,14 +159,15 @@ namespace CreatureMarker
 		/// <param name="arrow">The arrow to move</param>
 		/// <param name="camera">The main camera</param>
 		/// <param name="target">World point the arrow points at</param>
+		/// <param name="size">The marker's scale, which shrinks the bob along with the arrow</param>
 		/// <returns>The screen direction the arrow points in, as a unit vector</returns>
-		private static Vector2 Place(RectTransform arrow, Camera camera, Vector3 target)
+		private static Vector2 Place(RectTransform arrow, Camera camera, Vector3 target, float size)
 		{
 			Vector3 screen = camera.WorldToScreenPointScaled(target);
 			bool onScreen = (screen.z > 0f && screen.x >= 0f && screen.x <= Screen.width && screen.y >= 0f && screen.y <= Screen.height);
 			if (onScreen)
 			{
-				float bob = Mathf.Abs(Mathf.Sin(Time.time * BobSpeed)) * BobHeight;
+				float bob = Mathf.Abs(Mathf.Sin(Time.time * BobSpeed)) * CreatureConfig.BobHeight * size;
 				arrow.position = new Vector3(screen.x, screen.y + bob, 0f);
 				arrow.localRotation = Quaternion.identity;
 				return(Vector2.down);
@@ -178,31 +195,52 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Sets the label to "Name (5m)", "Name" or "5m", rebuilding the text only when the name or distance has changed
+		/// Sets the label to the name, then the level, then the distance in brackets when there is text before it -
+		/// like "Greydwarf ⭐⭐ (5m)", "Perch[3]" or "5m" - rebuilding the text only when one of them has changed
 		/// </summary>
 		/// <param name="marker">The marker whose label to set</param>
 		/// <param name="name">The name to show, or null to leave it out</param>
+		/// <param name="level">The level to show, or 0 to leave it out</param>
+		/// <param name="fish">Whether the level is a fish's, shown as a number instead of stars</param>
+		/// <param name="color">The marker color, which fills the stars</param>
 		/// <param name="distance">The distance in meters to show, or -1 to leave it out</param>
-		private static void SetLabelText(Marker marker, string name, int distance)
+		private void SetLabelText(Marker marker, string name, int level, bool fish, Color color, int distance)
 		{
-			if (name == marker.shownName && distance == marker.shownDistance)
+			if (name == marker.shownName && level == marker.shownLevel && fish == marker.shownFish && color == marker.shownColor && distance == marker.shownDistance)
 			{
 				return;
 			}
 			marker.shownName = name;
+			marker.shownLevel = level;
+			marker.shownFish = fish;
+			marker.shownColor = color;
 			marker.shownDistance = distance;
-			if (distance < 0)
+			string text = (name ?? "");
+			if (level > 1)
 			{
-				marker.label.text = (name ?? "");
+				if (fish)
+				{
+					// The game shows a fish's level the same way when it lies on the ground
+					text += "[" + level + "]";
+				}
+				else
+				{
+					if (text.Length > 0)
+					{
+						text += " ";
+					}
+					string star = stars.GetStar(color);
+					for (int i = 1; i < level; i++)
+					{
+						text += star;
+					}
+				}
 			}
-			else if (name == null)
+			if (distance >= 0)
 			{
-				marker.label.text = distance + "m";
+				text = ((text.Length > 0) ? text + " (" + distance + "m)" : distance + "m");
 			}
-			else
-			{
-				marker.label.text = name + " (" + distance + "m)";
-			}
+			marker.label.text = text;
 		}
 
 		/// <summary>
@@ -277,6 +315,11 @@ namespace CreatureMarker
 			{
 				label.font = template.font;
 				label.fontSharedMaterial = template.fontSharedMaterial;
+			}
+			stars.Create(enemyHud, label.font, LabelFontSize);
+			if (stars.Asset != null)
+			{
+				label.spriteAsset = stars.Asset;
 			}
 			label.fontSize = LabelFontSize;
 			label.alignment = TextAlignmentOptions.Center;

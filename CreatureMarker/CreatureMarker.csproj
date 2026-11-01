@@ -9,6 +9,10 @@
 			<HintPath>$(ManagedPath)\UnityEngine.UI.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
+		<Reference Include="UnityEngine.TextCoreFontEngineModule">
+			<HintPath>$(ManagedPath)\UnityEngine.TextCoreFontEngineModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
 		<Reference Include="Unity.TextMeshPro">
 			<HintPath>$(ManagedPath)\Unity.TextMeshPro.dll</HintPath>
 			<Private>false</Private>
