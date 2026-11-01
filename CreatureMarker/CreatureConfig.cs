@@ -4,6 +4,8 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using BepInEx;
+using BepInEx.Configuration;
+using Kriona.Shared;
 using UnityEngine;
 
 namespace CreatureMarker
@@ -18,12 +20,18 @@ namespace CreatureMarker
 	/// added by other mods, while keeping the values already set, and read again whenever it is saved while a world is
 	/// loaded. Lines for creatures that are no longer loaded are kept so their values survive a mod being removed for a
 	/// while
+	///
+	/// Every setting and creature line is also mirrored as an entry in the plugin's BepInEx config so Configuration
+	/// Manager can list and change them, and a change made there is written to this file
 	/// </remarks>
 	internal static class CreatureConfig
 	{
 		private const string FileName = Plugin.PluginGuid + ".cfg";
 		private const string Comment = "##";
-		private const string Inherit = "inherit";
+
+		private const string MarkersSection = "1 - Markers";
+		private const string ColorsSection = "2 - Colors";
+		private const string CreaturesSection = "3 - Creatures and Fish";
 
 		private const string ShowOnScreenKey = "Show On Screen";
 		private const string ShowOnMapKey = "Show On Map";
@@ -71,6 +79,52 @@ namespace CreatureMarker
 			"## inherit follows the All switches, while true or false always shows or hides that creature's or fish's marker",
 			"",
 		};
+
+		private static readonly string showOnScreenNote = "Show an arrow above each marked creature, pinned to the screen edge when it is off-screen, default true";
+		private static readonly string showOnMapNote = "Show a dot on the minimap and the large map for each marked creature, default true";
+		private static readonly string showNameNote = "Show the creature's name with its marker, default false";
+		private static readonly string showLevelNote = "Show stars after a creature's name and the level after a fish's name, like Perch[3], for those above the lowest level, default false";
+		private static readonly string showDistanceNote = "Show the creature's distance in meters with its marker, after the name when Show Name is on, default false";
+		private static readonly string maxDistanceNote = "Meters, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultMaxDistance;
+		private static readonly string farDistanceNote = "Meters beyond which a marker is drawn at Far Scale, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultFarDistance;
+		private static readonly string farScaleNote = "Size of a marker beyond Far Distance, from " + MinFarScale.ToString(CultureInfo.InvariantCulture) + " to 1 (no shrinking), default " + DefaultFarScale.ToString(CultureInfo.InvariantCulture);
+		private static readonly string bobHeightNote = "Pixels an on-screen arrow bobs up and down, from 0 (disables bobbing) to " + MaxBobHeight + ", default " + DefaultBobHeight;
+		private static readonly string passiveColorNote = "Creatures that won't attack you, default " + DefaultPassiveColor;
+		private static readonly string hostileColorNote = "Creatures that will attack you, default " + DefaultHostileColor;
+		private static readonly string bossColorNote = "Bosses, default " + DefaultBossColor;
+		private static readonly string fishColorNote = "Fish, default " + DefaultFishColor;
+
+		/// <summary>
+		/// Mirrors the settings as entries for Configuration Manager
+		/// </summary>
+		private static ConfigMirror mirror;
+
+		/// <summary>
+		/// The entries of the creature lines
+		/// </summary>
+		private static StateEntries creatureEntries;
+
+		private static ConfigEntry<bool> showOnScreenEntry;
+		private static ConfigEntry<bool> showOnMapEntry;
+		private static ConfigEntry<bool> showNameEntry;
+		private static ConfigEntry<bool> showLevelEntry;
+		private static ConfigEntry<bool> showDistanceEntry;
+		private static ConfigEntry<float> maxDistanceEntry;
+		private static ConfigEntry<float> farDistanceEntry;
+		private static ConfigEntry<float> farScaleEntry;
+		private static ConfigEntry<float> bobHeightEntry;
+		private static ConfigEntry<Color> passiveColorEntry;
+		private static ConfigEntry<Color> hostileColorEntry;
+		private static ConfigEntry<Color> bossColorEntry;
+		private static ConfigEntry<Color> fishColorEntry;
+		private static ConfigEntry<bool> allCreaturesEntry;
+		private static ConfigEntry<bool> allHostileEntry;
+		private static ConfigEntry<bool> allFishEntry;
+
+		/// <summary>
+		/// Display name by prefab name of every creature line, sorted, as last read - blank when the name isn't known
+		/// </summary>
+		private static SortedDictionary<string, string> names = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>
 		/// Whether marked creatures get an arrow on screen
@@ -140,7 +194,20 @@ namespace CreatureMarker
 		public static string FilePath => Path.Combine(Paths.ConfigPath, FileName);
 
 		/// <summary>
-		/// Reads the config file again when a world is loaded - without one, the file is read when the next world loads
+		/// Binds the settings as entries in the plugin's BepInEx config for Configuration Manager, and reads the config
+		/// file so they and any creature lines already in it show its values before a world loads
+		/// </summary>
+		/// <param name="file">The plugin's BepInEx config</param>
+		public static void Init(ConfigFile file)
+		{
+			mirror = new ConfigMirror(file, OnEntryChanged);
+			creatureEntries = new StateEntries(mirror, "inherit follows the All switches, while true or false always shows or hides its marker");
+			BindSettings();
+			LoadWithoutScene();
+		}
+
+		/// <summary>
+		/// Reads the config file again, writing it back with any new creatures when a world is loaded
 		/// </summary>
 		/// <remarks>
 		/// Writing the file back changes it again, which reads it once more, finds nothing new and leaves it alone
@@ -151,6 +218,52 @@ namespace CreatureMarker
 			{
 				Load(ZNetScene.instance);
 			}
+			else
+			{
+				LoadWithoutScene();
+			}
+		}
+
+		/// <summary>
+		/// Reads the config file without a prefab list, taking the creature lines and their names from the file
+		/// itself and leaving it unwritten
+		/// </summary>
+		private static void LoadWithoutScene()
+		{
+			if (!TryRead(out Dictionary<string, string> values, out Dictionary<string, string> notes))
+			{
+				return;
+			}
+			LoadSettings(values);
+			SortedDictionary<string, string> fileNames = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+			foreach (string key in values.Keys)
+			{
+				fileNames[key] = (notes.TryGetValue(key, out string note) ? note : "");
+			}
+			names = fileNames;
+			SyncEntries(BuildStates((string key) => (values.TryGetValue(key, out string text) ? ParseState(text) : null)));
+		}
+
+		/// <summary>
+		/// Reads the config file, logging a warning when it can't be read
+		/// </summary>
+		/// <param name="values">Set to the value text by key</param>
+		/// <param name="notes">Set to the comment after the value by key, for the lines that have one</param>
+		/// <returns>Whether the file could be read</returns>
+		private static bool TryRead(out Dictionary<string, string> values, out Dictionary<string, string> notes)
+		{
+			try
+			{
+				values = Read(FilePath, out notes);
+				return(true);
+			}
+			catch (IOException e)
+			{
+				Debug.LogWarning("[" + Plugin.PluginName + "] Couldn't read " + FilePath + ": " + e.Message);
+				values = null;
+				notes = null;
+				return(false);
+			}
 		}
 
 		/// <summary>
@@ -160,15 +273,8 @@ namespace CreatureMarker
 		/// <param name="scene">The scene holding the prefab list</param>
 		public static void Load(ZNetScene scene)
 		{
-			string path = FilePath;
-			Dictionary<string, string> values;
-			try
+			if (!TryRead(out Dictionary<string, string> values, out _))
 			{
-				values = Read(path);
-			}
-			catch (IOException e)
-			{
-				Debug.LogWarning("[" + Plugin.PluginName + "] Couldn't read " + path + ": " + e.Message);
 				return;
 			}
 			LoadSettings(values);
@@ -198,23 +304,156 @@ namespace CreatureMarker
 					names[key] = "";
 				}
 			}
-			// The keys in names keep the prefabs' own casing, which the hashes need to match
-			Dictionary<string, bool?> states = new Dictionary<string, bool?>();
+			CreatureConfig.names = names;
+			Dictionary<string, bool?> states = BuildStates((string key) => (values.TryGetValue(key, out string text) ? ParseState(text) : null));
+			Write(FilePath, names, states);
+			SyncEntries(states);
+		}
+
+		/// <summary>
+		/// The value of every creature line and the overrides they give
+		/// </summary>
+		/// <remarks>
+		/// The keys in names keep the prefabs' own casing, which the hashes need to match
+		/// </remarks>
+		/// <param name="getState">Gives a creature line's value by prefab name, null for inherit</param>
+		/// <returns>Value by prefab name, null for inherit</returns>
+		private static Dictionary<string, bool?> BuildStates(Func<string, bool?> getState)
+		{
+			Dictionary<string, bool?> states = new Dictionary<string, bool?>(StringComparer.OrdinalIgnoreCase);
 			overrides.Clear();
 			foreach (string key in names.Keys)
 			{
-				bool? state = null;
-				if (values.TryGetValue(key, out string text))
-				{
-					state = ParseState(text);
-				}
+				bool? state = getState(key);
 				states[key] = state;
 				if (state.HasValue)
 				{
 					overrides[key.GetStableHashCode()] = state.Value;
 				}
 			}
-			Write(path, names, states);
+			return(states);
+		}
+
+		/// <summary>
+		/// Binds an entry for each setting and All switch, in the order the file lists them
+		/// </summary>
+		private static void BindSettings()
+		{
+			int order = 100;
+			showOnScreenEntry = BindSetting(MarkersSection, ShowOnScreenKey, true, showOnScreenNote, null, order--);
+			showOnMapEntry = BindSetting(MarkersSection, ShowOnMapKey, true, showOnMapNote, null, order--);
+			showNameEntry = BindSetting(MarkersSection, ShowNameKey, false, showNameNote, null, order--);
+			showLevelEntry = BindSetting(MarkersSection, ShowLevelKey, false, showLevelNote, null, order--);
+			showDistanceEntry = BindSetting(MarkersSection, ShowDistanceKey, false, showDistanceNote, null, order--);
+			maxDistanceEntry = BindSetting(MarkersSection, MaxDistanceKey, DefaultMaxDistance, maxDistanceNote, new AcceptableValueRange<float>(MinMaxDistance, MaxMaxDistance), order--);
+			farDistanceEntry = BindSetting(MarkersSection, FarDistanceKey, DefaultFarDistance, farDistanceNote, new AcceptableValueRange<float>(MinMaxDistance, MaxMaxDistance), order--);
+			farScaleEntry = BindSetting(MarkersSection, FarScaleKey, DefaultFarScale, farScaleNote, new AcceptableValueRange<float>(MinFarScale, 1f), order--);
+			bobHeightEntry = BindSetting(MarkersSection, BobHeightKey, DefaultBobHeight, bobHeightNote, new AcceptableValueRange<float>(0f, MaxBobHeight), order--);
+			passiveColorEntry = BindSetting(ColorsSection, PassiveColorKey, ParseColor(DefaultPassiveColor, Color.green), passiveColorNote, null, order--);
+			hostileColorEntry = BindSetting(ColorsSection, HostileColorKey, ParseColor(DefaultHostileColor, Color.yellow), hostileColorNote, null, order--);
+			bossColorEntry = BindSetting(ColorsSection, BossColorKey, ParseColor(DefaultBossColor, Color.red), bossColorNote, null, order--);
+			fishColorEntry = BindSetting(ColorsSection, FishColorKey, ParseColor(DefaultFishColor, Color.cyan), fishColorNote, null, order--);
+			allCreaturesEntry = BindSetting(CreaturesSection, AllCreaturesKey, false, "Mark every creature", null, order--);
+			allHostileEntry = BindSetting(CreaturesSection, AllHostileKey, true, "Mark every creature that will attack you", null, order--);
+			allFishEntry = BindSetting(CreaturesSection, AllFishKey, false, "Mark every fish", null, order--);
+		}
+
+		/// <summary>
+		/// Binds one setting's entry
+		/// </summary>
+		/// <param name="section">The Configuration Manager category</param>
+		/// <param name="key">The setting's key, the same as in the file</param>
+		/// <param name="defaultValue">The setting's default</param>
+		/// <param name="description">Shown when hovering over the setting</param>
+		/// <param name="range">The values the setting can take, or null for any</param>
+		/// <param name="order">Position in its category, higher first</param>
+		/// <returns>The entry</returns>
+		private static ConfigEntry<T> BindSetting<T>(string section, string key, T defaultValue, string description, AcceptableValueBase range, int order)
+		{
+			return(mirror.Bind(section, key, defaultValue, description, range, order, null));
+		}
+
+		/// <summary>
+		/// Gives the entries the values just read, binding entries for new creature lines and removing those of lines
+		/// that are gone, without writing the file
+		/// </summary>
+		/// <param name="states">Value by prefab name, null for inherit</param>
+		private static void SyncEntries(Dictionary<string, bool?> states)
+		{
+			if (mirror == null)
+			{
+				return;
+			}
+			mirror.Sync(() =>
+			{
+				showOnScreenEntry.Value = ShowOnScreen;
+				showOnMapEntry.Value = ShowOnMap;
+				showNameEntry.Value = ShowName;
+				showLevelEntry.Value = ShowLevel;
+				showDistanceEntry.Value = ShowDistance;
+				maxDistanceEntry.Value = MaxDistance;
+				farDistanceEntry.Value = FarDistance;
+				farScaleEntry.Value = FarScale;
+				bobHeightEntry.Value = BobHeight;
+				passiveColorEntry.Value = passiveColor;
+				hostileColorEntry.Value = hostileColor;
+				bossColorEntry.Value = bossColor;
+				fishColorEntry.Value = fishColor;
+				allCreaturesEntry.Value = allCreatures;
+				allHostileEntry.Value = allHostile;
+				allFishEntry.Value = allFish;
+				foreach (KeyValuePair<string, string> name in names)
+				{
+					creatureEntries.Set(CreaturesSection, name.Key, name.Value, states[name.Key]);
+				}
+				creatureEntries.RemoveUnset();
+			});
+		}
+
+		/// <summary>
+		/// Takes the values of the entries after one is changed in Configuration Manager and writes them to the file
+		/// </summary>
+		private static void OnEntryChanged()
+		{
+			ShowOnScreen = showOnScreenEntry.Value;
+			ShowOnMap = showOnMapEntry.Value;
+			ShowName = showNameEntry.Value;
+			ShowLevel = showLevelEntry.Value;
+			ShowDistance = showDistanceEntry.Value;
+			MaxDistance = maxDistanceEntry.Value;
+			FarDistance = farDistanceEntry.Value;
+			FarScale = farScaleEntry.Value;
+			BobHeight = bobHeightEntry.Value;
+			passiveColorText = TakeEntryColor(passiveColorEntry, passiveColorText, ref passiveColor);
+			hostileColorText = TakeEntryColor(hostileColorEntry, hostileColorText, ref hostileColor);
+			bossColorText = TakeEntryColor(bossColorEntry, bossColorText, ref bossColor);
+			fishColorText = TakeEntryColor(fishColorEntry, fishColorText, ref fishColor);
+			allCreatures = allCreaturesEntry.Value;
+			allHostile = allHostileEntry.Value;
+			allFish = allFishEntry.Value;
+			Dictionary<string, bool?> states = BuildStates((string key) => (creatureEntries.TryGetState(key, out bool? state) ? state : null));
+			Write(FilePath, names, states);
+			Plugin.Watcher?.Remember();
+		}
+
+		/// <summary>
+		/// Takes a color entry's value, keeping the file's color text when the color is unchanged so a name like red
+		/// stays as it is
+		/// </summary>
+		/// <param name="entry">The color's entry</param>
+		/// <param name="text">The color text from the file</param>
+		/// <param name="color">The color in use, set to the entry's without its alpha when it differs</param>
+		/// <returns>The color text to write to the file</returns>
+		private static string TakeEntryColor(ConfigEntry<Color> entry, string text, ref Color color)
+		{
+			Color value = entry.Value;
+			value.a = 1f;
+			if (value == color)
+			{
+				return(text);
+			}
+			color = value;
+			return("#" + ColorUtility.ToHtmlStringRGB(value));
 		}
 
 		/// <summary>
@@ -434,13 +673,16 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Reads the key and value text of every "Key = value" line, ignoring blank lines and anything after ##
+		/// Reads the key and value text of every "Key = value" line, ignoring blank lines, and the comment after ## on
+		/// those lines
 		/// </summary>
 		/// <param name="path">Path of the config file</param>
+		/// <param name="notes">Set to the comment after the value by key, for the lines that have one</param>
 		/// <returns>Value text by key, empty when the file doesn't exist</returns>
-		private static Dictionary<string, string> Read(string path)
+		private static Dictionary<string, string> Read(string path, out Dictionary<string, string> notes)
 		{
 			Dictionary<string, string> values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+			notes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 			if (!File.Exists(path))
 			{
 				return(values);
@@ -448,9 +690,11 @@ namespace CreatureMarker
 			foreach (string line in File.ReadAllLines(path))
 			{
 				string text = line;
+				string note = "";
 				int comment = text.IndexOf(Comment, StringComparison.Ordinal);
 				if (comment >= 0)
 				{
+					note = text.Substring(comment + Comment.Length).Trim();
 					text = text.Substring(0, comment);
 				}
 				int equals = text.IndexOf('=');
@@ -462,6 +706,10 @@ namespace CreatureMarker
 				if (key.Length > 0)
 				{
 					values[key] = text.Substring(equals + 1).Trim();
+					if (note.Length > 0)
+					{
+						notes[key] = note;
+					}
 				}
 			}
 			return(values);
@@ -477,30 +725,30 @@ namespace CreatureMarker
 		{
 			StringBuilder builder = new StringBuilder();
 			AppendLines(builder, header);
-			AppendLine(builder, ShowOnScreenKey, FormatState(ShowOnScreen), "Show an arrow above each marked creature, pinned to the screen edge when it is off-screen, default true");
-			AppendLine(builder, ShowOnMapKey, FormatState(ShowOnMap), "Show a dot on the minimap and the large map for each marked creature, default true");
+			AppendLine(builder, ShowOnScreenKey, StateEntries.Format(ShowOnScreen), showOnScreenNote);
+			AppendLine(builder, ShowOnMapKey, StateEntries.Format(ShowOnMap), showOnMapNote);
 			builder.Append("\r\n");
-			AppendLine(builder, ShowNameKey, FormatState(ShowName), "Show the creature's name with its marker, default false");
-			AppendLine(builder, ShowLevelKey, FormatState(ShowLevel), "Show stars after a creature's name and the level after a fish's name, like Perch[3], for those above the lowest level, default false");
+			AppendLine(builder, ShowNameKey, StateEntries.Format(ShowName), showNameNote);
+			AppendLine(builder, ShowLevelKey, StateEntries.Format(ShowLevel), showLevelNote);
 			builder.Append("\r\n");
-			AppendLine(builder, ShowDistanceKey, FormatState(ShowDistance), "Show the creature's distance in meters with its marker, after the name when Show Name is on, default false");
-			AppendLine(builder, MaxDistanceKey, MaxDistance.ToString(CultureInfo.InvariantCulture), "Meters, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultMaxDistance);
-			AppendLine(builder, FarDistanceKey, FarDistance.ToString(CultureInfo.InvariantCulture), "Meters beyond which a marker is drawn at Far Scale, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultFarDistance);
-			AppendLine(builder, FarScaleKey, FarScale.ToString(CultureInfo.InvariantCulture), "Size of a marker beyond Far Distance, from " + MinFarScale.ToString(CultureInfo.InvariantCulture) + " to 1 (no shrinking), default " + DefaultFarScale.ToString(CultureInfo.InvariantCulture));
+			AppendLine(builder, ShowDistanceKey, StateEntries.Format(ShowDistance), showDistanceNote);
+			AppendLine(builder, MaxDistanceKey, MaxDistance.ToString(CultureInfo.InvariantCulture), maxDistanceNote);
+			AppendLine(builder, FarDistanceKey, FarDistance.ToString(CultureInfo.InvariantCulture), farDistanceNote);
+			AppendLine(builder, FarScaleKey, FarScale.ToString(CultureInfo.InvariantCulture), farScaleNote);
 			builder.Append("\r\n");
-			AppendLine(builder, BobHeightKey, BobHeight.ToString(CultureInfo.InvariantCulture), "Pixels an on-screen arrow bobs up and down, from 0 (disables bobbing) to " + MaxBobHeight + ", default " + DefaultBobHeight);
-			AppendLine(builder, PassiveColorKey, passiveColorText, "Creatures that won't attack you, default " + DefaultPassiveColor);
-			AppendLine(builder, HostileColorKey, hostileColorText, "Creatures that will attack you, default " + DefaultHostileColor);
-			AppendLine(builder, BossColorKey, bossColorText, "Bosses, default " + DefaultBossColor);
-			AppendLine(builder, FishColorKey, fishColorText, "Fish, default " + DefaultFishColor);
+			AppendLine(builder, BobHeightKey, BobHeight.ToString(CultureInfo.InvariantCulture), bobHeightNote);
+			AppendLine(builder, PassiveColorKey, passiveColorText, passiveColorNote);
+			AppendLine(builder, HostileColorKey, hostileColorText, hostileColorNote);
+			AppendLine(builder, BossColorKey, bossColorText, bossColorNote);
+			AppendLine(builder, FishColorKey, fishColorText, fishColorNote);
 			AppendLines(builder, creatureHeader);
-			AppendLine(builder, AllCreaturesKey, FormatState(allCreatures), "");
-			AppendLine(builder, AllHostileKey, FormatState(allHostile), "");
-			AppendLine(builder, AllFishKey, FormatState(allFish), "");
+			AppendLine(builder, AllCreaturesKey, StateEntries.Format(allCreatures), "");
+			AppendLine(builder, AllHostileKey, StateEntries.Format(allHostile), "");
+			AppendLine(builder, AllFishKey, StateEntries.Format(allFish), "");
 			builder.Append("\r\n");
 			foreach (KeyValuePair<string, string> name in names)
 			{
-				AppendLine(builder, name.Key, FormatState(states[name.Key]), name.Value);
+				AppendLine(builder, name.Key, StateEntries.Format(states[name.Key]), name.Value);
 			}
 			string contents = builder.ToString();
 			try
@@ -545,20 +793,6 @@ namespace CreatureMarker
 				builder.Append(" ").Append(Comment).Append(" ").Append(note);
 			}
 			builder.Append("\r\n");
-		}
-
-		/// <summary>
-		/// The text written for a true/false/inherit value
-		/// </summary>
-		/// <param name="value">The value, null for inherit</param>
-		/// <returns>"true", "false" or "inherit"</returns>
-		private static string FormatState(bool? value)
-		{
-			if (!value.HasValue)
-			{
-				return(Inherit);
-			}
-			return((value.Value ? "true" : "false"));
 		}
 
 		/// <summary>

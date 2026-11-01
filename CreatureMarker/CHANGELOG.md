@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.3.1
+- Support BepInEx Configuration Manager (reported by DB451)
+
 ## 1.3.0
 - Fish can be marked too, each with its own line in the config file and a new Fish Color setting (suggested by DarkFreezer)
 - Added the Show Level setting, off by default, which shows a ⭐ per star after a creature's name, and a fish's level after its name like Perch[3] (suggested by DarkFreezer)

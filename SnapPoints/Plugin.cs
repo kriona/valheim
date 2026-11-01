@@ -10,7 +10,7 @@ namespace SnapPoints
 	{
 		public const string PluginGuid = "kriona.SnapPoints";
 		public const string PluginName = "Snap Points";
-		public const string PluginVersion = "1.1.0";
+		public const string PluginVersion = "1.1.1";
 
 		/// <summary>
 		/// The plugin's log, for the classes outside the plugin
@@ -25,11 +25,12 @@ namespace SnapPoints
 		private Harmony harmony;
 
 		/// <summary>
-		/// Watches the config file for changes and applies the patches
+		/// Mirrors the config file for Configuration Manager, watches it for changes and applies the patches
 		/// </summary>
 		private void Awake()
 		{
 			Log = Logger;
+			PieceConfig.Init(Config);
 			Watcher = new ConfigWatcher(PieceConfig.FilePath, PieceConfig.Reload, Logger, PluginName);
 			harmony = new Harmony(PluginGuid);
 			harmony.PatchAll();

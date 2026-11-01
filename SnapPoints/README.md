@@ -33,6 +33,8 @@ When placing two chests, you **cannot** snap a chest by attempting to snap to th
 
 `BepInEx\config\kriona.SnapPoints.cfg` is created the first time you load a world, and changes take effect as soon as the file is saved. You do not need to restart Valheim or rejoin the world.
 
+Build pieces only appear in Configuration Manager once a world is loaded.
+
 The file has one line per build piece, grouped by the tool that builds it, with the piece's name in game after `##`:
 
 ```

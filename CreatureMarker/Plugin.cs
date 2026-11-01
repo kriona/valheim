@@ -10,7 +10,7 @@ namespace CreatureMarker
 	{
 		public const string PluginGuid = "kriona.CreatureMarker";
 		public const string PluginName = "Creature Marker";
-		public const string PluginVersion = "1.3.0";
+		public const string PluginVersion = "1.3.1";
 
 		private readonly MarkerHud markers = new MarkerHud();
 		private readonly MapMarkers mapMarkers = new MapMarkers();
@@ -23,10 +23,11 @@ namespace CreatureMarker
 		internal static ConfigWatcher Watcher;
 
 		/// <summary>
-		/// Watches the config file for changes and applies the patches
+		/// Binds the settings for Configuration Manager, watches the config file for changes and applies the patches
 		/// </summary>
 		private void Awake()
 		{
+			CreatureConfig.Init(Config);
 			Watcher = new ConfigWatcher(CreatureConfig.FilePath, CreatureConfig.Reload, Logger, PluginName);
 			harmony = new Harmony(PluginGuid);
 			harmony.PatchAll();
