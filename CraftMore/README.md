@@ -17,6 +17,8 @@ Hold a key while pressing Craft to craft more than one at a time, the way holdin
 
 `BepInEx\config\kriona.CraftMore.cfg` is created on first run, and changes take effect as soon as the file is saved. You do not need to restart Valheim or rejoin the world.
 
+Keys can only be added or removed in the file - Configuration Manager lists the keys already there as numbered slots.
+
 - `Show Hints` - lists the keys under the Craft button (default `true`)
 - `Full Experience` - the game raises a crafting skill by at most one level per batch, however many crafts are in it, and the rest of the experience is lost. Turn this on to get the experience of crafting each one separately, so a large batch can raise the skill several levels. It isn't needed when `One At A Time` is `true`, since each craft then gives its own experience (default `true`)
 - `One At A Time` - crafts a batch's items one after another, each going into your inventory as it's done, instead of all of them at the end. The batch takes as long either way, drops what you can't carry on the ground, and stops early if you cancel it, close the inventory or run out of materials (default `true`)

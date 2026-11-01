@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using BepInEx;
+using BepInEx.Configuration;
+using Kriona.Shared;
 using UnityEngine;
 
 namespace SnapPoints
@@ -17,12 +19,15 @@ namespace SnapPoints
 	/// added by other mods, while keeping the values already set, and read again whenever it is saved while a world is
 	/// loaded. Lines for pieces that are no longer loaded are kept so their values survive a mod being removed for a
 	/// while
+	///
+	/// Every piece line is also mirrored as an entry in the plugin's BepInEx config once a world loads, under its
+	/// tool's name, so Configuration Manager can list and change them, and a change made there is written to this file
 	/// </remarks>
 	internal static class PieceConfig
 	{
 		private const string FileName = Plugin.PluginGuid + ".cfg";
 		private const string Comment = "##";
-		private const string Inherit = "inherit";
+		private const string Inherit = StateEntries.Inherit;
 		private const string NotLoadedGroup = "Not loaded";
 
 		private static readonly string[] header =
@@ -61,6 +66,26 @@ namespace SnapPoints
 		private static readonly Dictionary<string, bool> states = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>
+		/// Mirrors the piece lines as entries for Configuration Manager
+		/// </summary>
+		private static ConfigMirror mirror;
+
+		/// <summary>
+		/// The entries of the piece lines
+		/// </summary>
+		private static StateEntries pieceEntries;
+
+		/// <summary>
+		/// Display name by prefab name, by tool name, as last written
+		/// </summary>
+		private static SortedDictionary<string, SortedDictionary<string, string>> lastGroups;
+
+		/// <summary>
+		/// Prefab names in the file that no tool builds, as last written
+		/// </summary>
+		private static SortedDictionary<string, string> lastNotLoaded;
+
+		/// <summary>
 		/// Whether any piece is set to false, so the snap point search can skip the lookup when none is
 		/// </summary>
 		public static bool AnyOff { get; private set; }
@@ -69,6 +94,17 @@ namespace SnapPoints
 		/// The config file's full path
 		/// </summary>
 		public static string FilePath => Path.Combine(Paths.ConfigPath, FileName);
+
+		/// <summary>
+		/// Starts mirroring the piece lines as entries in the plugin's BepInEx config for Configuration Manager - the
+		/// entries are bound once a world loads and the pieces are known
+		/// </summary>
+		/// <param name="file">The plugin's BepInEx config</param>
+		public static void Init(ConfigFile file)
+		{
+			mirror = new ConfigMirror(file, OnEntryChanged);
+			pieceEntries = new StateEntries(mirror, "true adds a snap point at each corner, false takes away all of its snap points, inherit leaves them as the game has them");
+		}
 
 		/// <summary>
 		/// The value set for a piece
@@ -132,7 +168,6 @@ namespace SnapPoints
 				}
 			}
 			Dictionary<string, bool?> lineStates = new Dictionary<string, bool?>(StringComparer.OrdinalIgnoreCase);
-			states.Clear();
 			foreach (SortedDictionary<string, string> group in groups.Values)
 			{
 				foreach (string key in group.Keys)
@@ -144,6 +179,20 @@ namespace SnapPoints
 			{
 				lineStates[key] = GetLineState(values, key);
 			}
+			SetStates(lineStates);
+			lastGroups = groups;
+			lastNotLoaded = notLoaded;
+			Write(path, groups, notLoaded, lineStates);
+			SyncEntries(lineStates);
+		}
+
+		/// <summary>
+		/// Takes the true or false lines into the states used for snapping
+		/// </summary>
+		/// <param name="lineStates">Value by prefab name, null for inherit</param>
+		private static void SetStates(Dictionary<string, bool?> lineStates)
+		{
+			states.Clear();
 			foreach (KeyValuePair<string, bool?> line in lineStates)
 			{
 				if (line.Value.HasValue)
@@ -152,7 +201,76 @@ namespace SnapPoints
 				}
 			}
 			AnyOff = states.ContainsValue(false);
-			Write(path, groups, notLoaded, lineStates);
+		}
+
+		/// <summary>
+		/// Gives the entries the values just read, binding entries for new piece lines and removing those of lines that
+		/// are gone, without writing the file
+		/// </summary>
+		/// <param name="lineStates">Value by prefab name, null for inherit</param>
+		private static void SyncEntries(Dictionary<string, bool?> lineStates)
+		{
+			if (mirror == null)
+			{
+				return;
+			}
+			mirror.Sync(() =>
+			{
+				foreach (KeyValuePair<string, SortedDictionary<string, string>> group in lastGroups)
+				{
+					foreach (KeyValuePair<string, string> piece in group.Value)
+					{
+						pieceEntries.Set(group.Key, piece.Key, piece.Value, lineStates[piece.Key]);
+					}
+				}
+				foreach (string key in lastNotLoaded.Keys)
+				{
+					pieceEntries.Set(NotLoadedGroup, key, "", lineStates[key]);
+				}
+				pieceEntries.RemoveUnset();
+			});
+		}
+
+		/// <summary>
+		/// Takes the values of the entries after one is changed in Configuration Manager, writes them to the file and
+		/// updates the snap points
+		/// </summary>
+		private static void OnEntryChanged()
+		{
+			if (lastGroups == null)
+			{
+				return;
+			}
+			Dictionary<string, bool?> lineStates = new Dictionary<string, bool?>(StringComparer.OrdinalIgnoreCase);
+			foreach (SortedDictionary<string, string> group in lastGroups.Values)
+			{
+				foreach (string key in group.Keys)
+				{
+					lineStates[key] = GetEntryState(key);
+				}
+			}
+			foreach (string key in lastNotLoaded.Keys)
+			{
+				lineStates[key] = GetEntryState(key);
+			}
+			SetStates(lineStates);
+			Write(FilePath, lastGroups, lastNotLoaded, lineStates);
+			Plugin.Watcher?.Remember();
+			Snapping.ApplyAll();
+		}
+
+		/// <summary>
+		/// The value of a piece line's entry, or the value already in use when it has none
+		/// </summary>
+		/// <param name="key">The piece's prefab name</param>
+		/// <returns>True or false, or null for inherit</returns>
+		private static bool? GetEntryState(string key)
+		{
+			if (pieceEntries.TryGetState(key, out bool? state))
+			{
+				return(state);
+			}
+			return(GetState(key));
 		}
 
 		/// <summary>
@@ -315,27 +433,13 @@ namespace SnapPoints
 			builder.Append("\r\n").Append(Comment).Append(" ").Append(heading).Append("\r\n");
 			foreach (KeyValuePair<string, string> piece in pieces)
 			{
-				builder.Append(piece.Key).Append(" = ").Append(FormatState(lineStates[piece.Key]));
+				builder.Append(piece.Key).Append(" = ").Append(StateEntries.Format(lineStates[piece.Key]));
 				if (piece.Value.Length > 0)
 				{
 					builder.Append(" ").Append(Comment).Append(" ").Append(piece.Value);
 				}
 				builder.Append("\r\n");
 			}
-		}
-
-		/// <summary>
-		/// The text written for a true/false/inherit value
-		/// </summary>
-		/// <param name="value">The value, null for inherit</param>
-		/// <returns>"true", "false" or "inherit"</returns>
-		private static string FormatState(bool? value)
-		{
-			if (!value.HasValue)
-			{
-				return(Inherit);
-			}
-			return((value.Value ? "true" : "false"));
 		}
 
 		/// <summary>

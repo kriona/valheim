@@ -9,18 +9,24 @@ namespace CraftMore
 	{
 		public const string PluginGuid = "kriona.CraftMore";
 		public const string PluginName = "Craft More";
-		public const string PluginVersion = "1.0.0";
-
-		private Harmony harmony;
-		private ConfigWatcher watcher;
+		public const string PluginVersion = "1.0.1";
 
 		/// <summary>
-		/// Reads the config file, watches it for changes and applies the patches
+		/// Watches the config file, which Configuration Manager changes also write
+		/// </summary>
+		internal static ConfigWatcher Watcher;
+
+		private Harmony harmony;
+
+		/// <summary>
+		/// Mirrors the settings for Configuration Manager, reads the config file, watches it for changes and applies
+		/// the patches
 		/// </summary>
 		private void Awake()
 		{
+			CraftConfig.Init(Config);
 			CraftConfig.Load();
-			watcher = new ConfigWatcher(CraftConfig.FilePath, CraftConfig.Load, Logger, PluginName);
+			Watcher = new ConfigWatcher(CraftConfig.FilePath, CraftConfig.Load, Logger, PluginName);
 			harmony = new Harmony(PluginGuid);
 			harmony.PatchAll();
 			Logger.LogInfo(PluginName + " " + PluginVersion + " loaded");
@@ -31,7 +37,7 @@ namespace CraftMore
 		/// </summary>
 		private void Update()
 		{
-			watcher.Update();
+			Watcher.Update();
 		}
 
 		/// <summary>
@@ -39,7 +45,7 @@ namespace CraftMore
 		/// </summary>
 		private void OnDestroy()
 		{
-			watcher?.Dispose();
+			Watcher?.Dispose();
 			harmony?.UnpatchSelf();
 		}
 	}
