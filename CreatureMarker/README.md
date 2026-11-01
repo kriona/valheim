@@ -27,10 +27,11 @@ Puts a colored arrow above nearby creatures and fish. Creatures that are off-scr
 | Hostile Color | #FFD91A | Marker color for creatures that will |
 | Boss Color | #FF3333 | Marker color for bosses |
 | Fish Color | #33CCFF | Marker color for fish |
-| All Creatures | false | Marks every creature and fish |
+| All Creatures | false | Marks every creature |
 | All Hostile Creatures | true | Marks every creature that will attack you |
+| All Fish | false | Marks every fish |
 
-Every creature and fish also gets its own line, `Prefab = inherit/true/false ## Name`. `inherit` follows the All switches, while `true` or `false` always shows or hides that creature's or fish's marker. To mark fish without marking every passive creature, set the fish's own lines to `true`.
+Every creature and fish also gets its own line, `Prefab = inherit/true/false ## Name`. `inherit` follows the All switches, while `true` or `false` always shows or hides that creature's or fish's marker.
 
 Colors can be `#RRGGBB` or a color name like `red`, `yellow`, `green`, `cyan` or `magenta`.
 

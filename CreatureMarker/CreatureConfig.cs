@@ -40,6 +40,7 @@ namespace CreatureMarker
 		private const string FishColorKey = "Fish Color";
 		private const string AllCreaturesKey = "All Creatures";
 		private const string AllHostileKey = "All Hostile Creatures";
+		private const string AllFishKey = "All Fish";
 
 		private const float DefaultMaxDistance = 50f;
 		private const float MinMaxDistance = 5f;
@@ -65,7 +66,7 @@ namespace CreatureMarker
 		private static readonly string[] creatureHeader =
 		{
 			"",
-			"## All Creatures marks every creature and fish, and All Hostile Creatures marks every creature that will attack you",
+			"## All Creatures marks every creature, All Hostile Creatures marks every creature that will attack you, and All Fish marks every fish",
 			"## Each creature and fish line is: Prefab = inherit/true/false ## Name in game",
 			"## inherit follows the All switches, while true or false always shows or hides that creature's or fish's marker",
 			"",
@@ -126,6 +127,7 @@ namespace CreatureMarker
 		private static Color fishColor = ParseColor(DefaultFishColor, Color.cyan);
 		private static bool allCreatures;
 		private static bool allHostile = true;
+		private static bool allFish;
 
 		/// <summary>
 		/// The true or false set on creature lines, by prefab hash, leaving out the ones set to inherit
@@ -262,7 +264,7 @@ namespace CreatureMarker
 				{
 					continue;
 				}
-				if (!IsMarked(fish.m_nview, allCreatures))
+				if (!IsMarked(fish.m_nview, allFish))
 				{
 					continue;
 				}
@@ -325,6 +327,7 @@ namespace CreatureMarker
 			fishColorText = TakeColor(values, FishColorKey, DefaultFishColor, out fishColor);
 			allCreatures = (ParseState(TakeValue(values, AllCreaturesKey)) ?? false);
 			allHostile = (ParseState(TakeValue(values, AllHostileKey)) ?? true);
+			allFish = (ParseState(TakeValue(values, AllFishKey)) ?? false);
 			ShowName = (ParseState(TakeValue(values, ShowNameKey)) ?? false);
 			ShowDistance = (ParseState(TakeValue(values, ShowDistanceKey)) ?? false);
 			ShowLevel = (ParseState(TakeValue(values, ShowLevelKey)) ?? false);
@@ -493,6 +496,7 @@ namespace CreatureMarker
 			AppendLines(builder, creatureHeader);
 			AppendLine(builder, AllCreaturesKey, FormatState(allCreatures), "");
 			AppendLine(builder, AllHostileKey, FormatState(allHostile), "");
+			AppendLine(builder, AllFishKey, FormatState(allFish), "");
 			builder.Append("\r\n");
 			foreach (KeyValuePair<string, string> name in names)
 			{
