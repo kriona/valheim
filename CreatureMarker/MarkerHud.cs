@@ -16,7 +16,6 @@ namespace CreatureMarker
 	{
 		private const float HeadOffset = 0.4f;
 		private const float EdgeMargin = 40f;
-		private const float BobHeight = 6f;
 		private const float BobSpeed = 5f;
 		private const float LabelGap = 2f;
 		private const float LabelFontSize = 16f;
@@ -162,7 +161,7 @@ namespace CreatureMarker
 			bool onScreen = (screen.z > 0f && screen.x >= 0f && screen.x <= Screen.width && screen.y >= 0f && screen.y <= Screen.height);
 			if (onScreen)
 			{
-				float bob = Mathf.Abs(Mathf.Sin(Time.time * BobSpeed)) * BobHeight;
+				float bob = Mathf.Abs(Mathf.Sin(Time.time * BobSpeed)) * CreatureConfig.BobHeight;
 				arrow.position = new Vector3(screen.x, screen.y + bob, 0f);
 				arrow.localRotation = Quaternion.identity;
 				return(Vector2.down);

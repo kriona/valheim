@@ -28,6 +28,7 @@ namespace CreatureMarker
 		private const string ShowOnScreenKey = "Show On Screen";
 		private const string ShowOnMapKey = "Show On Map";
 		private const string MaxDistanceKey = "Max Distance";
+		private const string BobHeightKey = "Bob Height";
 		private const string ShowNameKey = "Show Name";
 		private const string ShowDistanceKey = "Show Distance";
 		private const string ShowLevelKey = "Show Level";
@@ -41,6 +42,8 @@ namespace CreatureMarker
 		private const float DefaultMaxDistance = 50f;
 		private const float MinMaxDistance = 5f;
 		private const float MaxMaxDistance = 500f;
+		private const float DefaultBobHeight = 6f;
+		private const float MaxBobHeight = 30f;
 		private const string DefaultPassiveColor = "#40D940";
 		private const string DefaultHostileColor = "#FFD91A";
 		private const string DefaultBossColor = "#FF3333";
@@ -77,6 +80,11 @@ namespace CreatureMarker
 		/// Furthest a creature can be from the player, in meters, and still get a marker
 		/// </summary>
 		public static float MaxDistance { get; private set; } = DefaultMaxDistance;
+
+		/// <summary>
+		/// How far, in pixels, an on-screen arrow bobs up and down, 0 to keep it still
+		/// </summary>
+		public static float BobHeight { get; private set; } = DefaultBobHeight;
 
 		/// <summary>
 		/// Whether the creature's name is shown with its marker
@@ -305,6 +313,19 @@ namespace CreatureMarker
 					Warn(MaxDistanceKey, text);
 				}
 			}
+			BobHeight = DefaultBobHeight;
+			text = TakeValue(values, BobHeightKey);
+			if (text != null)
+			{
+				if (float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float bobHeight))
+				{
+					BobHeight = Mathf.Clamp(bobHeight, 0f, MaxBobHeight);
+				}
+				else
+				{
+					Warn(BobHeightKey, text);
+				}
+			}
 			passiveColorText = TakeColor(values, PassiveColorKey, DefaultPassiveColor, out passiveColor);
 			hostileColorText = TakeColor(values, HostileColorKey, DefaultHostileColor, out hostileColor);
 			bossColorText = TakeColor(values, BossColorKey, DefaultBossColor, out bossColor);
@@ -440,6 +461,7 @@ namespace CreatureMarker
 			AppendLine(builder, ShowOnMapKey, FormatState(ShowOnMap), "Show a dot on the minimap and the large map for each marked creature, default true");
 			builder.Append("\r\n");
 			AppendLine(builder, MaxDistanceKey, MaxDistance.ToString(CultureInfo.InvariantCulture), "Meters, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultMaxDistance);
+			AppendLine(builder, BobHeightKey, BobHeight.ToString(CultureInfo.InvariantCulture), "Pixels an on-screen arrow bobs up and down, from 0 to keep it still to " + MaxBobHeight + ", default " + DefaultBobHeight);
 			AppendLine(builder, ShowNameKey, FormatState(ShowName), "Show the creature's name with its marker, default false");
 			AppendLine(builder, ShowDistanceKey, FormatState(ShowDistance), "Show the creature's distance in meters with its marker, after the name when Show Name is on, default false");
 			AppendLine(builder, ShowLevelKey, FormatState(ShowLevel), "Show stars after a creature's name and the level after a fish's name, like Perch[3], for those above the lowest level, default false");

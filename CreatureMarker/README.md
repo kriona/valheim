@@ -17,6 +17,7 @@ Puts a colored arrow above nearby creatures and fish. Creatures that are off-scr
 | Show On Screen | true | Shows an arrow above each marked creature, pinned to the screen edge when it is off-screen |
 | Show On Map | true | Shows a dot on the minimap and the large map for each marked creature, except while you are in a dungeon |
 | Max Distance | 50 | How far away, in meters, a creature can be and still get a marker (5 - 500) |
+| Bob Height | 6 | How far, in pixels, an on-screen arrow bobs up and down (0 - 30). 0 disables bobbing |
 | Show Name | false | Shows the creature's name with its marker |
 | Show Distance | false | Shows the creature's distance with its marker |
 | Show Level | false | Shows a ⭐ for each of a creature's stars, and a fish's level like Perch[3], after the name. Creatures without stars and level 1 fish show nothing |
