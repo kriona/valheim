@@ -24,6 +24,11 @@ namespace CreatureMarker
 		internal static readonly Color OutlineColor = new Color(0.1f, 0.1f, 0.1f, 1f);
 
 		/// <summary>
+		/// Star characters to try for creature levels, in order, using the first one the label font can draw
+		/// </summary>
+		private static readonly char[] StarCandidates = { '⭐', '★', '*' };
+
+		/// <summary>
 		/// One creature's or fish's arrow and name label
 		/// </summary>
 		/// <remarks>
@@ -41,19 +46,26 @@ namespace CreatureMarker
 			public string name;
 
 			/// <summary>
-			/// The name and distance in the label's text, so the text is only rebuilt when one of them changes
+			/// The name, level and distance in the label's text, so the text is only rebuilt when one of them changes
 			/// </summary>
 			/// <remarks>
-			/// The name is null when names are hidden and the distance is -1 when distances are hidden, so -2 means
-			/// the text hasn't been set
+			/// The name is null when names are hidden, the level is 0 when levels are hidden and the distance is -1
+			/// when distances are hidden, so a distance of -2 means the text hasn't been set
 			/// </remarks>
 			public string shownName;
+			public int shownLevel;
+			public bool shownFish;
 			public int shownDistance = -2;
 		}
 
 		private readonly List<Marker> markers = new List<Marker>();
 		private GameObject root;
 		private Sprite sprite;
+
+		/// <summary>
+		/// The star shown for each of a creature's stars, picked when the first label is created
+		/// </summary>
+		private string star;
 
 		/// <summary>
 		/// Shows an arrow for each marked creature and fish when Show On Screen is on and hides the spare ones
@@ -79,7 +91,8 @@ namespace CreatureMarker
 			{
 				bool showName = CreatureConfig.ShowName;
 				bool showDistance = CreatureConfig.ShowDistance;
-				bool showLabel = (showName || showDistance);
+				bool showLevel = CreatureConfig.ShowLevel;
+				bool showLabel = (showName || showDistance || showLevel);
 				Vector3 playerPosition = player.transform.position;
 				foreach (Target target in marked)
 				{
@@ -96,7 +109,7 @@ namespace CreatureMarker
 							marker.name = Localization.instance.Localize(target.nameToken);
 						}
 						int distance = (showDistance ? Mathf.RoundToInt(Vector3.Distance(target.position, playerPosition)) : -1);
-						SetLabelText(marker, (showName ? marker.name : null), distance);
+						SetLabelText(marker, (showName ? marker.name : null), (showLevel ? target.level : 0), target.fish, distance);
 						marker.label.color = target.color;
 						PlaceLabel(marker, pointing);
 					}
@@ -177,31 +190,69 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Sets the label to "Name (5m)", "Name" or "5m", rebuilding the text only when the name or distance has changed
+		/// Sets the label to the name, then the level, then the distance in brackets when there is text before it -
+		/// like "Greydwarf ⭐⭐ (5m)", "Perch[3]" or "5m" - rebuilding the text only when one of them has changed
 		/// </summary>
 		/// <param name="marker">The marker whose label to set</param>
 		/// <param name="name">The name to show, or null to leave it out</param>
+		/// <param name="level">The level to show, or 0 to leave it out</param>
+		/// <param name="fish">Whether the level is a fish's, shown as a number instead of stars</param>
 		/// <param name="distance">The distance in meters to show, or -1 to leave it out</param>
-		private static void SetLabelText(Marker marker, string name, int distance)
+		private void SetLabelText(Marker marker, string name, int level, bool fish, int distance)
 		{
-			if (name == marker.shownName && distance == marker.shownDistance)
+			if (name == marker.shownName && level == marker.shownLevel && fish == marker.shownFish && distance == marker.shownDistance)
 			{
 				return;
 			}
 			marker.shownName = name;
+			marker.shownLevel = level;
+			marker.shownFish = fish;
 			marker.shownDistance = distance;
-			if (distance < 0)
+			string text = (name ?? "");
+			if (level > 1)
 			{
-				marker.label.text = (name ?? "");
+				if (fish)
+				{
+					// The game shows a fish's level the same way when it lies on the ground
+					text += "[" + level + "]";
+				}
+				else
+				{
+					if (text.Length > 0)
+					{
+						text += " ";
+					}
+					for (int i = 1; i < level; i++)
+					{
+						text += star;
+					}
+				}
 			}
-			else if (name == null)
+			if (distance >= 0)
 			{
-				marker.label.text = distance + "m";
+				text = ((text.Length > 0) ? text + " (" + distance + "m)" : distance + "m");
 			}
-			else
+			marker.label.text = text;
+		}
+
+		/// <summary>
+		/// The first of the star candidates the font, or one of its fallbacks, can draw
+		/// </summary>
+		/// <param name="font">The label font, or null</param>
+		/// <returns>The star text</returns>
+		private static string PickStar(TMP_FontAsset font)
+		{
+			if (font != null)
 			{
-				marker.label.text = name + " (" + distance + "m)";
+				foreach (char candidate in StarCandidates)
+				{
+					if (font.HasCharacter(candidate, true))
+					{
+						return(candidate.ToString());
+					}
+				}
 			}
+			return("*");
 		}
 
 		/// <summary>
@@ -276,6 +327,10 @@ namespace CreatureMarker
 			{
 				label.font = template.font;
 				label.fontSharedMaterial = template.fontSharedMaterial;
+			}
+			if (star == null)
+			{
+				star = PickStar(label.font);
 			}
 			label.fontSize = LabelFontSize;
 			label.alignment = TextAlignmentOptions.Center;

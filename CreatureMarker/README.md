@@ -3,7 +3,7 @@
 Puts a colored arrow above nearby creatures and fish. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them.
 
 - Separate colors for passive creatures, hostile creatures, bosses and fish
-- Optional name and distance label on each marker
+- Optional name, level and distance label on each marker
 - A matching colored dot on the minimap and the large map for each marked creature
 - Choose which creatures are marked - all of them, only hostile ones, or creature by creature
 - Includes creatures added by other mods
@@ -19,6 +19,7 @@ Puts a colored arrow above nearby creatures and fish. Creatures that are off-scr
 | Max Distance | 50 | How far away, in meters, a creature can be and still get a marker (5 - 500) |
 | Show Name | false | Shows the creature's name with its marker |
 | Show Distance | false | Shows the creature's distance with its marker |
+| Show Level | false | Shows a ⭐ for each of a creature's stars, and a fish's level like Perch[3], after the name. Creatures without stars and level 1 fish show nothing |
 | Passive Color | #40D940 | Marker color for creatures that won't attack you |
 | Hostile Color | #FFD91A | Marker color for creatures that will |
 | Boss Color | #FF3333 | Marker color for bosses |

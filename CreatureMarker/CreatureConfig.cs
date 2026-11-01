@@ -30,6 +30,7 @@ namespace CreatureMarker
 		private const string MaxDistanceKey = "Max Distance";
 		private const string ShowNameKey = "Show Name";
 		private const string ShowDistanceKey = "Show Distance";
+		private const string ShowLevelKey = "Show Level";
 		private const string PassiveColorKey = "Passive Color";
 		private const string HostileColorKey = "Hostile Color";
 		private const string BossColorKey = "Boss Color";
@@ -86,6 +87,11 @@ namespace CreatureMarker
 		/// Whether the creature's distance from the player is shown with its marker
 		/// </summary>
 		public static bool ShowDistance { get; private set; }
+
+		/// <summary>
+		/// Whether the creature's or fish's level is shown with its marker
+		/// </summary>
+		public static bool ShowLevel { get; private set; }
 
 		private static string passiveColorText = DefaultPassiveColor;
 		private static string hostileColorText = DefaultHostileColor;
@@ -217,6 +223,7 @@ namespace CreatureMarker
 				target.position = position;
 				target.top = character.GetTopPoint();
 				target.nameToken = character.GetHoverName();
+				target.level = character.GetLevel();
 				target.color = (character.IsBoss() ? bossColor : (hostile ? hostileColor : passiveColor));
 				marked.Add(target);
 			}
@@ -241,6 +248,8 @@ namespace CreatureMarker
 				target.position = position;
 				target.top = position;
 				target.nameToken = fish.GetHoverName();
+				target.level = ((fish.m_itemDrop != null) ? fish.m_itemDrop.m_itemData.m_quality : 1);
+				target.fish = true;
 				target.color = fishColor;
 				marked.Add(target);
 			}
@@ -304,6 +313,7 @@ namespace CreatureMarker
 			allHostile = (ParseState(TakeValue(values, AllHostileKey)) ?? true);
 			ShowName = (ParseState(TakeValue(values, ShowNameKey)) ?? false);
 			ShowDistance = (ParseState(TakeValue(values, ShowDistanceKey)) ?? false);
+			ShowLevel = (ParseState(TakeValue(values, ShowLevelKey)) ?? false);
 			ShowOnScreen = (ParseState(TakeValue(values, ShowOnScreenKey)) ?? true);
 			ShowOnMap = (ParseState(TakeValue(values, ShowOnMapKey)) ?? true);
 		}
@@ -432,6 +442,7 @@ namespace CreatureMarker
 			AppendLine(builder, MaxDistanceKey, MaxDistance.ToString(CultureInfo.InvariantCulture), "Meters, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultMaxDistance);
 			AppendLine(builder, ShowNameKey, FormatState(ShowName), "Show the creature's name with its marker, default false");
 			AppendLine(builder, ShowDistanceKey, FormatState(ShowDistance), "Show the creature's distance in meters with its marker, after the name when Show Name is on, default false");
+			AppendLine(builder, ShowLevelKey, FormatState(ShowLevel), "Show stars after a creature's name and the level after a fish's name, like Perch[3], for those above the lowest level, default false");
 			AppendLine(builder, PassiveColorKey, passiveColorText, "Creatures that won't attack you, default " + DefaultPassiveColor);
 			AppendLine(builder, HostileColorKey, hostileColorText, "Creatures that will attack you, default " + DefaultHostileColor);
 			AppendLine(builder, BossColorKey, bossColorText, "Bosses, default " + DefaultBossColor);

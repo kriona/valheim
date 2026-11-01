@@ -2,6 +2,8 @@
 
 ## 1.3.0
 - Fish can be marked too, each with its own line in the config file and a new Fish Color setting. All Creatures marks them, while All Hostile Creatures leaves them out
+- Added the Show Level setting, off by default, which shows a ⭐ per star after a creature's name, and a fish's level after its name like Perch[3]
+
 ## 1.2.1
 - Shows a message when the config file is reloaded
 

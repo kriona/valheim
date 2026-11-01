@@ -28,6 +28,16 @@ namespace CreatureMarker
 		public string nameToken;
 
 		/// <summary>
+		/// The creature's level, which is its star count plus one, or the fish's level - both start at 1
+		/// </summary>
+		public int level;
+
+		/// <summary>
+		/// Whether the target is a fish, whose level is shown as a number instead of stars
+		/// </summary>
+		public bool fish;
+
+		/// <summary>
 		/// The marker color
 		/// </summary>
 		public Color color;
