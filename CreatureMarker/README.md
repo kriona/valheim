@@ -50,7 +50,7 @@ Colors can be `#RRGGBB` or a color name like `red`, `yellow`, `green`, `cyan` or
 
 ## Installation
 
-With a mod manager such as r2modman or the Thunderstore Mod Manager, install [Creature Marker](https://thunderstore.io/c/valheim/p/Kriona/CreatureMarker/) - it installs BepInExPack for Valheim too.
+With a mod manager, install Creature Marker from [Thunderstore](https://thunderstore.io/c/valheim/p/Kriona/CreatureMarker/) using r2modman or the Thunderstore Mod Manager (which install BepInExPack for Valheim), or from [Nexus Mods](https://www.nexusmods.com/valheim/mods/4342) using Vortex.
 
 By hand:
 

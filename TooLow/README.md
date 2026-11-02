@@ -9,7 +9,7 @@ Shows a brief "Too low" message when your pickaxe hits ground that is already at
 
 ## Installation
 
-With a mod manager such as r2modman or the Thunderstore Mod Manager, install [Too Low](https://thunderstore.io/c/valheim/p/Kriona/TooLow/) - it installs BepInExPack for Valheim too.
+With a mod manager, install Too Low from [Thunderstore](https://thunderstore.io/c/valheim/p/Kriona/TooLow/) using r2modman or the Thunderstore Mod Manager (which install BepInExPack for Valheim), or from [Nexus Mods](https://www.nexusmods.com/valheim/mods/4345) using Vortex.
 
 By hand:
 

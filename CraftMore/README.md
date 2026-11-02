@@ -41,7 +41,7 @@ LeftShift = 10
 
 ## Installation
 
-With a mod manager such as r2modman or the Thunderstore Mod Manager, install [Craft More](https://thunderstore.io/c/valheim/p/Kriona/CraftMore/) - it installs BepInExPack for Valheim too.
+With a mod manager, install Craft More from [Thunderstore](https://thunderstore.io/c/valheim/p/Kriona/CraftMore/) using r2modman or the Thunderstore Mod Manager (which install BepInExPack for Valheim), or from [Nexus Mods](https://www.nexusmods.com/valheim/mods/4427) using Vortex.
 
 By hand:
 

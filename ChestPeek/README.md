@@ -10,7 +10,7 @@ Hover over a chest to see what's inside without opening it.
 
 ## Installation
 
-With a mod manager such as r2modman or the Thunderstore Mod Manager, install [Chest Peek](https://thunderstore.io/c/valheim/p/Kriona/ChestPeek/) - it installs BepInExPack for Valheim too.
+With a mod manager, install Chest Peek from [Thunderstore](https://thunderstore.io/c/valheim/p/Kriona/ChestPeek/) using r2modman or the Thunderstore Mod Manager (which install BepInExPack for Valheim), or from [Nexus Mods](https://www.nexusmods.com/valheim/mods/4341) using Vortex.
 
 By hand:
 

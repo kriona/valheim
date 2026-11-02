@@ -11,7 +11,7 @@ Reads the version from the mod's Plugin.cs, builds it and writes two zips:
   description in the root README's table
 
 It also runs build-bbcode.ps1 to write release\bbcode\<Mod>.bbcode for every mod. When a Thunderstore token is
-available, the manifest and icon are checked with Thunderstore's validators.
+available, the manifest and icon are checked with Thunderstore's validators, unless Thunderstore already has the version.
 
 -Publish then publishes the version everywhere, skipping any site that already has it so a failed run can be repeated:
 - GitHub - a release tagged <Mod>-v<Version> from the current commit with the zip and the DLL attached and that
@@ -318,10 +318,20 @@ finally
 }
 Write-Host ('Packaged ' + $thunderstoreZipPath)
 
+# Thunderstore's validator rejects a manifest for a version it already has, so a repeated run skips the check
+$thunderstoreHasVersion = $false
 if ($thunderstoreToken -ne '')
 {
-	Test-ThunderstorePackage $thunderstoreToken $thunderstoreTeam $manifest $iconFile
-	Write-Host 'Thunderstore accepted manifest.json and icon.png'
+	$thunderstoreHasVersion = Test-ThunderstoreVersion $thunderstoreTeam $mod $version
+	if ($thunderstoreHasVersion)
+	{
+		Write-Host ('Thunderstore already has ' + $thunderstoreTeam + '-' + $mod + '-' + $version + ', skipping the manifest and icon check')
+	}
+	else
+	{
+		Test-ThunderstorePackage $thunderstoreToken $thunderstoreTeam $manifest $iconFile
+		Write-Host 'Thunderstore accepted manifest.json and icon.png'
+	}
 }
 
 & (Join-Path $root 'build-bbcode.ps1')
@@ -391,7 +401,7 @@ if ($toGitHub)
 
 if ($toThunderstore)
 {
-	if (Test-ThunderstoreVersion $thunderstoreTeam $mod $version)
+	if ($thunderstoreHasVersion)
 	{
 		Write-Host ('Thunderstore already has ' + $thunderstoreTeam + '-' + $mod + '-' + $version + ', skipping it')
 	}

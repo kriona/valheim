@@ -17,7 +17,7 @@ Lists the other players on the server when you join in a popup and in chat.
 
 ## Installation
 
-With a mod manager such as r2modman or the Thunderstore Mod Manager, install [Who's Online](https://thunderstore.io/c/valheim/p/Kriona/WhosOnline/) - it installs BepInExPack for Valheim too.
+With a mod manager, install Who's Online from [Thunderstore](https://thunderstore.io/c/valheim/p/Kriona/WhosOnline/) using r2modman or the Thunderstore Mod Manager (which install BepInExPack for Valheim), or from [Nexus Mods](https://www.nexusmods.com/valheim/mods/4347) using Vortex.
 
 By hand:
 

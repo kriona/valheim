@@ -134,10 +134,12 @@ function Publish-NexusVersion([string]$apiKey, [string]$modId, [object]$mainFile
 	$md5Hex = -join ($md5 | ForEach-Object { $_.ToString('x2') })
 	$upload = (Invoke-JsonApi 'POST' ($nexusApi + 'uploads') $headers ([ordered]@{ filename = $fileName; size_bytes = $bytes.Length; md5 = $md5Hex })).data
 
-	# Both headers are part of the presigned URL's signature
+	# These headers are part of the presigned URL's signature, which expects the Content-Type that Nexus Mods' own
+	# upload action sends
 	$contentHeaders = @{
 		'Content-Disposition' = ('attachment; filename="' + $fileName + '"')
 		'Content-MD5' = [Convert]::ToBase64String($md5)
+		'Content-Type' = 'application/octet-stream'
 	}
 	$response = Invoke-Http 'PUT' $upload.presigned_url $null $bytes $null $contentHeaders
 	if (-not $response.Success)
@@ -184,12 +186,44 @@ function Publish-NexusVersion([string]$apiKey, [string]$modId, [object]$mainFile
 
 <#
 .SYNOPSIS
+Joins each list in a BBCode description onto one line, without its items' [/*] closers
+
+.DESCRIPTION
+Nexus Mods shows every line break in a description as a line break on the page, even inside a list, where each one
+ends up after an item, so the lines from a list's opening [list] to its closing [/list] are joined without one. Line
+breaks outside lists are kept. Each [*] ends the item before it, so the [/*] closers are left out
+
+.PARAMETER text
+The BBCode text, with LF line breaks
+
+.OUTPUTS
+The text with each list on one line
+#>
+function Join-BBCodeLists([string]$text)
+{
+	$builder = New-Object System.Text.StringBuilder
+	$depth = 0
+	$lines = $text.Split("`n")
+	for ($i = 0; $i -lt $lines.Count; $i++)
+	{
+		if ($i -gt 0 -and $depth -eq 0)
+		{
+			$builder.Append("`n") | Out-Null
+		}
+		$builder.Append($lines[$i]) | Out-Null
+		$depth += ([regex]::Matches($lines[$i], '\[list(=1)?\]').Count - [regex]::Matches($lines[$i], '\[/list\]').Count)
+	}
+	return($builder.ToString().Replace('[/*]', ''))
+}
+
+<#
+.SYNOPSIS
 Pushes each mod's summary and BBCode description to its Nexus Mods page when they've changed
 
 .DESCRIPTION
 The summary is the mod's description in the root README's table and the description is release\bbcode\<Mod>.bbcode
-from build-bbcode.ps1. What was pushed is saved in release\bbcode\pushed, and a mod is only updated when its summary or
-description differs from that copy. Mods with no Nexus Mods link are skipped
+from build-bbcode.ps1, with each list joined onto one line. What was pushed is saved in release\bbcode\pushed, and a
+mod is only updated when its summary or description differs from that copy. Mods with no Nexus Mods link are skipped
 
 .PARAMETER apiKey
 The personal Nexus Mods API key
@@ -218,7 +252,7 @@ function Publish-NexusDescriptions([string]$apiKey, [object[]]$modList, [string]
 		{
 			throw ('No BBCode for ' + $mod.Folder + ' at ' + $bbcodeFile + ' - run build-bbcode.ps1')
 		}
-		$description = [IO.File]::ReadAllText($bbcodeFile, $utf8)
+		$description = Join-BBCodeLists ([IO.File]::ReadAllText($bbcodeFile, $utf8))
 		$pushedDescriptionFile = Join-Path $pushedDir ($mod.Folder + '.bbcode')
 		$pushedSummaryFile = Join-Path $pushedDir ($mod.Folder + '.summary.txt')
 		$changes = [ordered]@{}

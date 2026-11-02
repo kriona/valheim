@@ -234,7 +234,7 @@ function Convert-Markdown([string[]]$lines, [string]$rawUrl, [string]$treeUrl)
 				$code += $lines[$i]
 				$i++
 			}
-			$output.Add('[code]' + ($code -join "`r`n") + '[/code]')
+			$output.Add('[code]' + ($code -join "`n") + '[/code]')
 		}
 		elseif ($line -match '^# ')
 		{
@@ -293,6 +293,55 @@ function Convert-Markdown([string[]]$lines, [string]$rawUrl, [string]$treeUrl)
 		$output.Add('[/list]')
 	}
 	return(,$output)
+}
+
+<#
+.SYNOPSIS
+Closes each list item with [/*], laid out the way the Nexus Mods description editor shows them
+
+.DESCRIPTION
+An item's [/*] goes at the end of its line, or on a line of its own after the [/list] of a list nested in the item
+
+.PARAMETER lines
+The BBCode lines, with each [*] item, [list] and [/list] starting a line of its own
+
+.OUTPUTS
+The lines with the items closed
+#>
+function Add-ItemClosers([string[]]$lines)
+{
+	$output = New-Object System.Collections.Generic.List[string]
+	# Whether the innermost open list, last in the list, has an item that hasn't been closed yet
+	$openItems = New-Object System.Collections.Generic.List[bool]
+	foreach ($line in $lines)
+	{
+		$closesItem = (($line.StartsWith('[*]') -or $line -eq '[/list]') -and $openItems.Count -gt 0 -and $openItems[$openItems.Count - 1])
+		if ($closesItem)
+		{
+			if ($output[$output.Count - 1] -eq '[/list]')
+			{
+				$output.Add('[/*]')
+			}
+			else
+			{
+				$output[$output.Count - 1] += '[/*]'
+			}
+		}
+		if ($line.StartsWith('[*]'))
+		{
+			$openItems[$openItems.Count - 1] = $true
+		}
+		elseif ($line -match '^\[list(=1)?\]$')
+		{
+			$openItems.Add($false)
+		}
+		elseif ($line -eq '[/list]')
+		{
+			$openItems.RemoveAt($openItems.Count - 1)
+		}
+		$output.Add($line)
+	}
+	return(,$output.ToArray())
 }
 
 <#
@@ -361,7 +410,8 @@ function Convert-Readme([string]$readmeFile, [string]$rawUrl, [string]$treeUrl, 
 		$output.Add('')
 		$output.AddRange($usedMods)
 	}
-	return(($output -join "`r`n").Trim() + "`r`n")
+	# LF alone, since Nexus Mods shows the CR of a CRLF as a line break of its own
+	return(((Add-ItemClosers $output) -join "`n").Trim() + "`n")
 }
 
 $root = $PSScriptRoot
