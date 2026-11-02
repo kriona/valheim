@@ -109,18 +109,20 @@ namespace CreatureMarker
 					marker.arrow.rectTransform.localScale = scale;
 					marker.label.rectTransform.localScale = scale;
 					marker.arrow.color = target.color;
-					// The game's HUD already shows the name and level, so the arrow sits above it and the label leaves them out
+					// While the game's HUD shows the name and level above an on-screen creature, the arrow sits above it and
+					// the label leaves them out - an arrow pinned to the screen edge is away from the HUD, so it keeps them
 					float gameHudHeight = GetGameHudHeight(enemyHud, target.source);
-					bool underGameHud = (gameHudHeight >= 0f);
 					Vector2 pointing;
-					if (underGameHud)
+					bool onScreen;
+					if (gameHudHeight >= 0f)
 					{
-						pointing = Place(marker.arrow.rectTransform, camera, target.top, gameHudHeight + GameHudGap, scale.x);
+						pointing = Place(marker.arrow.rectTransform, camera, target.top, gameHudHeight + GameHudGap, scale.x, out onScreen);
 					}
 					else
 					{
-						pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset, 0f, scale.x);
+						pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset, 0f, scale.x, out onScreen);
 					}
+					bool underGameHud = (gameHudHeight >= 0f && onScreen);
 					bool showText = (underGameHud ? showDistance : showLabel);
 					SetActive(marker.label.gameObject, showText);
 					if (showText)
@@ -182,11 +184,12 @@ namespace CreatureMarker
 		/// <param name="target">World point the arrow points at</param>
 		/// <param name="lift">How many screen pixels above the target an on-screen arrow's tip sits</param>
 		/// <param name="size">The marker's scale, which shrinks the bob along with the arrow</param>
+		/// <param name="onScreen">Set to whether the target is on screen, rather than the arrow pinned to the edge</param>
 		/// <returns>The screen direction the arrow points in, as a unit vector</returns>
-		private static Vector2 Place(RectTransform arrow, Camera camera, Vector3 target, float lift, float size)
+		private static Vector2 Place(RectTransform arrow, Camera camera, Vector3 target, float lift, float size, out bool onScreen)
 		{
 			Vector3 screen = camera.WorldToScreenPointScaled(target);
-			bool onScreen = (screen.z > 0f && screen.x >= 0f && screen.x <= Screen.width && screen.y >= 0f && screen.y <= Screen.height);
+			onScreen = (screen.z > 0f && screen.x >= 0f && screen.x <= Screen.width && screen.y >= 0f && screen.y <= Screen.height);
 			if (onScreen)
 			{
 				float bob = Mathf.Abs(Mathf.Sin(Time.time * BobSpeed)) * CreatureConfig.BobHeight * size;
