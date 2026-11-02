@@ -1,9 +1,10 @@
 # Creature Marker
 
-Puts a colored arrow above nearby creatures and fish. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them.
+Puts a colored arrow above nearby creatures, traders and fish. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them.
 
-- Separate colors for passive creatures, hostile creatures, bosses and fish
-- Optional name, level and distance label on each marker
+- Separate colors for passive creatures, hostile creatures, bosses, fish, traders and your tamed pets
+- Marks traders like Haldor, Hildir and the Bog Witch, and their pets like Halstein
+- Optional name, level and distance label on each marker, leaving out the name and level while the game shows its own above the creature
 - A matching colored dot on the minimap and the large map for each marked creature
 - Choose which creatures are marked - all of them, only hostile ones, or creature by creature
 - Includes creatures added by other mods
@@ -27,11 +28,13 @@ Puts a colored arrow above nearby creatures and fish. Creatures that are off-scr
 | Hostile Color | #FFD91A | Marker color for creatures that will |
 | Boss Color | #FF3333 | Marker color for bosses |
 | Fish Color | #33CCFF | Marker color for fish |
-| All Creatures | false | Marks every creature |
+| Pet Color | #FFF | Marker color for creatures you have tamed |
+| Trader Color | | Marker color for traders like Haldor, Hildir and the Bog Witch. Leave it blank to use Passive Color. Their pets, like Halstein, always use Passive Color |
+| All Creatures | false | Marks every creature, including traders and their pets |
 | All Hostile Creatures | true | Marks every creature that will attack you |
 | All Fish | false | Marks every fish |
 
-Every creature and fish also gets its own line, `Prefab = inherit/true/false ## Name`. `inherit` follows the All switches, while `true` or `false` always shows or hides that creature's or fish's marker.
+Every creature, trader and fish also gets its own line, `Prefab = inherit/true/false ## Name`. `inherit` follows the All switches, while `true` or `false` always shows or hides that one's marker. A trader's pet, like Halstein, gets its line the first time you come near it.
 
 Colors can be `#RRGGBB` or a color name like `red`, `yellow`, `green`, `cyan` or `magenta`.
 

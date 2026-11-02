@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0
+- Hide the mod's name and level when the game is already showing this info
+- Make sure the marker arrow doesn't overlap the game's info
+- Traders like Haldor, Hildir and the Bog Witch, and their pets like Halstein, can be marked too, each with its own line in the config file, and are marked by All Creatures
+- Added the Trader Color setting for traders, blank by default to use Passive Color - their pets use Passive Color
+- Added the Pet Color setting for creatures you have tamed, default #FFF
+
 ## 1.3.1
 - Support BepInEx Configuration Manager (reported by DB451)
 
