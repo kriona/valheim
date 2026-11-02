@@ -31,7 +31,7 @@ Colors can be a name (black, blue, green, orange, purple, red, white, yellow) or
 
 ## Installation
 
-With a mod manager such as r2modman or the Thunderstore Mod Manager, install [Weight Display](https://thunderstore.io/c/valheim/p/Kriona/WeightDisplay/) - it installs BepInExPack for Valheim too.
+With a mod manager, install Weight Display from [Thunderstore](https://thunderstore.io/c/valheim/p/Kriona/WeightDisplay/) using r2modman or the Thunderstore Mod Manager (which install BepInExPack for Valheim), or from [Nexus Mods](https://www.nexusmods.com/valheim/mods/4346) using Vortex.
 
 By hand:
 

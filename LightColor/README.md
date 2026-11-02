@@ -155,7 +155,7 @@ Typing one of these colors instead of `default` or blank gets you the same light
 
 ## Installation
 
-With a mod manager such as r2modman or the Thunderstore Mod Manager, install [Light Color](https://thunderstore.io/c/valheim/p/Kriona/LightColor/) - it installs BepInExPack for Valheim too.
+With a mod manager, install Light Color from [Thunderstore](https://thunderstore.io/c/valheim/p/Kriona/LightColor/) using r2modman or the Thunderstore Mod Manager (which install BepInExPack for Valheim), or from [Nexus Mods](https://www.nexusmods.com/valheim/mods/4352) using Vortex.
 
 By hand:
 

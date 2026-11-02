@@ -20,7 +20,7 @@ You don't have to aim at the small ore and fuel openings either. Each half of a 
 
 ## Installation
 
-With a mod manager such as r2modman or the Thunderstore Mod Manager, install [Quick Fill](https://thunderstore.io/c/valheim/p/Kriona/QuickFill/) - it installs BepInExPack for Valheim too.
+With a mod manager, install Quick Fill from [Thunderstore](https://thunderstore.io/c/valheim/p/Kriona/QuickFill/) using r2modman or the Thunderstore Mod Manager (which install BepInExPack for Valheim), or from [Nexus Mods](https://www.nexusmods.com/valheim/mods/4343) using Vortex.
 
 By hand:
 

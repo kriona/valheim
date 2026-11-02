@@ -21,7 +21,7 @@ Look at an armor stand and press Y to swap what you're wearing with what's on th
 
 ## Installation
 
-With a mod manager such as r2modman or the Thunderstore Mod Manager, install [Swap Gear](https://thunderstore.io/c/valheim/p/Kriona/SwapGear/) - it installs BepInExPack for Valheim too.
+With a mod manager, install Swap Gear from [Thunderstore](https://thunderstore.io/c/valheim/p/Kriona/SwapGear/) using r2modman or the Thunderstore Mod Manager (which install BepInExPack for Valheim), or from [Nexus Mods](https://www.nexusmods.com/valheim/mods/4344) using Vortex.
 
 By hand:
 
