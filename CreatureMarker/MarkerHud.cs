@@ -19,6 +19,7 @@ namespace CreatureMarker
 		private const float BobSpeed = 5f;
 		private const float LabelGap = 2f;
 		private const float LabelFontSize = 16f;
+		private const float GameHudGap = 4f;
 		private static readonly Vector2 ArrowSize = new Vector2(24f, 32f);
 		internal static readonly Color OutlineColor = new Color(0.1f, 0.1f, 0.1f, 1f);
 
@@ -64,6 +65,12 @@ namespace CreatureMarker
 		private readonly LevelStars stars = new LevelStars();
 
 		/// <summary>
+		/// Reused when measuring the game's own HUD above a creature
+		/// </summary>
+		private readonly List<Graphic> graphics = new List<Graphic>();
+		private readonly Vector3[] corners = new Vector3[4];
+
+		/// <summary>
 		/// Shows an arrow for each marked creature and fish when Show On Screen is on and hides the spare ones
 		/// </summary>
 		/// <param name="marked">The living marked creatures and the marked fish within range</param>
@@ -102,9 +109,21 @@ namespace CreatureMarker
 					marker.arrow.rectTransform.localScale = scale;
 					marker.label.rectTransform.localScale = scale;
 					marker.arrow.color = target.color;
-					Vector2 pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset, scale.x);
-					SetActive(marker.label.gameObject, showLabel);
-					if (showLabel)
+					// The game's HUD already shows the name and level, so the arrow sits above it and the label leaves them out
+					float gameHudHeight = GetGameHudHeight(enemyHud, target.source);
+					bool underGameHud = (gameHudHeight >= 0f);
+					Vector2 pointing;
+					if (underGameHud)
+					{
+						pointing = Place(marker.arrow.rectTransform, camera, target.top, gameHudHeight + GameHudGap, scale.x);
+					}
+					else
+					{
+						pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset, 0f, scale.x);
+					}
+					bool showText = (underGameHud ? showDistance : showLabel);
+					SetActive(marker.label.gameObject, showText);
+					if (showText)
 					{
 						if (marker.source != target.source)
 						{
@@ -112,7 +131,9 @@ namespace CreatureMarker
 							marker.name = Localization.instance.Localize(target.nameToken);
 						}
 						int distance = (showDistance ? Mathf.RoundToInt(Mathf.Sqrt(distanceSquared)) : -1);
-						SetLabelText(marker, (showName ? marker.name : null), (showLevel ? target.level : 0), target.fish, target.color, distance);
+						string name = ((showName && !underGameHud) ? marker.name : null);
+						int level = ((showLevel && !underGameHud) ? target.level : 0);
+						SetLabelText(marker, name, level, target.fish, target.color, distance);
 						marker.label.color = target.color;
 						PlaceLabel(marker, pointing);
 					}
@@ -159,16 +180,17 @@ namespace CreatureMarker
 		/// <param name="arrow">The arrow to move</param>
 		/// <param name="camera">The main camera</param>
 		/// <param name="target">World point the arrow points at</param>
+		/// <param name="lift">How many screen pixels above the target an on-screen arrow's tip sits</param>
 		/// <param name="size">The marker's scale, which shrinks the bob along with the arrow</param>
 		/// <returns>The screen direction the arrow points in, as a unit vector</returns>
-		private static Vector2 Place(RectTransform arrow, Camera camera, Vector3 target, float size)
+		private static Vector2 Place(RectTransform arrow, Camera camera, Vector3 target, float lift, float size)
 		{
 			Vector3 screen = camera.WorldToScreenPointScaled(target);
 			bool onScreen = (screen.z > 0f && screen.x >= 0f && screen.x <= Screen.width && screen.y >= 0f && screen.y <= Screen.height);
 			if (onScreen)
 			{
 				float bob = Mathf.Abs(Mathf.Sin(Time.time * BobSpeed)) * CreatureConfig.BobHeight * size;
-				arrow.position = new Vector3(screen.x, screen.y + bob, 0f);
+				arrow.position = new Vector3(screen.x, screen.y + lift + bob, 0f);
 				arrow.localRotation = Quaternion.identity;
 				return(Vector2.down);
 			}
@@ -192,6 +214,56 @@ namespace CreatureMarker
 			float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg + 90f;
 			arrow.localRotation = Quaternion.Euler(0f, 0f, angle);
 			return(direction.normalized);
+		}
+
+		/// <summary>
+		/// How far the top of the game's own name, stars and health bar sits above the creature's top point, in screen
+		/// pixels, while the game shows them above the creature
+		/// </summary>
+		/// <remarks>
+		/// The game places its HUD at the creature's top point, so measuring from the HUD's own position gives a height
+		/// that holds whether the game has moved it yet this frame or not. Bosses are left out since their bar sits at
+		/// the top of the screen
+		/// </remarks>
+		/// <param name="enemyHud">The enemy HUD</param>
+		/// <param name="source">The marked Character or Fish</param>
+		/// <returns>The height, or -1 when the game isn't showing a name above the target</returns>
+		private float GetGameHudHeight(EnemyHud enemyHud, Object source)
+		{
+			Character character = source as Character;
+			if (character == null || character.IsBoss() || !enemyHud.m_huds.TryGetValue(character, out EnemyHud.HudData data))
+			{
+				return(-1f);
+			}
+			if (data.m_isMount || data.m_gui == null || !data.m_gui.activeSelf || data.m_name == null || !data.m_name.gameObject.activeInHierarchy)
+			{
+				return(-1f);
+			}
+			float bottom = data.m_gui.transform.position.y;
+			float top = bottom;
+			data.m_gui.GetComponentsInChildren(false, graphics);
+			foreach (Graphic graphic in graphics)
+			{
+				if (graphic.color.a <= 0f)
+				{
+					continue;
+				}
+				if (graphic is TMP_Text text)
+				{
+					// The text's rect can be taller than the letters, so measure the letters themselves
+					if (!string.IsNullOrEmpty(text.text))
+					{
+						top = Mathf.Max(top, text.rectTransform.TransformPoint(text.textBounds.max).y);
+					}
+				}
+				else
+				{
+					graphic.rectTransform.GetWorldCorners(corners);
+					top = Mathf.Max(top, corners[1].y);
+				}
+			}
+			graphics.Clear();
+			return(top - bottom);
 		}
 
 		/// <summary>

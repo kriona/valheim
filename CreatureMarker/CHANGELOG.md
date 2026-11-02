@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.2
+- Hide the mod's name and level when the game is already showing this info
+- Make sure the marker arrow doesn't overlap the game's info
+
 ## 1.3.1
 - Support BepInEx Configuration Manager (reported by DB451)
 
