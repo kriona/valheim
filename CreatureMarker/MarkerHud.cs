@@ -226,7 +226,7 @@ namespace CreatureMarker
 		/// the top of the screen
 		/// </remarks>
 		/// <param name="enemyHud">The enemy HUD</param>
-		/// <param name="source">The marked Character or Fish</param>
+		/// <param name="source">The marked Character, Trader, Petable or Fish</param>
 		/// <returns>The height, or -1 when the game isn't showing a name above the target</returns>
 		private float GetGameHudHeight(EnemyHud enemyHud, Object source)
 		{

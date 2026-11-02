@@ -46,6 +46,7 @@ namespace CreatureMarker
 		private const string HostileColorKey = "Hostile Color";
 		private const string BossColorKey = "Boss Color";
 		private const string FishColorKey = "Fish Color";
+		private const string TraderColorKey = "Trader Color";
 		private const string AllCreaturesKey = "All Creatures";
 		private const string AllHostileKey = "All Hostile Creatures";
 		private const string AllFishKey = "All Fish";
@@ -74,9 +75,9 @@ namespace CreatureMarker
 		private static readonly string[] creatureHeader =
 		{
 			"",
-			"## All Creatures marks every creature, All Hostile Creatures marks every creature that will attack you, and All Fish marks every fish",
-			"## Each creature and fish line is: Prefab = inherit/true/false ## Name in game",
-			"## inherit follows the All switches, while true or false always shows or hides that creature's or fish's marker",
+			"## All Creatures marks every creature, including traders and their pets, All Hostile Creatures marks every creature that will attack you, and All Fish marks every fish",
+			"## Each creature, trader, pet and fish line is: Prefab = inherit/true/false ## Name in game",
+			"## inherit follows the All switches, while true or false always shows or hides that one's marker",
 			"",
 		};
 
@@ -93,6 +94,7 @@ namespace CreatureMarker
 		private static readonly string hostileColorNote = "Creatures that will attack you, default " + DefaultHostileColor;
 		private static readonly string bossColorNote = "Bosses, default " + DefaultBossColor;
 		private static readonly string fishColorNote = "Fish, default " + DefaultFishColor;
+		private static readonly string traderColorNote = "Traders like Haldor, Hildir and the Bog Witch, blank to use Passive Color, default blank";
 
 		/// <summary>
 		/// Mirrors the settings as entries for Configuration Manager
@@ -117,6 +119,11 @@ namespace CreatureMarker
 		private static ConfigEntry<Color> hostileColorEntry;
 		private static ConfigEntry<Color> bossColorEntry;
 		private static ConfigEntry<Color> fishColorEntry;
+
+		/// <summary>
+		/// Text rather than a color, since a blank value falls back to Passive Color
+		/// </summary>
+		private static ConfigEntry<string> traderColorEntry;
 		private static ConfigEntry<bool> allCreaturesEntry;
 		private static ConfigEntry<bool> allHostileEntry;
 		private static ConfigEntry<bool> allFishEntry;
@@ -125,6 +132,12 @@ namespace CreatureMarker
 		/// Display name by prefab name of every creature line, sorted, as last read - blank when the name isn't known
 		/// </summary>
 		private static SortedDictionary<string, string> names = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+		/// <summary>
+		/// Display name by prefab name of the traders and pets seen in the world, which aren't all in the scene's prefab
+		/// list, kept so their lines keep their names each time the file is read
+		/// </summary>
+		private static readonly Dictionary<string, string> npcNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>
 		/// Whether marked creatures get an arrow on screen
@@ -179,6 +192,12 @@ namespace CreatureMarker
 		private static Color hostileColor = ParseColor(DefaultHostileColor, Color.yellow);
 		private static Color bossColor = ParseColor(DefaultBossColor, Color.red);
 		private static Color fishColor = ParseColor(DefaultFishColor, Color.cyan);
+		private static string traderColorText = "";
+
+		/// <summary>
+		/// The trader color, or null when it is blank and Passive Color is used instead
+		/// </summary>
+		private static Color? traderColor;
 		private static bool allCreatures;
 		private static bool allHostile = true;
 		private static bool allFish;
@@ -267,8 +286,8 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Reads the config file, adds any prefabs with a Character component other than the player or a Fish
-		/// component and writes it back
+		/// Reads the config file, adds any prefabs with a Character component other than the player, a Trader, a
+		/// Petable or a Fish component, and the traders and pets seen in the world, and writes it back
 		/// </summary>
 		/// <param name="scene">The scene holding the prefab list</param>
 		public static void Load(ZNetScene scene)
@@ -291,10 +310,29 @@ namespace CreatureMarker
 					names[prefab.name] = GetDisplayName(character.m_name);
 					continue;
 				}
+				Trader trader = prefab.GetComponent<Trader>();
+				if (trader != null)
+				{
+					names[prefab.name] = GetDisplayName(trader.m_name);
+					continue;
+				}
+				Petable petable = prefab.GetComponent<Petable>();
+				if (petable != null)
+				{
+					names[prefab.name] = GetDisplayName(petable.m_name);
+					continue;
+				}
 				Fish fish = prefab.GetComponent<Fish>();
 				if (fish != null)
 				{
 					names[prefab.name] = GetDisplayName(fish.m_name);
+				}
+			}
+			foreach (KeyValuePair<string, string> npc in npcNames)
+			{
+				if (!names.ContainsKey(npc.Key))
+				{
+					names[npc.Key] = npc.Value;
 				}
 			}
 			foreach (string key in values.Keys)
@@ -308,6 +346,31 @@ namespace CreatureMarker
 			Dictionary<string, bool?> states = BuildStates((string key) => (values.TryGetValue(key, out string text) ? ParseState(text) : null));
 			Write(FilePath, names, states);
 			SyncEntries(states);
+		}
+
+		/// <summary>
+		/// Gives a trader or pet seen in the world a line in the config file when it doesn't have one with its name yet
+		/// </summary>
+		/// <remarks>
+		/// Pets are part of the locations that place them rather than prefabs of their own, so their lines can only be
+		/// added once one has been seen
+		/// </remarks>
+		/// <param name="key">The prefab name</param>
+		/// <param name="nameToken">The name token</param>
+		public static void AddNPC(string key, string nameToken)
+		{
+			string name = GetDisplayName(nameToken);
+			if (npcNames.TryGetValue(key, out string known) && known == name)
+			{
+				return;
+			}
+			npcNames[key] = name;
+			if (ZNetScene.instance == null || (names.TryGetValue(key, out string listed) && listed.Length > 0))
+			{
+				return;
+			}
+			Load(ZNetScene.instance);
+			Plugin.Watcher?.Remember();
 		}
 
 		/// <summary>
@@ -353,6 +416,7 @@ namespace CreatureMarker
 			hostileColorEntry = BindSetting(ColorsSection, HostileColorKey, ParseColor(DefaultHostileColor, Color.yellow), hostileColorNote, null, order--);
 			bossColorEntry = BindSetting(ColorsSection, BossColorKey, ParseColor(DefaultBossColor, Color.red), bossColorNote, null, order--);
 			fishColorEntry = BindSetting(ColorsSection, FishColorKey, ParseColor(DefaultFishColor, Color.cyan), fishColorNote, null, order--);
+			traderColorEntry = BindSetting(ColorsSection, TraderColorKey, "", traderColorNote, null, order--);
 			allCreaturesEntry = BindSetting(CreaturesSection, AllCreaturesKey, false, "Mark every creature", null, order--);
 			allHostileEntry = BindSetting(CreaturesSection, AllHostileKey, true, "Mark every creature that will attack you", null, order--);
 			allFishEntry = BindSetting(CreaturesSection, AllFishKey, false, "Mark every fish", null, order--);
@@ -399,6 +463,7 @@ namespace CreatureMarker
 				hostileColorEntry.Value = hostileColor;
 				bossColorEntry.Value = bossColor;
 				fishColorEntry.Value = fishColor;
+				traderColorEntry.Value = traderColorText;
 				allCreaturesEntry.Value = allCreatures;
 				allHostileEntry.Value = allHostile;
 				allFishEntry.Value = allFish;
@@ -428,6 +493,7 @@ namespace CreatureMarker
 			hostileColorText = TakeEntryColor(hostileColorEntry, hostileColorText, ref hostileColor);
 			bossColorText = TakeEntryColor(bossColorEntry, bossColorText, ref bossColor);
 			fishColorText = TakeEntryColor(fishColorEntry, fishColorText, ref fishColor);
+			traderColorText = ParseOptionalColor(TraderColorKey, traderColorEntry.Value, out traderColor);
 			allCreatures = allCreaturesEntry.Value;
 			allHostile = allHostileEntry.Value;
 			allFish = allFishEntry.Value;
@@ -457,7 +523,8 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Fills the list with the living marked creatures and the marked fish within Max Distance of the player
+		/// Fills the list with the living marked creatures, the marked traders and pets and the marked fish within Max
+		/// Distance of the player
 		/// </summary>
 		/// <param name="player">The local player</param>
 		/// <param name="marked">The list to fill, cleared first</param>
@@ -489,6 +556,27 @@ namespace CreatureMarker
 				target.nameToken = character.GetHoverName();
 				target.level = character.GetLevel();
 				target.color = (character.IsBoss() ? bossColor : (hostile ? hostileColor : passiveColor));
+				marked.Add(target);
+			}
+			Color merchantColor = (traderColor ?? passiveColor);
+			foreach (NPC npc in NpcList.Get())
+			{
+				Vector3 position = npc.source.transform.position;
+				if (Vector3.SqrMagnitude(position - playerPosition) > maxDistanceSquared)
+				{
+					continue;
+				}
+				if (!IsMarked(npc.hash, allCreatures))
+				{
+					continue;
+				}
+				Target target = new Target();
+				target.source = npc.source;
+				target.position = position;
+				target.top = position + Vector3.up * npc.GetHeight();
+				target.nameToken = npc.nameToken;
+				target.level = 1;
+				target.color = ((npc.source is Trader) ? merchantColor : passiveColor);
 				marked.Add(target);
 			}
 			foreach (IMonoUpdater updater in Fish.Instances)
@@ -528,7 +616,23 @@ namespace CreatureMarker
 		/// <returns>True when it should get a marker</returns>
 		private static bool IsMarked(ZNetView nview, bool inherited)
 		{
-			if (nview != null && nview.IsValid() && overrides.TryGetValue(nview.GetZDO().GetPrefab(), out bool value))
+			if (nview != null && nview.IsValid())
+			{
+				return(IsMarked(nview.GetZDO().GetPrefab(), inherited));
+			}
+			return(inherited);
+		}
+
+		/// <summary>
+		/// Whether a prefab should get a marker, from its own line when that is true or false, or else from what the
+		/// All switches give it
+		/// </summary>
+		/// <param name="prefabHash">The prefab name's hash</param>
+		/// <param name="inherited">Whether the All switches mark it</param>
+		/// <returns>True when it should get a marker</returns>
+		private static bool IsMarked(int prefabHash, bool inherited)
+		{
+			if (overrides.TryGetValue(prefabHash, out bool value))
 			{
 				return(value);
 			}
@@ -564,6 +668,7 @@ namespace CreatureMarker
 			hostileColorText = TakeColor(values, HostileColorKey, DefaultHostileColor, out hostileColor);
 			bossColorText = TakeColor(values, BossColorKey, DefaultBossColor, out bossColor);
 			fishColorText = TakeColor(values, FishColorKey, DefaultFishColor, out fishColor);
+			traderColorText = ParseOptionalColor(TraderColorKey, TakeValue(values, TraderColorKey), out traderColor);
 			allCreatures = (ParseState(TakeValue(values, AllCreaturesKey)) ?? false);
 			allHostile = (ParseState(TakeValue(values, AllHostileKey)) ?? true);
 			allFish = (ParseState(TakeValue(values, AllFishKey)) ?? false);
@@ -619,6 +724,30 @@ namespace CreatureMarker
 			}
 			color = ParseColor(defaultText, Color.white);
 			return(defaultText);
+		}
+
+		/// <summary>
+		/// Parses a color setting that can be left blank, logging a warning when it doesn't parse
+		/// </summary>
+		/// <param name="key">The setting's key</param>
+		/// <param name="text">The color text, or null or blank for none</param>
+		/// <param name="color">The parsed color, or null when the text is blank or doesn't parse</param>
+		/// <returns>The color text to write back to the file, blank when it is blank or doesn't parse</returns>
+		private static string ParseOptionalColor(string key, string text, out Color? color)
+		{
+			color = null;
+			if (string.IsNullOrWhiteSpace(text))
+			{
+				return("");
+			}
+			text = text.Trim();
+			if (!ColorUtility.TryParseHtmlString(text, out Color parsed))
+			{
+				Warn(key, text);
+				return("");
+			}
+			color = parsed;
+			return(text);
 		}
 
 		/// <summary>
@@ -741,6 +870,7 @@ namespace CreatureMarker
 			AppendLine(builder, HostileColorKey, hostileColorText, hostileColorNote);
 			AppendLine(builder, BossColorKey, bossColorText, bossColorNote);
 			AppendLine(builder, FishColorKey, fishColorText, fishColorNote);
+			AppendLine(builder, TraderColorKey, traderColorText, traderColorNote);
 			AppendLines(builder, creatureHeader);
 			AppendLine(builder, AllCreaturesKey, StateEntries.Format(allCreatures), "");
 			AppendLine(builder, AllHostileKey, StateEntries.Format(allHostile), "");
@@ -787,7 +917,11 @@ namespace CreatureMarker
 		/// <param name="note">Comment after the value, or blank for none</param>
 		private static void AppendLine(StringBuilder builder, string key, string value, string note)
 		{
-			builder.Append(key).Append(" = ").Append(value);
+			builder.Append(key).Append(" =");
+			if (value.Length > 0)
+			{
+				builder.Append(" ").Append(value);
+			}
 			if (note.Length > 0)
 			{
 				builder.Append(" ").Append(Comment).Append(" ").Append(note);
