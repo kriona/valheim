@@ -46,6 +46,7 @@ namespace CreatureMarker
 		private const string HostileColorKey = "Hostile Color";
 		private const string BossColorKey = "Boss Color";
 		private const string FishColorKey = "Fish Color";
+		private const string PetColorKey = "Pet Color";
 		private const string TraderColorKey = "Trader Color";
 		private const string AllCreaturesKey = "All Creatures";
 		private const string AllHostileKey = "All Hostile Creatures";
@@ -63,6 +64,7 @@ namespace CreatureMarker
 		private const string DefaultHostileColor = "#FFD91A";
 		private const string DefaultBossColor = "#FF3333";
 		private const string DefaultFishColor = "#33CCFF";
+		private const string DefaultPetColor = "#FFF";
 
 		private static readonly string[] header =
 		{
@@ -94,6 +96,7 @@ namespace CreatureMarker
 		private static readonly string hostileColorNote = "Creatures that will attack you, default " + DefaultHostileColor;
 		private static readonly string bossColorNote = "Bosses, default " + DefaultBossColor;
 		private static readonly string fishColorNote = "Fish, default " + DefaultFishColor;
+		private static readonly string petColorNote = "Creatures you have tamed, default " + DefaultPetColor;
 		private static readonly string traderColorNote = "Traders like Haldor, Hildir and the Bog Witch, blank to use Passive Color, default blank";
 
 		/// <summary>
@@ -119,6 +122,7 @@ namespace CreatureMarker
 		private static ConfigEntry<Color> hostileColorEntry;
 		private static ConfigEntry<Color> bossColorEntry;
 		private static ConfigEntry<Color> fishColorEntry;
+		private static ConfigEntry<Color> petColorEntry;
 
 		/// <summary>
 		/// Text rather than a color, since a blank value falls back to Passive Color
@@ -188,10 +192,12 @@ namespace CreatureMarker
 		private static string hostileColorText = DefaultHostileColor;
 		private static string bossColorText = DefaultBossColor;
 		private static string fishColorText = DefaultFishColor;
+		private static string petColorText = DefaultPetColor;
 		private static Color passiveColor = ParseColor(DefaultPassiveColor, Color.green);
 		private static Color hostileColor = ParseColor(DefaultHostileColor, Color.yellow);
 		private static Color bossColor = ParseColor(DefaultBossColor, Color.red);
 		private static Color fishColor = ParseColor(DefaultFishColor, Color.cyan);
+		private static Color petColor = ParseColor(DefaultPetColor, Color.white);
 		private static string traderColorText = "";
 
 		/// <summary>
@@ -416,6 +422,7 @@ namespace CreatureMarker
 			hostileColorEntry = BindSetting(ColorsSection, HostileColorKey, ParseColor(DefaultHostileColor, Color.yellow), hostileColorNote, null, order--);
 			bossColorEntry = BindSetting(ColorsSection, BossColorKey, ParseColor(DefaultBossColor, Color.red), bossColorNote, null, order--);
 			fishColorEntry = BindSetting(ColorsSection, FishColorKey, ParseColor(DefaultFishColor, Color.cyan), fishColorNote, null, order--);
+			petColorEntry = BindSetting(ColorsSection, PetColorKey, ParseColor(DefaultPetColor, Color.white), petColorNote, null, order--);
 			traderColorEntry = BindSetting(ColorsSection, TraderColorKey, "", traderColorNote, null, order--);
 			allCreaturesEntry = BindSetting(CreaturesSection, AllCreaturesKey, false, "Mark every creature", null, order--);
 			allHostileEntry = BindSetting(CreaturesSection, AllHostileKey, true, "Mark every creature that will attack you", null, order--);
@@ -463,6 +470,7 @@ namespace CreatureMarker
 				hostileColorEntry.Value = hostileColor;
 				bossColorEntry.Value = bossColor;
 				fishColorEntry.Value = fishColor;
+				petColorEntry.Value = petColor;
 				traderColorEntry.Value = traderColorText;
 				allCreaturesEntry.Value = allCreatures;
 				allHostileEntry.Value = allHostile;
@@ -493,6 +501,7 @@ namespace CreatureMarker
 			hostileColorText = TakeEntryColor(hostileColorEntry, hostileColorText, ref hostileColor);
 			bossColorText = TakeEntryColor(bossColorEntry, bossColorText, ref bossColor);
 			fishColorText = TakeEntryColor(fishColorEntry, fishColorText, ref fishColor);
+			petColorText = TakeEntryColor(petColorEntry, petColorText, ref petColor);
 			traderColorText = ParseOptionalColor(TraderColorKey, traderColorEntry.Value, out traderColor);
 			allCreatures = allCreaturesEntry.Value;
 			allHostile = allHostileEntry.Value;
@@ -555,7 +564,7 @@ namespace CreatureMarker
 				target.top = character.GetTopPoint();
 				target.nameToken = character.GetHoverName();
 				target.level = character.GetLevel();
-				target.color = (character.IsBoss() ? bossColor : (hostile ? hostileColor : passiveColor));
+				target.color = GetCreatureColor(character, hostile);
 				marked.Add(target);
 			}
 			Color merchantColor = (traderColor ?? passiveColor);
@@ -640,6 +649,26 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
+		/// The marker color of a creature - Boss Color for bosses, Pet Color for tamed creatures, then Hostile Color or
+		/// Passive Color
+		/// </summary>
+		/// <param name="character">The creature</param>
+		/// <param name="hostile">Whether the creature will attack the player</param>
+		/// <returns>The color</returns>
+		private static Color GetCreatureColor(Character character, bool hostile)
+		{
+			if (character.IsBoss())
+			{
+				return(bossColor);
+			}
+			if (character.IsTamed())
+			{
+				return(petColor);
+			}
+			return((hostile ? hostileColor : passiveColor));
+		}
+
+		/// <summary>
 		/// Whether the creature has monster AI and currently counts as the player's enemy
 		/// </summary>
 		/// <remarks>
@@ -668,6 +697,7 @@ namespace CreatureMarker
 			hostileColorText = TakeColor(values, HostileColorKey, DefaultHostileColor, out hostileColor);
 			bossColorText = TakeColor(values, BossColorKey, DefaultBossColor, out bossColor);
 			fishColorText = TakeColor(values, FishColorKey, DefaultFishColor, out fishColor);
+			petColorText = TakeColor(values, PetColorKey, DefaultPetColor, out petColor);
 			traderColorText = ParseOptionalColor(TraderColorKey, TakeValue(values, TraderColorKey), out traderColor);
 			allCreatures = (ParseState(TakeValue(values, AllCreaturesKey)) ?? false);
 			allHostile = (ParseState(TakeValue(values, AllHostileKey)) ?? true);
@@ -870,6 +900,7 @@ namespace CreatureMarker
 			AppendLine(builder, HostileColorKey, hostileColorText, hostileColorNote);
 			AppendLine(builder, BossColorKey, bossColorText, bossColorNote);
 			AppendLine(builder, FishColorKey, fishColorText, fishColorNote);
+			AppendLine(builder, PetColorKey, petColorText, petColorNote);
 			AppendLine(builder, TraderColorKey, traderColorText, traderColorNote);
 			AppendLines(builder, creatureHeader);
 			AppendLine(builder, AllCreaturesKey, StateEntries.Format(allCreatures), "");
