@@ -10,7 +10,7 @@ namespace WeightDisplay
 	{
 		public const string PluginGuid = "kriona.WeightDisplay";
 		public const string PluginName = "Weight Display";
-		public const string PluginVersion = "1.3.0";
+		public const string PluginVersion = "1.3.1";
 
 		private ConfigEntry<int> fontSize;
 		private ConfigEntry<int> margin;
