@@ -141,6 +141,12 @@ namespace LightColor
 			{
 				return;
 			}
+			// The server can turn AdminOnly on while the player is still typing
+			if (!AdminSync.CanChangeColors)
+			{
+				Player.m_localPlayer?.Message(MessageHud.MessageType.Center, AdminSync.DeniedMessage);
+				return;
+			}
 			text = text.Trim();
 			if (!LightSettings.TryParse(text, out LightSettings settings, out string error))
 			{
