@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.3.1
+- The slot count only includes items in the inventory grid, so items in another mod's equipment slots (such as CDEV Equipment Slots) aren't counted
+
 ## 1.3.0
 - Shows how many inventory slots are in use after the weight (suggested by digibluez)
 - The inventory screen's weight icon replaces the word "Weight" (suggested by digibluez)

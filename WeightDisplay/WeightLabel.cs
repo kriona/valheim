@@ -152,7 +152,7 @@ namespace WeightDisplay
 			Inventory inventory = player.GetInventory();
 			int weight = Mathf.CeilToInt(inventory.GetTotalWeight());
 			int max = Mathf.CeilToInt(player.GetMaxCarryWeight());
-			int usedSlots = inventory.NrOfItems();
+			int usedSlots = CountGridItems(inventory);
 			int slots = inventory.GetWidth() * inventory.GetHeight();
 			if (weight == shownWeight && max == shownMax && usedSlots == shownUsedSlots && slots == shownSlots)
 			{
@@ -174,6 +174,31 @@ namespace WeightDisplay
 				text.text = (showWeight ? weightText : slotsText);
 			}
 			PlaceIcon(useIcon);
+		}
+
+		/// <summary>
+		/// Counts the items inside the inventory's grid
+		/// </summary>
+		/// <remarks>
+		/// Equipment slot mods such as CDEV Equipment Slots keep their slots' items in the player's inventory at grid
+		/// positions outside its width and height, and those items don't take up a grid slot
+		/// </remarks>
+		/// <param name="inventory">The player's inventory</param>
+		/// <returns>The number of items whose position is within the grid</returns>
+		private static int CountGridItems(Inventory inventory)
+		{
+			int width = inventory.GetWidth();
+			int height = inventory.GetHeight();
+			int count = 0;
+			foreach (ItemDrop.ItemData item in inventory.GetAllItems())
+			{
+				Vector2i pos = item.m_gridPos;
+				if (pos.x >= 0 && pos.y >= 0 && pos.x < width && pos.y < height)
+				{
+					count++;
+				}
+			}
+			return(count);
 		}
 
 		/// <summary>

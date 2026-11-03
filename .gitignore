@@ -3,6 +3,9 @@ bin/
 obj/
 release/
 
+# External binaries
+external/
+
 # Python bytecode caches
 __pycache__/
 
