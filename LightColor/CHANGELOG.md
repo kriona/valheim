@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.0
+- The `AdminOnly` setting on a server lets only its admins change colors and text glow, when the server has the mod installed (suggested by evers95)
+- The `AdminOnlyHelmet` setting on a server lets only its admins color their helmet with the `Helmet` setting
+
 ## 1.4.1
 - A black portal's trim now doesn't glow
 

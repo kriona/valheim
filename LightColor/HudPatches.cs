@@ -28,7 +28,7 @@ namespace LightColor
 				return;
 			}
 			LightTint tint = hover.GetComponentInParent<LightTint>();
-			if (tint == null || !tint.HasEffects)
+			if (tint == null || !tint.HasEffects || !AdminSync.CanChangeColors)
 			{
 				return;
 			}

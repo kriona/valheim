@@ -11,6 +11,7 @@ Hover over an object that gives off light (e.g., sconce, campfire, portal) and p
 - Type `default` or blank to go revert to the original color
 - The hover text shows the key on every object it works with
 - Respects wards - you can't change lights inside a ward you don't have access to
+- Servers can let only their admins change colors - see [Admin Only](#admin-only)
 
 <img src="images/white-portal.jpg" alt="A white portal" width="750">
 
@@ -21,6 +22,16 @@ An object's color / brightness / range is stored on the object and saved with th
 Colors are shared with everyone who uses this mod, and changes are seen by all players.
 
 The `Helmet` setting is copied to your character; other players with this mod see your Dverger circlet in the color you set.
+
+### Admin Only
+
+To let only admins change colors, install the mod on the server and set `AdminOnly = true` in the server's `BepInEx\config\kriona.LightColor.cfg`. Admins are the players listed in the server's `adminlist.txt`. Other players don't see the key in the hover text, and pressing it tells them only admins can change colors. The change takes effect as soon as the file is saved, for players already connected too.
+
+When a player hosts the world from their game instead of a dedicated server, the setting comes from the host's config file, and the host can always change colors. A player's own `AdminOnly` setting does nothing on someone else's server.
+
+To let only admins use the `Helmet` setting as well, set `AdminOnlyHelmet = true` the same way. Other players' circlets keep their own light, and they're told once that only admins can use the setting. The two settings work separately, so you can turn on either one or both.
+
+The check happens in each player's game, so it keeps honest players from changing colors but can't stop someone running a modified copy of the mod.
 
 ## Screenshots
 
@@ -152,6 +163,8 @@ Typing one of these colors instead of `default` or blank gets you the same light
 
 - `ColorKey` - the key to press while looking at a light, optionally with modifiers, e.g. `L` or `LeftControl + L` (default `L`)
 - `Helmet` - the color, brightness and range for the light on your equipped Dverger circlet. Seen by other players with this mod (default blank, which keeps the circlet's own light)
+- `AdminOnly` - on a server, or in the game of the player hosting the world, lets only admins change colors - see [Admin Only](#admin-only) (default `false`)
+- `AdminOnlyHelmet` - on a server, or in the game of the player hosting the world, lets only admins use the `Helmet` setting - see [Admin Only](#admin-only) (default `false`)
 
 ## Installation
 
@@ -162,4 +175,4 @@ By hand:
 1. Install BepInExPack for Valheim from [Thunderstore](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/) or [Nexus Mods](https://www.nexusmods.com/valheim/mods/3605)
 2. Extract the zip into your Valheim folder, or copy `LightColor.dll` into `BepInEx\plugins`
 
-Client-side only - the server doesn't need it. Other players only need it to see the colors.
+Client-side - the server only needs it to let only admins change colors. Other players only need it to see the colors.

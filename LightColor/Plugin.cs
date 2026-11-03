@@ -11,12 +11,19 @@ namespace LightColor
 	{
 		public const string PluginGuid = "kriona.LightColor";
 		public const string PluginName = "Light Color";
-		public const string PluginVersion = "1.4.1";
+		public const string PluginVersion = "1.5.0";
 
 		public static ConfigEntry<KeyboardShortcut> ColorKey;
 		public static ConfigEntry<string> Helmet;
+		public static ConfigEntry<bool> AdminOnly;
+		public static ConfigEntry<bool> AdminOnlyHelmet;
 
 		private Harmony harmony;
+
+		/// <summary>
+		/// Whether the game is a dedicated server, which has no player or screen and only sends its settings to players
+		/// </summary>
+		private bool dedicated;
 
 		/// <summary>
 		/// Reads the config file again once it has been saved - settings whose value changed fire their change events,
@@ -36,6 +43,12 @@ namespace LightColor
 		private string storedText;
 
 		/// <summary>
+		/// Whether the Helmet setting was left out of the last write because only admins can use it, so the player is
+		/// only told once
+		/// </summary>
+		private bool helmetDenied;
+
+		/// <summary>
 		/// Binds the settings, watches the config file for changes and applies the patches
 		/// </summary>
 		private void Awake()
@@ -44,9 +57,21 @@ namespace LightColor
 			Helmet = Config.Bind("General", "Helmet", "", "Color, brightness and range for the light on your equipped helmet, like the Dverger circlet, typed the same way as on a light, e.g. blue 150% 20m - other players with the mod see it too, and blank keeps the helmet's own light");
 			Helmet.SettingChanged += (sender, args) => CheckHelmetText();
 			CheckHelmetText();
+			AdminOnly = Config.Bind("Server", "AdminOnly", false, "Only admins in the server's adminlist.txt can change colors and text glow");
+			AdminOnly.SettingChanged += (sender, args) => AdminSync.SendToAll();
+			AdminOnlyHelmet = Config.Bind("Server", "AdminOnlyHelmet", false, "Only admins in the server's adminlist.txt can color their equipped helmet with the Helmet setting");
+			AdminOnlyHelmet.SettingChanged += (sender, args) => AdminSync.SendToAll();
 			watcher = new ConfigWatcher(Config, Logger, PluginName);
 			harmony = new Harmony(PluginGuid);
-			harmony.PatchAll();
+			dedicated = Application.isBatchMode;
+			if (dedicated)
+			{
+				harmony.CreateClassProcessor(typeof(ZNetPeerInfoPatch)).Patch();
+			}
+			else
+			{
+				harmony.PatchAll();
+			}
 			Logger.LogInfo(PluginName + " " + PluginVersion + " loaded");
 		}
 
@@ -57,6 +82,10 @@ namespace LightColor
 		private void Update()
 		{
 			watcher.Update();
+			if (dedicated)
+			{
+				return;
+			}
 			StoreHelmetSettings();
 			if (!IsColorKeyDown())
 			{
@@ -73,7 +102,16 @@ namespace LightColor
 				return;
 			}
 			LightTint tint = hover.GetComponentInParent<LightTint>();
-			if (tint != null && tint.HasEffects && PrivateArea.CheckAccess(tint.transform.position))
+			if (tint == null || !tint.HasEffects)
+			{
+				return;
+			}
+			if (!AdminSync.CanChangeColors)
+			{
+				player.Message(MessageHud.MessageType.Center, AdminSync.DeniedMessage);
+				return;
+			}
+			if (PrivateArea.CheckAccess(tint.transform.position))
 			{
 				tint.RequestColor();
 			}
@@ -102,12 +140,19 @@ namespace LightColor
 		}
 
 		/// <summary>
-		/// Writes the Helmet setting to the local player's ZDO when the player or the setting has changed since the last write
+		/// Writes the Helmet setting to the local player's ZDO when the player or the setting has changed since the last
+		/// write, writing blank instead when the server lets only admins use it and the player isn't one
 		/// </summary>
 		private void StoreHelmetSettings()
 		{
 			Player player = Player.m_localPlayer;
-			if (player == null || (player == storedPlayer && helmetText == storedText))
+			if (player == null)
+			{
+				return;
+			}
+			bool denied = (helmetText.Length > 0 && !AdminSync.CanUseHelmet);
+			string text = (denied ? "" : helmetText);
+			if (player == storedPlayer && text == storedText)
 			{
 				return;
 			}
@@ -116,9 +161,14 @@ namespace LightColor
 			{
 				return;
 			}
-			nview.GetZDO().Set(HelmetTint.SettingsHash, helmetText);
+			nview.GetZDO().Set(HelmetTint.SettingsHash, text);
 			storedPlayer = player;
-			storedText = helmetText;
+			storedText = text;
+			if (denied && !helmetDenied)
+			{
+				player.Message(MessageHud.MessageType.TopLeft, "Only admins can use the Helmet setting on this server");
+			}
+			helmetDenied = denied;
 		}
 
 		/// <summary>
