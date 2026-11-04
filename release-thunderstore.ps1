@@ -89,8 +89,9 @@ Rewrites a mod's README.md for its Thunderstore package
 
 .DESCRIPTION
 Leaves out the "# Title" line and the blank line after it, since the package page shows its name, and points relative
-images and links at GitHub, since Thunderstore doesn't render images inside the package. Links to headings (#...) and
-the lines of fenced code blocks are left as they are. Ends with a link to every mod on Thunderstore, rather than a list
+images and links at GitHub, since Thunderstore doesn't render images inside the package. Links to headings (#...) point
+at the heading in the README on GitHub, since Thunderstore strips the id and name attributes that anchors need. The
+lines of fenced code blocks are left as they are. Ends with a link to every mod on Thunderstore, rather than a list
 that would go stale since a version's README can't be changed after upload, and a link to the source
 
 .PARAMETER readmeFile
@@ -147,6 +148,10 @@ function Convert-ThunderstoreReadme([string]$readmeFile, [string]$rawUrl, [strin
 				$base = $rawUrl
 			}
 			return($match.Groups[1].Value + '[' + $match.Groups[2].Value + '](' + $base + '/' + $match.Groups[3].Value + ')')
+		})
+		$line = [regex]::Replace($line, '\[([^\]]*)\]\((#[^)]+)\)', {
+			param($match)
+			return('[' + $match.Groups[1].Value + '](' + $treeUrl + '/README.md' + $match.Groups[2].Value + ')')
 		})
 		$output.Add($line)
 	}

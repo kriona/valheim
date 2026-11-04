@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Functions shared by build-release.ps1 and build-bbcode.ps1 - dot-source it rather than running it
+Functions shared by build-release.ps1, build-bbcode.ps1 and stats.ps1 - dot-source it rather than running it
 
 .DESCRIPTION
 Reads the root README's "## Mods" table, the GitHub repository from the origin remote and secrets from .env, and sends
