@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.0
+- Support birds
+
 ## 1.4.0
 - Hide the mod's name and level when the game is already showing this info
 - Make sure the marker arrow doesn't overlap the game's info

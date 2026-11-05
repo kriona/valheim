@@ -77,8 +77,8 @@ namespace CreatureMarker
 		private static readonly string[] creatureHeader =
 		{
 			"",
-			"## All Creatures marks every creature, including traders and their pets, All Hostile Creatures marks every creature that will attack you, and All Fish marks every fish",
-			"## Each creature, trader, pet and fish line is: Prefab = inherit/true/false ## Name in game",
+			"## All Creatures marks every creature, including traders, their pets and birds, All Hostile Creatures marks every creature that will attack you, and All Fish marks every fish",
+			"## Each creature, trader, pet, fish and bird line is: Prefab = inherit/true/false ## Name in game",
 			"## inherit follows the All switches, while true or false always shows or hides that one's marker",
 			"",
 		};
@@ -92,11 +92,10 @@ namespace CreatureMarker
 		private static readonly string farDistanceNote = "Meters beyond which a marker is drawn at Far Scale, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultFarDistance;
 		private static readonly string farScaleNote = "Size of a marker beyond Far Distance, from " + MinFarScale.ToString(CultureInfo.InvariantCulture) + " to 1 (no shrinking), default " + DefaultFarScale.ToString(CultureInfo.InvariantCulture);
 		private static readonly string bobHeightNote = "Pixels an on-screen arrow bobs up and down, from 0 (disables bobbing) to " + MaxBobHeight + ", default " + DefaultBobHeight;
-		private static readonly string passiveColorNote = "Creatures that won't attack you, default " + DefaultPassiveColor;
+		private static readonly string passiveColorNote = "Creatures that won't attack you, including birds, default " + DefaultPassiveColor;
 		private static readonly string hostileColorNote = "Creatures that will attack you, default " + DefaultHostileColor;
 		private static readonly string bossColorNote = "Bosses, default " + DefaultBossColor;
-		private static readonly string fishColorNote = "Fish, default " + DefaultFishColor;
-		private static readonly string petColorNote = "Creatures you have tamed, default " + DefaultPetColor;
+		private static readonly string fishColorNote = "Fish, default " + DefaultFishColor;		private static readonly string petColorNote = "Creatures you have tamed, default " + DefaultPetColor;
 		private static readonly string traderColorNote = "Traders like Haldor, Hildir and the Bog Witch, blank to use Passive Color, default blank";
 
 		/// <summary>
@@ -131,6 +130,20 @@ namespace CreatureMarker
 		private static ConfigEntry<bool> allCreaturesEntry;
 		private static ConfigEntry<bool> allHostileEntry;
 		private static ConfigEntry<bool> allFishEntry;
+
+		/// <summary>
+		/// Name token by prefab name of the birds whose name isn't their prefab name split into words - the game gives
+		/// birds no name of their own
+		/// </summary>
+		private static readonly Dictionary<string, string> birdNameTokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+		{
+			{ "Seagal", "$caption_seagull" },
+		};
+
+		/// <summary>
+		/// Name token by prefab hash of the birds marked so far, so a bird's name is only worked out once
+		/// </summary>
+		private static readonly Dictionary<int, string> birdNamesByHash = new Dictionary<int, string>();
 
 		/// <summary>
 		/// Display name by prefab name of every creature line, sorted, as last read - blank when the name isn't known
@@ -293,7 +306,7 @@ namespace CreatureMarker
 
 		/// <summary>
 		/// Reads the config file, adds any prefabs with a Character component other than the player, a Trader, a
-		/// Petable or a Fish component, and the traders and pets seen in the world, and writes it back
+		/// Petable, a Fish or a RandomFlyingBird component, and the traders and pets seen in the world, and writes it back
 		/// </summary>
 		/// <param name="scene">The scene holding the prefab list</param>
 		public static void Load(ZNetScene scene)
@@ -332,6 +345,11 @@ namespace CreatureMarker
 				if (fish != null)
 				{
 					names[prefab.name] = GetDisplayName(fish.m_name);
+					continue;
+				}
+				if (prefab.GetComponent<RandomFlyingBird>() != null)
+				{
+					names[prefab.name] = GetDisplayName(GetBirdNameToken(prefab.name));
 				}
 			}
 			foreach (KeyValuePair<string, string> npc in npcNames)
@@ -424,7 +442,7 @@ namespace CreatureMarker
 			fishColorEntry = BindSetting(ColorsSection, FishColorKey, ParseColor(DefaultFishColor, Color.cyan), fishColorNote, null, order--);
 			petColorEntry = BindSetting(ColorsSection, PetColorKey, ParseColor(DefaultPetColor, Color.white), petColorNote, null, order--);
 			traderColorEntry = BindSetting(ColorsSection, TraderColorKey, "", traderColorNote, null, order--);
-			allCreaturesEntry = BindSetting(CreaturesSection, AllCreaturesKey, false, "Mark every creature", null, order--);
+			allCreaturesEntry = BindSetting(CreaturesSection, AllCreaturesKey, false, "Mark every creature, including traders, their pets and birds", null, order--);
 			allHostileEntry = BindSetting(CreaturesSection, AllHostileKey, true, "Mark every creature that will attack you", null, order--);
 			allFishEntry = BindSetting(CreaturesSection, AllFishKey, false, "Mark every fish", null, order--);
 		}
@@ -532,8 +550,8 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Fills the list with the living marked creatures, the marked traders and pets and the marked fish within Max
-		/// Distance of the player
+		/// Fills the list with the living marked creatures, the marked traders and pets and the marked fish and birds
+		/// within Max Distance of the player
 		/// </summary>
 		/// <param name="player">The local player</param>
 		/// <param name="marked">The list to fill, cleared first</param>
@@ -614,6 +632,78 @@ namespace CreatureMarker
 				target.color = fishColor;
 				marked.Add(target);
 			}
+			foreach (IMonoUpdater updater in RandomFlyingBird.Instances)
+			{
+				RandomFlyingBird bird = updater as RandomFlyingBird;
+				if (bird == null || bird.m_nview == null || !bird.m_nview.IsValid())
+				{
+					continue;
+				}
+				Vector3 position = bird.transform.position;
+				if (Vector3.SqrMagnitude(position - playerPosition) > maxDistanceSquared)
+				{
+					continue;
+				}
+				int prefabHash = bird.m_nview.GetZDO().GetPrefab();
+				if (!IsMarked(prefabHash, allCreatures))
+				{
+					continue;
+				}
+				Target target = new Target();
+				target.source = bird;
+				target.position = position;
+				target.top = position;
+				target.nameToken = GetBirdNameToken(bird, prefabHash);
+				target.level = 1;
+				target.color = passiveColor;
+				marked.Add(target);
+			}
+		}
+
+		/// <summary>
+		/// The name token of a bird in the world, worked out from its prefab name the first time a bird of that prefab
+		/// is marked
+		/// </summary>
+		/// <param name="bird">The bird</param>
+		/// <param name="prefabHash">The bird's prefab name hash</param>
+		/// <returns>The name token</returns>
+		private static string GetBirdNameToken(RandomFlyingBird bird, int prefabHash)
+		{
+			if (!birdNamesByHash.TryGetValue(prefabHash, out string token))
+			{
+				token = GetBirdNameToken(Utils.GetPrefabName(bird.gameObject));
+				birdNamesByHash[prefabHash] = token;
+			}
+			return(token);
+		}
+
+		/// <summary>
+		/// The name token of a bird prefab - the game's seagull caption for seagulls, and otherwise the prefab name
+		/// split into words, like Ash Crow for AshCrow, since the game gives birds no name of their own
+		/// </summary>
+		/// <param name="prefabName">The bird's prefab name</param>
+		/// <returns>The name token, or plain text that localizes to itself</returns>
+		private static string GetBirdNameToken(string prefabName)
+		{
+			if (birdNameTokens.TryGetValue(prefabName, out string token))
+			{
+				return(token);
+			}
+			StringBuilder builder = new StringBuilder();
+			for (int i = 0; i < prefabName.Length; i++)
+			{
+				char c = prefabName[i];
+				if (c == '_')
+				{
+					c = ' ';
+				}
+				else if (i > 0 && char.IsUpper(c) && char.IsLower(prefabName[i - 1]))
+				{
+					builder.Append(' ');
+				}
+				builder.Append(c);
+			}
+			return(builder.ToString().Trim());
 		}
 
 		/// <summary>
@@ -961,7 +1051,7 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// The creature's or fish's name in the current language, falling back to its name token
+		/// The creature's, fish's or bird's name in the current language, falling back to its name token
 		/// </summary>
 		/// <param name="token">The prefab's name token</param>
 		/// <returns>The name to show after the value</returns>

@@ -24,7 +24,7 @@ namespace CreatureMarker
 		internal static readonly Color OutlineColor = new Color(0.1f, 0.1f, 0.1f, 1f);
 
 		/// <summary>
-		/// One creature's or fish's arrow and name label
+		/// One creature's, fish's or bird's arrow and name label
 		/// </summary>
 		/// <remarks>
 		/// The label is a sibling of the arrow so it stays upright when the arrow rotates at the screen edge
@@ -71,9 +71,9 @@ namespace CreatureMarker
 		private readonly Vector3[] corners = new Vector3[4];
 
 		/// <summary>
-		/// Shows an arrow for each marked creature and fish when Show On Screen is on and hides the spare ones
+		/// Shows an arrow for each marked creature, fish and bird when Show On Screen is on and hides the spare ones
 		/// </summary>
-		/// <param name="marked">The living marked creatures and the marked fish within range</param>
+		/// <param name="marked">The living marked creatures and the marked fish and birds within range</param>
 		/// <param name="player">The local player</param>
 		public void Update(List<Target> marked, Player player)
 		{
@@ -229,7 +229,7 @@ namespace CreatureMarker
 		/// the top of the screen
 		/// </remarks>
 		/// <param name="enemyHud">The enemy HUD</param>
-		/// <param name="source">The marked Character, Trader, Petable or Fish</param>
+		/// <param name="source">The marked Character, Trader, Petable, Fish or RandomFlyingBird</param>
 		/// <returns>The height, or -1 when the game isn't showing a name above the target</returns>
 		private float GetGameHudHeight(EnemyHud enemyHud, Object source)
 		{
