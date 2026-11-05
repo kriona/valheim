@@ -42,7 +42,7 @@ namespace CreatureMarker
 		/// Shows a dot for each marked creature inside the open map's view and hides the spare ones, showing none
 		/// while the player is in a dungeon
 		/// </summary>
-		/// <param name="marked">The living marked creatures and the marked fish within range</param>
+		/// <param name="marked">The living marked creatures and the marked fish and birds within range</param>
 		/// <param name="player">The local player, for whether they are in a dungeon</param>
 		public void Update(List<Target> marked, Player player)
 		{
@@ -79,7 +79,7 @@ namespace CreatureMarker
 		/// <param name="map">The map's image, for its view and size</param>
 		/// <param name="show">Whether the map is open and dots are turned on</param>
 		/// <param name="minimap">The minimap, for converting world positions</param>
-		/// <param name="marked">The living marked creatures and the marked fish within range</param>
+		/// <param name="marked">The living marked creatures and the marked fish and birds within range</param>
 		private void UpdateLayer(DotLayer layer, RectTransform root, RawImage map, bool show, Minimap minimap, List<Target> marked)
 		{
 			if (layer.root != root)

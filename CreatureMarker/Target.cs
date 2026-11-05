@@ -3,12 +3,13 @@ using UnityEngine;
 namespace CreatureMarker
 {
 	/// <summary>
-	/// A marked creature or fish, with what the arrow and map dot need to show it
+	/// A marked creature, fish or bird, with what the arrow and map dot need to show it
 	/// </summary>
 	public struct Target
 	{
 		/// <summary>
-		/// The Character, Trader, Petable or Fish being marked, so a marker can tell when it is given a different one
+		/// The Character, Trader, Petable, Fish or RandomFlyingBird being marked, so a marker can tell when it is given
+		/// a different one
 		/// </summary>
 		public Object source;
 
@@ -18,7 +19,7 @@ namespace CreatureMarker
 		public Vector3 position;
 
 		/// <summary>
-		/// The world point the arrow sits above - the top of a creature's head, or a fish's position
+		/// The world point the arrow sits above - the top of a creature's head, or a fish's or bird's position
 		/// </summary>
 		public Vector3 top;
 
@@ -28,7 +29,8 @@ namespace CreatureMarker
 		public string nameToken;
 
 		/// <summary>
-		/// The creature's level, which is its star count plus one, or the fish's level - both start at 1
+		/// The creature's level, which is its star count plus one, or the fish's level - both start at 1, and birds are
+		/// always level 1
 		/// </summary>
 		public int level;
 
