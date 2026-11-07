@@ -1,10 +1,11 @@
 # Creature Marker
 
-Puts a colored arrow above nearby creatures, traders, fish, birds and leviathans. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them.
+Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans and other players. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them.
 
 - Separate colors for passive creatures, hostile creatures, creatures that are targeting you, bosses, fish, traders, leviathans and your tamed pets
 - Marks traders like Haldor, Hildir and the Bog Witch, and their pets like Halstein
 - Marks leviathans and lava leviathans, so they're easy to find when you want their chitin or flametal ore
+- Marks other players who are sharing their position on the map, unless they're sneaking
 - Optional name, level and distance label on each marker, leaving out the name and level while the game shows its own above the creature
 - A matching colored dot on the minimap and the large map for each marked creature
 - Choose which creatures are marked - passive ones, hostile ones, or creature by creature, with separate switches for fish, birds and leviathans and a lowest level for creatures and fish
@@ -43,11 +44,13 @@ Puts a colored arrow above nearby creatures, traders, fish, birds and leviathans
 | Pet Color | #FFF | Marker color for creatures you have tamed |
 | Trader Color | | Marker color for traders like Haldor, Hildir and the Bog Witch. Leave it blank to use Passive Color. Their pets, like Halstein, always use Passive Color |
 | Leviathan Color | #B366FF | Marker color for leviathans and lava leviathans |
+| Player Color | #FFF | Marker color for other players |
 | All Passive Creatures | false | Marks every creature that won't attack you, including traders and their pets |
 | All Hostile Creatures | true | Marks every creature that will attack you |
 | All Fish | false | Marks every fish |
 | All Birds | false | Marks every bird |
 | All Leviathans | true | Marks every leviathan and lava leviathan. A leviathan's marker goes away once it starts diving after being hit |
+| All Players | true | Marks every other player who is sharing their position on the map, except while they're sneaking |
 | Min Creature Level | 0 | Lowest level a creature needs to get a marker, which is its number of stars (0 - 9). 0 marks every creature, and 1 marks only creatures with stars. Traders, their pets and leviathans aren't affected |
 | Min Fish Level | 1 | Lowest level a fish needs to get a marker (1 - 5). 1 marks fish of every level |
 

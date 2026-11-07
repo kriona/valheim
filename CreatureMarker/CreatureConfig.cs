@@ -50,6 +50,7 @@ namespace CreatureMarker
 		private const string PetColorKey = "Pet Color";
 		private const string TraderColorKey = "Trader Color";
 		private const string LeviathanColorKey = "Leviathan Color";
+		private const string PlayerColorKey = "Player Color";
 		private const string AllPassiveKey = "All Passive Creatures";
 
 		/// <summary>
@@ -61,6 +62,7 @@ namespace CreatureMarker
 		private const string AllFishKey = "All Fish";
 		private const string AllBirdsKey = "All Birds";
 		private const string AllLeviathansKey = "All Leviathans";
+		private const string AllPlayersKey = "All Players";
 		private const string MinCreatureLevelKey = "Min Creature Level";
 		private const string MinFishLevelKey = "Min Fish Level";
 
@@ -79,6 +81,7 @@ namespace CreatureMarker
 		private const string DefaultFishColor = "#33CCFF";
 		private const string DefaultPetColor = "#FFF";
 		private const string DefaultLeviathanColor = "#B366FF";
+		private const string DefaultPlayerColor = "#FFF";
 		private const int DefaultMinCreatureLevel = 0;
 		private const int MaxMinCreatureLevel = 9;
 		private const int DefaultMinFishLevel = 1;
@@ -100,6 +103,7 @@ namespace CreatureMarker
 			"## All Fish marks every fish",
 			"## All Birds marks every bird",
 			"## All Leviathans marks every leviathan",
+			"## All Players marks every other player who is sharing their position on the map and isn't sneaking",
 			"",
 		};
 
@@ -128,6 +132,7 @@ namespace CreatureMarker
 		private static readonly string petColorNote = "Creatures you have tamed, default " + DefaultPetColor;
 		private static readonly string traderColorNote = "Traders like Haldor, Hildir and the Bog Witch, blank to use Passive Color, default blank";
 		private static readonly string leviathanColorNote = "Leviathans, default " + DefaultLeviathanColor;
+		private static readonly string playerColorNote = "Other players, default " + DefaultPlayerColor;
 		private static readonly string minCreatureLevelNote = "Lowest level a creature needs to get a marker, which is its number of stars, from 0 (every creature) to " + MaxMinCreatureLevel + ", default " + DefaultMinCreatureLevel + ", traders, their pets, birds and leviathans aren't affected";
 		private static readonly string minFishLevelNote ="Lowest level a fish needs to get a marker, even when its own line is true, from 1 (every fish) to " + MaxMinFishLevel + ", default " + DefaultMinFishLevel;
 
@@ -162,11 +167,13 @@ namespace CreatureMarker
 		/// </summary>
 		private static ConfigEntry<string> traderColorEntry;
 		private static ConfigEntry<Color> leviathanColorEntry;
+		private static ConfigEntry<Color> playerColorEntry;
 		private static ConfigEntry<bool> allPassiveEntry;
 		private static ConfigEntry<bool> allHostileEntry;
 		private static ConfigEntry<bool> allFishEntry;
 		private static ConfigEntry<bool> allBirdsEntry;
 		private static ConfigEntry<bool> allLeviathansEntry;
+		private static ConfigEntry<bool> allPlayersEntry;
 		private static ConfigEntry<int> minCreatureLevelEntry;
 		private static ConfigEntry<int> minFishLevelEntry;
 
@@ -261,11 +268,14 @@ namespace CreatureMarker
 		private static Color? traderColor;
 		private static string leviathanColorText = DefaultLeviathanColor;
 		private static Color leviathanColor = ParseColor(DefaultLeviathanColor, Color.magenta);
+		private static string playerColorText = DefaultPlayerColor;
+		private static Color playerColor = ParseColor(DefaultPlayerColor, Color.white);
 		private static bool allPassive;
 		private static bool allHostile = true;
 		private static bool allFish;
 		private static bool allBirds;
 		private static bool allLeviathans = true;
+		private static bool allPlayers = true;
 
 		/// <summary>
 		/// Lowest number of stars a creature needs to get a marker
@@ -502,11 +512,13 @@ namespace CreatureMarker
 			petColorEntry = BindSetting(ColorsSection, PetColorKey, ParseColor(DefaultPetColor, Color.white), petColorNote, null, order--);
 			traderColorEntry = BindSetting(ColorsSection, TraderColorKey, "", traderColorNote, null, order--);
 			leviathanColorEntry = BindSetting(ColorsSection, LeviathanColorKey, ParseColor(DefaultLeviathanColor, Color.magenta), leviathanColorNote, null, order--);
+			playerColorEntry = BindSetting(ColorsSection, PlayerColorKey, ParseColor(DefaultPlayerColor, Color.white), playerColorNote, null, order--);
 			allPassiveEntry = BindSetting(CreaturesSection, AllPassiveKey, false, "Mark every creature that won't attack you, including traders and their pets", null, order--);
 			allHostileEntry = BindSetting(CreaturesSection, AllHostileKey, true, "Mark every creature that will attack you", null, order--);
 			allFishEntry = BindSetting(CreaturesSection, AllFishKey, false, "Mark every fish", null, order--);
 			allBirdsEntry = BindSetting(CreaturesSection, AllBirdsKey, false, "Mark every bird", null, order--);
 			allLeviathansEntry = BindSetting(CreaturesSection, AllLeviathansKey, true, "Mark every leviathan", null, order--);
+			allPlayersEntry = BindSetting(CreaturesSection, AllPlayersKey, true, "Mark every other player who is sharing their position on the map and isn't sneaking", null, order--);
 			minCreatureLevelEntry = BindSetting(CreaturesSection, MinCreatureLevelKey, DefaultMinCreatureLevel, minCreatureLevelNote, new AcceptableValueRange<int>(0, MaxMinCreatureLevel), order--);
 			minFishLevelEntry = BindSetting(CreaturesSection, MinFishLevelKey, DefaultMinFishLevel, minFishLevelNote, new AcceptableValueRange<int>(1, MaxMinFishLevel), order--);
 		}
@@ -556,11 +568,13 @@ namespace CreatureMarker
 				petColorEntry.Value = petColor;
 				traderColorEntry.Value = traderColorText;
 				leviathanColorEntry.Value = leviathanColor;
+				playerColorEntry.Value = playerColor;
 				allPassiveEntry.Value = allPassive;
 				allHostileEntry.Value = allHostile;
 				allFishEntry.Value = allFish;
 				allBirdsEntry.Value = allBirds;
 				allLeviathansEntry.Value = allLeviathans;
+				allPlayersEntry.Value = allPlayers;
 				minCreatureLevelEntry.Value = minCreatureLevel;
 				minFishLevelEntry.Value = minFishLevel;
 				foreach (KeyValuePair<string, string> name in names)
@@ -593,11 +607,13 @@ namespace CreatureMarker
 			petColorText = TakeEntryColor(petColorEntry, petColorText, ref petColor);
 			traderColorText = ParseOptionalColor(TraderColorKey, traderColorEntry.Value, out traderColor);
 			leviathanColorText = TakeEntryColor(leviathanColorEntry, leviathanColorText, ref leviathanColor);
+			playerColorText = TakeEntryColor(playerColorEntry, playerColorText, ref playerColor);
 			allPassive = allPassiveEntry.Value;
 			allHostile = allHostileEntry.Value;
 			allFish = allFishEntry.Value;
 			allBirds = allBirdsEntry.Value;
 			allLeviathans = allLeviathansEntry.Value;
+			allPlayers = allPlayersEntry.Value;
 			minCreatureLevel = minCreatureLevelEntry.Value;
 			minFishLevel = minFishLevelEntry.Value;
 			Dictionary<string, bool?> states = BuildStates((string key) => (creatureEntries.TryGetState(key, out bool? state) ? state : null));
@@ -626,8 +642,9 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Fills the list with the living marked creatures, the marked traders and pets, the marked fish and birds and
-		/// the marked leviathans that haven't started diving, within Max Distance of the player
+		/// Fills the list with the living marked creatures, the other players sharing their position who aren't
+		/// sneaking, the marked traders and pets, the marked fish and birds and the marked leviathans that haven't
+		/// started diving, within Max Distance of the player
 		/// </summary>
 		/// <param name="player">The local player</param>
 		/// <param name="marked">The list to fill, cleared first</param>
@@ -643,8 +660,23 @@ namespace CreatureMarker
 				{
 					continue;
 				}
-				if (character is Player || character.IsDead())
+				if (character.IsDead())
 				{
+					continue;
+				}
+				if (character is Player other)
+				{
+					if (allPlayers && other != player && !other.IsCrouching() && IsSharingPosition(other))
+					{
+						Target playerTarget = new Target();
+						playerTarget.source = other;
+						playerTarget.position = position;
+						playerTarget.top = other.GetTopPoint();
+						playerTarget.nameToken = other.GetHoverName();
+						playerTarget.level = 1;
+						playerTarget.color = playerColor;
+						marked.Add(playerTarget);
+					}
 					continue;
 				}
 				int level = character.GetLevel();
@@ -896,6 +928,29 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
+		/// Whether another player is sharing their position on the map, going by the player list the server sends
+		/// </summary>
+		/// <param name="other">The other player</param>
+		/// <returns>True when the player list has the player with their position public</returns>
+		private static bool IsSharingPosition(Player other)
+		{
+			ZNet net = ZNet.instance;
+			if (net == null)
+			{
+				return(false);
+			}
+			ZDOID id = other.GetZDOID();
+			foreach (ZNet.PlayerInfo info in net.GetPlayerList())
+			{
+				if (info.m_characterID == id)
+				{
+					return(info.m_publicPosition);
+				}
+			}
+			return(false);
+		}
+
+		/// <summary>
 		/// Whether a leviathan has started diving, after being hit, and is about to disappear
 		/// </summary>
 		/// <param name="leviathan">The leviathan</param>
@@ -943,7 +998,9 @@ namespace CreatureMarker
 			petColorText = TakeColor(values, PetColorKey, DefaultPetColor, out petColor);
 			traderColorText = ParseOptionalColor(TraderColorKey, TakeValue(values, TraderColorKey), out traderColor);
 			leviathanColorText = TakeColor(values, LeviathanColorKey, DefaultLeviathanColor, out leviathanColor);
+			playerColorText = TakeColor(values, PlayerColorKey, DefaultPlayerColor, out playerColor);
 			allLeviathans = (ParseState(TakeValue(values, AllLeviathansKey)) ?? true);
+			allPlayers = (ParseState(TakeValue(values, AllPlayersKey)) ?? true);
 			string oldAllCreaturesText = TakeValue(values, OldAllCreaturesKey);
 			string allPassiveText = TakeValue(values, AllPassiveKey);
 			string allBirdsText = TakeValue(values, AllBirdsKey);
@@ -1190,12 +1247,14 @@ namespace CreatureMarker
 			AppendLine(builder, PetColorKey, petColorText, petColorNote);
 			AppendLine(builder, TraderColorKey, traderColorText, traderColorNote);
 			AppendLine(builder, LeviathanColorKey, leviathanColorText, leviathanColorNote);
+			AppendLine(builder, PlayerColorKey, playerColorText, playerColorNote);
 			AppendLines(builder, creatureHeader);
 			AppendLine(builder, AllPassiveKey, StateEntries.Format(allPassive), "");
 			AppendLine(builder, AllHostileKey, StateEntries.Format(allHostile), "");
 			AppendLine(builder, AllFishKey, StateEntries.Format(allFish), "");
 			AppendLine(builder, AllBirdsKey, StateEntries.Format(allBirds), "");
 			AppendLine(builder, AllLeviathansKey, StateEntries.Format(allLeviathans), "");
+			AppendLine(builder, AllPlayersKey, StateEntries.Format(allPlayers), "");
 			AppendLine(builder, MinCreatureLevelKey, minCreatureLevel.ToString(CultureInfo.InvariantCulture), minCreatureLevelNote);
 			AppendLine(builder, MinFishLevelKey, minFishLevel.ToString(CultureInfo.InvariantCulture), minFishLevelNote);
 			AppendLines(builder, creatureLinesHeader);
