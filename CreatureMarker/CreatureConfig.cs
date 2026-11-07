@@ -44,6 +44,7 @@ namespace CreatureMarker
 		private const string ShowLevelKey = "Show Level";
 		private const string PassiveColorKey = "Passive Color";
 		private const string HostileColorKey = "Hostile Color";
+		private const string AngryColorKey = "Angry Color";
 		private const string BossColorKey = "Boss Color";
 		private const string FishColorKey = "Fish Color";
 		private const string PetColorKey = "Pet Color";
@@ -67,10 +68,11 @@ namespace CreatureMarker
 		private const float DefaultFarDistance = 50f;
 		private const float DefaultFarScale = 0.66f;
 		private const float MinFarScale = 0.2f;
-		private const float DefaultBobHeight = 6f;
+		private const float DefaultBobHeight = 0f;
 		private const float MaxBobHeight = 30f;
 		private const string DefaultPassiveColor = "#40D940";
 		private const string DefaultHostileColor = "#FFD91A";
+		private const string DefaultAngryColor = "#FF801A";
 		private const string DefaultBossColor = "#FF3333";
 		private const string DefaultFishColor = "#33CCFF";
 		private const string DefaultPetColor = "#FFF";
@@ -116,6 +118,7 @@ namespace CreatureMarker
 		private static readonly string bobHeightNote = "Pixels an on-screen arrow bobs up and down, from 0 (disables bobbing) to " + MaxBobHeight + ", default " + DefaultBobHeight;
 		private static readonly string passiveColorNote = "Creatures that won't attack you, including birds, default " + DefaultPassiveColor;
 		private static readonly string hostileColorNote = "Creatures that will attack you, default " + DefaultHostileColor;
+		private static readonly string angryColorNote = "Hostile creatures that are after you right now, default " + DefaultAngryColor;
 		private static readonly string bossColorNote = "Bosses, default " + DefaultBossColor;
 		private static readonly string fishColorNote = "Fish, default " + DefaultFishColor;
 		private static readonly string petColorNote = "Creatures you have tamed, default " + DefaultPetColor;
@@ -144,6 +147,7 @@ namespace CreatureMarker
 		private static ConfigEntry<float> bobHeightEntry;
 		private static ConfigEntry<Color> passiveColorEntry;
 		private static ConfigEntry<Color> hostileColorEntry;
+		private static ConfigEntry<Color> angryColorEntry;
 		private static ConfigEntry<Color> bossColorEntry;
 		private static ConfigEntry<Color> fishColorEntry;
 		private static ConfigEntry<Color> petColorEntry;
@@ -231,11 +235,13 @@ namespace CreatureMarker
 
 		private static string passiveColorText = DefaultPassiveColor;
 		private static string hostileColorText = DefaultHostileColor;
+		private static string angryColorText = DefaultAngryColor;
 		private static string bossColorText = DefaultBossColor;
 		private static string fishColorText = DefaultFishColor;
 		private static string petColorText = DefaultPetColor;
 		private static Color passiveColor = ParseColor(DefaultPassiveColor, Color.green);
 		private static Color hostileColor = ParseColor(DefaultHostileColor, Color.yellow);
+		private static Color angryColor = ParseColor(DefaultAngryColor, Color.red);
 		private static Color bossColor = ParseColor(DefaultBossColor, Color.red);
 		private static Color fishColor = ParseColor(DefaultFishColor, Color.cyan);
 		private static Color petColor = ParseColor(DefaultPetColor, Color.white);
@@ -477,6 +483,7 @@ namespace CreatureMarker
 			bobHeightEntry = BindSetting(MarkersSection, BobHeightKey, DefaultBobHeight, bobHeightNote, new AcceptableValueRange<float>(0f, MaxBobHeight), order--);
 			passiveColorEntry = BindSetting(ColorsSection, PassiveColorKey, ParseColor(DefaultPassiveColor, Color.green), passiveColorNote, null, order--);
 			hostileColorEntry = BindSetting(ColorsSection, HostileColorKey, ParseColor(DefaultHostileColor, Color.yellow), hostileColorNote, null, order--);
+			angryColorEntry = BindSetting(ColorsSection, AngryColorKey, ParseColor(DefaultAngryColor, Color.red), angryColorNote, null, order--);
 			bossColorEntry = BindSetting(ColorsSection, BossColorKey, ParseColor(DefaultBossColor, Color.red), bossColorNote, null, order--);
 			fishColorEntry = BindSetting(ColorsSection, FishColorKey, ParseColor(DefaultFishColor, Color.cyan), fishColorNote, null, order--);
 			petColorEntry = BindSetting(ColorsSection, PetColorKey, ParseColor(DefaultPetColor, Color.white), petColorNote, null, order--);
@@ -528,6 +535,7 @@ namespace CreatureMarker
 				bobHeightEntry.Value = BobHeight;
 				passiveColorEntry.Value = passiveColor;
 				hostileColorEntry.Value = hostileColor;
+				angryColorEntry.Value = angryColor;
 				bossColorEntry.Value = bossColor;
 				fishColorEntry.Value = fishColor;
 				petColorEntry.Value = petColor;
@@ -562,6 +570,7 @@ namespace CreatureMarker
 			BobHeight = bobHeightEntry.Value;
 			passiveColorText = TakeEntryColor(passiveColorEntry, passiveColorText, ref passiveColor);
 			hostileColorText = TakeEntryColor(hostileColorEntry, hostileColorText, ref hostileColor);
+			angryColorText = TakeEntryColor(angryColorEntry, angryColorText, ref angryColor);
 			bossColorText = TakeEntryColor(bossColorEntry, bossColorText, ref bossColor);
 			fishColorText = TakeEntryColor(fishColorEntry, fishColorText, ref fishColor);
 			petColorText = TakeEntryColor(petColorEntry, petColorText, ref petColor);
@@ -636,7 +645,7 @@ namespace CreatureMarker
 				target.top = character.GetTopPoint();
 				target.nameToken = character.GetHoverName();
 				target.level = level;
-				target.color = GetCreatureColor(character, hostile);
+				target.color = GetCreatureColor(character, hostile, player);
 				marked.Add(target);
 			}
 			Color merchantColor = (traderColor ?? passiveColor);
@@ -794,13 +803,14 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// The marker color of a creature - Boss Color for bosses, Pet Color for tamed creatures, then Hostile Color or
-		/// Passive Color
+		/// The marker color of a creature - Boss Color for bosses, Pet Color for tamed creatures, Angry Color for hostile
+		/// creatures that are after the player, then Hostile Color or Passive Color
 		/// </summary>
 		/// <param name="character">The creature</param>
 		/// <param name="hostile">Whether the creature will attack the player</param>
+		/// <param name="player">The local player</param>
 		/// <returns>The color</returns>
-		private static Color GetCreatureColor(Character character, bool hostile)
+		private static Color GetCreatureColor(Character character, bool hostile, Player player)
 		{
 			if (character.IsBoss())
 			{
@@ -810,7 +820,47 @@ namespace CreatureMarker
 			{
 				return(petColor);
 			}
-			return((hostile ? hostileColor : passiveColor));
+			if (!hostile)
+			{
+				return(passiveColor);
+			}
+			return((IsAngry(character, player) ? angryColor : hostileColor));
+		}
+
+		/// <summary>
+		/// Whether a hostile creature is after the player right now
+		/// </summary>
+		/// <remarks>
+		/// Only the game that owns a creature runs its AI and knows which creature it is targeting. For a creature owned
+		/// by another player, this reads the target that player's copy of the mod stores in the creature's ZDO, trusted
+		/// only while the game's own synced state says the creature is alerted and has a target, since an owner without
+		/// the mod leaves the last stored target behind. With no target stored, the owner doesn't have the mod, and any
+		/// alerted creature with a target counts, which is also true when it is after another player or creature
+		/// </remarks>
+		/// <param name="character">The creature</param>
+		/// <param name="player">The local player</param>
+		/// <returns>True when the creature is targeting the player</returns>
+		private static bool IsAngry(Character character, Player player)
+		{
+			MonsterAI ai = character.GetBaseAI() as MonsterAI;
+			if (ai == null || !character.m_nview.IsValid())
+			{
+				return(false);
+			}
+			if (character.m_nview.IsOwner())
+			{
+				return(ai.m_targetCreature == player);
+			}
+			if (!ai.IsAlerted() || !ai.HaveTarget())
+			{
+				return(false);
+			}
+			ZDOID target = character.m_nview.GetZDO().GetZDOID(MonsterTargetPatch.TargetHash);
+			if (target.IsNone())
+			{
+				return(true);
+			}
+			return(target == player.GetZDOID());
 		}
 
 		/// <summary>
@@ -840,6 +890,7 @@ namespace CreatureMarker
 			BobHeight = TakeFloat(values, BobHeightKey, DefaultBobHeight, 0f, MaxBobHeight);
 			passiveColorText = TakeColor(values, PassiveColorKey, DefaultPassiveColor, out passiveColor);
 			hostileColorText = TakeColor(values, HostileColorKey, DefaultHostileColor, out hostileColor);
+			angryColorText = TakeColor(values, AngryColorKey, DefaultAngryColor, out angryColor);
 			bossColorText = TakeColor(values, BossColorKey, DefaultBossColor, out bossColor);
 			fishColorText = TakeColor(values, FishColorKey, DefaultFishColor, out fishColor);
 			petColorText = TakeColor(values, PetColorKey, DefaultPetColor, out petColor);
@@ -1084,6 +1135,7 @@ namespace CreatureMarker
 			AppendLine(builder, BobHeightKey, BobHeight.ToString(CultureInfo.InvariantCulture), bobHeightNote);
 			AppendLine(builder, PassiveColorKey, passiveColorText, passiveColorNote);
 			AppendLine(builder, HostileColorKey, hostileColorText, hostileColorNote);
+			AppendLine(builder, AngryColorKey, angryColorText, angryColorNote);
 			AppendLine(builder, BossColorKey, bossColorText, bossColorNote);
 			AppendLine(builder, FishColorKey, fishColorText, fishColorNote);
 			AppendLine(builder, PetColorKey, petColorText, petColorNote);

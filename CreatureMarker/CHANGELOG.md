@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0
+- Added the Angry Color setting, default #FF801A (orange), for hostile creatures that are targeting you
+- In multiplayer, each creature's target is shared with the other players who have the mod, so Angry Color only goes to creatures that are after you - see Multiplayer in the README for creatures run by players without the mod
+- Bob Height defaults to 0, so arrows don't bob unless you turn it on
+
 ## 1.6.0
 - Replaced the All Creatures switch with All Passive Creatures, which marks every creature that won't attack you, including traders and their pets - a config file with the old All Creatures = true turns on All Passive Creatures, All Hostile Creatures and All Birds, so the same creatures stay marked
 - Added the All Birds switch, off by default, to mark every bird

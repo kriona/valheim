@@ -2,7 +2,7 @@
 
 Puts a colored arrow above nearby creatures, traders, fish and birds. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them.
 
-- Separate colors for passive creatures, hostile creatures, bosses, fish, traders and your tamed pets
+- Separate colors for passive creatures, hostile creatures, creatures that are targeting you, bosses, fish, traders and your tamed pets
 - Marks traders like Haldor, Hildir and the Bog Witch, and their pets like Halstein
 - Optional name, level and distance label on each marker, leaving out the name and level while the game shows its own above the creature
 - A matching colored dot on the minimap and the large map for each marked creature
@@ -15,7 +15,7 @@ Puts a colored arrow above nearby creatures, traders, fish and birds. Creatures 
 
 <img src="images/Deathsquito.jpg" alt="An arrow appearing above a Deathsquito" width="1000">
 
-### Showing names and distances
+### Showing names, distances, fish, and birds
 
 <img src="images/AllSettings.jpg" alt="Showing names and distances" width="1000">
 
@@ -30,12 +30,13 @@ Puts a colored arrow above nearby creatures, traders, fish and birds. Creatures 
 | Max Distance | 50 | How far away, in meters, a creature can be and still get a marker (5 - 500) |
 | Far Distance | 50 | How far away, in meters, a creature has to be for its marker to be drawn at Far Scale (5 - 500) |
 | Far Scale | 0.66 | Size of the arrow and label of a creature beyond Far Distance (0.2 - 1). 1 keeps every marker full size |
-| Bob Height | 6 | How far, in pixels, an on-screen arrow bobs up and down (0 - 30). 0 disables bobbing |
+| Bob Height | 0 | How far, in pixels, an on-screen arrow bobs up and down (0 - 30). 0 disables bobbing |
 | Show Name | false | Shows the creature's name with its marker |
 | Show Distance | false | Shows the creature's distance with its marker |
 | Show Level | false | Shows a ⭐ for each of a creature's stars, and a fish's level like Perch[3], after the name. Creatures without stars and level 1 fish show nothing |
 | Passive Color | #40D940 | Marker color for creatures that won't attack you, including birds |
 | Hostile Color | #FFD91A | Marker color for creatures that will |
+| Angry Color | #FF801A | Marker color for hostile creatures that are targeting you - see [Multiplayer](#multiplayer) |
 | Boss Color | #FF3333 | Marker color for bosses |
 | Fish Color | #33CCFF | Marker color for fish |
 | Pet Color | #FFF | Marker color for creatures you have tamed |
@@ -51,6 +52,12 @@ Every creature, trader, fish and bird also gets its own line, `Prefab = inherit/
 
 Colors can be `#RRGGBB` or a color name like `red`, `yellow`, `green`, `cyan` or `magenta`.
 
+## Multiplayer
+
+In multiplayer, each creature's AI runs in one player's game, usually the player who was nearby first, and only that game knows who the creature is targeting. Creature Marker shares that target with the other players, so Angry Color only goes to creatures that are targeting you, not ones chasing another player, a tamed creature or a deer.
+
+When the player whose game runs a creature doesn't have the mod, nothing shares its target, and its marker uses Angry Color whenever it is alerted and after anyone - you, another player or another creature. If a player with the mod ran the creature earlier, the target they shared is kept until the creature calms down, so for a while it can still be the creature's old target.
+
 ## Installation
 
 With a mod manager, install Creature Marker from [Thunderstore](https://thunderstore.io/c/valheim/p/Kriona/CreatureMarker/) using r2modman or the Thunderstore Mod Manager (which install BepInExPack for Valheim), or from [Nexus Mods](https://www.nexusmods.com/valheim/mods/4342) using Vortex.
@@ -60,4 +67,4 @@ By hand:
 1. Install BepInExPack for Valheim from [Thunderstore](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/) or [Nexus Mods](https://www.nexusmods.com/valheim/mods/3605)
 2. Extract the zip into your Valheim folder, or copy `CreatureMarker.dll` into `BepInEx\plugins`
 
-Client-side only - other players and the server don't need it.
+Client-side only - other players and the server don't need it, though Angry Color is only exact for creatures run by players who have it (see [Multiplayer](#multiplayer)).
