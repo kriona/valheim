@@ -83,7 +83,7 @@ namespace CreatureMarker
 
 		/// <summary>
 		/// Shows an arrow for each marked creature, fish and bird when Show On Screen is on and hides the spare ones,
-		/// showing none while the large map is open since they would be drawn over it
+		/// showing none while the large map or the loading screen is shown since they would be drawn over it
 		/// </summary>
 		/// <param name="marked">The living marked creatures and the marked fish and birds within range</param>
 		/// <param name="player">The local player</param>
@@ -104,7 +104,7 @@ namespace CreatureMarker
 			}
 			int used = 0;
 			bool largeMap = (Minimap.instance != null && Minimap.instance.m_mode == Minimap.MapMode.Large);
-			if (CreatureConfig.ShowOnScreen && !largeMap)
+			if (CreatureConfig.ShowOnScreen && !largeMap && !IsLoadingScreenShown())
 			{
 				bool showName = CreatureConfig.ShowName;
 				bool showDistance = CreatureConfig.ShowDistance;
@@ -163,6 +163,19 @@ namespace CreatureMarker
 				SetActive(markers[i].arrow.gameObject, false);
 				SetActive(markers[i].label.gameObject, false);
 			}
+		}
+
+		/// <summary>
+		/// Whether the game's black loading screen is shown, as it is while teleporting, sleeping or dead
+		/// </summary>
+		/// <remarks>
+		/// The loading screen is part of the HUD canvas, which the markers' canvas sorts above
+		/// </remarks>
+		/// <returns>True when the loading screen is shown, even while it is fading in or out</returns>
+		private static bool IsLoadingScreenShown()
+		{
+			Hud hud = Hud.instance;
+			return(hud != null && hud.m_loadingScreen != null && hud.m_loadingScreen.gameObject.activeSelf);
 		}
 
 		/// <summary>

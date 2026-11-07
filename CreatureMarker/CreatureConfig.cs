@@ -48,9 +48,18 @@ namespace CreatureMarker
 		private const string FishColorKey = "Fish Color";
 		private const string PetColorKey = "Pet Color";
 		private const string TraderColorKey = "Trader Color";
-		private const string AllCreaturesKey = "All Creatures";
+		private const string AllPassiveKey = "All Passive Creatures";
+
+		/// <summary>
+		/// The switch config files from before 1.6.0 have in place of All Passive Creatures, which marked every
+		/// creature, trader, pet and bird, and which LoadSettings converts
+		/// </summary>
+		private const string OldAllCreaturesKey = "All Creatures";
 		private const string AllHostileKey = "All Hostile Creatures";
 		private const string AllFishKey = "All Fish";
+		private const string AllBirdsKey = "All Birds";
+		private const string MinCreatureLevelKey = "Min Creature Level";
+		private const string MinFishLevelKey = "Min Fish Level";
 
 		private const float DefaultMaxDistance = 50f;
 		private const float MinMaxDistance = 5f;
@@ -65,6 +74,10 @@ namespace CreatureMarker
 		private const string DefaultBossColor = "#FF3333";
 		private const string DefaultFishColor = "#33CCFF";
 		private const string DefaultPetColor = "#FFF";
+		private const int DefaultMinCreatureLevel = 0;
+		private const int MaxMinCreatureLevel = 9;
+		private const int DefaultMinFishLevel = 1;
+		private const int MaxMinFishLevel = 5;
 
 		private static readonly string[] header =
 		{
@@ -77,7 +90,16 @@ namespace CreatureMarker
 		private static readonly string[] creatureHeader =
 		{
 			"",
-			"## All Creatures marks every creature, including traders, their pets and birds, All Hostile Creatures marks every creature that will attack you, and All Fish marks every fish",
+			"## All Passive Creatures marks every creature that won't attack you, including traders and their pets",
+			"## All Hostile Creatures marks every creature that will attack you",
+			"## All Fish marks every fish",
+			"## All Birds marks every bird",
+			"",
+		};
+
+		private static readonly string[] creatureLinesHeader =
+		{
+			"",
 			"## Each creature, trader, pet, fish and bird line is: Prefab = inherit/true/false ## Name in game",
 			"## inherit follows the All switches, while true or false always shows or hides that one's marker",
 			"",
@@ -95,8 +117,11 @@ namespace CreatureMarker
 		private static readonly string passiveColorNote = "Creatures that won't attack you, including birds, default " + DefaultPassiveColor;
 		private static readonly string hostileColorNote = "Creatures that will attack you, default " + DefaultHostileColor;
 		private static readonly string bossColorNote = "Bosses, default " + DefaultBossColor;
-		private static readonly string fishColorNote = "Fish, default " + DefaultFishColor;		private static readonly string petColorNote = "Creatures you have tamed, default " + DefaultPetColor;
+		private static readonly string fishColorNote = "Fish, default " + DefaultFishColor;
+		private static readonly string petColorNote = "Creatures you have tamed, default " + DefaultPetColor;
 		private static readonly string traderColorNote = "Traders like Haldor, Hildir and the Bog Witch, blank to use Passive Color, default blank";
+		private static readonly string minCreatureLevelNote = "Lowest level a creature needs to get a marker, which is its number of stars, from 0 (every creature) to " + MaxMinCreatureLevel + ", default " + DefaultMinCreatureLevel + ", traders, their pets and birds aren't affected";
+		private static readonly string minFishLevelNote ="Lowest level a fish needs to get a marker, even when its own line is true, from 1 (every fish) to " + MaxMinFishLevel + ", default " + DefaultMinFishLevel;
 
 		/// <summary>
 		/// Mirrors the settings as entries for Configuration Manager
@@ -127,9 +152,12 @@ namespace CreatureMarker
 		/// Text rather than a color, since a blank value falls back to Passive Color
 		/// </summary>
 		private static ConfigEntry<string> traderColorEntry;
-		private static ConfigEntry<bool> allCreaturesEntry;
+		private static ConfigEntry<bool> allPassiveEntry;
 		private static ConfigEntry<bool> allHostileEntry;
 		private static ConfigEntry<bool> allFishEntry;
+		private static ConfigEntry<bool> allBirdsEntry;
+		private static ConfigEntry<int> minCreatureLevelEntry;
+		private static ConfigEntry<int> minFishLevelEntry;
 
 		/// <summary>
 		/// Name token by prefab name of the birds whose name isn't their prefab name split into words - the game gives
@@ -217,9 +245,20 @@ namespace CreatureMarker
 		/// The trader color, or null when it is blank and Passive Color is used instead
 		/// </summary>
 		private static Color? traderColor;
-		private static bool allCreatures;
+		private static bool allPassive;
 		private static bool allHostile = true;
 		private static bool allFish;
+		private static bool allBirds;
+
+		/// <summary>
+		/// Lowest number of stars a creature needs to get a marker
+		/// </summary>
+		private static int minCreatureLevel = DefaultMinCreatureLevel;
+
+		/// <summary>
+		/// Lowest level a fish needs to get a marker
+		/// </summary>
+		private static int minFishLevel = DefaultMinFishLevel;
 
 		/// <summary>
 		/// The true or false set on creature lines, by prefab hash, leaving out the ones set to inherit
@@ -442,9 +481,12 @@ namespace CreatureMarker
 			fishColorEntry = BindSetting(ColorsSection, FishColorKey, ParseColor(DefaultFishColor, Color.cyan), fishColorNote, null, order--);
 			petColorEntry = BindSetting(ColorsSection, PetColorKey, ParseColor(DefaultPetColor, Color.white), petColorNote, null, order--);
 			traderColorEntry = BindSetting(ColorsSection, TraderColorKey, "", traderColorNote, null, order--);
-			allCreaturesEntry = BindSetting(CreaturesSection, AllCreaturesKey, false, "Mark every creature, including traders, their pets and birds", null, order--);
+			allPassiveEntry = BindSetting(CreaturesSection, AllPassiveKey, false, "Mark every creature that won't attack you, including traders and their pets", null, order--);
 			allHostileEntry = BindSetting(CreaturesSection, AllHostileKey, true, "Mark every creature that will attack you", null, order--);
 			allFishEntry = BindSetting(CreaturesSection, AllFishKey, false, "Mark every fish", null, order--);
+			allBirdsEntry = BindSetting(CreaturesSection, AllBirdsKey, false, "Mark every bird", null, order--);
+			minCreatureLevelEntry = BindSetting(CreaturesSection, MinCreatureLevelKey, DefaultMinCreatureLevel, minCreatureLevelNote, new AcceptableValueRange<int>(0, MaxMinCreatureLevel), order--);
+			minFishLevelEntry = BindSetting(CreaturesSection, MinFishLevelKey, DefaultMinFishLevel, minFishLevelNote, new AcceptableValueRange<int>(1, MaxMinFishLevel), order--);
 		}
 
 		/// <summary>
@@ -490,9 +532,12 @@ namespace CreatureMarker
 				fishColorEntry.Value = fishColor;
 				petColorEntry.Value = petColor;
 				traderColorEntry.Value = traderColorText;
-				allCreaturesEntry.Value = allCreatures;
+				allPassiveEntry.Value = allPassive;
 				allHostileEntry.Value = allHostile;
 				allFishEntry.Value = allFish;
+				allBirdsEntry.Value = allBirds;
+				minCreatureLevelEntry.Value = minCreatureLevel;
+				minFishLevelEntry.Value = minFishLevel;
 				foreach (KeyValuePair<string, string> name in names)
 				{
 					creatureEntries.Set(CreaturesSection, name.Key, name.Value, states[name.Key]);
@@ -521,9 +566,12 @@ namespace CreatureMarker
 			fishColorText = TakeEntryColor(fishColorEntry, fishColorText, ref fishColor);
 			petColorText = TakeEntryColor(petColorEntry, petColorText, ref petColor);
 			traderColorText = ParseOptionalColor(TraderColorKey, traderColorEntry.Value, out traderColor);
-			allCreatures = allCreaturesEntry.Value;
+			allPassive = allPassiveEntry.Value;
 			allHostile = allHostileEntry.Value;
 			allFish = allFishEntry.Value;
+			allBirds = allBirdsEntry.Value;
+			minCreatureLevel = minCreatureLevelEntry.Value;
+			minFishLevel = minFishLevelEntry.Value;
 			Dictionary<string, bool?> states = BuildStates((string key) => (creatureEntries.TryGetState(key, out bool? state) ? state : null));
 			Write(FilePath, names, states);
 			Plugin.Watcher?.Remember();
@@ -571,8 +619,14 @@ namespace CreatureMarker
 				{
 					continue;
 				}
+				int level = character.GetLevel();
+				// The game's level is the star count plus 1, while Min Creature Level counts stars
+				if (level - 1 < minCreatureLevel)
+				{
+					continue;
+				}
 				bool hostile = IsHostile(character, player);
-				if (!IsMarked(character.m_nview, (allCreatures || (allHostile && hostile))))
+				if (!IsMarked(character.m_nview, (hostile ? allHostile : allPassive)))
 				{
 					continue;
 				}
@@ -581,7 +635,7 @@ namespace CreatureMarker
 				target.position = position;
 				target.top = character.GetTopPoint();
 				target.nameToken = character.GetHoverName();
-				target.level = character.GetLevel();
+				target.level = level;
 				target.color = GetCreatureColor(character, hostile);
 				marked.Add(target);
 			}
@@ -593,7 +647,7 @@ namespace CreatureMarker
 				{
 					continue;
 				}
-				if (!IsMarked(npc.hash, allCreatures))
+				if (!IsMarked(npc.hash, allPassive))
 				{
 					continue;
 				}
@@ -618,7 +672,8 @@ namespace CreatureMarker
 				{
 					continue;
 				}
-				if (!IsMarked(fish.m_nview, allFish))
+				int level = ((fish.m_itemDrop != null) ? fish.m_itemDrop.m_itemData.m_quality : 1);
+				if (level < minFishLevel || !IsMarked(fish.m_nview, allFish))
 				{
 					continue;
 				}
@@ -627,7 +682,7 @@ namespace CreatureMarker
 				target.position = position;
 				target.top = position;
 				target.nameToken = fish.GetHoverName();
-				target.level = ((fish.m_itemDrop != null) ? fish.m_itemDrop.m_itemData.m_quality : 1);
+				target.level = level;
 				target.fish = true;
 				target.color = fishColor;
 				marked.Add(target);
@@ -645,7 +700,7 @@ namespace CreatureMarker
 					continue;
 				}
 				int prefabHash = bird.m_nview.GetZDO().GetPrefab();
-				if (!IsMarked(prefabHash, allCreatures))
+				if (!IsMarked(prefabHash, allBirds))
 				{
 					continue;
 				}
@@ -789,9 +844,26 @@ namespace CreatureMarker
 			fishColorText = TakeColor(values, FishColorKey, DefaultFishColor, out fishColor);
 			petColorText = TakeColor(values, PetColorKey, DefaultPetColor, out petColor);
 			traderColorText = ParseOptionalColor(TraderColorKey, TakeValue(values, TraderColorKey), out traderColor);
-			allCreatures = (ParseState(TakeValue(values, AllCreaturesKey)) ?? false);
+			string oldAllCreaturesText = TakeValue(values, OldAllCreaturesKey);
+			string allPassiveText = TakeValue(values, AllPassiveKey);
+			string allBirdsText = TakeValue(values, AllBirdsKey);
+			allPassive = (ParseState(allPassiveText) ?? false);
 			allHostile = (ParseState(TakeValue(values, AllHostileKey)) ?? true);
 			allFish = (ParseState(TakeValue(values, AllFishKey)) ?? false);
+			allBirds = (ParseState(allBirdsText) ?? false);
+			if (allPassiveText == null && ParseState(oldAllCreaturesText) == true)
+			{
+				// All Creatures from a config file before 1.6.0 marked every creature, trader, pet and bird, so it turns
+				// on every switch that covers them
+				allPassive = true;
+				allHostile = true;
+				if (allBirdsText == null)
+				{
+					allBirds = true;
+				}
+			}
+			minCreatureLevel = TakeInt(values, MinCreatureLevelKey, DefaultMinCreatureLevel, 0, MaxMinCreatureLevel);
+			minFishLevel = TakeInt(values, MinFishLevelKey, DefaultMinFishLevel, 1, MaxMinFishLevel);
 			ShowName = (ParseState(TakeValue(values, ShowNameKey)) ?? false);
 			ShowDistance = (ParseState(TakeValue(values, ShowDistanceKey)) ?? false);
 			ShowLevel = (ParseState(TakeValue(values, ShowLevelKey)) ?? false);
@@ -816,6 +888,30 @@ namespace CreatureMarker
 				return(defaultValue);
 			}
 			if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float value))
+			{
+				Warn(key, text);
+				return(defaultValue);
+			}
+			return(Mathf.Clamp(value, min, max));
+		}
+
+		/// <summary>
+		/// Takes a whole number setting out of the file values, kept within its range
+		/// </summary>
+		/// <param name="values">Value text by key, as read from the file</param>
+		/// <param name="key">The setting's key</param>
+		/// <param name="defaultValue">Value to use when the setting is missing or doesn't parse</param>
+		/// <param name="min">Lowest allowed value</param>
+		/// <param name="max">Highest allowed value</param>
+		/// <returns>The value</returns>
+		private static int TakeInt(Dictionary<string, string> values, string key, int defaultValue, int min, int max)
+		{
+			string text = TakeValue(values, key);
+			if (text == null)
+			{
+				return(defaultValue);
+			}
+			if (!int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
 			{
 				Warn(key, text);
 				return(defaultValue);
@@ -993,10 +1089,13 @@ namespace CreatureMarker
 			AppendLine(builder, PetColorKey, petColorText, petColorNote);
 			AppendLine(builder, TraderColorKey, traderColorText, traderColorNote);
 			AppendLines(builder, creatureHeader);
-			AppendLine(builder, AllCreaturesKey, StateEntries.Format(allCreatures), "");
+			AppendLine(builder, AllPassiveKey, StateEntries.Format(allPassive), "");
 			AppendLine(builder, AllHostileKey, StateEntries.Format(allHostile), "");
 			AppendLine(builder, AllFishKey, StateEntries.Format(allFish), "");
-			builder.Append("\r\n");
+			AppendLine(builder, AllBirdsKey, StateEntries.Format(allBirds), "");
+			AppendLine(builder, MinCreatureLevelKey, minCreatureLevel.ToString(CultureInfo.InvariantCulture), minCreatureLevelNote);
+			AppendLine(builder, MinFishLevelKey, minFishLevel.ToString(CultureInfo.InvariantCulture), minFishLevelNote);
+			AppendLines(builder, creatureLinesHeader);
 			foreach (KeyValuePair<string, string> name in names)
 			{
 				AppendLine(builder, name.Key, StateEntries.Format(states[name.Key]), name.Value);
