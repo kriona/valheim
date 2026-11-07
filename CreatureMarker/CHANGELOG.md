@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.8.0
+- Move a trader's arrow above their speech bubble while they are talking, so it doesn't cover what they say
+
 ## 1.7.0
 - Added the Angry Color setting, default #FF801A (orange), for hostile creatures that are targeting you
 - In multiplayer, each creature's target is shared with the other players who have the mod, so Angry Color only goes to creatures that are after you - see Multiplayer in the README for creatures run by players without the mod
