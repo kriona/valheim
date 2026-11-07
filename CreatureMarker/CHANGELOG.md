@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.1
+- Draw markers above the minimap, so an arrow on the top right of the screen isn't hidden behind it
+- Hide the on-screen markers while the large map is open
+
 ## 1.5.0
 - Support birds
 
