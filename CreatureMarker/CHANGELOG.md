@@ -1,6 +1,7 @@
 # Changelog
 
 ## 1.8.0
+- Support leviathans and lava leviathans, with the All Leviathans switch, on by default, and the Leviathan Color setting, default #B366FF (purple)
 - Move a trader's arrow above their speech bubble while they are talking, so it doesn't cover what they say
 
 ## 1.7.0

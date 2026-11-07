@@ -49,6 +49,7 @@ namespace CreatureMarker
 		private const string FishColorKey = "Fish Color";
 		private const string PetColorKey = "Pet Color";
 		private const string TraderColorKey = "Trader Color";
+		private const string LeviathanColorKey = "Leviathan Color";
 		private const string AllPassiveKey = "All Passive Creatures";
 
 		/// <summary>
@@ -59,6 +60,7 @@ namespace CreatureMarker
 		private const string AllHostileKey = "All Hostile Creatures";
 		private const string AllFishKey = "All Fish";
 		private const string AllBirdsKey = "All Birds";
+		private const string AllLeviathansKey = "All Leviathans";
 		private const string MinCreatureLevelKey = "Min Creature Level";
 		private const string MinFishLevelKey = "Min Fish Level";
 
@@ -76,6 +78,7 @@ namespace CreatureMarker
 		private const string DefaultBossColor = "#FF3333";
 		private const string DefaultFishColor = "#33CCFF";
 		private const string DefaultPetColor = "#FFF";
+		private const string DefaultLeviathanColor = "#B366FF";
 		private const int DefaultMinCreatureLevel = 0;
 		private const int MaxMinCreatureLevel = 9;
 		private const int DefaultMinFishLevel = 1;
@@ -96,13 +99,14 @@ namespace CreatureMarker
 			"## All Hostile Creatures marks every creature that will attack you",
 			"## All Fish marks every fish",
 			"## All Birds marks every bird",
+			"## All Leviathans marks every leviathan",
 			"",
 		};
 
 		private static readonly string[] creatureLinesHeader =
 		{
 			"",
-			"## Each creature, trader, pet, fish and bird line is: Prefab = inherit/true/false ## Name in game",
+			"## Each creature, trader, pet, fish, bird and leviathan line is: Prefab = inherit/true/false ## Name in game",
 			"## inherit follows the All switches, while true or false always shows or hides that one's marker",
 			"",
 		};
@@ -123,7 +127,8 @@ namespace CreatureMarker
 		private static readonly string fishColorNote = "Fish, default " + DefaultFishColor;
 		private static readonly string petColorNote = "Creatures you have tamed, default " + DefaultPetColor;
 		private static readonly string traderColorNote = "Traders like Haldor, Hildir and the Bog Witch, blank to use Passive Color, default blank";
-		private static readonly string minCreatureLevelNote = "Lowest level a creature needs to get a marker, which is its number of stars, from 0 (every creature) to " + MaxMinCreatureLevel + ", default " + DefaultMinCreatureLevel + ", traders, their pets and birds aren't affected";
+		private static readonly string leviathanColorNote = "Leviathans, default " + DefaultLeviathanColor;
+		private static readonly string minCreatureLevelNote = "Lowest level a creature needs to get a marker, which is its number of stars, from 0 (every creature) to " + MaxMinCreatureLevel + ", default " + DefaultMinCreatureLevel + ", traders, their pets, birds and leviathans aren't affected";
 		private static readonly string minFishLevelNote ="Lowest level a fish needs to get a marker, even when its own line is true, from 1 (every fish) to " + MaxMinFishLevel + ", default " + DefaultMinFishLevel;
 
 		/// <summary>
@@ -156,20 +161,23 @@ namespace CreatureMarker
 		/// Text rather than a color, since a blank value falls back to Passive Color
 		/// </summary>
 		private static ConfigEntry<string> traderColorEntry;
+		private static ConfigEntry<Color> leviathanColorEntry;
 		private static ConfigEntry<bool> allPassiveEntry;
 		private static ConfigEntry<bool> allHostileEntry;
 		private static ConfigEntry<bool> allFishEntry;
 		private static ConfigEntry<bool> allBirdsEntry;
+		private static ConfigEntry<bool> allLeviathansEntry;
 		private static ConfigEntry<int> minCreatureLevelEntry;
 		private static ConfigEntry<int> minFishLevelEntry;
 
 		/// <summary>
-		/// Name token by prefab name of the birds whose name isn't their prefab name split into words - the game gives
-		/// birds no name of their own
+		/// Name token, or plain text that localizes to itself, by prefab name of the birds and leviathans whose name
+		/// isn't their prefab name split into words - the game gives them no name of their own
 		/// </summary>
-		private static readonly Dictionary<string, string> birdNameTokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+		private static readonly Dictionary<string, string> prefabNameTokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "Seagal", "$caption_seagull" },
+			{ "LeviathanLava", "Lava Leviathan" },
 		};
 
 		/// <summary>
@@ -183,7 +191,7 @@ namespace CreatureMarker
 		private static SortedDictionary<string, string> names = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>
-		/// Display name by prefab name of the traders and pets seen in the world, which aren't all in the scene's prefab
+		/// Display name by prefab name of the traders, pets and leviathans seen in the world, which aren't all in the scene's prefab
 		/// list, kept so their lines keep their names each time the file is read
 		/// </summary>
 		private static readonly Dictionary<string, string> npcNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -251,10 +259,13 @@ namespace CreatureMarker
 		/// The trader color, or null when it is blank and Passive Color is used instead
 		/// </summary>
 		private static Color? traderColor;
+		private static string leviathanColorText = DefaultLeviathanColor;
+		private static Color leviathanColor = ParseColor(DefaultLeviathanColor, Color.magenta);
 		private static bool allPassive;
 		private static bool allHostile = true;
 		private static bool allFish;
 		private static bool allBirds;
+		private static bool allLeviathans = true;
 
 		/// <summary>
 		/// Lowest number of stars a creature needs to get a marker
@@ -351,7 +362,8 @@ namespace CreatureMarker
 
 		/// <summary>
 		/// Reads the config file, adds any prefabs with a Character component other than the player, a Trader, a
-		/// Petable, a Fish or a RandomFlyingBird component, and the traders and pets seen in the world, and writes it back
+		/// Petable, a Fish, a RandomFlyingBird or a Leviathan component, and the traders and pets seen in the world, and
+		/// writes it back
 		/// </summary>
 		/// <param name="scene">The scene holding the prefab list</param>
 		public static void Load(ZNetScene scene)
@@ -392,9 +404,9 @@ namespace CreatureMarker
 					names[prefab.name] = GetDisplayName(fish.m_name);
 					continue;
 				}
-				if (prefab.GetComponent<RandomFlyingBird>() != null)
+				if (prefab.GetComponent<RandomFlyingBird>() != null || prefab.GetComponent<Leviathan>() != null)
 				{
-					names[prefab.name] = GetDisplayName(GetBirdNameToken(prefab.name));
+					names[prefab.name] = GetDisplayName(GetPrefabNameToken(prefab.name));
 				}
 			}
 			foreach (KeyValuePair<string, string> npc in npcNames)
@@ -418,7 +430,8 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Gives a trader or pet seen in the world a line in the config file when it doesn't have one with its name yet
+		/// Gives a trader, pet or leviathan seen in the world a line in the config file when it doesn't have one with its
+		/// name yet
 		/// </summary>
 		/// <remarks>
 		/// Pets are part of the locations that place them rather than prefabs of their own, so their lines can only be
@@ -488,10 +501,12 @@ namespace CreatureMarker
 			fishColorEntry = BindSetting(ColorsSection, FishColorKey, ParseColor(DefaultFishColor, Color.cyan), fishColorNote, null, order--);
 			petColorEntry = BindSetting(ColorsSection, PetColorKey, ParseColor(DefaultPetColor, Color.white), petColorNote, null, order--);
 			traderColorEntry = BindSetting(ColorsSection, TraderColorKey, "", traderColorNote, null, order--);
+			leviathanColorEntry = BindSetting(ColorsSection, LeviathanColorKey, ParseColor(DefaultLeviathanColor, Color.magenta), leviathanColorNote, null, order--);
 			allPassiveEntry = BindSetting(CreaturesSection, AllPassiveKey, false, "Mark every creature that won't attack you, including traders and their pets", null, order--);
 			allHostileEntry = BindSetting(CreaturesSection, AllHostileKey, true, "Mark every creature that will attack you", null, order--);
 			allFishEntry = BindSetting(CreaturesSection, AllFishKey, false, "Mark every fish", null, order--);
 			allBirdsEntry = BindSetting(CreaturesSection, AllBirdsKey, false, "Mark every bird", null, order--);
+			allLeviathansEntry = BindSetting(CreaturesSection, AllLeviathansKey, true, "Mark every leviathan", null, order--);
 			minCreatureLevelEntry = BindSetting(CreaturesSection, MinCreatureLevelKey, DefaultMinCreatureLevel, minCreatureLevelNote, new AcceptableValueRange<int>(0, MaxMinCreatureLevel), order--);
 			minFishLevelEntry = BindSetting(CreaturesSection, MinFishLevelKey, DefaultMinFishLevel, minFishLevelNote, new AcceptableValueRange<int>(1, MaxMinFishLevel), order--);
 		}
@@ -540,10 +555,12 @@ namespace CreatureMarker
 				fishColorEntry.Value = fishColor;
 				petColorEntry.Value = petColor;
 				traderColorEntry.Value = traderColorText;
+				leviathanColorEntry.Value = leviathanColor;
 				allPassiveEntry.Value = allPassive;
 				allHostileEntry.Value = allHostile;
 				allFishEntry.Value = allFish;
 				allBirdsEntry.Value = allBirds;
+				allLeviathansEntry.Value = allLeviathans;
 				minCreatureLevelEntry.Value = minCreatureLevel;
 				minFishLevelEntry.Value = minFishLevel;
 				foreach (KeyValuePair<string, string> name in names)
@@ -575,10 +592,12 @@ namespace CreatureMarker
 			fishColorText = TakeEntryColor(fishColorEntry, fishColorText, ref fishColor);
 			petColorText = TakeEntryColor(petColorEntry, petColorText, ref petColor);
 			traderColorText = ParseOptionalColor(TraderColorKey, traderColorEntry.Value, out traderColor);
+			leviathanColorText = TakeEntryColor(leviathanColorEntry, leviathanColorText, ref leviathanColor);
 			allPassive = allPassiveEntry.Value;
 			allHostile = allHostileEntry.Value;
 			allFish = allFishEntry.Value;
 			allBirds = allBirdsEntry.Value;
+			allLeviathans = allLeviathansEntry.Value;
 			minCreatureLevel = minCreatureLevelEntry.Value;
 			minFishLevel = minFishLevelEntry.Value;
 			Dictionary<string, bool?> states = BuildStates((string key) => (creatureEntries.TryGetState(key, out bool? state) ? state : null));
@@ -607,8 +626,8 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Fills the list with the living marked creatures, the marked traders and pets and the marked fish and birds
-		/// within Max Distance of the player
+		/// Fills the list with the living marked creatures, the marked traders and pets, the marked fish and birds and
+		/// the marked leviathans that haven't started diving, within Max Distance of the player
 		/// </summary>
 		/// <param name="player">The local player</param>
 		/// <param name="marked">The list to fill, cleared first</param>
@@ -656,7 +675,12 @@ namespace CreatureMarker
 				{
 					continue;
 				}
-				if (!IsMarked(npc.hash, allPassive))
+				Leviathan leviathan = npc.source as Leviathan;
+				if (!IsMarked(npc.hash, ((leviathan != null) ? allLeviathans : allPassive)))
+				{
+					continue;
+				}
+				if (leviathan != null && IsDiving(leviathan))
 				{
 					continue;
 				}
@@ -666,7 +690,14 @@ namespace CreatureMarker
 				target.top = position + Vector3.up * npc.GetHeight();
 				target.nameToken = npc.nameToken;
 				target.level = 1;
-				target.color = ((npc.source is Trader) ? merchantColor : passiveColor);
+				if (leviathan != null)
+				{
+					target.color = leviathanColor;
+				}
+				else
+				{
+					target.color = ((npc.source is Trader) ? merchantColor : passiveColor);
+				}
 				marked.Add(target);
 			}
 			foreach (IMonoUpdater updater in Fish.Instances)
@@ -735,21 +766,22 @@ namespace CreatureMarker
 		{
 			if (!birdNamesByHash.TryGetValue(prefabHash, out string token))
 			{
-				token = GetBirdNameToken(Utils.GetPrefabName(bird.gameObject));
+				token = GetPrefabNameToken(Utils.GetPrefabName(bird.gameObject));
 				birdNamesByHash[prefabHash] = token;
 			}
 			return(token);
 		}
 
 		/// <summary>
-		/// The name token of a bird prefab - the game's seagull caption for seagulls, and otherwise the prefab name
-		/// split into words, like Ash Crow for AshCrow, since the game gives birds no name of their own
+		/// The name token of a bird or leviathan prefab, which the game gives no name of their own - the game's seagull
+		/// caption for seagulls, Lava Leviathan for LeviathanLava, and otherwise the prefab name split into words, like
+		/// Ash Crow for AshCrow
 		/// </summary>
-		/// <param name="prefabName">The bird's prefab name</param>
+		/// <param name="prefabName">The bird's or leviathan's prefab name</param>
 		/// <returns>The name token, or plain text that localizes to itself</returns>
-		private static string GetBirdNameToken(string prefabName)
+		public static string GetPrefabNameToken(string prefabName)
 		{
-			if (birdNameTokens.TryGetValue(prefabName, out string token))
+			if (prefabNameTokens.TryGetValue(prefabName, out string token))
 			{
 				return(token);
 			}
@@ -864,6 +896,21 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
+		/// Whether a leviathan has started diving, after being hit, and is about to disappear
+		/// </summary>
+		/// <param name="leviathan">The leviathan</param>
+		/// <returns>True when it is diving, or its network view is gone</returns>
+		private static bool IsDiving(Leviathan leviathan)
+		{
+			ZNetView nview = leviathan.m_nview;
+			if (nview == null || !nview.IsValid())
+			{
+				return(true);
+			}
+			return(nview.GetZDO().GetBool(ZDOVars.s_dead));
+		}
+
+		/// <summary>
 		/// Whether the creature has monster AI and currently counts as the player's enemy
 		/// </summary>
 		/// <remarks>
@@ -895,6 +942,8 @@ namespace CreatureMarker
 			fishColorText = TakeColor(values, FishColorKey, DefaultFishColor, out fishColor);
 			petColorText = TakeColor(values, PetColorKey, DefaultPetColor, out petColor);
 			traderColorText = ParseOptionalColor(TraderColorKey, TakeValue(values, TraderColorKey), out traderColor);
+			leviathanColorText = TakeColor(values, LeviathanColorKey, DefaultLeviathanColor, out leviathanColor);
+			allLeviathans = (ParseState(TakeValue(values, AllLeviathansKey)) ?? true);
 			string oldAllCreaturesText = TakeValue(values, OldAllCreaturesKey);
 			string allPassiveText = TakeValue(values, AllPassiveKey);
 			string allBirdsText = TakeValue(values, AllBirdsKey);
@@ -1140,11 +1189,13 @@ namespace CreatureMarker
 			AppendLine(builder, FishColorKey, fishColorText, fishColorNote);
 			AppendLine(builder, PetColorKey, petColorText, petColorNote);
 			AppendLine(builder, TraderColorKey, traderColorText, traderColorNote);
+			AppendLine(builder, LeviathanColorKey, leviathanColorText, leviathanColorNote);
 			AppendLines(builder, creatureHeader);
 			AppendLine(builder, AllPassiveKey, StateEntries.Format(allPassive), "");
 			AppendLine(builder, AllHostileKey, StateEntries.Format(allHostile), "");
 			AppendLine(builder, AllFishKey, StateEntries.Format(allFish), "");
 			AppendLine(builder, AllBirdsKey, StateEntries.Format(allBirds), "");
+			AppendLine(builder, AllLeviathansKey, StateEntries.Format(allLeviathans), "");
 			AppendLine(builder, MinCreatureLevelKey, minCreatureLevel.ToString(CultureInfo.InvariantCulture), minCreatureLevelNote);
 			AppendLine(builder, MinFishLevelKey, minFishLevel.ToString(CultureInfo.InvariantCulture), minFishLevelNote);
 			AppendLines(builder, creatureLinesHeader);
