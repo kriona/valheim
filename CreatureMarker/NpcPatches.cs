@@ -19,6 +19,26 @@ namespace CreatureMarker
 	}
 
 	/// <summary>
+	/// Adds each leviathan to the NPC list
+	/// </summary>
+	/// <remarks>
+	/// A leviathan is a mineable rock that floats, with no Character component, and the game gives it no name, so it
+	/// is named after its prefab
+	/// </remarks>
+	[HarmonyPatch(typeof(Leviathan), nameof(Leviathan.Awake))]
+	public static class LeviathanAwakePatch
+	{
+		/// <summary>
+		/// Adds the leviathan to the NPC list
+		/// </summary>
+		/// <param name="__instance">The leviathan that was just created</param>
+		private static void Postfix(Leviathan __instance)
+		{
+			NpcList.Add(__instance, CreatureConfig.GetPrefabNameToken(Utils.GetPrefabName(__instance.gameObject)));
+		}
+	}
+
+	/// <summary>
 	/// Adds the pets in each location, like Halstein in Hildir's camp, to the NPC list
 	/// </summary>
 	/// <remarks>
