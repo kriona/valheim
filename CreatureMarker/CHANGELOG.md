@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0
+- Replaced the All Creatures switch with All Passive Creatures, which marks every creature that won't attack you, including traders and their pets - a config file with the old All Creatures = true turns on All Passive Creatures, All Hostile Creatures and All Birds, so the same creatures stay marked
+- Added the All Birds switch, off by default, to mark every bird
+- Added the Min Creature Level setting, the number of stars a creature needs to get a marker, default 0
+- Added the Min Fish Level setting, default 1 (suggested by DarkFreezer)
+- Hide the on-screen markers while the loading screen is shown, like when going through a portal
+
 ## 1.5.1
 - Draw markers above the minimap, so an arrow on the top right of the screen isn't hidden behind it
 - Hide the on-screen markers while the large map is open
