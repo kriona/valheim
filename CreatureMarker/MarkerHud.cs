@@ -10,10 +10,16 @@ namespace CreatureMarker
 	/// with an optional name label behind each arrow
 	/// </summary>
 	/// <remarks>
-	/// The markers live under the enemy HUD root, so they share the health bars' canvas and hide along with them
+	/// The markers live in a canvas of their own under the enemy HUD root, so they hide along with the health bars,
+	/// but sort above the HUD canvas so an arrow pinned to the screen edge isn't hidden behind the minimap
 	/// </remarks>
 	public class MarkerHud
 	{
+		/// <summary>
+		/// Above the HUD canvas holding the minimap (400) and below the top left messages (500), the inventory and
+		/// every other screen opened over the game
+		/// </summary>
+		private const int SortingOrder = 450;
 		private const float HeadOffset = 0.4f;
 		private const float EdgeMargin = 40f;
 		private const float BobSpeed = 5f;
@@ -57,6 +63,11 @@ namespace CreatureMarker
 
 		private readonly List<Marker> markers = new List<Marker>();
 		private GameObject root;
+
+		/// <summary>
+		/// The markers' canvas under the enemy HUD root
+		/// </summary>
+		private RectTransform layer;
 		private Sprite sprite;
 
 		/// <summary>
@@ -71,7 +82,8 @@ namespace CreatureMarker
 		private readonly Vector3[] corners = new Vector3[4];
 
 		/// <summary>
-		/// Shows an arrow for each marked creature, fish and bird when Show On Screen is on and hides the spare ones
+		/// Shows an arrow for each marked creature, fish and bird when Show On Screen is on and hides the spare ones,
+		/// showing none while the large map is open since they would be drawn over it
 		/// </summary>
 		/// <param name="marked">The living marked creatures and the marked fish and birds within range</param>
 		/// <param name="player">The local player</param>
@@ -88,9 +100,11 @@ namespace CreatureMarker
 				// The markers were destroyed along with the previous HUD root
 				root = enemyHud.m_hudRoot;
 				markers.Clear();
+				layer = CreateLayer();
 			}
 			int used = 0;
-			if (CreatureConfig.ShowOnScreen)
+			bool largeMap = (Minimap.instance != null && Minimap.instance.m_mode == Minimap.MapMode.Large);
+			if (CreatureConfig.ShowOnScreen && !largeMap)
 			{
 				bool showName = CreatureConfig.ShowName;
 				bool showDistance = CreatureConfig.ShowDistance;
@@ -152,21 +166,14 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Removes the markers, the generated sprite and the star sprite asset
+		/// Removes the markers' canvas along with the markers, the generated sprite and the star sprite asset
 		/// </summary>
 		public void Destroy()
 		{
 			stars.Destroy();
-			foreach (Marker marker in markers)
+			if (layer != null)
 			{
-				if (marker.arrow != null)
-				{
-					Object.Destroy(marker.arrow.gameObject);
-				}
-				if (marker.label != null)
-				{
-					Object.Destroy(marker.label.gameObject);
-				}
+				Object.Destroy(layer.gameObject);
 			}
 			markers.Clear();
 			if (sprite != null)
@@ -375,14 +382,33 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Creates a centered name label under the enemy HUD root, styled like the health bars' names
+		/// Creates the markers' canvas under the enemy HUD root, filling it and sorted above the HUD
+		/// </summary>
+		/// <returns>The canvas's transform</returns>
+		private RectTransform CreateLayer()
+		{
+			GameObject go = new GameObject("CreatureMarkers", typeof(RectTransform));
+			go.transform.SetParent(root.transform, false);
+			RectTransform rect = (RectTransform)go.transform;
+			rect.anchorMin = Vector2.zero;
+			rect.anchorMax = Vector2.one;
+			rect.offsetMin = Vector2.zero;
+			rect.offsetMax = Vector2.zero;
+			Canvas canvas = go.AddComponent<Canvas>();
+			canvas.overrideSorting = true;
+			canvas.sortingOrder = SortingOrder;
+			return(rect);
+		}
+
+		/// <summary>
+		/// Creates a centered name label in the markers' canvas, styled like the health bars' names
 		/// </summary>
 		/// <param name="enemyHud">The enemy HUD whose name text supplies the font</param>
 		/// <returns>The label</returns>
 		private TextMeshProUGUI CreateLabel(EnemyHud enemyHud)
 		{
 			GameObject go = new GameObject("CreatureMarkerLabel", typeof(RectTransform));
-			go.transform.SetParent(root.transform, false);
+			go.transform.SetParent(layer, false);
 			go.SetActive(false);
 			TextMeshProUGUI label = go.AddComponent<TextMeshProUGUI>();
 			TMP_Text template = GetNameTemplate(enemyHud);
@@ -424,13 +450,13 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Creates an arrow image under the enemy HUD root with its pivot on the tip
+		/// Creates an arrow image in the markers' canvas with its pivot on the tip
 		/// </summary>
 		/// <returns>The arrow's image</returns>
 		private Image CreateArrow()
 		{
 			GameObject go = new GameObject("CreatureMarkerArrow", typeof(RectTransform));
-			go.transform.SetParent(root.transform, false);
+			go.transform.SetParent(layer, false);
 			Image image = go.AddComponent<Image>();
 			image.sprite = GetSprite();
 			image.raycastTarget = false;
