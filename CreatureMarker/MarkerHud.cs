@@ -126,15 +126,16 @@ namespace CreatureMarker
 					// While the game's HUD shows the name and level above an on-screen creature, the arrow sits above it and
 					// the label leaves them out - an arrow pinned to the screen edge is away from the HUD, so it keeps them
 					float gameHudHeight = GetGameHudHeight(enemyHud, target.source);
+					Rect? dialog = GetDialogRect(target.source);
 					Vector2 pointing;
 					bool onScreen;
 					if (gameHudHeight >= 0f)
 					{
-						pointing = Place(marker.arrow.rectTransform, camera, target.top, gameHudHeight + GameHudGap, scale.x, out onScreen);
+						pointing = Place(marker.arrow.rectTransform, camera, target.top, gameHudHeight + GameHudGap, dialog, scale.x, out onScreen);
 					}
 					else
 					{
-						pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset, 0f, scale.x, out onScreen);
+						pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset, 0f, dialog, scale.x, out onScreen);
 					}
 					bool underGameHud = (gameHudHeight >= 0f && onScreen);
 					bool showText = (underGameHud ? showDistance : showLabel);
@@ -203,17 +204,29 @@ namespace CreatureMarker
 		/// <param name="camera">The main camera</param>
 		/// <param name="target">World point the arrow points at</param>
 		/// <param name="lift">How many screen pixels above the target an on-screen arrow's tip sits</param>
+		/// <param name="dialog">The screen rectangle of the target's speech bubble, which an on-screen arrow sits above
+		/// when the bubble would cover it, or null when the target isn't talking</param>
 		/// <param name="size">The marker's scale, which shrinks the bob along with the arrow</param>
 		/// <param name="onScreen">Set to whether the target is on screen, rather than the arrow pinned to the edge</param>
 		/// <returns>The screen direction the arrow points in, as a unit vector</returns>
-		private static Vector2 Place(RectTransform arrow, Camera camera, Vector3 target, float lift, float size, out bool onScreen)
+		private static Vector2 Place(RectTransform arrow, Camera camera, Vector3 target, float lift, Rect? dialog, float size, out bool onScreen)
 		{
 			Vector3 screen = camera.WorldToScreenPointScaled(target);
 			onScreen = (screen.z > 0f && screen.x >= 0f && screen.x <= Screen.width && screen.y >= 0f && screen.y <= Screen.height);
 			if (onScreen)
 			{
+				float tip = screen.y + lift;
+				if (dialog.HasValue)
+				{
+					Rect bubble = dialog.Value;
+					float halfArrow = ArrowSize.x * 0.5f * arrow.lossyScale.x;
+					if (bubble.yMax > tip && screen.x + halfArrow > bubble.xMin && screen.x - halfArrow < bubble.xMax)
+					{
+						tip = bubble.yMax + GameHudGap;
+					}
+				}
 				float bob = Mathf.Abs(Mathf.Sin(Time.time * BobSpeed)) * CreatureConfig.BobHeight * size;
-				arrow.position = new Vector3(screen.x, screen.y + lift + bob, 0f);
+				arrow.position = new Vector3(screen.x, tip + bob, 0f);
 				arrow.localRotation = Quaternion.identity;
 				return(Vector2.down);
 			}
@@ -264,7 +277,51 @@ namespace CreatureMarker
 			}
 			float bottom = data.m_gui.transform.position.y;
 			float top = bottom;
-			data.m_gui.GetComponentsInChildren(false, graphics);
+			if (GetGraphicsBounds(data.m_gui, out Rect bounds))
+			{
+				top = Mathf.Max(top, bounds.yMax);
+			}
+			return(top - bottom);
+		}
+
+		/// <summary>
+		/// The screen rectangle of the speech bubble the game shows over a target that is talking, like a trader
+		/// greeting the player
+		/// </summary>
+		/// <param name="source">The marked Character, Trader, Petable, Fish or RandomFlyingBird</param>
+		/// <returns>The bubble's rectangle in screen pixels, or null when the target has no bubble showing</returns>
+		private Rect? GetDialogRect(Object source)
+		{
+			Chat chat = Chat.instance;
+			Component component = source as Component;
+			if (chat == null || component == null || chat.m_npcTexts.Count == 0)
+			{
+				return(null);
+			}
+			Chat.NpcText npcText = chat.FindNpcText(component.gameObject);
+			if (npcText == null || npcText.m_gui == null || !npcText.m_gui.activeInHierarchy || !npcText.IsVisible())
+			{
+				return(null);
+			}
+			if (!GetGraphicsBounds(npcText.m_gui, out Rect bounds))
+			{
+				return(null);
+			}
+			return(bounds);
+		}
+
+		/// <summary>
+		/// Measures the visible graphics under a screen space UI object, going by the letters themselves for text
+		/// </summary>
+		/// <param name="root">The UI object to measure</param>
+		/// <param name="bounds">Set to the rectangle around the graphics in screen pixels</param>
+		/// <returns>False when nothing under the object is visible</returns>
+		private bool GetGraphicsBounds(GameObject root, out Rect bounds)
+		{
+			Vector2 min = new Vector2(float.MaxValue, float.MaxValue);
+			Vector2 max = new Vector2(float.MinValue, float.MinValue);
+			bool found = false;
+			root.GetComponentsInChildren(false, graphics);
 			foreach (Graphic graphic in graphics)
 			{
 				if (graphic.color.a <= 0f)
@@ -274,19 +331,27 @@ namespace CreatureMarker
 				if (graphic is TMP_Text text)
 				{
 					// The text's rect can be taller than the letters, so measure the letters themselves
-					if (!string.IsNullOrEmpty(text.text))
+					if (string.IsNullOrEmpty(text.text))
 					{
-						top = Mathf.Max(top, text.rectTransform.TransformPoint(text.textBounds.max).y);
+						continue;
 					}
+					Bounds letters = text.textBounds;
+					Vector2 lower = text.rectTransform.TransformPoint(letters.min);
+					Vector2 upper = text.rectTransform.TransformPoint(letters.max);
+					min = Vector2.Min(min, lower);
+					max = Vector2.Max(max, upper);
 				}
 				else
 				{
 					graphic.rectTransform.GetWorldCorners(corners);
-					top = Mathf.Max(top, corners[1].y);
+					min = Vector2.Min(min, corners[0]);
+					max = Vector2.Max(max, corners[2]);
 				}
+				found = true;
 			}
 			graphics.Clear();
-			return(top - bottom);
+			bounds = (found ? Rect.MinMaxRect(min.x, min.y, max.x, max.y) : default(Rect));
+			return(found);
 		}
 
 		/// <summary>
