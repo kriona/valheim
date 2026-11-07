@@ -6,7 +6,7 @@ A library of Valheim mods I've made.
 
 | Mod | Description | Nexus Mods | Thunderstore |
 | --- | --- | --- | --- |
-| [Chest Peek](ChestPeek) | Hover over a chest to see what's inside without opening it. | [Mod 4341](https://www.nexusmods.com/valheim/mods/4341) | [Link](https://thunderstore.io/c/valheim/p/Kriona/ChestPeek/) |
+| [Chest Peek](ChestPeek) | Hover over a chest to see what's inside without opening it, and spot full or empty chests at a glance. | [Mod 4341](https://www.nexusmods.com/valheim/mods/4341) | [Link](https://thunderstore.io/c/valheim/p/Kriona/ChestPeek/) |
 | [Craft More](CraftMore) | Hold Ctrl to craft a full stack, or Alt to craft as many as you have the materials for. Gain experience for each craft rather than for each batch. | [Mod 4427](https://www.nexusmods.com/valheim/mods/4427) | [Link](https://thunderstore.io/c/valheim/p/Kriona/CraftMore/) |
 | [Creature Marker](CreatureMarker) | Puts a colored arrow above nearby creatures, traders, fish and birds, or at the edge of the screen when they're off-screen, with optional name, star level and distance, and a matching dot on the map. | [Mod 4342](https://www.nexusmods.com/valheim/mods/4342) | [Link](https://thunderstore.io/c/valheim/p/Kriona/CreatureMarker/) |
 | [Light Color](LightColor) | Press L on an object that gives off light (e.g., sconce, campfire, portal, mounted Dverger circlet) to set its color, brightness, and range. Also makes sign text glow with a colored halo, lit letters or an outline. Servers can limit it to admins. | [Mod 4352](https://www.nexusmods.com/valheim/mods/4352) | [Link](https://thunderstore.io/c/valheim/p/Kriona/LightColor/) |
