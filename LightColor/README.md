@@ -115,7 +115,6 @@ Glowing text isn't shaded by the light around it, so it reads the same by day an
 | Campfire | `#FF8153` | `#D68669` |
 | Cauldron | `#FFAC53` | |
 | Charcoal Kiln | `#FF7A00` | |
-| Drakkar | `#F4C7AE` | |
 | Dverger Circlet on an item stand | `#A0F8EE` | |
 | Dverger Pole Lantern | `#FFC849` | |
 | Dverger Wall Lantern | `#FFC849` | |
@@ -133,7 +132,6 @@ Glowing text isn't shaded by the light around it, so it reads the same by day an
 | Iron Fire Pit | `#FF8153` | `#D68669` |
 | Jack-o-turnip | `#FF9E7B` | |
 | Lava Lantern | `#FF9E7B` | |
-| Longship | `#F4C7AE` | |
 | Mead Ketill | `#FFAC53` | |
 | Portal | `#FF6400` | |
 | Resin Candle | `#FFA539` | |

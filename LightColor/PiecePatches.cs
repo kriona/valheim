@@ -21,11 +21,29 @@ namespace LightColor
 			{
 				return;
 			}
-			if (__instance.GetComponentInChildren<Light>(true) == null && __instance.GetComponentInChildren<Sign>(true) == null)
+			if (!HasLight(__instance) && __instance.GetComponentInChildren<Sign>(true) == null)
 			{
 				return;
 			}
 			__instance.gameObject.AddComponent<LightTint>().Init(nview);
+		}
+
+		/// <summary>
+		/// Whether the piece has a light that can shine
+		/// </summary>
+		/// <remarks>
+		/// Inactive lights count, since a fire's light stays inactive until it's lit. A ship only counts active lights,
+		/// since the longship and drakkar carry an unused trader lamp under an inactive object that the game never turns on
+		/// </remarks>
+		/// <param name="piece">The piece to search</param>
+		/// <returns>True when the piece has a light</returns>
+		private static bool HasLight(Piece piece)
+		{
+			if (piece.GetComponent<Ship>() == null)
+			{
+				return((piece.GetComponentInChildren<Light>(true) != null));
+			}
+			return((piece.GetComponentInChildren<Light>() != null));
 		}
 	}
 
