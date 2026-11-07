@@ -20,7 +20,7 @@ A picture of me not falling... not very exciting. Sorry.
 
 ## Installation
 
-With a mod manager, install Safe Sneak from [Thunderstore](https://thunderstore.io/c/valheim/p/Kriona/SafeSneak/) using r2modman or the Thunderstore Mod Manager (which install BepInExPack for Valheim).
+With a mod manager, install Safe Sneak from [Thunderstore](https://thunderstore.io/c/valheim/p/Kriona/SafeSneak/) using r2modman or the Thunderstore Mod Manager (which install BepInExPack for Valheim), or from [Nexus Mods](https://www.nexusmods.com/valheim/mods/4866) using Vortex.
 
 By hand:
 

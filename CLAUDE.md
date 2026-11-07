@@ -12,14 +12,24 @@ Each subdirectory is a BepInEx plugin project built with `dotnet build <Project>
 - `stats.ps1` prints each mod's downloads and endorsements on Nexus Mods (v1 API, `NEXUS_API_KEY`) and downloads and likes on Thunderstore (package metrics API, no key), using the links in the root `README.md` table
 - `build-release.ps1` and `build-bbcode.ps1` dot-source `release-common.ps1` (the root README table, `.env` secrets, HTTP), `release-thunderstore.ps1` and `release-nexus.ps1`, and `stats.ps1` dot-sources `release-common.ps1`. The Thunderstore team, the BepInExPack dependency and the categories added to every mod (the current game update's and `ai-generated`) are constants at the top of `build-release.ps1`
 - Each mod's description in the root `README.md` table summarizes its own `README.md` - when a change adds or alters what a mod does, update its description there too, since it also appears on every other mod's Nexus Mods page, as its Nexus Mods summary and as its Thunderstore description, which allows at most 250 characters
-- Every mod's Nexus Mods description ends with an "Other Mods By Me" list that `build-bbcode.ps1` builds from the root `README.md` table, leaving out mods with no Nexus Mods link, followed by the root README's "Other Mods I Use" section - once a new mod's Nexus Mods page exists, add its link to that table and run `build-bbcode.ps1 -Publish` to push the changed descriptions to every mod, or the new mod won't be listed on them. The Thunderstore README links to the team's package list instead, since a version's README can't be changed after upload
-- A new mod's Nexus Mods page has to be created on the website before `-Publish` can upload to it, since uploads add a version to the mod's existing main file. Its Thunderstore package is created by its first upload, at `https://thunderstore.io/c/valheim/p/Kriona/<Name>/`
+- Every mod's Nexus Mods description ends with an "Other Mods By Me" list that `build-bbcode.ps1` builds from the root `README.md` table, leaving out mods with no Nexus Mods link, followed by the root README's "Other Mods I Use" section. `build-bbcode.ps1 -Publish` pushes the changed descriptions to every mod without a release. The Thunderstore README links to the team's package list instead, since a version's README can't be changed after upload
 - `Plugin.cs` holds the `BaseUnityPlugin` with the GUID `kriona.<Name>`, the display name and a version starting at `1.0.0`, and calls `harmony.PatchAll()`
 - Harmony patches go in a separate `*Patches.cs` file, one static class per patch
 - `assembly_valheim` is referenced with `Publicize="true"`, so private game members can be patched and used directly without reflection
 - Look up game code by decompiling into the scratchpad: `ilspycmd -t <Class> "C:\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\assembly_valheim.dll"`
 - Look up how a prefab is built - its hierarchy, components, lights, particle colors, materials and textures - with `python -P tools/prefab-dump.py find|tree|materials|particles <name>`, which finds the prefab's asset bundle itself. It needs UnityPy (`python -m pip install --user UnityPy`), and `-P` rather than `-I` so the user install is found
 - `TweakStats/NAMES.md` is generated from the game's files by `python -P tools/tweakstats-names.py` - run it again after a game update rather than editing the file
+
+## Releasing a New Mod
+After making a new mod, end by telling the user these steps for releasing it. Its first release needs a Nexus Mods page that only the website can create, and the scripts can't release it until that page exists:
+
+1. Run `.\build-release.ps1 <Name>` without `-Publish` to write `release\packages\<Name>-<Version>.zip` - it needs the mod's `icon.png`, so the user's icon has to be in place first
+2. Create the mod's page on Nexus Mods by hand, uploading that zip as its main file with the version from `Plugin.cs` and that version's `CHANGELOG.md` section. Releases add a version to the mod's one active file, so `-Publish` fails on a page with no file
+3. Once the user gives the mod ID, add `[Mod <ID>](https://www.nexusmods.com/valheim/mods/<ID>)` to the mod's row in the root `README.md` table and a Nexus Mods link to the Installation section of the mod's `README.md`
+4. Merge the branch into main - `-Publish` and `-GitHubOnly` fail until the release commit is on main, and the branch shouldn't be merged before it has its Nexus Mods link, which is why the Nexus Mods page comes first
+5. Run `.\build-release.ps1 <Name> -Publish`. It creates the GitHub release, creates the Thunderstore package with its first upload (at `https://thunderstore.io/c/valheim/p/Kriona/<Name>/`), skips the Nexus Mods upload since that version is already there, and pushes every mod's Nexus Mods summary and description, which adds the new mod to their "Other Mods By Me" lists
+
+Images in a mod's `README.md` only show on Nexus Mods and Thunderstore once the code is merged into main, since the scripts point them at the files on GitHub's main branch. A Nexus Mods description pasted in by hand before then shows broken images until step 5 pushes it again
 
 ## Line Endings
 - All files use LF, set by `.gitattributes` and `.editorconfig`
