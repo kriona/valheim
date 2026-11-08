@@ -178,14 +178,14 @@ namespace CreatureMarker
 		private static ConfigEntry<int> minFishLevelEntry;
 
 		/// <summary>
-		/// Name token, or plain text that localizes to itself, by prefab name of the birds, leviathans, Odin and Valkyrie
+		/// Name token, or plain text that localizes to itself, by prefab name of the birds, leviathans, Oden and Valkyrie
 		/// whose name isn't their prefab name split into words - the game gives them no name of their own
 		/// </summary>
 		private static readonly Dictionary<string, string> prefabNameTokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "Seagal", "$caption_seagull" },
 			{ "LeviathanLava", "Lava Leviathan" },
-			{ "odin", "Odin" },
+			{ "odin", "Oden" },
 			{ "Valkyrie", "$npc_valkyrie_end" },
 		};
 
@@ -200,7 +200,7 @@ namespace CreatureMarker
 		private static SortedDictionary<string, string> names = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>
-		/// Display name by prefab name of the traders, pets, leviathans, Odin, ravens and Valkyries seen in the world, which aren't all in the scene's prefab
+		/// Display name by prefab name of the traders, pets, leviathans, Oden, ravens and Valkyries seen in the world, which aren't all in the scene's prefab
 		/// list, kept so their lines keep their names each time the file is read
 		/// </summary>
 		private static readonly Dictionary<string, string> npcNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -274,10 +274,10 @@ namespace CreatureMarker
 		private static Color playerColor = ParseColor(DefaultPlayerColor, Color.white);
 
 		/// <summary>
-		/// The marker color of Odin, the hooded figure who watches the player from a distance, his ravens, Hugin and
+		/// The marker color of Oden, the hooded figure who watches the player from a distance, his ravens, Hugin and
 		/// Munin, and the Valkyrie who carries a player into a new world
 		/// </summary>
-		private static readonly Color odinColor = ParseColor("#888", Color.gray);
+		private static readonly Color odenColor = ParseColor("#888", Color.gray);
 		private static bool allPassive;
 		private static bool allHostile = true;
 		private static bool allFish;
@@ -448,7 +448,7 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Gives a trader, pet, leviathan, Odin, raven or Valkyrie seen in the world a line in the config file when it
+		/// Gives a trader, pet, leviathan, Oden, raven or Valkyrie seen in the world a line in the config file when it
 		/// doesn't have one with its name yet
 		/// </summary>
 		/// <remarks>
@@ -651,7 +651,7 @@ namespace CreatureMarker
 
 		/// <summary>
 		/// Fills the list with the living marked creatures, the other players sharing their position who aren't
-		/// sneaking, the marked traders, pets, Odin and Valkyries, the marked ravens while they are landed, the marked fish
+		/// sneaking, the marked traders, pets, Oden and Valkyries, the marked ravens while they are landed, the marked fish
 		/// and birds and the marked leviathans that haven't started diving, within Max Distance of the player
 		/// </summary>
 		/// <param name="player">The local player</param>
@@ -741,7 +741,7 @@ namespace CreatureMarker
 				}
 				else if (npc.source is Odin || raven != null || npc.source is Valkyrie)
 				{
-					target.color = odinColor;
+					target.color = odenColor;
 				}
 				else
 				{
@@ -822,11 +822,11 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// The name token of a bird, leviathan, Odin or Valkyrie prefab, which the game gives no name of their own - the
-		/// game's seagull caption for seagulls, Lava Leviathan for LeviathanLava, Odin for odin, the game's end-credits
+		/// The name token of a bird, leviathan, Oden or Valkyrie prefab, which the game gives no name of their own - the
+		/// game's seagull caption for seagulls, Lava Leviathan for LeviathanLava, Oden for odin, the game's end-credits
 		/// Valkyrie name for Valkyrie, and otherwise the prefab name split into words, like Ash Crow for AshCrow
 		/// </summary>
-		/// <param name="prefabName">The bird's, leviathan's, Odin's or Valkyrie's prefab name</param>
+		/// <param name="prefabName">The bird's, leviathan's, Oden's or Valkyrie's prefab name</param>
 		/// <returns>The name token, or plain text that localizes to itself</returns>
 		public static string GetPrefabNameToken(string prefabName)
 		{

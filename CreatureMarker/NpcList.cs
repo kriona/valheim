@@ -4,7 +4,7 @@ using UnityEngine;
 namespace CreatureMarker
 {
 	/// <summary>
-	/// A trader, like Haldor, a trader's pet, like Halstein, a leviathan, Odin, one of his ravens or a Valkyrie - none is
+	/// A trader, like Haldor, a trader's pet, like Halstein, a leviathan, Oden, one of his ravens or a Valkyrie - none is
 	/// a Character, so the game keeps no list of them
 	/// </summary>
 	internal class NPC
@@ -70,7 +70,7 @@ namespace CreatureMarker
 	}
 
 	/// <summary>
-	/// The traders, traders' pets, leviathans, Odin, ravens and Valkyries in the world, gathered as they are created
+	/// The traders, traders' pets, leviathans, Oden, ravens and Valkyries in the world, gathered as they are created
 	/// </summary>
 	internal static class NpcList
 	{
@@ -87,7 +87,7 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Adds a trader, pet, leviathan, Odin, raven or Valkyrie, and gives it a line in the config file when it doesn't
+		/// Adds a trader, pet, leviathan, Oden, raven or Valkyrie, and gives it a line in the config file when it doesn't
 		/// have one yet
 		/// </summary>
 		/// <param name="source">The Trader, Petable, Leviathan, Odin, Raven or Valkyrie</param>
