@@ -18,6 +18,11 @@ namespace CreatureMarker
 		private Harmony harmony;
 
 		/// <summary>
+		/// The loaded plugin, whose markers the camera patch places each frame
+		/// </summary>
+		private static Plugin instance;
+
+		/// <summary>
 		/// Watches the config file, which the creature list also writes when the scene starts
 		/// </summary>
 		internal static ConfigWatcher Watcher;
@@ -27,6 +32,7 @@ namespace CreatureMarker
 		/// </summary>
 		private void Awake()
 		{
+			instance = this;
 			CreatureConfig.Init(Config);
 			Watcher = new ConfigWatcher(CreatureConfig.FilePath, CreatureConfig.Reload, Logger, PluginName);
 			harmony = new Harmony(PluginGuid);
@@ -43,18 +49,19 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Runs after the camera and creatures have moved so the markers track their final positions
+		/// Places the markers on screen and on the map, called once the camera has moved for the frame so the markers
+		/// track the creatures' final positions
 		/// </summary>
-		private void LateUpdate()
+		internal static void UpdateMarkers()
 		{
 			Player player = Player.m_localPlayer;
-			if (player == null)
+			if (instance == null || player == null)
 			{
 				return;
 			}
-			CreatureConfig.GetMarked(player, marked);
-			markers.Update(marked, player);
-			mapMarkers.Update(marked, player);
+			CreatureConfig.GetMarked(player, instance.marked);
+			instance.markers.Update(instance.marked, player);
+			instance.mapMarkers.Update(instance.marked, player);
 		}
 
 		/// <summary>
@@ -62,6 +69,7 @@ namespace CreatureMarker
 		/// </summary>
 		private void OnDestroy()
 		{
+			instance = null;
 			markers.Destroy();
 			mapMarkers.Destroy();
 			Watcher?.Dispose();
