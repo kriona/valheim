@@ -78,6 +78,26 @@ namespace CreatureMarker
 	}
 
 	/// <summary>
+	/// Adds the Valkyrie, the giant bird who carries a player into a new world, to the NPC list
+	/// </summary>
+	/// <remarks>
+	/// The Valkyrie has no Character component and the game gives her no name, so she takes the name of the Valkyrie
+	/// in the end credits
+	/// </remarks>
+	[HarmonyPatch(typeof(Valkyrie), nameof(Valkyrie.Awake))]
+	public static class ValkyrieAwakePatch
+	{
+		/// <summary>
+		/// Adds the Valkyrie to the NPC list
+		/// </summary>
+		/// <param name="__instance">The Valkyrie that was just created</param>
+		private static void Postfix(Valkyrie __instance)
+		{
+			NpcList.Add(__instance, CreatureConfig.GetPrefabNameToken(Utils.GetPrefabName(__instance.gameObject)));
+		}
+	}
+
+	/// <summary>
 	/// Adds the pets in each location, like Halstein in Hildir's camp, to the NPC list
 	/// </summary>
 	/// <remarks>
