@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.2
+- Mark the Valkyrie who carries players into a new world as a passive creature with a gray (#888) marker like Oden's - she's marked when All Passive Creatures is on or her own line is true, including while she's carrying you
+- Place the markers after the camera moves each frame, so a marker on a creature that moves in steps, like the Valkyrie, holds still instead of flickering between two spots
+- Rename Odin to Oden, per the game's lore
+
 ## 1.8.1
 - Mark Odin, the hooded figure who watches you from a distance, and his ravens Hugin and Munin while they're landed, as passive creatures with a gray (#888) marker - they're marked when All Passive Creatures is on or their own line is true
 - Only pin an off-screen arrow to the top half of the screen when the creature is higher up than you, so a creature behind you on level ground gets its arrow in the bottom half
