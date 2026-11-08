@@ -1,7 +1,7 @@
 # Changelog
 
 ## 1.8.1
-- Mark Odin, the hooded figure who watches you from a distance, as a passive creature with a gray (#888) marker - he's marked when All Passive Creatures is on or his own line is true
+- Mark Odin, the hooded figure who watches you from a distance, and his ravens Hugin and Munin while they're landed, as passive creatures with a gray (#888) marker - they're marked when All Passive Creatures is on or their own line is true
 - Only pin an off-screen arrow to the top half of the screen when the creature is higher up than you, so a creature behind you on level ground gets its arrow in the bottom half
 
 ## 1.8.0

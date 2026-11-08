@@ -59,6 +59,25 @@ namespace CreatureMarker
 	}
 
 	/// <summary>
+	/// Adds Hugin and Munin, the ravens who land near the player to give tips, to the NPC list
+	/// </summary>
+	/// <remarks>
+	/// Each player's game has its own ravens, which wait far out of sight while they aren't landed
+	/// </remarks>
+	[HarmonyPatch(typeof(Raven), nameof(Raven.Awake))]
+	public static class RavenAwakePatch
+	{
+		/// <summary>
+		/// Adds the raven to the NPC list
+		/// </summary>
+		/// <param name="__instance">The raven that was just created</param>
+		private static void Postfix(Raven __instance)
+		{
+			NpcList.Add(__instance, __instance.m_name);
+		}
+	}
+
+	/// <summary>
 	/// Adds the pets in each location, like Halstein in Hildir's camp, to the NPC list
 	/// </summary>
 	/// <remarks>

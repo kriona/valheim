@@ -199,7 +199,7 @@ namespace CreatureMarker
 		private static SortedDictionary<string, string> names = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>
-		/// Display name by prefab name of the traders, pets, leviathans and Odin seen in the world, which aren't all in the scene's prefab
+		/// Display name by prefab name of the traders, pets, leviathans, Odin and ravens seen in the world, which aren't all in the scene's prefab
 		/// list, kept so their lines keep their names each time the file is read
 		/// </summary>
 		private static readonly Dictionary<string, string> npcNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -273,7 +273,8 @@ namespace CreatureMarker
 		private static Color playerColor = ParseColor(DefaultPlayerColor, Color.white);
 
 		/// <summary>
-		/// The marker color of Odin, the hooded figure who watches the player from a distance
+		/// The marker color of Odin, the hooded figure who watches the player from a distance, and his ravens, Hugin and
+		/// Munin
 		/// </summary>
 		private static readonly Color odinColor = ParseColor("#888", Color.gray);
 		private static bool allPassive;
@@ -446,8 +447,8 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Gives a trader, pet, leviathan or Odin seen in the world a line in the config file when it doesn't have one
-		/// with its name yet
+		/// Gives a trader, pet, leviathan, Odin or raven seen in the world a line in the config file when it doesn't have
+		/// one with its name yet
 		/// </summary>
 		/// <remarks>
 		/// Pets are part of the locations that place them rather than prefabs of their own, so their lines can only be
@@ -649,8 +650,8 @@ namespace CreatureMarker
 
 		/// <summary>
 		/// Fills the list with the living marked creatures, the other players sharing their position who aren't
-		/// sneaking, the marked traders, pets and Odin, the marked fish and birds and the marked leviathans that haven't
-		/// started diving, within Max Distance of the player
+		/// sneaking, the marked traders, pets and Odin, the marked ravens while they are landed, the marked fish and birds
+		/// and the marked leviathans that haven't started diving, within Max Distance of the player
 		/// </summary>
 		/// <param name="player">The local player</param>
 		/// <param name="marked">The list to fill, cleared first</param>
@@ -722,6 +723,11 @@ namespace CreatureMarker
 				{
 					continue;
 				}
+				Raven raven = npc.source as Raven;
+				if (raven != null && !raven.IsSpawned())
+				{
+					continue;
+				}
 				Target target = new Target();
 				target.source = npc.source;
 				target.position = position;
@@ -732,7 +738,7 @@ namespace CreatureMarker
 				{
 					target.color = leviathanColor;
 				}
-				else if (npc.source is Odin)
+				else if (npc.source is Odin || raven != null)
 				{
 					target.color = odinColor;
 				}
