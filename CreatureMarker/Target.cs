@@ -8,8 +8,8 @@ namespace CreatureMarker
 	public struct Target
 	{
 		/// <summary>
-		/// The Character, Trader, Petable, Fish, RandomFlyingBird or Leviathan being marked, so a marker can tell when it
-		/// is given a different one
+		/// The Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan or Odin being marked, so a marker can tell
+		/// when it is given a different one
 		/// </summary>
 		public Object source;
 

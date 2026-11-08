@@ -178,13 +178,14 @@ namespace CreatureMarker
 		private static ConfigEntry<int> minFishLevelEntry;
 
 		/// <summary>
-		/// Name token, or plain text that localizes to itself, by prefab name of the birds and leviathans whose name
-		/// isn't their prefab name split into words - the game gives them no name of their own
+		/// Name token, or plain text that localizes to itself, by prefab name of the birds, leviathans and Odin whose
+		/// name isn't their prefab name split into words - the game gives them no name of their own
 		/// </summary>
 		private static readonly Dictionary<string, string> prefabNameTokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "Seagal", "$caption_seagull" },
 			{ "LeviathanLava", "Lava Leviathan" },
+			{ "odin", "Odin" },
 		};
 
 		/// <summary>
@@ -198,7 +199,7 @@ namespace CreatureMarker
 		private static SortedDictionary<string, string> names = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>
-		/// Display name by prefab name of the traders, pets and leviathans seen in the world, which aren't all in the scene's prefab
+		/// Display name by prefab name of the traders, pets, leviathans and Odin seen in the world, which aren't all in the scene's prefab
 		/// list, kept so their lines keep their names each time the file is read
 		/// </summary>
 		private static readonly Dictionary<string, string> npcNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -270,6 +271,11 @@ namespace CreatureMarker
 		private static Color leviathanColor = ParseColor(DefaultLeviathanColor, Color.magenta);
 		private static string playerColorText = DefaultPlayerColor;
 		private static Color playerColor = ParseColor(DefaultPlayerColor, Color.white);
+
+		/// <summary>
+		/// The marker color of Odin, the hooded figure who watches the player from a distance
+		/// </summary>
+		private static readonly Color odinColor = ParseColor("#888", Color.gray);
 		private static bool allPassive;
 		private static bool allHostile = true;
 		private static bool allFish;
@@ -372,8 +378,8 @@ namespace CreatureMarker
 
 		/// <summary>
 		/// Reads the config file, adds any prefabs with a Character component other than the player, a Trader, a
-		/// Petable, a Fish, a RandomFlyingBird or a Leviathan component, and the traders and pets seen in the world, and
-		/// writes it back
+		/// Petable, a Fish, a RandomFlyingBird, a Leviathan or an Odin component, and the traders and pets seen in the
+		/// world, and writes it back
 		/// </summary>
 		/// <param name="scene">The scene holding the prefab list</param>
 		public static void Load(ZNetScene scene)
@@ -414,7 +420,7 @@ namespace CreatureMarker
 					names[prefab.name] = GetDisplayName(fish.m_name);
 					continue;
 				}
-				if (prefab.GetComponent<RandomFlyingBird>() != null || prefab.GetComponent<Leviathan>() != null)
+				if (prefab.GetComponent<RandomFlyingBird>() != null || prefab.GetComponent<Leviathan>() != null || prefab.GetComponent<Odin>() != null)
 				{
 					names[prefab.name] = GetDisplayName(GetPrefabNameToken(prefab.name));
 				}
@@ -440,8 +446,8 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Gives a trader, pet or leviathan seen in the world a line in the config file when it doesn't have one with its
-		/// name yet
+		/// Gives a trader, pet, leviathan or Odin seen in the world a line in the config file when it doesn't have one
+		/// with its name yet
 		/// </summary>
 		/// <remarks>
 		/// Pets are part of the locations that place them rather than prefabs of their own, so their lines can only be
@@ -643,7 +649,7 @@ namespace CreatureMarker
 
 		/// <summary>
 		/// Fills the list with the living marked creatures, the other players sharing their position who aren't
-		/// sneaking, the marked traders and pets, the marked fish and birds and the marked leviathans that haven't
+		/// sneaking, the marked traders, pets and Odin, the marked fish and birds and the marked leviathans that haven't
 		/// started diving, within Max Distance of the player
 		/// </summary>
 		/// <param name="player">The local player</param>
@@ -726,6 +732,10 @@ namespace CreatureMarker
 				{
 					target.color = leviathanColor;
 				}
+				else if (npc.source is Odin)
+				{
+					target.color = odinColor;
+				}
 				else
 				{
 					target.color = ((npc.source is Trader) ? merchantColor : passiveColor);
@@ -805,11 +815,11 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// The name token of a bird or leviathan prefab, which the game gives no name of their own - the game's seagull
-		/// caption for seagulls, Lava Leviathan for LeviathanLava, and otherwise the prefab name split into words, like
-		/// Ash Crow for AshCrow
+		/// The name token of a bird, leviathan or Odin prefab, which the game gives no name of their own - the game's
+		/// seagull caption for seagulls, Lava Leviathan for LeviathanLava, Odin for odin, and otherwise the prefab name
+		/// split into words, like Ash Crow for AshCrow
 		/// </summary>
-		/// <param name="prefabName">The bird's or leviathan's prefab name</param>
+		/// <param name="prefabName">The bird's, leviathan's or Odin's prefab name</param>
 		/// <returns>The name token, or plain text that localizes to itself</returns>
 		public static string GetPrefabNameToken(string prefabName)
 		{
