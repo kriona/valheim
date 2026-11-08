@@ -26,6 +26,12 @@ namespace CreatureMarker
 		private const float LabelGap = 2f;
 		private const float LabelFontSize = 16f;
 		private const float GameHudGap = 4f;
+
+		/// <summary>
+		/// How many meters higher than the player a target has to be for its arrow to be pinned to the top half of the
+		/// screen, so uneven ground doesn't count as higher
+		/// </summary>
+		private const float HigherMargin = 1f;
 		private static readonly Vector2 ArrowSize = new Vector2(24f, 32f);
 		internal static readonly Color OutlineColor = new Color(0.1f, 0.1f, 0.1f, 1f);
 
@@ -127,15 +133,16 @@ namespace CreatureMarker
 					// the label leaves them out - an arrow pinned to the screen edge is away from the HUD, so it keeps them
 					float gameHudHeight = GetGameHudHeight(enemyHud, target.source);
 					Rect? dialog = GetDialogRect(target.source);
+					bool higher = (target.position.y > playerPosition.y + HigherMargin);
 					Vector2 pointing;
 					bool onScreen;
 					if (gameHudHeight >= 0f)
 					{
-						pointing = Place(marker.arrow.rectTransform, camera, target.top, gameHudHeight + GameHudGap, dialog, scale.x, out onScreen);
+						pointing = Place(marker.arrow.rectTransform, camera, target.top, gameHudHeight + GameHudGap, dialog, scale.x, higher, out onScreen);
 					}
 					else
 					{
-						pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset, 0f, dialog, scale.x, out onScreen);
+						pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset, 0f, dialog, scale.x, higher, out onScreen);
 					}
 					bool underGameHud = (gameHudHeight >= 0f && onScreen);
 					bool showText = (underGameHud ? showDistance : showLabel);
@@ -207,9 +214,11 @@ namespace CreatureMarker
 		/// <param name="dialog">The screen rectangle of the target's speech bubble, which an on-screen arrow sits above
 		/// when the bubble would cover it, or null when the target isn't talking</param>
 		/// <param name="size">The marker's scale, which shrinks the bob along with the arrow</param>
+		/// <param name="higher">Whether the target is higher than the player, which lets an off-screen arrow be pinned to
+		/// the top half of the screen - otherwise it is mirrored into the bottom half, on the same side</param>
 		/// <param name="onScreen">Set to whether the target is on screen, rather than the arrow pinned to the edge</param>
 		/// <returns>The screen direction the arrow points in, as a unit vector</returns>
-		private static Vector2 Place(RectTransform arrow, Camera camera, Vector3 target, float lift, Rect? dialog, float size, out bool onScreen)
+		private static Vector2 Place(RectTransform arrow, Camera camera, Vector3 target, float lift, Rect? dialog, float size, bool higher, out bool onScreen)
 		{
 			Vector3 screen = camera.WorldToScreenPointScaled(target);
 			onScreen = (screen.z > 0f && screen.x >= 0f && screen.x <= Screen.width && screen.y >= 0f && screen.y <= Screen.height);
@@ -237,6 +246,11 @@ namespace CreatureMarker
 				// Points behind the camera project mirrored through the screen center
 				direction = -direction;
 			}
+			if (!higher && direction.y > 0f)
+			{
+				// An arrow at the top of the screen reads as the target being above the player
+				direction.y = -direction.y;
+			}
 			if (direction.sqrMagnitude < 0.01f)
 			{
 				direction = Vector2.down;
@@ -262,7 +276,7 @@ namespace CreatureMarker
 		/// the top of the screen
 		/// </remarks>
 		/// <param name="enemyHud">The enemy HUD</param>
-		/// <param name="source">The marked Character, Trader, Petable, Fish, RandomFlyingBird or Leviathan</param>
+		/// <param name="source">The marked Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin or Raven</param>
 		/// <returns>The height, or -1 when the game isn't showing a name above the target</returns>
 		private float GetGameHudHeight(EnemyHud enemyHud, Object source)
 		{
@@ -288,7 +302,7 @@ namespace CreatureMarker
 		/// The screen rectangle of the speech bubble the game shows over a target that is talking, like a trader
 		/// greeting the player
 		/// </summary>
-		/// <param name="source">The marked Character, Trader, Petable, Fish, RandomFlyingBird or Leviathan</param>
+		/// <param name="source">The marked Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin or Raven</param>
 		/// <returns>The bubble's rectangle in screen pixels, or null when the target has no bubble showing</returns>
 		private Rect? GetDialogRect(Object source)
 		{

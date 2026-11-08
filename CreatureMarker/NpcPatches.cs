@@ -39,6 +39,45 @@ namespace CreatureMarker
 	}
 
 	/// <summary>
+	/// Adds Odin to the NPC list each time he appears
+	/// </summary>
+	/// <remarks>
+	/// Odin is a figure with no Character component who watches the player from a distance and vanishes when they get
+	/// close, and the game gives him no name
+	/// </remarks>
+	[HarmonyPatch(typeof(Odin), nameof(Odin.Awake))]
+	public static class OdinAwakePatch
+	{
+		/// <summary>
+		/// Adds Odin to the NPC list
+		/// </summary>
+		/// <param name="__instance">The Odin that was just created</param>
+		private static void Postfix(Odin __instance)
+		{
+			NpcList.Add(__instance, CreatureConfig.GetPrefabNameToken(Utils.GetPrefabName(__instance.gameObject)));
+		}
+	}
+
+	/// <summary>
+	/// Adds Hugin and Munin, the ravens who land near the player to give tips, to the NPC list
+	/// </summary>
+	/// <remarks>
+	/// Each player's game has its own ravens, which wait far out of sight while they aren't landed
+	/// </remarks>
+	[HarmonyPatch(typeof(Raven), nameof(Raven.Awake))]
+	public static class RavenAwakePatch
+	{
+		/// <summary>
+		/// Adds the raven to the NPC list
+		/// </summary>
+		/// <param name="__instance">The raven that was just created</param>
+		private static void Postfix(Raven __instance)
+		{
+			NpcList.Add(__instance, __instance.m_name);
+		}
+	}
+
+	/// <summary>
 	/// Adds the pets in each location, like Halstein in Hildir's camp, to the NPC list
 	/// </summary>
 	/// <remarks>
