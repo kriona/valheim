@@ -1,6 +1,6 @@
 # Creature Marker
 
-Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans and other players. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them.
+Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans and other players. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them, and only creatures higher up than you get one in the top half of the screen.
 
 - Separate colors for passive creatures, hostile creatures, creatures that are targeting you, bosses, fish, traders, leviathans and your tamed pets
 - Marks traders like Haldor, Hildir and the Bog Witch, and their pets like Halstein

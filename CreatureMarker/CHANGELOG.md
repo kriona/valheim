@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.8.1
+- Only pin an off-screen arrow to the top half of the screen when the creature is higher up than you, so a creature behind you on level ground gets its arrow in the bottom half
+
 ## 1.8.0
 - Support leviathans and lava leviathans, with the All Leviathans switch, on by default, and the Leviathan Color setting, default #B366FF (purple)
 - Support other players who are sharing their position on the map and aren't sneaking, with the All Players switch, on by default, and the Player Color setting, default #FFF (white)
