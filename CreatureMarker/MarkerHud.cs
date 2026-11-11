@@ -48,9 +48,15 @@ namespace CreatureMarker
 			public Object source;
 
 			/// <summary>
-			/// The target's localized name, looked up when the marker is given a new target
+			/// The target's localized name, followed by the stack size for a stack of items, looked up when the marker is
+			/// given a new target or the stack size changes
 			/// </summary>
 			public string name;
+
+			/// <summary>
+			/// The stack size in the name
+			/// </summary>
+			public int count;
 
 			/// <summary>
 			/// The name, level, star color and distance in the label's text, so the text is only rebuilt when one of
@@ -149,10 +155,16 @@ namespace CreatureMarker
 					SetActive(marker.label.gameObject, showText);
 					if (showText)
 					{
-						if (marker.source != target.source)
+						if (marker.source != target.source || marker.count != target.count)
 						{
 							marker.source = target.source;
+							marker.count = target.count;
 							marker.name = Localization.instance.Localize(target.nameToken);
+							if (target.count > 1)
+							{
+								// The game shows a stack's size the same way when it lies on the ground
+								marker.name += " x" + target.count;
+							}
 						}
 						int distance = (showDistance ? Mathf.RoundToInt(Mathf.Sqrt(distanceSquared)) : -1);
 						string name = ((showName && !underGameHud) ? marker.name : null);
@@ -276,7 +288,7 @@ namespace CreatureMarker
 		/// the top of the screen
 		/// </remarks>
 		/// <param name="enemyHud">The enemy HUD</param>
-		/// <param name="source">The marked Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin, Raven or Valkyrie</param>
+		/// <param name="source">The marked Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin, Raven, Valkyrie or ItemDrop</param>
 		/// <returns>The height, or -1 when the game isn't showing a name above the target</returns>
 		private float GetGameHudHeight(EnemyHud enemyHud, Object source)
 		{
@@ -302,7 +314,7 @@ namespace CreatureMarker
 		/// The screen rectangle of the speech bubble the game shows over a target that is talking, like a trader
 		/// greeting the player
 		/// </summary>
-		/// <param name="source">The marked Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin, Raven or Valkyrie</param>
+		/// <param name="source">The marked Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin, Raven, Valkyrie or ItemDrop</param>
 		/// <returns>The bubble's rectangle in screen pixels, or null when the target has no bubble showing</returns>
 		private Rect? GetDialogRect(Object source)
 		{
