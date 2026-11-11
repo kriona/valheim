@@ -5,6 +5,7 @@
   <Project Path="LightColor/LightColor.csproj" />
   <Project Path="QuickFill/QuickFill.csproj" />
   <Project Path="SafeSneak/SafeSneak.csproj" />
+  <Project Path="SkillProgress/SkillProgress.csproj" />
   <Project Path="SnapPoints/SnapPoints.csproj" />
   <Project Path="SwapGear/SwapGear.csproj" />
   <Project Path="TooLow/TooLow.csproj" />

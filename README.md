@@ -12,6 +12,7 @@ A library of Valheim mods I've made.
 | [Light Color](LightColor) | Press L on an object that gives off light (e.g., sconce, campfire, portal, mounted Dverger circlet) to set its color, brightness, and range. Also makes sign text glow with a colored halo, lit letters or an outline. Servers can limit it to admins. | [Mod 4352](https://www.nexusmods.com/valheim/mods/4352) | [Link](https://thunderstore.io/c/valheim/p/Kriona/LightColor/) |
 | [Quick Fill](QuickFill) | Hold Shift and press the use key (E) to fill a station (e.g., smelter, kiln, oven, fire) in one go. Mouse targets on stations are also larger. | [Mod 4343](https://www.nexusmods.com/valheim/mods/4343) | [Link](https://thunderstore.io/c/valheim/p/Kriona/QuickFill/) |
 | [Safe Sneak](SafeSneak) | Stops you from walking off ledges while you're sneaking (like in Minecraft). | [Mod 4866](https://www.nexusmods.com/valheim/mods/4866) | [Link](https://thunderstore.io/c/valheim/p/Kriona/SafeSneak/) |
+| [Skill Progress](SkillProgress) | Shows a progress bar under the stamina bar while you train a skill (e.g., swimming). | [Mod 4935](https://www.nexusmods.com/valheim/mods/4935) | [Link](https://thunderstore.io/c/valheim/p/Kriona/SkillProgress/) |
 | [Snap Points](SnapPoints) | Gives chests, resource stacks, tables, benches, banners, armor stands, item stands and portals snap points. Any other build piece can be given snap points (or have its snap points taken away) via config. | [Mod 4370](https://www.nexusmods.com/valheim/mods/4370) | [Link](https://thunderstore.io/c/valheim/p/Kriona/SnapPoints/) |
 | [Swap Gear](SwapGear) | Swap what you're wearing with what's on an armor stand. | [Mod 4344](https://www.nexusmods.com/valheim/mods/4344) | [Link](https://thunderstore.io/c/valheim/p/Kriona/SwapGear/) |
 | [Too Low](TooLow) | Shows a "Too low" message when your pickaxe hits the 8m digging limit. | [Mod 4345](https://www.nexusmods.com/valheim/mods/4345) | [Link](https://thunderstore.io/c/valheim/p/Kriona/TooLow/) |
@@ -76,6 +77,19 @@ NEXUS_API_KEY=...
 ```
 
 Converts every mod's `README.md` to `release\bbcode\<Mod>.bbcode` for its Nexus Mods description, with images loaded from GitHub and a link to the mod's source and the "Other Mods I Use" list below added at the end. Every mod is converted each time, since a new mod's Nexus link goes in every other mod's description - `build-release.ps1` runs it too. `-Publish` pushes each mod's summary and description to Nexus Mods when they've changed, without a release - e.g. after editing a README or adding a mod's Nexus Mods link.
+
+### Releasing a New Mod
+
+A mod's first release needs a Nexus Mods page, which only the website can create, and `-Publish` can't release the mod until that page exists:
+
+1. Check the mod has its `README.md`, a `CHANGELOG.md` section for the version in `Plugin.cs`, a 256x256 `icon.png`, a `thunderstore-categories.txt` and a row in the table above
+2. Run `.\build-release.ps1 ModName` without `-Publish` to write `release\packages\<Mod>-<Version>.zip`
+3. Create the mod's page on Nexus Mods by hand, uploading that zip as its main file with the version from `Plugin.cs` and that version's `CHANGELOG.md` section. Releases add a version to the mod's one active file, so `-Publish` fails on a page with no file
+4. Add `[Mod <ID>](https://www.nexusmods.com/valheim/mods/<ID>)` and the Thunderstore link (`https://thunderstore.io/c/valheim/p/Kriona/<Mod>/`) to the mod's row in the table above, and a Nexus Mods link to the Installation section of the mod's `README.md`
+5. Merge the branch into main - `-Publish` releases on GitHub from the current commit and fails until it's on main, and the branch shouldn't be merged before it has its Nexus Mods link
+6. Run `.\build-release.ps1 ModName -Publish`. It creates the GitHub release, creates the Thunderstore package with its first upload, skips the Nexus Mods upload since that version is already there, and pushes every mod's Nexus Mods summary and description, which adds the new mod to their "Other Mods By Me" lists
+
+Images in the mod's `README.md` only show on Nexus Mods and Thunderstore once it's merged into main, since they point at the files on GitHub's main branch - a description pasted into Nexus Mods by hand in step 3 shows broken images until step 6 pushes it again.
 
 ## Other Mods I Use
 
