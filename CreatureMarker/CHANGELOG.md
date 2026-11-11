@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.9.0
+- Support items on the ground, with the Items On Ground switch, off by default, and the Item Color setting, default #FF66CC (pink). No I'm not changing the mod name
+
 ## 1.8.2
 - Mark the Valkyrie who carries players into a new world as a passive creature with a gray (#888) marker like Oden's - she's marked when All Passive Creatures is on or her own line is true, including while she's carrying you
 - Place the markers after the camera moves each frame, so a marker on a creature that moves in steps, like the Valkyrie, holds still instead of flickering between two spots

@@ -2,7 +2,7 @@
 
 Shows a progress bar under the stamina bar while you train a skill (e.g., swimming) so you can see how close you are to the next level.
 
-<img src="images/swim-jump.jpg" alt="When another player is online" width="750">
+<img src="images/swim-jump.jpg" alt="Swimming and jumping at the same time" width="750">
 
 ## Installation
 
