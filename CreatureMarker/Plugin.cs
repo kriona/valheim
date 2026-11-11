@@ -6,6 +6,7 @@ using Kriona.Shared;
 namespace CreatureMarker
 {
 	[BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+	[BepInDependency(PortalPreviewPatches.PortalPreviewGuid, BepInDependency.DependencyFlags.SoftDependency)]
 	public class Plugin : BaseUnityPlugin
 	{
 		public const string PluginGuid = "kriona.CreatureMarker";
@@ -37,6 +38,7 @@ namespace CreatureMarker
 			Watcher = new ConfigWatcher(CreatureConfig.FilePath, CreatureConfig.Reload, Logger, PluginName);
 			harmony = new Harmony(PluginGuid);
 			harmony.PatchAll();
+			PortalPreviewPatches.Apply(harmony);
 			Logger.LogInfo(PluginName + " " + PluginVersion + " loaded");
 		}
 

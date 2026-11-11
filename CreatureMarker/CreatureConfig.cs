@@ -305,6 +305,11 @@ namespace CreatureMarker
 		private static int minFishLevel = DefaultMinFishLevel;
 
 		/// <summary>
+		/// Reused for the traders and pets seen through portals each frame
+		/// </summary>
+		private static readonly List<PortalNpc> portalNpcs = new List<PortalNpc>();
+
+		/// <summary>
 		/// The true or false set on creature lines, by prefab hash, leaving out the ones set to inherit
 		/// </summary>
 		private static readonly Dictionary<int, bool> overrides = new Dictionary<int, bool>();
@@ -666,9 +671,10 @@ namespace CreatureMarker
 
 		/// <summary>
 		/// Fills the list with the living marked creatures, the other players sharing their position who aren't
-		/// sneaking, the marked traders, pets, Oden and Valkyries, the marked ravens while they are landed, the marked fish
-		/// and birds, the marked leviathans that haven't started diving and, when Items On Ground is on, the items lying
-		/// on the ground, within Max Distance of the player
+		/// sneaking, the marked traders, pets, Oden and Valkyries, the marked ravens while they are landed, the marked
+		/// traders and pets seen through PortalPreview's portal views, the marked fish and birds, the marked leviathans
+		/// that haven't started diving and, when Items On Ground is on, the items lying on the ground, within Max
+		/// Distance of the player
 		/// </summary>
 		/// <param name="player">The local player</param>
 		/// <param name="marked">The list to fill, cleared first</param>
@@ -763,6 +769,23 @@ namespace CreatureMarker
 				{
 					target.color = ((npc.source is Trader) ? merchantColor : passiveColor);
 				}
+				marked.Add(target);
+			}
+			PortalNpcs.GetSeen(playerPosition, maxDistanceSquared, portalNpcs);
+			foreach (PortalNpc npc in portalNpcs)
+			{
+				if (!IsMarked(npc.hash, allPassive))
+				{
+					continue;
+				}
+				Target target = new Target();
+				target.source = npc.portal;
+				target.throughPortal = true;
+				target.position = npc.position;
+				target.top = npc.top;
+				target.nameToken = npc.nameToken;
+				target.level = 1;
+				target.color = (npc.trader ? merchantColor : passiveColor);
 				marked.Add(target);
 			}
 			foreach (IMonoUpdater updater in Fish.Instances)

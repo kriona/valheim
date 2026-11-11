@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.10.0
+- With PortalPreview ([Nexus](https://www.nexusmods.com/valheim/mods/3977), [Thunderstore](https://thunderstore.io/c/valheim/p/Ivvty/PortalPreview/)) installed, mark the traders and pets you can see through a portal's preview. Is this useful? Not really. Is it cool as hell? Absolutely
+
 ## 1.9.0
 - Support items on the ground, with the Items On Ground switch, off by default, and the Item Color setting, default #FF66CC (pink). No I'm not changing the mod name
 

@@ -3,7 +3,7 @@
 Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans, other players and items on the ground. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them, and only creatures higher up than you get one in the top half of the screen.
 
 - Separate colors for passive creatures, hostile creatures, creatures that are targeting you, bosses, fish, traders, leviathans and your tamed pets
-- Marks traders like Haldor, Hildir and the Bog Witch, and their pets like Halstein
+- Marks traders like Haldor, Hildir and the Bog Witch, and their pets like Halstein, including through portals with [PortalPreview](#portalpreview)
 - Marks leviathans and lava leviathans, so they're easy to find when you want their chitin or flametal ore
 - Marks other players who are sharing their position on the map, unless they're sneaking
 - Can mark every item lying on the ground, so dropped loot is easy to spot
@@ -70,6 +70,12 @@ Colors can be `#RRGGBB` or a color name like `red`, `yellow`, `green`, `cyan` or
 In multiplayer, each creature's AI runs in one player's game, usually the player who was nearby first, and only that game knows who the creature is targeting. Creature Marker shares that target with the other players, so Angry Color only goes to creatures that are targeting you, not ones chasing another player, a tamed creature or a deer.
 
 When the player whose game runs a creature doesn't have the mod, nothing shares its target, and its marker uses Angry Color whenever it is alerted and after anyone - you, another player or another creature. If a player with the mod ran the creature earlier, the target they shared is kept until the creature calms down, so for a while it can still be the creature's old target.
+
+## PortalPreview
+
+With PortalPreview installed, traders and their pets get markers where you see them through a portal's preview of where it leads. PortalPreview saves a still picture of each portal's surroundings, and Creature Marker remembers the traders and pets that were there when it did, in `BepInEx\cache\kriona.CreatureMarker`. Other creatures aren't marked through portals, since they would have moved on by the time you look.
+
+These markers follow the same switches and colors as traders and pets on this side of the portal, only show within the portal's opening, never over its frame, and don't get a dot on the map.
 
 ## Installation
 

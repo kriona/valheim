@@ -94,7 +94,7 @@ namespace CreatureMarker
 				foreach (Target target in marked)
 				{
 					Vector3 position = target.position;
-					if (!minimap.IsPointVisible(position, map))
+					if (target.throughPortal || !minimap.IsPointVisible(position, map))
 					{
 						continue;
 					}
