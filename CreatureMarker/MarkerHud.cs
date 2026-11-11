@@ -48,6 +48,12 @@ namespace CreatureMarker
 			public Object source;
 
 			/// <summary>
+			/// The name token the name was looked up from, since the traders and pets seen through one portal share it as
+			/// their source
+			/// </summary>
+			public string nameToken;
+
+			/// <summary>
 			/// The target's localized name, followed by the stack size for a stack of items, looked up when the marker is
 			/// given a new target or the stack size changes
 			/// </summary>
@@ -74,6 +80,26 @@ namespace CreatureMarker
 		}
 
 		private readonly List<Marker> markers = new List<Marker>();
+
+		/// <summary>
+		/// The mask cutting the markers seen through each portal to its opening, by portal
+		/// </summary>
+		private readonly Dictionary<Object, OpeningMask> masks = new Dictionary<Object, OpeningMask>();
+
+		/// <summary>
+		/// The masks shaped this frame, so the others can be hidden
+		/// </summary>
+		private readonly HashSet<OpeningMask> masksShaped = new HashSet<OpeningMask>();
+
+		/// <summary>
+		/// Reused for the portals whose masks are removed once the portal is gone
+		/// </summary>
+		private readonly List<Object> masksGone = new List<Object>();
+
+		/// <summary>
+		/// Reused for an opening's outline on screen
+		/// </summary>
+		private readonly List<Vector2> openingPoints = new List<Vector2>();
 		private GameObject root;
 
 		/// <summary>
@@ -112,6 +138,7 @@ namespace CreatureMarker
 				// The markers were destroyed along with the previous HUD root
 				root = enemyHud.m_hudRoot;
 				markers.Clear();
+				masks.Clear();
 				layer = CreateLayer();
 			}
 			int used = 0;
@@ -129,6 +156,23 @@ namespace CreatureMarker
 				{
 					Marker marker = GetMarker(used, enemyHud);
 					used++;
+					Transform parent = layer;
+					if (target.throughPortal)
+					{
+						OpeningMask mask = GetOpeningMask(target.source, camera);
+						if (mask == null)
+						{
+							SetActive(marker.arrow.gameObject, false);
+							SetActive(marker.label.gameObject, false);
+							continue;
+						}
+						parent = mask.transform;
+					}
+					if (marker.arrow.transform.parent != parent)
+					{
+						marker.arrow.transform.SetParent(parent, false);
+						marker.label.transform.SetParent(parent, false);
+					}
 					float distanceSquared = Vector3.SqrMagnitude(target.position - playerPosition);
 					Vector3 scale = ((distanceSquared > farDistanceSquared) ? farScale : Vector3.one);
 					// The label is scaled along with the arrow, so placing it can go by the arrow's scale alone
@@ -155,9 +199,10 @@ namespace CreatureMarker
 					SetActive(marker.label.gameObject, showText);
 					if (showText)
 					{
-						if (marker.source != target.source || marker.count != target.count)
+						if (marker.source != target.source || marker.nameToken != target.nameToken || marker.count != target.count)
 						{
 							marker.source = target.source;
+							marker.nameToken = target.nameToken;
 							marker.count = target.count;
 							marker.name = Localization.instance.Localize(target.nameToken);
 							if (target.count > 1)
@@ -183,6 +228,70 @@ namespace CreatureMarker
 				SetActive(markers[i].arrow.gameObject, false);
 				SetActive(markers[i].label.gameObject, false);
 			}
+			HideUnusedMasks();
+		}
+
+		/// <summary>
+		/// The mask cutting the markers seen through a portal to its opening, shaped to where the opening is on screen
+		/// the first time it is asked for in a frame
+		/// </summary>
+		/// <param name="portal">The portal</param>
+		/// <param name="camera">The main camera</param>
+		/// <returns>The mask, or null when the opening can't be placed on screen</returns>
+		private OpeningMask GetOpeningMask(Object portal, Camera camera)
+		{
+			if (masks.TryGetValue(portal, out OpeningMask mask) && masksShaped.Contains(mask))
+			{
+				return(mask);
+			}
+			if (!PortalNpcs.GetOpeningOnScreen(portal as Transform, camera, openingPoints, out Vector2 center))
+			{
+				return(null);
+			}
+			if (mask == null)
+			{
+				mask = OpeningMask.Create(layer);
+				masks[portal] = mask;
+			}
+			SetActive(mask.gameObject, true);
+			mask.SetShape(openingPoints, center);
+			masksShaped.Add(mask);
+			return(mask);
+		}
+
+		/// <summary>
+		/// Hides the masks of portals with no markers this frame and removes those of portals that are gone
+		/// </summary>
+		private void HideUnusedMasks()
+		{
+			foreach (KeyValuePair<Object, OpeningMask> entry in masks)
+			{
+				if (entry.Key == null)
+				{
+					masksGone.Add(entry.Key);
+				}
+				else if (!masksShaped.Contains(entry.Value))
+				{
+					SetActive(entry.Value.gameObject, false);
+				}
+			}
+			foreach (Object portal in masksGone)
+			{
+				OpeningMask mask = masks[portal];
+				// Markers left under the mask are out of use, and go back to the canvas so they aren't destroyed with it
+				foreach (Marker marker in markers)
+				{
+					if (marker.arrow.transform.parent == mask.transform)
+					{
+						marker.arrow.transform.SetParent(layer, false);
+						marker.label.transform.SetParent(layer, false);
+					}
+				}
+				Object.Destroy(mask.gameObject);
+				masks.Remove(portal);
+			}
+			masksGone.Clear();
+			masksShaped.Clear();
 		}
 
 		/// <summary>
@@ -209,6 +318,7 @@ namespace CreatureMarker
 				Object.Destroy(layer.gameObject);
 			}
 			markers.Clear();
+			masks.Clear();
 			if (sprite != null)
 			{
 				Object.Destroy(sprite.texture);

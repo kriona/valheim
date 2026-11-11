@@ -95,6 +95,7 @@ Images in the mod's `README.md` only show on Nexus Mods and Thunderstore once it
 
 - [Build Camera](https://old.thunderstore.io/c/valheim/p/Azumatt/Build_Camera_Custom_Hammers_Edition/) by Azumatt
 - [Clock](https://www.nexusmods.com/valheim/mods/85) by aedenthorn
+- [Portal Preview](https://www.nexusmods.com/valheim/mods/3977) by Ivvty
 - [Quiet Portals](https://www.nexusmods.com/valheim/mods/1981) by Neobotics
 - [Remember Server Password](https://old.thunderstore.io/c/valheim/p/MagiCorp/RememberServerPassword/) by MagiCorp
 - [Tools in Water](https://www.nexusmods.com/valheim/mods/3771) by Lilizzll

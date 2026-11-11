@@ -9,9 +9,15 @@ namespace CreatureMarker
 	{
 		/// <summary>
 		/// The Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin, Raven, Valkyrie or ItemDrop being
-		/// marked, so a marker can tell when it is given a different one
+		/// marked, or the portal a trader or pet is seen through, so a marker can tell when it is given a different one
 		/// </summary>
 		public Object source;
+
+		/// <summary>
+		/// Whether the target is a trader or pet seen through a portal's PortalPreview view, placed where it appears on
+		/// this side of the portal, which gets no map dot
+		/// </summary>
+		public bool throughPortal;
 
 		/// <summary>
 		/// The target's position in the world
