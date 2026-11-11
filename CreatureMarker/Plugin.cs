@@ -11,7 +11,7 @@ namespace CreatureMarker
 	{
 		public const string PluginGuid = "kriona.CreatureMarker";
 		public const string PluginName = "Creature Marker";
-		public const string PluginVersion = "1.9.0";
+		public const string PluginVersion = "1.10.0";
 
 		private readonly MarkerHud markers = new MarkerHud();
 		private readonly MapMarkers mapMarkers = new MapMarkers();
