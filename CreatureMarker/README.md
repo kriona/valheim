@@ -26,6 +26,12 @@ Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans, o
 
 <img src="images/objects.jpg" alt="Items on the ground" width="1000">
 
+### Portal Preview
+
+<img src="images/portal-preview.jpg" alt="Portal Preview by Ivvty" width="750">
+
+Support for Portal Preview ([Nexus](https://www.nexusmods.com/valheim/mods/3977), [Thunderstore](https://thunderstore.io/c/valheim/p/Ivvty/PortalPreview/)) by Ivvty
+
 ## Configuration
 
 `BepInEx\config\kriona.CreatureMarker.cfg` is created when you first load a world with the mod, and changes take effect as soon as the file is saved. You do not need to restart Valheim or rejoin the world.
