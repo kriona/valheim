@@ -44,10 +44,21 @@ namespace CreatureMarker
 		/// <returns>The height in meters</returns>
 		public float GetHeight()
 		{
-			if (height >= 0f)
+			if (height < 0f)
 			{
-				return(height);
+				height = MeasureHeight(source);
 			}
+			return(height);
+		}
+
+		/// <summary>
+		/// How far the top of an object sits above its position, measured from its colliders, or its renderers when it
+		/// has no solid colliders
+		/// </summary>
+		/// <param name="source">The object to measure, along with everything under it</param>
+		/// <returns>The height in meters, or 2 when it has neither</returns>
+		public static float MeasureHeight(Component source)
+		{
 			float bottom = source.transform.position.y;
 			float top = float.MinValue;
 			foreach (Collider collider in source.GetComponentsInChildren<Collider>())
@@ -64,8 +75,7 @@ namespace CreatureMarker
 					top = Mathf.Max(top, renderer.bounds.max.y);
 				}
 			}
-			height = ((top == float.MinValue) ? 2f : Mathf.Max(0f, top - bottom));
-			return(height);
+			return((top == float.MinValue) ? 2f : Mathf.Max(0f, top - bottom));
 		}
 	}
 
