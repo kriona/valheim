@@ -398,7 +398,7 @@ namespace CreatureMarker
 		/// the top of the screen
 		/// </remarks>
 		/// <param name="enemyHud">The enemy HUD</param>
-		/// <param name="source">The marked Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin, Raven, Valkyrie or ItemDrop</param>
+		/// <param name="source">The marked Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin, Raven, Valkyrie, ItemDrop or TeleportWorld</param>
 		/// <returns>The height, or -1 when the game isn't showing a name above the target</returns>
 		private float GetGameHudHeight(EnemyHud enemyHud, Object source)
 		{
@@ -424,7 +424,7 @@ namespace CreatureMarker
 		/// The screen rectangle of the speech bubble the game shows over a target that is talking, like a trader
 		/// greeting the player
 		/// </summary>
-		/// <param name="source">The marked Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin, Raven, Valkyrie or ItemDrop</param>
+		/// <param name="source">The marked Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin, Raven, Valkyrie, ItemDrop or TeleportWorld</param>
 		/// <returns>The bubble's rectangle in screen pixels, or null when the target has no bubble showing</returns>
 		private Rect? GetDialogRect(Object source)
 		{

@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.0
+- Support portals, with the All Portals switch, off by default, and the Portal Color setting, default #B08EFF (lavendar). Still not changing the mod name
+
 ## 1.10.0
 - With PortalPreview ([Nexus](https://www.nexusmods.com/valheim/mods/3977), [Thunderstore](https://thunderstore.io/c/valheim/p/Ivvty/PortalPreview/)) installed, mark the traders and pets you can see through a portal's preview. Is this useful? Not really. Is it cool as hell? Absolutely
 

@@ -3,13 +3,14 @@ using UnityEngine;
 namespace CreatureMarker
 {
 	/// <summary>
-	/// A marked creature, fish, bird or item, with what the arrow and map dot need to show it
+	/// A marked creature, fish, bird, item or portal, with what the arrow and map dot need to show it
 	/// </summary>
 	public struct Target
 	{
 		/// <summary>
-		/// The Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin, Raven, Valkyrie or ItemDrop being
-		/// marked, or the portal a trader or pet is seen through, so a marker can tell when it is given a different one
+		/// The Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin, Raven, Valkyrie, ItemDrop or
+		/// TeleportWorld being marked, or the portal a trader or pet is seen through, so a marker can tell when it is
+		/// given a different one
 		/// </summary>
 		public Object source;
 
@@ -25,7 +26,8 @@ namespace CreatureMarker
 		public Vector3 position;
 
 		/// <summary>
-		/// The world point the arrow sits above - the top of a creature's head, or a fish's, bird's or item's position
+		/// The world point the arrow sits above - the top of a creature's head or a portal's frame, or a fish's, bird's or
+		/// item's position
 		/// </summary>
 		public Vector3 top;
 
