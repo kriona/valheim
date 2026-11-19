@@ -53,6 +53,7 @@ namespace CreatureMarker
 		private const string PlayerColorKey = "Player Color";
 		private const string ItemColorKey = "Item Color";
 		private const string PortalColorKey = "Portal Color";
+		private const string TombstoneColorKey = "Tombstone Color";
 		private const string AllPassiveKey = "All Passive Creatures";
 
 		/// <summary>
@@ -67,6 +68,7 @@ namespace CreatureMarker
 		private const string AllPlayersKey = "All Players";
 		private const string ItemsOnGroundKey = "Items On Ground";
 		private const string AllPortalsKey = "All Portals";
+		private const string AllTombstonesKey = "All Tombstones";
 		private const string MinCreatureLevelKey = "Min Creature Level";
 		private const string MinFishLevelKey = "Min Fish Level";
 
@@ -93,6 +95,7 @@ namespace CreatureMarker
 		private const string DefaultPlayerColor = "#FFF";
 		private const string DefaultItemColor = "#FF66CC";
 		private const string DefaultPortalColor = "#B08EFF";
+		private const string DefaultTombstoneColor = "#BBB";
 		private const int DefaultMinCreatureLevel = 0;
 		private const int MaxMinCreatureLevel = 9;
 		private const int DefaultMinFishLevel = 1;
@@ -146,6 +149,7 @@ namespace CreatureMarker
 		private static readonly string playerColorNote = "Other players, default " + DefaultPlayerColor;
 		private static readonly string itemColorNote = "Items lying on the ground, default " + DefaultItemColor;
 		private static readonly string portalColorNote = "Portals, default " + DefaultPortalColor;
+		private static readonly string tombstoneColorNote = "Tombstones, default " + DefaultTombstoneColor;
 		private static readonly string minCreatureLevelNote = "Lowest level a creature needs to get a marker, which is its number of stars, from 0 (every creature) to " + MaxMinCreatureLevel + ", default " + DefaultMinCreatureLevel + ", traders, their pets, birds and leviathans aren't affected";
 		private static readonly string minFishLevelNote ="Lowest level a fish needs to get a marker, even when its own line is true, from 1 (every fish) to " + MaxMinFishLevel + ", default " + DefaultMinFishLevel;
 
@@ -183,6 +187,7 @@ namespace CreatureMarker
 		private static ConfigEntry<Color> playerColorEntry;
 		private static ConfigEntry<Color> itemColorEntry;
 		private static ConfigEntry<Color> portalColorEntry;
+		private static ConfigEntry<Color> tombstoneColorEntry;
 		private static ConfigEntry<bool> allPassiveEntry;
 		private static ConfigEntry<bool> allHostileEntry;
 		private static ConfigEntry<bool> allFishEntry;
@@ -191,6 +196,7 @@ namespace CreatureMarker
 		private static ConfigEntry<bool> allPlayersEntry;
 		private static ConfigEntry<bool> itemsOnGroundEntry;
 		private static ConfigEntry<bool> allPortalsEntry;
+		private static ConfigEntry<bool> allTombstonesEntry;
 		private static ConfigEntry<int> minCreatureLevelEntry;
 		private static ConfigEntry<int> minFishLevelEntry;
 
@@ -293,6 +299,8 @@ namespace CreatureMarker
 		private static Color itemColor = ParseColor(DefaultItemColor, Color.magenta);
 		private static string portalColorText = DefaultPortalColor;
 		private static Color portalColor = ParseColor(DefaultPortalColor, Color.cyan);
+		private static string tombstoneColorText = DefaultTombstoneColor;
+		private static Color tombstoneColor = ParseColor(DefaultTombstoneColor, Color.gray);
 
 		/// <summary>
 		/// The marker color of Oden, the hooded figure who watches the player from a distance, his ravens, Hugin and
@@ -307,6 +315,7 @@ namespace CreatureMarker
 		private static bool allPlayers = true;
 		private static bool itemsOnGround;
 		private static bool allPortals;
+		private static bool allTombstones = true;
 
 		/// <summary>
 		/// Lowest number of stars a creature needs to get a marker
@@ -551,6 +560,7 @@ namespace CreatureMarker
 			playerColorEntry = BindSetting(ColorsSection, PlayerColorKey, ParseColor(DefaultPlayerColor, Color.white), playerColorNote, null, order--);
 			itemColorEntry = BindSetting(ColorsSection, ItemColorKey, ParseColor(DefaultItemColor, Color.magenta), itemColorNote, null, order--);
 			portalColorEntry = BindSetting(ColorsSection, PortalColorKey, ParseColor(DefaultPortalColor, Color.cyan), portalColorNote, null, order--);
+			tombstoneColorEntry = BindSetting(ColorsSection, TombstoneColorKey, ParseColor(DefaultTombstoneColor, Color.gray), tombstoneColorNote, null, order--);
 			allPassiveEntry = BindSetting(CreaturesSection, AllPassiveKey, false, "Mark every creature that won't attack you, including traders and their pets", null, order--);
 			allHostileEntry = BindSetting(CreaturesSection, AllHostileKey, true, "Mark every creature that will attack you", null, order--);
 			allFishEntry = BindSetting(CreaturesSection, AllFishKey, false, "Mark every fish", null, order--);
@@ -559,6 +569,7 @@ namespace CreatureMarker
 			allPlayersEntry = BindSetting(CreaturesSection, AllPlayersKey, true, "Mark every other player who is sharing their position on the map and isn't sneaking", null, order--);
 			itemsOnGroundEntry = BindSetting(CreaturesSection, ItemsOnGroundKey, false, "Mark every item lying on the ground", null, order--);
 			allPortalsEntry = BindSetting(CreaturesSection, AllPortalsKey, false, "Mark every portal", null, order--);
+			allTombstonesEntry = BindSetting(CreaturesSection, AllTombstonesKey, true, "Mark every tombstone", null, order--);
 			minCreatureLevelEntry = BindSetting(CreaturesSection, MinCreatureLevelKey, DefaultMinCreatureLevel, minCreatureLevelNote, new AcceptableValueRange<int>(0, MaxMinCreatureLevel), order--);
 			minFishLevelEntry = BindSetting(CreaturesSection, MinFishLevelKey, DefaultMinFishLevel, minFishLevelNote, new AcceptableValueRange<int>(1, MaxMinFishLevel), order--);
 		}
@@ -611,6 +622,7 @@ namespace CreatureMarker
 				playerColorEntry.Value = playerColor;
 				itemColorEntry.Value = itemColor;
 				portalColorEntry.Value = portalColor;
+				tombstoneColorEntry.Value = tombstoneColor;
 				allPassiveEntry.Value = allPassive;
 				allHostileEntry.Value = allHostile;
 				allFishEntry.Value = allFish;
@@ -619,6 +631,7 @@ namespace CreatureMarker
 				allPlayersEntry.Value = allPlayers;
 				itemsOnGroundEntry.Value = itemsOnGround;
 				allPortalsEntry.Value = allPortals;
+				allTombstonesEntry.Value = allTombstones;
 				minCreatureLevelEntry.Value = minCreatureLevel;
 				minFishLevelEntry.Value = minFishLevel;
 				foreach (KeyValuePair<string, string> name in names)
@@ -654,6 +667,7 @@ namespace CreatureMarker
 			playerColorText = TakeEntryColor(playerColorEntry, playerColorText, ref playerColor);
 			itemColorText = TakeEntryColor(itemColorEntry, itemColorText, ref itemColor);
 			portalColorText = TakeEntryColor(portalColorEntry, portalColorText, ref portalColor);
+			tombstoneColorText = TakeEntryColor(tombstoneColorEntry, tombstoneColorText, ref tombstoneColor);
 			allPassive = allPassiveEntry.Value;
 			allHostile = allHostileEntry.Value;
 			allFish = allFishEntry.Value;
@@ -662,6 +676,7 @@ namespace CreatureMarker
 			allPlayers = allPlayersEntry.Value;
 			itemsOnGround = itemsOnGroundEntry.Value;
 			allPortals = allPortalsEntry.Value;
+			allTombstones = allTombstonesEntry.Value;
 			minCreatureLevel = minCreatureLevelEntry.Value;
 			minFishLevel = minFishLevelEntry.Value;
 			Dictionary<string, bool?> states = BuildStates((string key) => (creatureEntries.TryGetState(key, out bool? state) ? state : null));
@@ -693,8 +708,8 @@ namespace CreatureMarker
 		/// Fills the list with the living marked creatures, the other players sharing their position who aren't
 		/// sneaking, the marked traders, pets, Oden and Valkyries, the marked ravens while they are landed, the marked
 		/// traders and pets seen through PortalPreview's portal views, the marked fish and birds, the marked leviathans
-		/// that haven't started diving, the items lying on the ground when Items On Ground is on and the portals when
-		/// All Portals is on, within Max Distance of the player
+		/// that haven't started diving, the items lying on the ground when Items On Ground is on, the portals when All
+		/// Portals is on and the tombstones when All Tombstones is on, within Max Distance of the player
 		/// </summary>
 		/// <param name="player">The local player</param>
 		/// <param name="marked">The list to fill, cleared first</param>
@@ -868,6 +883,41 @@ namespace CreatureMarker
 			if (allPortals)
 			{
 				GetMarkedPortals(playerPosition, maxDistanceSquared, marked);
+			}
+			if (allTombstones)
+			{
+				GetMarkedTombstones(playerPosition, maxDistanceSquared, marked);
+			}
+		}
+
+		/// <summary>
+		/// Adds the tombstones within Max Distance of the player to the list, named by their owners
+		/// </summary>
+		/// <param name="playerPosition">The local player's position</param>
+		/// <param name="maxDistanceSquared">Max Distance squared</param>
+		/// <param name="marked">The list to add to</param>
+		private static void GetMarkedTombstones(Vector3 playerPosition, float maxDistanceSquared, List<Target> marked)
+		{
+			foreach (WorldTombstone tombstone in TombstoneList.Get())
+			{
+				TombStone source = tombstone.source;
+				if (source.m_nview == null || !source.m_nview.IsValid())
+				{
+					continue;
+				}
+				Vector3 position = source.transform.position;
+				if (Vector3.SqrMagnitude(position - playerPosition) > maxDistanceSquared)
+				{
+					continue;
+				}
+				Target target = new Target();
+				target.source = source;
+				target.position = position;
+				target.top = position + Vector3.up * tombstone.GetHeight();
+				target.nameToken = tombstone.GetNameToken();
+				target.level = 1;
+				target.color = tombstoneColor;
+				marked.Add(target);
 			}
 		}
 
@@ -1177,10 +1227,12 @@ namespace CreatureMarker
 			playerColorText = TakeColor(values, PlayerColorKey, DefaultPlayerColor, out playerColor);
 			itemColorText = TakeColor(values, ItemColorKey, DefaultItemColor, out itemColor);
 			portalColorText = TakeColor(values, PortalColorKey, DefaultPortalColor, out portalColor);
+			tombstoneColorText = TakeColor(values, TombstoneColorKey, DefaultTombstoneColor, out tombstoneColor);
 			allLeviathans = (ParseState(TakeValue(values, AllLeviathansKey)) ?? true);
 			allPlayers = (ParseState(TakeValue(values, AllPlayersKey)) ?? true);
 			itemsOnGround = (ParseState(TakeValue(values, ItemsOnGroundKey)) ?? false);
 			allPortals = (ParseState(TakeValue(values, AllPortalsKey)) ?? false);
+			allTombstones = (ParseState(TakeValue(values, AllTombstonesKey)) ?? true);
 			string oldAllCreaturesText = TakeValue(values, OldAllCreaturesKey);
 			string allPassiveText = TakeValue(values, AllPassiveKey);
 			string allBirdsText = TakeValue(values, AllBirdsKey);
@@ -1445,6 +1497,10 @@ namespace CreatureMarker
 			builder.Append("## All Portals marks every portal, with its tag as its name\r\n");
 			AppendLine(builder, AllPortalsKey, StateEntries.Format(allPortals), "");
 			AppendLine(builder, PortalColorKey, portalColorText, portalColorNote);
+			builder.Append("\r\n");
+			builder.Append("## All Tombstones marks every tombstone, with its owner's name as its name\r\n");
+			AppendLine(builder, AllTombstonesKey, StateEntries.Format(allTombstones), "");
+			AppendLine(builder, TombstoneColorKey, tombstoneColorText, tombstoneColorNote);
 			AppendLines(builder, creatureLinesHeader);
 			foreach (KeyValuePair<string, string> name in names)
 			{

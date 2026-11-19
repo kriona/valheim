@@ -2,6 +2,7 @@
 
 ## 1.12.0
 - With Zombie Apocalypse installed, zombie animals like deer and hares are now marked as hostile creatures, and turn to Angry Color when they're after you
+- Mark tombstones, with the All Tombstones switch, on by default, and the Tombstone Color setting, default #BBB (light gray). The name is the player who died there
 
 ## 1.11.0
 - Support portals, with the All Portals switch, off by default, and the Portal Color setting, default #B08EFF (lavendar). Still not changing the mod name
