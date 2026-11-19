@@ -78,6 +78,11 @@ namespace CreatureMarker
 		private const float MinFarScale = 0.2f;
 		private const float DefaultBobHeight = 0f;
 		private const float MaxBobHeight = 30f;
+
+		/// <summary>
+		/// The ZDO flag Zombie Apocalypse sets on the creatures it raises as zombies
+		/// </summary>
+		private static readonly int ZombieHash = "kriona.ZombieApocalypse.zombie".GetStableHashCode();
 		private const string DefaultPassiveColor = "#40D940";
 		private const string DefaultHostileColor = "#FFD91A";
 		private const string DefaultAngryColor = "#FF801A";
@@ -1049,21 +1054,24 @@ namespace CreatureMarker
 		/// by another player, this reads the target that player's copy of the mod stores in the creature's ZDO, trusted
 		/// only while the game's own synced state says the creature is alerted and has a target, since an owner without
 		/// the mod leaves the last stored target behind. With no target stored, the owner doesn't have the mod, and any
-		/// alerted creature with a target counts, which is also true when it is after another player or creature
+		/// alerted creature with a target counts, which is also true when it is after another player or creature. A
+		/// zombie animal keeps its target in its AnimalAI and never stores one, so it always counts that way
 		/// </remarks>
 		/// <param name="character">The creature</param>
 		/// <param name="player">The local player</param>
 		/// <returns>True when the creature is targeting the player</returns>
 		private static bool IsAngry(Character character, Player player)
 		{
-			MonsterAI ai = character.GetBaseAI() as MonsterAI;
-			if (ai == null || !character.m_nview.IsValid())
+			BaseAI ai = character.GetBaseAI();
+			MonsterAI monster = ai as MonsterAI;
+			AnimalAI animal = ai as AnimalAI;
+			if ((monster == null && animal == null) || !character.m_nview.IsValid())
 			{
 				return(false);
 			}
 			if (character.m_nview.IsOwner())
 			{
-				return(ai.m_targetCreature == player);
+				return(((monster != null) ? monster.m_targetCreature : animal.m_target) == player);
 			}
 			if (!ai.IsAlerted() || !ai.HaveTarget())
 			{
@@ -1116,18 +1124,36 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Whether the creature has monster AI and currently counts as the player's enemy
+		/// Whether the creature has monster AI, or is a zombie animal, and currently counts as the player's enemy
 		/// </summary>
 		/// <remarks>
-		/// Animals that only flee, like deer, have AnimalAI and are left out. Tamed creatures and Dvergr that haven't
-		/// been provoked aren't enemies of the player, so they are left out too
+		/// Animals that only flee, like deer, have AnimalAI and are left out - unless Zombie Apocalypse has raised them
+		/// as zombies, which hunt players down. Tamed creatures and Dvergr that haven't been provoked aren't enemies of
+		/// the player, so they are left out too
 		/// </remarks>
 		/// <param name="character">The creature to check</param>
 		/// <param name="player">The local player</param>
 		/// <returns>True when the creature is hostile</returns>
 		private static bool IsHostile(Character character, Player player)
 		{
-			return(character.GetBaseAI() is MonsterAI && BaseAI.IsEnemy(character, player));
+			BaseAI ai = character.GetBaseAI();
+			if (!(ai is MonsterAI) && !(ai is AnimalAI && IsZombie(character)))
+			{
+				return(false);
+			}
+			return(BaseAI.IsEnemy(character, player));
+		}
+
+		/// <summary>
+		/// Whether Zombie Apocalypse has raised a creature as a zombie, read from the flag it stores in the creature's
+		/// ZDO so neither mod needs the other
+		/// </summary>
+		/// <param name="character">The creature</param>
+		/// <returns>True when the creature is a zombie</returns>
+		private static bool IsZombie(Character character)
+		{
+			ZNetView nview = character.m_nview;
+			return(nview != null && nview.IsValid() && nview.GetZDO().GetBool(ZombieHash));
 		}
 
 		/// <summary>

@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.12.0
+- With Zombie Apocalypse installed, zombie animals like deer and hares are now marked as hostile creatures, and turn to Angry Color when they're after you
+
 ## 1.11.0
 - Support portals, with the All Portals switch, off by default, and the Portal Color setting, default #B08EFF (lavendar). Still not changing the mod name
 
