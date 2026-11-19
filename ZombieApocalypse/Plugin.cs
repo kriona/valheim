@@ -15,6 +15,7 @@ namespace ZombieApocalypse
 
 		private const string RisingSection = "Rising";
 		private const string ZombiesSection = "Zombies";
+		private const string DeathSection = "Death";
 
 		/// <summary>
 		/// Undead creatures outside the Undead faction, and creatures that were never alive
@@ -40,6 +41,7 @@ namespace ZombieApocalypse
 		public static ConfigEntry<Color> ZombieEyeColor;
 		public static ConfigEntry<bool> ZombieFlies;
 		public static ConfigEntry<float> ZombieBuzzVolume;
+		public static ConfigEntry<bool> ZombieVikings;
 
 		/// <summary>
 		/// The plugin's log
@@ -72,7 +74,9 @@ namespace ZombieApocalypse
 			ZombieEyes = Config.Bind(ZombiesSection, "ZombieEyes", true, "Zombies' eyes glow ZombieEyeColor - creatures with glowing eyes (e.g., greydwarfs, dvergr and necks) have them recolored, and ones with eyes painted on (e.g., boars, wolves and trolls) get glowing eyeballs");
 			ZombieEyeColor = Config.Bind(ZombiesSection, "ZombieEyeColor", (Color)new Color32(255, 26, 13, 255), "Color zombies' eyes glow, as RRGGBBAA hex");
 			ZombieFlies = Config.Bind(ZombiesSection, "ZombieFlies", true, "Zombies carry the draugr's swarm of flies and faint green haze");
-			ZombieBuzzVolume = Config.Bind(ZombiesSection, "ZombieBuzzVolume", 0.4f, new ConfigDescription("How loud zombies' flies buzz, from 0 for silent to 1 - a beehive is 0.8. Takes effect for zombies that rise or load after it's changed", new AcceptableValueRange<float>(0f, 1f)));			watcher = new ConfigWatcher(Config, Logger, PluginName);
+			ZombieBuzzVolume = Config.Bind(ZombiesSection, "ZombieBuzzVolume", 0.4f, new ConfigDescription("How loud zombies' flies buzz, from 0 for silent to 1 - a beehive is 0.8. Takes effect for zombies that rise or load after it's changed", new AcceptableValueRange<float>(0f, 1f)));
+			ZombieVikings = Config.Bind(DeathSection, "ZombieVikings", true, "When a zombie kills you, your body gets back up as a zombie viking with your health, wearing your armor and carrying your things, and leaves them in your tombstone when it's killed - food and spirit weapons stay in your tombstone");
+			watcher = new ConfigWatcher(Config, Logger, PluginName);
 			Log = Logger;
 			harmony = new Harmony(PluginGuid);
 			harmony.PatchAll();

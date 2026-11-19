@@ -316,8 +316,9 @@ namespace ZombieApocalypse
 			{
 				character.gameObject.AddComponent<RiseBlend>();
 			}
-			// The game sets an unhurt creature's health from its level each time it loads
-			if (nview.IsOwner() && character.GetHealth() >= character.GetMaxHealth())
+			// The game sets an unhurt creature's health from its level each time it loads. A viking has the player's
+			// health instead, which it sets as it loads
+			if (nview.IsOwner() && !ZombieViking.IsViking(character) && character.GetHealth() >= character.GetMaxHealth())
 			{
 				float health = character.GetMaxHealthBase() * character.GetLevel() * Plugin.ZombieHealth.Value / 100f;
 				character.SetMaxHealth(health);

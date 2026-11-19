@@ -133,9 +133,12 @@ namespace ZombieApocalypse
 			if (zombie == null)
 			{
 				ragdoll.SpawnLoot((ragdoll.m_lootSpawnJoint != null) ? ragdoll.m_lootSpawnJoint.transform.position : middle);
+				ZombieViking.DropGrave(zdo, middle, facing);
 				ZNetScene.instance.Destroy(gameObject);
 				return;
 			}
+			// A player's corpse holds the things their viking carries
+			ZombieViking.HandOver(zdo, zombie);
 			Loot.Clear(zdo, Loot.CorpseKeys);
 			zdo.Set(Zombies.ZombieIdKey, zombie.GetZDOID());
 			// Kept a moment past the blend so a client that hears about the zombie late still has the pose
