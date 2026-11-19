@@ -19,6 +19,7 @@ A library of Valheim mods I've made.
 | [Tweak Stats](TweakStats) | Change the stats of any item, recipe, creature, build piece or status effect - weapon damage, attack stamina, armor, block power, food, durability, weight, stack sizes, crafting costs, creature health and drops, building health and more. | [Mod 4363](https://www.nexusmods.com/valheim/mods/4363) | [Link](https://thunderstore.io/c/valheim/p/Kriona/TweakStats/) |
 | [Weight Display](WeightDisplay) | Shows your current and maximum carry weight, followed by how many inventory slots are in use, just below the minimap. | [Mod 4346](https://www.nexusmods.com/valheim/mods/4346) | [Link](https://thunderstore.io/c/valheim/p/Kriona/WeightDisplay/) |
 | [Who's Online](WhosOnline) | Lists the other players on the server when you join in a popup and in chat. | [Mod 4347](https://www.nexusmods.com/valheim/mods/4347) | [Link](https://thunderstore.io/c/valheim/p/Kriona/WhosOnline/) |
+| [Zombie Apocalypse](ZombieApocalypse) | Slain creatures rise as zombies and keep fighting. Creatures that are already undead, bosses and summons stay dead. |  | [Link](https://thunderstore.io/c/valheim/p/Kriona/ZombieApocalypse/) |
 
 ## Download
 

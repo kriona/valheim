@@ -12,4 +12,5 @@
   <Project Path="TweakStats/TweakStats.csproj" />
   <Project Path="WeightDisplay/WeightDisplay.csproj" />
   <Project Path="WhosOnline/WhosOnline.csproj" />
+  <Project Path="ZombieApocalypse/ZombieApocalypse.csproj" />
 </Solution>
