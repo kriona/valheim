@@ -1425,11 +1425,11 @@ namespace ZombieApocalypse
 		/// Adds an item to a list of loot, unless there's none of it or the game has no such item
 		/// </summary>
 		/// <param name="loot">The loot, as each item's prefab and amount</param>
-		/// <param name="prefabName">The item's prefab name</param>
+		/// <param name="prefabName">The item's prefab name, or null for none</param>
 		/// <param name="amount">How many to drop</param>
 		private static void AddLoot(List<KeyValuePair<GameObject, int>> loot, string prefabName, int amount)
 		{
-			GameObject prefab = ObjectDB.instance.GetItemPrefab(prefabName);
+			GameObject prefab = (string.IsNullOrEmpty(prefabName) ? null : ObjectDB.instance.GetItemPrefab(prefabName));
 			if (amount > 0 && prefab != null)
 			{
 				loot.Add(new KeyValuePair<GameObject, int>(prefab, amount));

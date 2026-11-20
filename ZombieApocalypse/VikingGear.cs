@@ -51,7 +51,7 @@ namespace ZombieApocalypse
 		public int CoinsMax;
 
 		/// <summary>
-		/// The item a viking drops from what's left of its body, like a draugr's entrails
+		/// The item a viking drops from what's left of its body, like a draugr's entrails, or null for none
 		/// </summary>
 		public string Remains = "Entrails";
 
@@ -114,7 +114,7 @@ namespace ZombieApocalypse
 				Ammo = new[] { "ArrowWood", "ArrowFlint", "ArrowFire" },
 				Shields = new[] { "ShieldWood" },
 				Armor = new[] { new ArmorSet("ArmorRagsChest", "ArmorRagsLegs", null, null), new ArmorSet("ArmorLeatherChest", "ArmorLeatherLegs", "HelmetLeather", "CapeDeerHide") },
-				Health = 50f, SkillMin = 0f, SkillMax = 12f, CoinsMin = 0, CoinsMax = 10, Remains = "BoneFragments", Unarmed = 25f, MeleeScale = 1.4f, Power = null
+				Health = 50f, SkillMin = 0f, SkillMax = 12f, CoinsMin = 0, CoinsMax = 10, Remains = null, Unarmed = 25f, MeleeScale = 1.4f, Power = null
 			},
 			new BiomeGear
 			{
@@ -123,7 +123,7 @@ namespace ZombieApocalypse
 				Ammo = new[] { "ArrowBronze" },
 				Shields = new[] { "ShieldBronzeBuckler" },
 				Armor = new[] { new ArmorSet("ArmorTrollLeatherChest", "ArmorTrollLeatherLegs", "HelmetTrollLeather", "CapeTrollHide"), new ArmorSet("ArmorBerserkerChest", "ArmorBerserkerLegs", "HelmetBerserkerHood", null), new ArmorSet("ArmorBronzeChest", "ArmorBronzeLegs", "HelmetBronze", null) },
-				Health = 120f, SkillMin = 13f, SkillMax = 25f, CoinsMin = 10, CoinsMax = 30, Remains = "BoneFragments", Unarmed = 45f, MeleeScale = 1.7f, Power = "GP_Eikthyr"
+				Health = 120f, SkillMin = 13f, SkillMax = 25f, CoinsMin = 10, CoinsMax = 30, Remains = null, Unarmed = 45f, MeleeScale = 1.7f, Power = "GP_Eikthyr"
 			},
 			new BiomeGear
 			{

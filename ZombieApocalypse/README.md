@@ -49,7 +49,7 @@ Zombie Vikings roam the world, each with gear appropriate to the biome it spawns
 - A Viking with a bow or crossbow carries 100 arrows or bolts appropriate to its biome. It never carries weapons or ammo that deal spirit damage, and a Deep North Viking never carries Dyrnwyn
 - Its health, skill, fists and coins depend on its biome - from 50 health, skill 0-12 and 0-10 coins in the Meadows to 1200 health, skill 88-100 and 200-300 coins in the Deep North - and stars multiply its health and coins
 - Its armor protects it half as well as a player's and wears down the same way, its weapons and shield wear down as it uses them, and it raises its shield against attacks, more often and with better timing the more skilled it is
-- When it dies it drops its coins and 0-2 bone fragments in the Meadows and Black Forest, or 0-2 entrails from the Swamp on, multiplied by its stars, and each piece of its gear has a 5% chance to drop, at most 2
+- When it dies it drops its coins, and 0-2 entrails from the Swamp on, multiplied by its stars, and each piece of its gear has a 5% chance to drop, at most 2
 
 ## Forsaken Power
 
