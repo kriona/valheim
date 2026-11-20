@@ -106,10 +106,21 @@ namespace ZombieApocalypse
 				standing = false;
 				Hide();
 			}
-			if (nview.IsOwner() && now >= zdo.GetLong(Zombies.RemoveAtKey))
+			if (nview.IsOwner() && now >= zdo.GetLong(Zombies.RemoveAtKey) && !Watched())
 			{
 				ZNetScene.instance.Destroy(gameObject);
 			}
+		}
+
+		/// <summary>
+		/// Checks whether the corpse is the dead local player's ragdoll, which the game's camera stays on until they
+		/// respawn and leaves for the free camera around their body once it's gone
+		/// </summary>
+		/// <returns>True while the local player is dead and this is their ragdoll</returns>
+		private bool Watched()
+		{
+			Player local = Player.m_localPlayer;
+			return(local != null && local.IsDead() && local.GetRagdoll() == ragdoll);
 		}
 
 		/// <summary>
