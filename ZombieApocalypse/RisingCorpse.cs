@@ -137,8 +137,16 @@ namespace ZombieApocalypse
 				ZNetScene.instance.Destroy(gameObject);
 				return;
 			}
-			// A player's corpse holds the things their viking carries
-			ZombieViking.HandOver(zdo, zombie);
+			// A player's corpse holds the things their viking carries, and the viking guards their tombstone rather than
+			// joining a raid
+			if (zdo.GetByteArray(ZombieViking.DataKey) != null)
+			{
+				ZombieViking.HandOver(zdo, zombie);
+			}
+			else
+			{
+				RaidHunt.Join(zombie, middle);
+			}
 			Loot.Clear(zdo, Loot.CorpseKeys);
 			zdo.Set(Zombies.ZombieIdKey, zombie.GetZDOID());
 			// Kept a moment past the blend so a client that hears about the zombie late still has the pose

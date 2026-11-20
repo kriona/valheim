@@ -18,6 +18,7 @@ namespace ZombieApocalypse
 		private const string DeathSection = "Death";
 		private const string VikingGearSection = "Viking Gear";
 		private const string PowersSection = "Forsaken Powers";
+		private const string RaidsSection = "Raids";
 
 		/// <summary>
 		/// Undead creatures outside the Undead faction, and creatures that were never alive
@@ -45,6 +46,7 @@ namespace ZombieApocalypse
 		public static ConfigEntry<bool> ZombieFlies;
 		public static ConfigEntry<float> ZombieBuzzVolume;
 		public static ConfigEntry<bool> TombstoneZombies;
+		public static ConfigEntry<bool> VikingRaids;
 		public static ConfigEntry<int> ArmorChance;
 		public static ConfigEntry<int> HelmetChance;
 		public static ConfigEntry<int> CapeChance;
@@ -94,6 +96,8 @@ namespace ZombieApocalypse
 			ZombieFlies = Config.Bind(ZombiesSection, "ZombieFlies", true, "Zombies carry the draugr's swarm of flies and faint green haze");
 			ZombieBuzzVolume = Config.Bind(ZombiesSection, "ZombieBuzzVolume", 0.4f, new ConfigDescription("How loud zombies' flies buzz, from 0 for silent to 1 - a beehive is 0.8. Takes effect for zombies that rise or load after it's changed", new AcceptableValueRange<float>(0f, 1f)));
 			TombstoneZombies = Config.Bind(DeathSection, "TombstoneZombies", true, "When a zombie kills you, your body gets back up as a zombie viking with your health, wearing your armor and carrying your things, and leaves them in your tombstone when it's killed - food, silver ore and ingots, and spirit weapons stay in your tombstone");
+			VikingRaids = Config.Bind(RaidsSection, "VikingRaids", true, "Zombie vikings can raid your base in any biome, armed for the biome it's in - false leaves them out of the raids, though a raid already underway carries on");
+			VikingRaids.SettingChanged += (sender, args) => VikingRaid.UpdateEnabled();
 			ArmorChance = Config.Bind(VikingGearSection, "ArmorChance", 65, new ConfigDescription("Percent chance that a zombie viking of the world wears armor - always the set's chest and legs", new AcceptableValueRange<int>(0, 100)));
 			HelmetChance = Config.Bind(VikingGearSection, "HelmetChance", 50, new ConfigDescription("Percent chance that a viking wearing armor also wears the set's helmet", new AcceptableValueRange<int>(0, 100)));
 			CapeChance = Config.Bind(VikingGearSection, "CapeChance", 50, new ConfigDescription("Percent chance that a viking wearing armor also wears the set's cape", new AcceptableValueRange<int>(0, 100)));

@@ -54,6 +54,15 @@ Zombie Vikings roam the world, each with gear appropriate to the biome it spawns
 - Its armor protects it half as well as a player's and wears down the same way, its weapons and shield wear down as it uses them, and it raises its shield against attacks, more often and with better timing the more skilled it is
 - When it dies it drops its coins, and 0-2 entrails from the Swamp on, multiplied by its stars, and each piece of its gear has a 5% chance to drop, at most 2
 
+## Raids
+
+Zombie Vikings can raid your base:
+
+- The raid can come to a base in any biome from the start of the game, without beating a boss first, alongside the game's own raids
+- Its Vikings are armed for the biome the base is in, so a Meadows base gets Meadows Vikings and a Plains base gets Plains Vikings
+- Fewer Vikings come at once than in other raids, since Vikings are a little tougher than other raiders
+- Any zombie that rises during a raid hunts players like the raiders until the raid ends, then stays as an ordinary zombie. A tombstone zombie Viking keeps guarding your tombstone instead
+
 ## Forsaken Power
 
 Zombie Viking have a chance to use a forsaken power appropriate for their biome the first time it spots an enemy. A tombstone zombie Viking a 50% chance to use your last selected power when a player first comes near. Once a zombie Viking uses its forsaken power, there is a global 30 second cooldown.
@@ -104,6 +113,10 @@ Zombies:
 Death:
 
 - `TombstoneZombies` - when a zombie kills you, your body gets back up as a tombstone zombie Viking carrying your things (default `true`)
+
+Raids:
+
+- `VikingRaids` - zombie Vikings can raid your base, and `false` leaves them out of the raids, though a raid already underway carries on (default `true`)
 
 Zombie Viking Gear:
 
