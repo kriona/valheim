@@ -125,14 +125,13 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Reads the config file again once it has been saved, shares or puts back the server's settings after a
-		/// change, and shares whether the local player has corpse run
+		/// Reads the config file again once it has been saved, and shares or puts back the server's settings after a
+		/// change
 		/// </summary>
 		private void Update()
 		{
 			watcher.Update();
 			ConfigSync.Update();
-			CorpseRun.Update();
 		}
 
 		/// <summary>

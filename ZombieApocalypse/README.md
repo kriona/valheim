@@ -10,7 +10,6 @@ Slain creatures don't stay dead - a few seconds after a creature dies, its corps
 - Zombies are undead and always hostile, and like all undead, they leave other undead alone
 - Animals that normally run away (e.g., deer, hares, seals and young animals) will, as zombies, hunt you down instead
 - Zombies slow down as they're hurt - at full speed down to half health, then slowing steadily to two-thirds speed as their health runs out
-- While you have corpse run from picking up your tombstone, nothing you kill rises
 - A creature's loot drops only drops when its zombie dies, after killing it a second time
 - From the Black Forest on, a zombie's corpse has a 25% chance to leave a small cloud of weak poison for a few seconds when it poofs
 
