@@ -1116,10 +1116,7 @@ namespace ZombieApocalypse
 			if (health > 0f)
 			{
 				humanoid.SetMaxHealth(health);
-				if (unhurt)
-				{
-					humanoid.SetHealth(health);
-				}
+				Zombies.SetHealth(humanoid, health, unhurt);
 			}
 			bool night = (!data.Tombstone && ai != null && ai.DespawnInDay());
 			humanoid.m_runSpeed = (night ? NightRunSpeed : RunSpeed);

@@ -59,6 +59,17 @@ namespace ZombieApocalypse
 		public static readonly int RiseEndKey = "kriona.ZombieApocalypse.riseEnd".GetStableHashCode();
 
 		/// <summary>
+		/// The share of its max health a zombie rises with, until its owner first sets its health - 0 once it's set
+		/// </summary>
+		public static readonly int RiseHealthKey = "kriona.ZombieApocalypse.riseHealth".GetStableHashCode();
+
+		/// <summary>
+		/// The fewest and most of its max health a zombie rises with, so it looks hurt as it gets up
+		/// </summary>
+		private const float RiseHealthMin = 0.25f;
+		private const float RiseHealthMax = 0.75f;
+
+		/// <summary>
 		/// When a corpse's creature died, in ZNet time ticks
 		/// </summary>
 		public static readonly int DiedAtKey = "kriona.ZombieApocalypse.diedAt".GetStableHashCode();
@@ -225,6 +236,7 @@ namespace ZombieApocalypse
 			zdo.Set(ZombieKey, true);
 			zdo.Set(RiseStartKey, riseStart);
 			zdo.Set(RiseEndKey, riseEnd);
+			zdo.Set(RiseHealthKey, UnityEngine.Random.Range(RiseHealthMin, RiseHealthMax));
 			character.SetLevel(rise.Level);
 			if (rise.Loot != null && rise.Loot.Count > 0)
 			{
@@ -316,13 +328,36 @@ namespace ZombieApocalypse
 			{
 				character.gameObject.AddComponent<RiseBlend>();
 			}
-			// The game sets an unhurt creature's health from its level each time it loads. A viking has the player's
+			// The game sets a creature's max health from its level each time it loads. A viking has the player's
 			// health instead, which it sets as it loads
-			if (nview.IsOwner() && !ZombieViking.IsViking(character) && character.GetHealth() >= character.GetMaxHealth())
+			if (nview.IsOwner() && !ZombieViking.IsViking(character))
 			{
+				bool unhurt = character.GetHealth() >= character.GetMaxHealth();
 				float health = character.GetMaxHealthBase() * character.GetLevel() * Plugin.ZombieHealth.Value / 100f;
 				character.SetMaxHealth(health);
-				character.SetHealth(health);
+				SetHealth(character, health, unhurt);
+			}
+		}
+
+		/// <summary>
+		/// Sets a zombie's health on its owner after its max health - part of it the first time, as it rises, and all
+		/// of it when it's unhurt
+		/// </summary>
+		/// <param name="character">The zombie</param>
+		/// <param name="maxHealth">Its max health</param>
+		/// <param name="unhurt">Whether it was unhurt before its max health was set</param>
+		public static void SetHealth(Character character, float maxHealth, bool unhurt)
+		{
+			ZDO zdo = character.m_nview.GetZDO();
+			float share = zdo.GetFloat(RiseHealthKey);
+			if (share > 0f)
+			{
+				zdo.Set(RiseHealthKey, 0f);
+				character.SetHealth(maxHealth * share);
+			}
+			else if (unhurt)
+			{
+				character.SetHealth(maxHealth);
 			}
 		}
 

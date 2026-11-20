@@ -4,6 +4,7 @@ Slain creatures don't stay dead - a few seconds after a creature dies, its corps
 
 <img src="images/troll.jpg" alt="Zombie troll" width="750">
 
+- A zombie rises with 25-75% of its health, so it looks battered as it gets up
 - A zombie first aggros whoever killed it
 - Zombies take damage like the undead - they're immune to poison, weak to spirit damage (e.g., silver weapons) and fire, and tougher against arrows and spears
 - Zombies are undead and always hostile, and like all undead, they leave other undead alone
