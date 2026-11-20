@@ -10,6 +10,7 @@ Slain creatures don't stay dead - a few seconds after a creature dies, its corps
 - Zombies are undead and always hostile, and like all undead, they leave other undead alone
 - Animals that normally run away (e.g., deer, hares, seals and young animals) will, as zombies, hunt you down instead
 - Zombies slow down as they're hurt - at full speed down to half health, then slowing steadily to two-thirds speed as their health runs out
+- While you have corpse run from picking up your tombstone, nothing you kill rises
 - A creature's loot drops only drops when its zombie dies, after killing it a second time
 
 <img src="images/deer.jpg" alt="Zombie deer" width="750">
@@ -24,7 +25,7 @@ Even the fauna will fight you.
 
 ## Your Death
 
-When a zombie kills you, your own body gets back up as a tombstone zombie Viking with your name, looks and health, wearing your armor and carrying everything you had (except food and spirit weapons / ammo).
+When a zombie kills you, your own body gets back up as a tombstone zombie Viking with your name, looks and health, wearing your armor and carrying everything you had (except food and spirit weapons / ammo). If you still have corpse run from picking up your tombstone, your body stays dead.
 
 - It guards your tombstone (or where you fell, if there isn't one)
 - It won't chase anything more than 20 meters from the tombstone, and if it ends up much farther out than that, it gives up the fight and returns to the spot you died

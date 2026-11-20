@@ -24,7 +24,7 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
-	/// Turns the local player into a zombie viking when a zombie kills them
+	/// Turns the local player into a zombie viking when a zombie kills them, unless they have corpse run
 	/// </summary>
 	/// <remarks>
 	/// OnDeath makes the player's corpse and tombstone, so the equipment they're wearing is read first, and their
@@ -34,8 +34,12 @@ namespace ZombieApocalypse
 	public static class VikingPlayerDeathPatch
 	{
 		/// <summary>
-		/// Records the player's looks and equipment when a zombie dealt the killing blow
+		/// Records the player's looks and equipment when a zombie dealt the killing blow and they don't have corpse
+		/// run
 		/// </summary>
+		/// <remarks>
+		/// Corpse run is checked before the game's OnDeath runs, while the player still has their status effects
+		/// </remarks>
 		/// <param name="__instance">The dying player</param>
 		private static void Prefix(Player __instance)
 		{
@@ -45,7 +49,7 @@ namespace ZombieApocalypse
 				return;
 			}
 			Character killer = __instance.m_lastHit?.GetAttacker();
-			if (killer != null && Zombies.IsZombie(killer))
+			if (killer != null && Zombies.IsZombie(killer) && !CorpseRun.Protects(__instance))
 			{
 				ZombieViking.Pending = ZombieViking.BeginPlayerDeath(__instance);
 			}
