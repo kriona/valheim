@@ -3,7 +3,8 @@ using HarmonyLib;
 namespace ZombieApocalypse
 {
 	/// <summary>
-	/// Turns a creature marked as a zombie in its ZDO into one as it loads - on another client, or after a reload
+	/// Turns a creature marked as a zombie in its ZDO into one as it loads - on another client, or after a reload - and
+	/// every zombie viking, which is always one
 	/// </summary>
 	/// <remarks>
 	/// A zombie raised on this client isn't marked yet when its Awake runs, so Zombies.Raise sets it up instead
@@ -17,7 +18,7 @@ namespace ZombieApocalypse
 		/// <param name="__instance">The creature loading</param>
 		private static void Postfix(Character __instance)
 		{
-			if (!__instance.IsPlayer() && Zombies.IsZombie(__instance))
+			if (!__instance.IsPlayer() && (Zombies.IsZombie(__instance) || ZombieViking.IsViking(__instance)))
 			{
 				Zombies.Apply(__instance);
 			}

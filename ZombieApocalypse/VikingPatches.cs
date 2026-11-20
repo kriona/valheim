@@ -1,10 +1,12 @@
 using System;
 using HarmonyLib;
+using UnityEngine;
 
 namespace ZombieApocalypse
 {
 	/// <summary>
-	/// Adds the zombie viking prefab to each world's prefabs, so vikings can spawn and load
+	/// Adds the zombie viking prefab to each world's prefabs, so vikings can spawn and load, puts it in the body piles'
+	/// spawns and listens for vikings using forsaken powers
 	/// </summary>
 	[HarmonyPatch(typeof(ZNetScene), nameof(ZNetScene.Awake))]
 	public static class VikingPrefabPatch
@@ -16,6 +18,8 @@ namespace ZombieApocalypse
 		private static void Postfix(ZNetScene __instance)
 		{
 			ZombieViking.Register(__instance);
+			VikingSpawns.AddToBodyPiles(__instance);
+			ZRoutedRpc.instance?.Register<long>(ZombieViking.PowerRpc, ZombieViking.OnPowerUsed);
 		}
 	}
 
@@ -36,7 +40,7 @@ namespace ZombieApocalypse
 		private static void Prefix(Player __instance)
 		{
 			ZombieViking.Pending = null;
-			if (!Plugin.ZombieVikings.Value || !ServerCheck.Active || __instance != Player.m_localPlayer || !__instance.m_nview.IsOwner())
+			if (!Plugin.TombstoneZombies.Value || !ServerCheck.Active || __instance != Player.m_localPlayer || !__instance.m_nview.IsOwner())
 			{
 				return;
 			}
@@ -183,7 +187,7 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
-	/// Has a zombie viking stand and wait where it lost sight of an enemy, instead of running circles around the spot
+	/// Has a tombstone viking stand and wait where it lost sight of an enemy, instead of running circles around the spot
 	/// </summary>
 	[HarmonyPatch(typeof(BaseAI), nameof(BaseAI.RandomMovement))]
 	public static class VikingSearchPatch
@@ -192,15 +196,176 @@ namespace ZombieApocalypse
 		/// Stops the viking in place of the random movement
 		/// </summary>
 		/// <param name="__instance">The AI moving</param>
-		/// <returns>False for a viking, to skip the random movement</returns>
+		/// <returns>False for a tombstone viking, to skip the random movement</returns>
 		private static bool Prefix(BaseAI __instance)
 		{
-			if (!__instance.TryGetComponent(out ZombieViking _))
+			if (!__instance.TryGetComponent(out ZombieViking viking) || !viking.IsGuard())
 			{
 				return(true);
 			}
 			__instance.StopMoving();
 			return(false);
+		}
+	}
+
+	/// <summary>
+	/// Gives a zombie viking a skill level in each skill, which a monster doesn't have
+	/// </summary>
+	[HarmonyPatch(typeof(Character), nameof(Character.GetSkillFactor))]
+	public static class VikingSkillPatch
+	{
+		/// <summary>
+		/// Reports the viking's skill as a fraction, the same as a player's
+		/// </summary>
+		/// <param name="__instance">The creature</param>
+		/// <param name="skill">The skill</param>
+		/// <param name="__result">Its skill from 0 to 1</param>
+		private static void Postfix(Character __instance, Skills.SkillType skill, ref float __result)
+		{
+			if (!__instance.TryGetComponent(out ZombieViking viking))
+			{
+				return;
+			}
+			float level = viking.SkillLevel(skill);
+			if (level >= 0f)
+			{
+				__result = ((skill == Skills.SkillType.None) ? 0f : Mathf.Clamp01(level / 100f));
+			}
+		}
+	}
+
+	/// <summary>
+	/// Scales a zombie viking's hits by its skill the way a player's are, in place of a monster's near-full damage
+	/// </summary>
+	[HarmonyPatch(typeof(Character), nameof(Character.GetRandomSkillFactor))]
+	public static class VikingRandomSkillPatch
+	{
+		/// <summary>
+		/// Rolls the viking's damage factor from its skill, the same as a player's - from 40% of a weapon's damage with
+		/// no skill to all of it with full skill, give or take 15%
+		/// </summary>
+		/// <param name="__instance">The creature attacking</param>
+		/// <param name="skill">The skill the attack uses</param>
+		/// <param name="__result">The damage factor</param>
+		private static void Postfix(Character __instance, Skills.SkillType skill, ref float __result)
+		{
+			if (!__instance.TryGetComponent(out ZombieViking viking))
+			{
+				return;
+			}
+			float level = viking.SkillLevel(skill);
+			if (level < 0f)
+			{
+				return;
+			}
+			float factor = Mathf.Lerp(0.4f, 1f, ((skill == Skills.SkillType.None) ? 0f : Mathf.Clamp01(level / 100f)));
+			__result = Mathf.Lerp(Mathf.Clamp01(factor - 0.15f), Mathf.Clamp01(factor + 0.15f), UnityEngine.Random.value);
+		}
+	}
+
+	/// <summary>
+	/// Notes the zombie viking a hit is being dealt to, so its armor is applied as the damage lands
+	/// </summary>
+	/// <remarks>
+	/// The game only applies a player's armor, partway through this RPC, so the viking's is applied by VikingArmorPatch
+	/// at the same point
+	/// </remarks>
+	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
+	public static class VikingHitPatch
+	{
+		/// <summary>
+		/// The viking being hit, while the RPC runs
+		/// </summary>
+		public static Character Target;
+
+		/// <summary>
+		/// Notes the viking
+		/// </summary>
+		/// <param name="__instance">The creature being hit</param>
+		private static void Prefix(Character __instance)
+		{
+			Target = ((__instance.TryGetComponent(out ZombieViking _)) ? __instance : null);
+		}
+
+		/// <summary>
+		/// Forgets the viking, whether or not the RPC finished
+		/// </summary>
+		/// <param name="__exception">An exception the RPC threw, or null</param>
+		/// <returns>The exception, so it's still thrown</returns>
+		private static Exception Finalizer(Exception __exception)
+		{
+			Target = null;
+			return(__exception);
+		}
+	}
+
+	/// <summary>
+	/// Reduces a hit on a zombie viking by its armor and wears its armor down, the same as a player's
+	/// </summary>
+	[HarmonyPatch(typeof(Character), nameof(Character.ApplyDamage))]
+	public static class VikingArmorPatch
+	{
+		/// <summary>
+		/// Applies the armor to the hit being dealt by RPC_Damage
+		/// </summary>
+		/// <param name="__instance">The creature being damaged</param>
+		/// <param name="hit">The hit, after resistances</param>
+		private static void Prefix(Character __instance, HitData hit)
+		{
+			if (VikingHitPatch.Target != __instance)
+			{
+				return;
+			}
+			VikingHitPatch.Target = null;
+			if (__instance.TryGetComponent(out ZombieViking viking))
+			{
+				viking.ApplyArmor(hit);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Gives a zombie viking the resistances of the armor it wears, the same as a player
+	/// </summary>
+	[HarmonyPatch(typeof(Character), nameof(Character.ApplyArmorDamageMods))]
+	public static class VikingResistancePatch
+	{
+		/// <summary>
+		/// Adds the armor's resistances
+		/// </summary>
+		/// <param name="__instance">The creature</param>
+		/// <param name="mods">Its damage modifiers</param>
+		private static void Postfix(Character __instance, ref HitData.DamageModifiers mods)
+		{
+			if (__instance.TryGetComponent(out ZombieViking viking))
+			{
+				viking.ApplyArmorMods(ref mods);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Makes a zombie viking hit as hard as its biome calls for - its punches, since a player's fists barely scratch,
+	/// and a viking of the world's melee weapons, which would hit softer than the biome's creatures at its skill
+	/// </summary>
+	[HarmonyPatch(typeof(Character), nameof(Character.Damage))]
+	public static class VikingDamagePatch
+	{
+		/// <summary>
+		/// Scales a hit from a viking
+		/// </summary>
+		/// <param name="hit">The hit about to be dealt</param>
+		private static void Prefix(HitData hit)
+		{
+			Character attacker = hit.GetAttacker();
+			if (attacker != null && attacker.TryGetComponent(out ZombieViking viking))
+			{
+				float scale = viking.DamageScale();
+				if (scale != 1f)
+				{
+					hit.m_damage.Modify(scale);
+				}
+			}
 		}
 	}
 

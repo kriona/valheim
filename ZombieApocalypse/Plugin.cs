@@ -16,6 +16,7 @@ namespace ZombieApocalypse
 		private const string RisingSection = "Rising";
 		private const string ZombiesSection = "Zombies";
 		private const string DeathSection = "Death";
+		private const string VikingGearSection = "Viking Gear";
 
 		/// <summary>
 		/// Undead creatures outside the Undead faction, and creatures that were never alive
@@ -41,7 +42,18 @@ namespace ZombieApocalypse
 		public static ConfigEntry<Color> ZombieEyeColor;
 		public static ConfigEntry<bool> ZombieFlies;
 		public static ConfigEntry<float> ZombieBuzzVolume;
-		public static ConfigEntry<bool> ZombieVikings;
+		public static ConfigEntry<bool> TombstoneZombies;
+		public static ConfigEntry<int> ArmorChance;
+		public static ConfigEntry<int> HelmetChance;
+		public static ConfigEntry<int> CapeChance;
+		public static ConfigEntry<int> WeaponChance;
+		public static ConfigEntry<int> ShieldChance;
+		public static ConfigEntry<bool> StarsUpgradeGear;
+		public static ConfigEntry<int> DurabilityMin;
+		public static ConfigEntry<int> DurabilityMax;
+		public static ConfigEntry<float> GearDropChance;
+		public static ConfigEntry<int> GearDropMax;
+		public static ConfigEntry<int> ArmorEffectiveness;
 
 		/// <summary>
 		/// The plugin's log
@@ -75,7 +87,18 @@ namespace ZombieApocalypse
 			ZombieEyeColor = Config.Bind(ZombiesSection, "ZombieEyeColor", (Color)new Color32(255, 26, 13, 255), "Color zombies' eyes glow, as RRGGBBAA hex");
 			ZombieFlies = Config.Bind(ZombiesSection, "ZombieFlies", true, "Zombies carry the draugr's swarm of flies and faint green haze");
 			ZombieBuzzVolume = Config.Bind(ZombiesSection, "ZombieBuzzVolume", 0.4f, new ConfigDescription("How loud zombies' flies buzz, from 0 for silent to 1 - a beehive is 0.8. Takes effect for zombies that rise or load after it's changed", new AcceptableValueRange<float>(0f, 1f)));
-			ZombieVikings = Config.Bind(DeathSection, "ZombieVikings", true, "When a zombie kills you, your body gets back up as a zombie viking with your health, wearing your armor and carrying your things, and leaves them in your tombstone when it's killed - food and spirit weapons stay in your tombstone");
+			TombstoneZombies = Config.Bind(DeathSection, "TombstoneZombies", true, "When a zombie kills you, your body gets back up as a zombie viking with your health, wearing your armor and carrying your things, and leaves them in your tombstone when it's killed - food and spirit weapons stay in your tombstone");
+			ArmorChance = Config.Bind(VikingGearSection, "ArmorChance", 65, new ConfigDescription("Percent chance that a zombie viking of the world wears armor - always the set's chest and legs", new AcceptableValueRange<int>(0, 100)));
+			HelmetChance = Config.Bind(VikingGearSection, "HelmetChance", 50, new ConfigDescription("Percent chance that a viking wearing armor also wears the set's helmet", new AcceptableValueRange<int>(0, 100)));
+			CapeChance = Config.Bind(VikingGearSection, "CapeChance", 50, new ConfigDescription("Percent chance that a viking wearing armor also wears the set's cape", new AcceptableValueRange<int>(0, 100)));
+			WeaponChance = Config.Bind(VikingGearSection, "WeaponChance", 85, new ConfigDescription("Percent chance that a zombie viking of the world wields a weapon - without one, it fights with its fists", new AcceptableValueRange<int>(0, 100)));
+			ShieldChance = Config.Bind(VikingGearSection, "ShieldChance", 40, new ConfigDescription("Percent chance that a zombie viking of the world carries a shield, unless its weapon takes both hands", new AcceptableValueRange<int>(0, 100)));
+			StarsUpgradeGear = Config.Bind(VikingGearSection, "StarsUpgradeGear", true, "Each of a zombie viking's stars upgrades its gear one level - false leaves it all at level 1");
+			DurabilityMin = Config.Bind(VikingGearSection, "DurabilityMin", 50, new ConfigDescription("Least durability a zombie viking's gear spawns with, as a percent of full", new AcceptableValueRange<int>(1, 100)));
+			DurabilityMax = Config.Bind(VikingGearSection, "DurabilityMax", 95, new ConfigDescription("Most durability a zombie viking's gear spawns with, as a percent of full", new AcceptableValueRange<int>(1, 100)));
+			GearDropChance = Config.Bind(VikingGearSection, "GearDropChance", 5f, new ConfigDescription("Percent chance that a zombie viking of the world drops each piece of its gear, as worn as it is, when it dies", new AcceptableValueRange<float>(0f, 100f)));
+			GearDropMax = Config.Bind(VikingGearSection, "GearDropMax", 2, new ConfigDescription("Most pieces of gear a zombie viking of the world drops", new AcceptableValueRange<int>(0, 10)));
+			ArmorEffectiveness = Config.Bind(VikingGearSection, "ArmorEffectiveness", 50, new ConfigDescription("How well armor protects any zombie viking, tombstone ones included, as a percent of how well it protects a player - armor is made for creatures' hits, so at 100 a viking is about twice as hard to kill", new AcceptableValueRange<int>(0, 200)));
 			watcher = new ConfigWatcher(Config, Logger, PluginName);
 			Log = Logger;
 			harmony = new Harmony(PluginGuid);

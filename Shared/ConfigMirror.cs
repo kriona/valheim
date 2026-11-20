@@ -37,8 +37,12 @@ namespace Kriona.Shared
 		}
 
 		/// <summary>
-		/// Binds an entry, or returns the one already bound with the same section and key
+		/// Binds an entry, or returns the one already bound with the same section and key, without calling back
 		/// </summary>
+		/// <remarks>
+		/// When BepInEx's file already has a value for the entry, binding it sets that value, which raises a change before
+		/// the plugin has the entry to read, so it's done as a sync
+		/// </remarks>
 		/// <param name="section">The Configuration Manager category</param>
 		/// <param name="key">The setting's key, the same as in the plugin's file</param>
 		/// <param name="defaultValue">The setting's default</param>
@@ -53,7 +57,16 @@ namespace Kriona.Shared
 			ConfigurationManagerAttributes attributes = new ConfigurationManagerAttributes();
 			attributes.Order = order;
 			attributes.DispName = displayName;
-			return(config.Bind(section, key, defaultValue, new ConfigDescription(description, acceptableValues, attributes)));
+			bool wasSyncing = syncing;
+			syncing = true;
+			try
+			{
+				return(config.Bind(section, key, defaultValue, new ConfigDescription(description, acceptableValues, attributes)));
+			}
+			finally
+			{
+				syncing = wasSyncing;
+			}
 		}
 
 		/// <summary>

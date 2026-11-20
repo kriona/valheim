@@ -7,11 +7,12 @@ using UnityEngine;
 namespace ZombieApocalypse
 {
 	/// <summary>
-	/// Who a zombie viking was and how it looks, handed from the player's death to their corpse and on to the viking
+	/// Who a zombie viking was and how it looks and fights - for a tombstone viking, handed from the player's death to
+	/// their corpse and on to the viking, and for a viking of the world, rolled when it first loads
 	/// </summary>
 	internal class VikingData
 	{
-		private const int Version = 2;
+		private const int Version = 3;
 
 		public string Name = "";
 		public long PlayerId;
@@ -45,6 +46,26 @@ namespace ZombieApocalypse
 		public bool HasHome;
 
 		/// <summary>
+		/// Whether the viking is a player's, risen by their tombstone, rather than one of the world's
+		/// </summary>
+		public bool Tombstone = true;
+
+		/// <summary>
+		/// The index in VikingGear's tables of the biome the viking's gear, coins and fists come from
+		/// </summary>
+		public int Biome = -1;
+
+		/// <summary>
+		/// A viking of the world's level in every skill, from 0 to 100
+		/// </summary>
+		public float Skill;
+
+		/// <summary>
+		/// A tombstone viking's level in each of the player's skills when they died, by skill type
+		/// </summary>
+		public Dictionary<int, float> Skills = new Dictionary<int, float>();
+
+		/// <summary>
 		/// Writes the data to bytes for a ZDO
 		/// </summary>
 		/// <returns>The bytes</returns>
@@ -65,6 +86,15 @@ namespace ZombieApocalypse
 			pkg.Write(WeaponSlot);
 			pkg.Write(Power);
 			pkg.Write(Home);
+			pkg.Write(Tombstone);
+			pkg.Write(Biome);
+			pkg.Write(Skill);
+			pkg.Write(Skills.Count);
+			foreach (KeyValuePair<int, float> skill in Skills)
+			{
+				pkg.Write(skill.Key);
+				pkg.Write(skill.Value);
+			}
 			return(pkg.GetArray());
 		}
 
@@ -99,6 +129,18 @@ namespace ZombieApocalypse
 				data.Home = pkg.ReadVector3();
 				data.HasHome = true;
 			}
+			if (version >= 3)
+			{
+				data.Tombstone = pkg.ReadBool();
+				data.Biome = pkg.ReadInt();
+				data.Skill = pkg.ReadSingle();
+				int count = pkg.ReadInt();
+				for (int i = 0; i < count; i++)
+				{
+					int skill = pkg.ReadInt();
+					data.Skills[skill] = pkg.ReadSingle();
+				}
+			}
 			return(data);
 		}
 	}
@@ -129,15 +171,17 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
-	/// A zombie viking - a player killed by a zombie, risen from their corpse with their looks, health, armor and things
+	/// A zombie viking - a player killed by a zombie, risen from their corpse with their looks, health, armor and things,
+	/// or one of the world's, with a random look and gear from VikingGear
 	/// </summary>
 	/// <remarks>
 	/// The viking is its own prefab, built from the player's prefab with the player's parts swapped for a monster's and
-	/// the draugr's AI. Everything the player carried but food and spirit weapons goes with it, and it keeps them in its
-	/// ZDO as they're used up, so it never despawns or loses them. It drops them in a tombstone of the player's when it's
+	/// the draugr's AI. A tombstone viking carries everything the player had but food and spirit weapons, and keeps it in
+	/// its ZDO as it's used up, so it never despawns or loses it. It drops it in a tombstone of the player's when it's
 	/// killed. Equipment the world let the player keep is copied to it marked as kept, so it fights with it but never
-	/// drops it. It wields what the player was wielding, or else its best weapon, and switches when that breaks or runs
-	/// out of ammo
+	/// drops it. A viking of the world rolls its gear the first time it loads, and drops coins and maybe some of its gear.
+	/// Each wields its chosen weapon, or else its best one, and switches when that breaks or runs out of ammo. Its armor
+	/// protects it and wears down, and it raises its shield against attacks, better the more skilled it is
 	/// </remarks>
 	internal class ZombieViking : MonoBehaviour
 	{
@@ -211,10 +255,58 @@ namespace ZombieApocalypse
 		private const float SyncInterval = 1f;
 
 		/// <summary>
-		/// How near a player comes before the viking may use its forsaken power, which reaches as far as a player's does
+		/// A night viking's running speed and how much faster it walks, and so how much faster than a viking of the day
+		/// </summary>
+		private const float NightRunSpeed = 7f;
+		private const float NightSpeedScale = 1.3f;
+
+		/// <summary>
+		/// How near a player comes before a tombstone viking may use its forsaken power, which reaches as far as a
+		/// player's does
 		/// </summary>
 		private const float PowerRange = 10f;
-		private const float PowerChance = 0.5f;
+
+		/// <summary>
+		/// The chance a tombstone viking uses its power when a player first comes near, and a viking of the world when it
+		/// first spots an enemy
+		/// </summary>
+		private const float TombstonePowerChance = 0.5f;
+		private const float WorldPowerChance = 0.1f;
+
+		/// <summary>
+		/// Seconds after any viking uses a forsaken power before another may
+		/// </summary>
+		private const float PowerCooldown = 30f;
+
+		/// <summary>
+		/// The routed RPC that tells every client a viking has used a power, with when the cooldown ends in ticks
+		/// </summary>
+		public const string PowerRpc = "kriona.ZombieApocalypse.VikingPower";
+
+		/// <summary>
+		/// When the next viking may use a forsaken power, in ZNet time ticks
+		/// </summary>
+		private static long powerCooldownUntil;
+
+
+		/// <summary>
+		/// The most of its biome's remains a viking of the world drops, before its stars
+		/// </summary>
+		private const int RemainsMax = 2;
+
+		/// <summary>
+		/// How the viking raises its shield - how near an enemy's melee attack starts for it to react, how likely it is
+		/// to react and how slowly, from no skill to full skill, and how long it holds the shield up
+		/// </summary>
+		private const float BlockMeleeRange = 5f;
+		private const float BlockRangedRange = 30f;
+		private const float BlockChanceMin = 0.2f;
+		private const float BlockChanceMax = 0.75f;
+		private const float BlockDelayMin = 0.45f;
+		private const float BlockDelayMax = 0.12f;
+		private const float BlockDelayJitter = 0.12f;
+		private const float BlockHoldMin = 0.6f;
+		private const float BlockHoldMax = 1.1f;
 
 		/// <summary>
 		/// Seconds into the forsaken power animation the power takes hold
@@ -289,6 +381,23 @@ namespace ZombieApocalypse
 		private float tunedRangeMin;
 		private float tunedAngle;
 		private float tunedInterval;
+
+		/// <summary>
+		/// The prefab's walking pace, which a night viking's is scaled from
+		/// </summary>
+		private float baseSpeed;
+
+		/// <summary>
+		/// When the viking raises its shield against the attack it saw coming, and until when it holds it up, or negative
+		/// numbers while it isn't
+		/// </summary>
+		private float blockAt = -1f;
+		private float blockUntil = -1f;
+
+		/// <summary>
+		/// Whether the viking's enemy was attacking last frame, so a new attack is reacted to once
+		/// </summary>
+		private bool enemyWasAttacking;
 
 		/// <summary>
 		/// Checks whether a creature is a zombie viking
@@ -446,6 +555,12 @@ namespace ZombieApocalypse
 			data.Width = player.GetInventory().m_width;
 			data.Height = player.GetInventory().m_height;
 			data.Power = ((player.m_guardianSE != null && player.m_guardianPowerCooldown <= 0f) ? player.m_guardianSE.NameHash() : 0);
+			data.Tombstone = true;
+			data.Biome = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(player.transform.position));
+			foreach (KeyValuePair<Skills.SkillType, Skills.Skill> skill in player.GetSkills().m_skillData)
+			{
+				data.Skills[(int)skill.Key] = skill.Value.m_level;
+			}
 			death.Data = data;
 			return(death);
 		}
@@ -649,10 +764,11 @@ namespace ZombieApocalypse
 			humanoid = GetComponent<Humanoid>();
 			nview = GetComponent<ZNetView>();
 			ai = GetComponent<MonsterAI>();
+			baseSpeed = humanoid.m_speed;
 		}
 
 		/// <summary>
-		/// Loads the viking on its owner as it starts
+		/// Loads the viking on its owner as it starts, rolling a viking of the world's look and gear the first time
 		/// </summary>
 		public void OnStart()
 		{
@@ -664,8 +780,8 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// On the owner, loads the viking when it's handed over, saves its inventory as it changes and gives it its one
-		/// chance to use its forsaken power
+		/// On the owner, loads the viking when it's handed over, saves its inventory as it changes, raises its shield
+		/// and gives it its one chance to use its forsaken power
 		/// </summary>
 		private void Update()
 		{
@@ -691,9 +807,247 @@ namespace ZombieApocalypse
 			if (Time.time >= nextSync)
 			{
 				nextSync = Time.time + SyncInterval;
+				DropBrokenShield();
 				SaveInventory();
 			}
+			UpdateBlock();
 			UpdatePower();
+		}
+
+		/// <summary>
+		/// Rolls a new viking of the world's look, health, skill, power and gear for the biome it's in, and marks it as a
+		/// zombie
+		/// </summary>
+		private void Generate()
+		{
+			int index = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(transform.position));
+			VikingData rolled = VikingGear.RollData(index);
+			Inventory gear = VikingGear.RollLoadout(index, humanoid.GetLevel(), rolled);
+			ZPackage pkg = new ZPackage();
+			gear.Save(pkg);
+			ZDO zdo = nview.GetZDO();
+			zdo.Set(DataKey, rolled.ToBytes());
+			zdo.Set(InventoryKey, pkg.GetArray());
+			zdo.Set(Zombies.ZombieKey, true);
+			data = null;
+		}
+
+		/// <summary>
+		/// Finds the index of the biome the viking's gear, coins and fists come from
+		/// </summary>
+		/// <returns>The index into VikingGear's tables</returns>
+		private int BiomeIndex()
+		{
+			if (GetData() != null && data.Biome >= 0)
+			{
+				return(data.Biome);
+			}
+			return(VikingGear.IndexOf(WorldGenerator.instance.GetBiome(transform.position)));
+		}
+
+		/// <summary>
+		/// Gets the viking's level in a skill - a viking of the world's own level in everything, or the dead player's
+		/// level for a tombstone viking
+		/// </summary>
+		/// <param name="skill">The skill</param>
+		/// <returns>The level from 0 to 100, or a negative number before the viking has data</returns>
+		public float SkillLevel(Skills.SkillType skill)
+		{
+			if (GetData() == null)
+			{
+				return(-1f);
+			}
+			if (!data.Tombstone)
+			{
+				return(data.Skill);
+			}
+			// A tombstone viking from before vikings had skills fights at its biome's middle skill
+			if (data.Skills.Count == 0)
+			{
+				BiomeGear gear = VikingGear.Get(BiomeIndex());
+				return((gear.SkillMin + gear.SkillMax) / 2f);
+			}
+			return(data.Skills.TryGetValue((int)skill, out float level) ? level : 0f);
+		}
+
+		/// <summary>
+		/// Works out how much harder the viking hits than a player of its skill with what's in its hands - its fists by
+		/// its biome's punch, and a viking of the world's melee weapons by its biome's MeleeScale
+		/// </summary>
+		/// <returns>The multiplier for the hit's damage</returns>
+		public float DamageScale()
+		{
+			ItemDrop.ItemData weapon = CurrentWeapon();
+			BiomeGear gear = VikingGear.Get(BiomeIndex());
+			if (weapon == null)
+			{
+				ItemDrop unarmed = humanoid.m_unarmedWeapon;
+				float baseDamage = ((unarmed != null) ? unarmed.m_itemData.m_shared.m_damages.GetTotalPhysicalDamage() : 0f);
+				return((baseDamage > 0f) ? gear.Unarmed / baseDamage : 1f);
+			}
+			bool ranged = (weapon.m_shared.m_attack != null && weapon.m_shared.m_attack.m_attackType == Attack.AttackType.Projectile);
+			return((GetData() != null && !data.Tombstone && !ranged) ? gear.MeleeScale : 1f);
+		}
+
+		/// <summary>
+		/// Adds up the armor of the pieces the viking wears, at the config's ArmorEffectiveness percent of what they give a
+		/// player
+		/// </summary>
+		/// <returns>Its armor</returns>
+		private float BodyArmor()
+		{
+			float armor = 0f;
+			foreach (ItemDrop.ItemData piece in WornArmor())
+			{
+				armor += piece.GetArmor();
+			}
+			return(armor * Plugin.ArmorEffectiveness.Value / 100f);
+		}
+
+		/// <summary>
+		/// Lists the armor pieces the viking wears
+		/// </summary>
+		/// <returns>Its chest, legs, helmet and cape, those it has on</returns>
+		private List<ItemDrop.ItemData> WornArmor()
+		{
+			List<ItemDrop.ItemData> pieces = new List<ItemDrop.ItemData>();
+			foreach (ItemDrop.ItemData piece in new ItemDrop.ItemData[] { humanoid.m_chestItem, humanoid.m_legItem, humanoid.m_helmetItem, humanoid.m_shoulderItem })
+			{
+				if (piece != null)
+				{
+					pieces.Add(piece);
+				}
+			}
+			return(pieces);
+		}
+
+		/// <summary>
+		/// Reduces a hit by the viking's armor and wears down a random piece by the damage left, taking it off when it
+		/// breaks - the same as a player's armor
+		/// </summary>
+		/// <param name="hit">The hit, after resistances</param>
+		public void ApplyArmor(HitData hit)
+		{
+			List<ItemDrop.ItemData> pieces = WornArmor();
+			if (pieces.Count == 0)
+			{
+				return;
+			}
+			hit.ApplyArmor(BodyArmor());
+			float damage = hit.GetTotalPhysicalDamage() + hit.GetTotalElementalDamage();
+			if (damage <= 0f)
+			{
+				return;
+			}
+			ItemDrop.ItemData piece = pieces[Random.Range(0, pieces.Count)];
+			if (!piece.m_shared.m_useDurability)
+			{
+				return;
+			}
+			piece.m_durability = Mathf.Max(0f, piece.m_durability - damage);
+			if (piece.m_durability <= 0f)
+			{
+				humanoid.UnequipItem(piece, false);
+			}
+		}
+
+		/// <summary>
+		/// Adds the resistances of the viking's armor to its own, the same as a player's
+		/// </summary>
+		/// <param name="mods">Its damage modifiers</param>
+		public void ApplyArmorMods(ref HitData.DamageModifiers mods)
+		{
+			foreach (ItemDrop.ItemData piece in WornArmor())
+			{
+				mods.Apply(piece.m_shared.m_damageModifiers);
+			}
+		}
+
+		/// <summary>
+		/// Takes off the viking's shield once it has broken
+		/// </summary>
+		private void DropBrokenShield()
+		{
+			ItemDrop.ItemData left = humanoid.m_leftItem;
+			if (left != null && left.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shield && left.m_shared.m_useDurability && left.m_durability <= 0f)
+			{
+				humanoid.UnequipItem(left, false);
+			}
+		}
+
+		/// <summary>
+		/// Raises the viking's shield against an enemy's attack it sees starting - more often and closer to the moment of
+		/// the hit the more skilled it is, but never every time or perfectly - and lowers it again after a moment
+		/// </summary>
+		private void UpdateBlock()
+		{
+			ItemDrop.ItemData left = humanoid.m_leftItem;
+			bool hasShield = (left != null && left.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shield);
+			if (!hasShield || ai == null || humanoid.IsDead())
+			{
+				StopBlocking();
+				enemyWasAttacking = false;
+				return;
+			}
+			float now = Time.time;
+			if (blockAt >= 0f && now >= blockAt)
+			{
+				blockAt = -1f;
+				humanoid.m_blocking = true;
+				blockUntil = now + Random.Range(BlockHoldMin, BlockHoldMax);
+			}
+			if (blockUntil >= 0f && now >= blockUntil)
+			{
+				StopBlocking();
+			}
+			Character enemy = ai.m_targetCreature;
+			bool attacking = (enemy != null && enemy.InAttack() && Vector3.Distance(enemy.transform.position, transform.position) <= ReactRange(enemy));
+			if (attacking && !enemyWasAttacking && blockAt < 0f && blockUntil < 0f && !humanoid.InAttack())
+			{
+				float skill = Mathf.Clamp01(SkillLevel(Skills.SkillType.Blocking) / 100f);
+				if (Random.value < Mathf.Lerp(BlockChanceMin, BlockChanceMax, skill))
+				{
+					float delay = Mathf.Lerp(BlockDelayMin, BlockDelayMax, skill) + Random.Range(-BlockDelayJitter, BlockDelayJitter);
+					blockAt = now + Mathf.Max(0.05f, delay);
+				}
+			}
+			enemyWasAttacking = attacking;
+		}
+
+		/// <summary>
+		/// Works out how near an enemy's attack has to start for the viking to raise its shield
+		/// </summary>
+		/// <param name="enemy">The enemy</param>
+		/// <returns>The distance - far for an enemy with a bow or other ranged weapon</returns>
+		private static float ReactRange(Character enemy)
+		{
+			Humanoid armed = enemy as Humanoid;
+			ItemDrop.ItemData weapon = ((armed != null) ? armed.GetCurrentWeapon() : null);
+			bool ranged = (weapon != null && weapon.m_shared.m_attack != null && weapon.m_shared.m_attack.m_attackType == Attack.AttackType.Projectile);
+			return(ranged ? BlockRangedRange : BlockMeleeRange);
+		}
+
+		/// <summary>
+		/// Lowers the viking's shield and forgets any block it was about to make
+		/// </summary>
+		private void StopBlocking()
+		{
+			humanoid.m_blocking = false;
+			blockAt = -1f;
+			blockUntil = -1f;
+		}
+
+		/// <summary>
+		/// Notes that a viking somewhere has used a forsaken power, so none uses one until the cooldown ends
+		/// </summary>
+		/// <param name="sender">The client that sent it</param>
+		/// <param name="until">When the cooldown ends, in ZNet time ticks</param>
+		public static void OnPowerUsed(long sender, long until)
+		{
+			if (until > powerCooldownUntil)
+			{
+				powerCooldownUntil = until;
+			}
 		}
 
 		/// <summary>
@@ -710,14 +1064,22 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Loads the viking's inventory from its ZDO, puts its armor back on, picks its weapon and gives it the
-		/// player's looks and health
+		/// Loads the viking's inventory from its ZDO, puts its armor back on, picks its weapon and gives it its looks,
+		/// health and pace - rolling a viking of the world first when it has no data yet
 		/// </summary>
+		/// <remarks>
+		/// A tombstone viking is handed its data in the frame it spawns, before its Start loads it, so a viking still
+		/// without data here is one of the world's
+		/// </remarks>
 		private void Load()
 		{
 			if (GetData() == null)
 			{
-				return;
+				Generate();
+				if (GetData() == null)
+				{
+					return;
+				}
 			}
 			ZDO zdo = nview.GetZDO();
 			Inventory inventory = humanoid.GetInventory();
@@ -759,15 +1121,21 @@ namespace ZombieApocalypse
 			EquipWeapon();
 			SetHome();
 			SetLooks(humanoid.m_visEquipment);
+			// A viking of the world's health is multiplied by its stars like any creature's, a tombstone viking's is the
+			// player's own
+			float health = data.MaxHealth * (data.Tombstone ? 1 : humanoid.GetLevel());
 			bool unhurt = humanoid.GetHealth() >= humanoid.GetMaxHealth();
-			if (data.MaxHealth > 0f)
+			if (health > 0f)
 			{
-				humanoid.SetMaxHealth(data.MaxHealth);
+				humanoid.SetMaxHealth(health);
 				if (unhurt)
 				{
-					humanoid.SetHealth(data.MaxHealth);
+					humanoid.SetHealth(health);
 				}
 			}
+			bool night = (!data.Tombstone && ai != null && ai.DespawnInDay());
+			humanoid.m_runSpeed = (night ? NightRunSpeed : RunSpeed);
+			humanoid.m_speed = baseSpeed * (night ? NightSpeedScale : 1f);
 			loaded = true;
 		}
 
@@ -777,7 +1145,7 @@ namespace ZombieApocalypse
 		/// </summary>
 		private void SetHome()
 		{
-			if (ai == null)
+			if (ai == null || !data.Tombstone)
 			{
 				return;
 			}
@@ -786,6 +1154,15 @@ namespace ZombieApocalypse
 			ai.m_spawnPoint = home;
 			nview.GetZDO().Set(ZDOVars.s_spawnPoint, home);
 			ai.SetPatrolPoint(home);
+		}
+
+		/// <summary>
+		/// Checks whether the viking guards a tombstone, rather than roaming like a viking of the world
+		/// </summary>
+		/// <returns>True once a tombstone viking has its home</returns>
+		public bool IsGuard()
+		{
+			return(hasHome);
 		}
 
 		/// <summary>
@@ -991,7 +1368,8 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Drops everything the viking carries but kept items in a tombstone of the player's, as it dies on its owner
+		/// As the viking dies on its owner, drops everything a tombstone viking carries but kept items in a tombstone of
+		/// the player's, or a viking of the world's coins and maybe some of its gear
 		/// </summary>
 		public void DropGrave()
 		{
@@ -1003,8 +1381,71 @@ namespace ZombieApocalypse
 			{
 				return;
 			}
-			SpawnGrave(humanoid.GetCenterPoint(), transform.rotation, humanoid.GetInventory(), data);
+			if (data.Tombstone)
+			{
+				SpawnGrave(humanoid.GetCenterPoint(), transform.rotation, humanoid.GetInventory(), data);
+			}
+			else
+			{
+				DropLoot();
+			}
 			humanoid.GetInventory().m_inventory.Clear();
+		}
+
+		/// <summary>
+		/// Drops a viking of the world's coins and remains, more for each star, and each piece of its gear by
+		/// the config's GearDropChance, up to its GearDropMax, as it is
+		/// </summary>
+		private void DropLoot()
+		{
+			Vector3 position = humanoid.GetCenterPoint();
+			BiomeGear gear = VikingGear.Get(BiomeIndex());
+			int level = humanoid.GetLevel();
+			List<KeyValuePair<GameObject, int>> loot = new List<KeyValuePair<GameObject, int>>();
+			AddLoot(loot, "Coins", Random.Range(gear.CoinsMin, gear.CoinsMax + 1) * level);
+			AddLoot(loot, gear.Remains, Random.Range(0, RemainsMax + 1) * level);
+			if (loot.Count > 0)
+			{
+				CharacterDrop.DropItems(loot, position, 0.5f, nview.GetZDO().IsCheated());
+			}
+			List<ItemDrop.ItemData> pieces = new List<ItemDrop.ItemData>();
+			foreach (ItemDrop.ItemData item in humanoid.GetInventory().GetAllItems())
+			{
+				ItemDrop.ItemData.ItemType type = item.m_shared.m_itemType;
+				if (type != ItemDrop.ItemData.ItemType.Ammo && type != ItemDrop.ItemData.ItemType.AmmoNonEquipable)
+				{
+					pieces.Add(item);
+				}
+			}
+			int dropped = 0;
+			while (pieces.Count > 0 && dropped < Plugin.GearDropMax.Value)
+			{
+				int index = Random.Range(0, pieces.Count);
+				ItemDrop.ItemData piece = pieces[index];
+				pieces.RemoveAt(index);
+				if (Random.value * 100f >= Plugin.GearDropChance.Value)
+				{
+					continue;
+				}
+				piece.m_equipped = false;
+				ItemDrop.DropItem(piece, piece.m_stack, position + Random.insideUnitSphere * 0.5f, Quaternion.identity);
+				dropped++;
+			}
+		}
+
+		/// <summary>
+		/// Adds an item to a list of loot, unless there's none of it or the game has no such item
+		/// </summary>
+		/// <param name="loot">The loot, as each item's prefab and amount</param>
+		/// <param name="prefabName">The item's prefab name</param>
+		/// <param name="amount">How many to drop</param>
+		private static void AddLoot(List<KeyValuePair<GameObject, int>> loot, string prefabName, int amount)
+		{
+			GameObject prefab = ObjectDB.instance.GetItemPrefab(prefabName);
+			if (amount > 0 && prefab != null)
+			{
+				loot.Add(new KeyValuePair<GameObject, int>(prefab, amount));
+			}
 		}
 
 		/// <summary>
@@ -1038,7 +1479,8 @@ namespace ZombieApocalypse
 				}
 			}
 			bool oneHanded = (choice == null || choice.m_shared.m_itemType == ItemDrop.ItemData.ItemType.OneHandedWeapon);
-			if (shield != null && oneHanded && !humanoid.IsItemEquiped(shield) && humanoid.GetInventory().ContainsItem(shield))
+			bool shieldWorks = (shield != null && (!shield.m_shared.m_useDurability || shield.m_durability > 0f));
+			if (shieldWorks && oneHanded && !humanoid.IsItemEquiped(shield) && humanoid.GetInventory().ContainsItem(shield))
 			{
 				humanoid.EquipItem(shield, false);
 			}
@@ -1223,8 +1665,9 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Gives the viking its one chance to use the player's forsaken power, the first time a player comes near once
-		/// it's standing
+		/// Gives the viking its one chance to use its forsaken power once it's standing - a tombstone viking the first
+		/// time a player comes near, a viking of the world the first time it spots an enemy - unless another viking has
+		/// used one within PowerCooldown
 		/// </summary>
 		private void UpdatePower()
 		{
@@ -1233,15 +1676,35 @@ namespace ZombieApocalypse
 			{
 				return;
 			}
-			if (!Player.IsPlayerInRange(transform.position, PowerRange))
+			float chance;
+			if (data.Tombstone)
+			{
+				if (!Player.IsPlayerInRange(transform.position, PowerRange))
+				{
+					return;
+				}
+				chance = TombstonePowerChance;
+			}
+			else
+			{
+				if (ai == null || ai.m_targetCreature == null)
+				{
+					return;
+				}
+				chance = WorldPowerChance;
+			}
+			zdo.Set(PowerUsedKey, true);
+			long now = Zombies.Now();
+			if (Random.value >= chance || now < powerCooldownUntil)
 			{
 				return;
 			}
-			zdo.Set(PowerUsedKey, true);
-			if (Random.value < PowerChance)
+			powerCooldownUntil = now + Zombies.Ticks(PowerCooldown);
+			if (ZRoutedRpc.instance != null)
 			{
-				StartCoroutine(UsePower(data.Power));
+				ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, PowerRpc, powerCooldownUntil);
 			}
+			StartCoroutine(UsePower(data.Power));
 		}
 
 		/// <summary>
