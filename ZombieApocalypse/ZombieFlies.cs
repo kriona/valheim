@@ -13,7 +13,10 @@ namespace ZombieApocalypse
 	/// sized to how big the creature is next to a draugr, from the size it has on the draugr - which its skeleton's
 	/// own scale is part of - and filled in ahead so the swarm is full from the start. A zombie also gets the beehive's
 	/// swarm buzzing, without its wasp sound, at ZombieBuzzVolume. Every client makes its own copies, which go with the
-	/// zombie when it's destroyed. They're shown or hidden every second to follow ZombieFlies
+	/// zombie when it's destroyed. They're shown or hidden every second to follow ZombieFlies. A zombie gives off
+	/// ZombieHazeStrength percent of a draugr's haze, and the haze of zombies crowded together would pile up into a thick cloud, so
+	/// each one's haze thins by how many are near it, keeping a crowd's haze to about HazeCrowd zombies' worth. The
+	/// draugr's own haze is left as it is
 	/// </remarks>
 	internal class ZombieFlies : MonoBehaviour
 	{
@@ -43,7 +46,23 @@ namespace ZombieApocalypse
 		private const float MinScale = 0.6f;
 		private const float MaxScale = 3f;
 
+		/// <summary>
+		/// The index in SourcePaths of the haze
+		/// </summary>
+		private const int HazeIndex = 1;
+
+		/// <summary>
+		/// How near other zombies have to be to thin a zombie's haze, and how many zombies' worth of haze a crowd has
+		/// </summary>
+		private const float HazeRange = 6f;
+		private const float HazeCrowd = 3f;
+
 		private static bool loggedMissing;
+
+		/// <summary>
+		/// Every zombie and corpse with effects, for counting the crowd around each one
+		/// </summary>
+		private static readonly HashSet<ZombieFlies> all = new HashSet<ZombieFlies>();
 
 		/// <summary>
 		/// The creature the effects are sized for, when they're on something other than the creature itself (e.g., a
@@ -53,6 +72,29 @@ namespace ZombieApocalypse
 
 		private GameObject[] effects;
 		private float nextRefresh;
+
+		/// <summary>
+		/// The haze's particle systems, and how many particles each emits over time and distance at full strength
+		/// </summary>
+		private ParticleSystem[] haze;
+		private float[] hazeRates;
+		private float[] hazeDistanceRates;
+
+		/// <summary>
+		/// Counts the zombie in the crowds of the others
+		/// </summary>
+		private void OnEnable()
+		{
+			all.Add(this);
+		}
+
+		/// <summary>
+		/// Stops counting the zombie in the crowds of the others
+		/// </summary>
+		private void OnDisable()
+		{
+			all.Remove(this);
+		}
 
 		/// <summary>
 		/// Copies the draugr's effects onto the zombie's or corpse's body
@@ -84,12 +126,32 @@ namespace ZombieApocalypse
 				}
 				effects[i] = Copy(part, bone, size);
 			}
+			if (effects[HazeIndex] != null)
+			{
+				haze = effects[HazeIndex].GetComponentsInChildren<ParticleSystem>(true);
+				hazeRates = new float[haze.Length];
+				hazeDistanceRates = new float[haze.Length];
+				for (int i = 0; i < haze.Length; i++)
+				{
+					hazeRates[i] = haze[i].emission.rateOverTimeMultiplier;
+					hazeDistanceRates[i] = haze[i].emission.rateOverDistanceMultiplier;
+				}
+			}
 			// Only the zombie buzzes - a corpse getting up on its own has a hidden zombie buzzing from the same spot
 			if (character != null)
 			{
 				effects[SourcePaths.Length] = AddBuzz(bone);
 			}
 			Refresh();
+			if (haze != null && Plugin.ZombieFlies.Value)
+			{
+				// Filled in again at the strength just set, since Copy filled it in at the draugr's
+				foreach (ParticleSystem particles in haze)
+				{
+					particles.Simulate(particles.main.startLifetime.constantMax, true, true);
+					particles.Play(true);
+				}
+			}
 		}
 
 		/// <summary>
@@ -150,7 +212,7 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Shows or hides the effects to follow ZombieFlies
+		/// Shows or hides the effects to follow ZombieFlies, and thins the haze for the crowd around the zombie
 		/// </summary>
 		private void Refresh()
 		{
@@ -166,6 +228,40 @@ namespace ZombieApocalypse
 				{
 					effect.SetActive(on);
 				}
+			}
+			if (on && haze != null)
+			{
+				ThinHaze();
+			}
+		}
+
+		/// <summary>
+		/// Sets how much haze the zombie gives off - ZombieHazeStrength percent of a draugr's, lowered by how many zombies
+		/// are near it so a crowd's haze adds up to about HazeCrowd zombies' worth - letting the particles already out
+		/// fade as they would
+		/// </summary>
+		private void ThinHaze()
+		{
+			Vector3 position = transform.position;
+			float rangeSquared = HazeRange * HazeRange;
+			int crowd = 0;
+			foreach (ZombieFlies other in all)
+			{
+				if (other != null && (other.transform.position - position).sqrMagnitude <= rangeSquared)
+				{
+					crowd++;
+				}
+			}
+			float strength = Plugin.ZombieHazeStrength.Value / 100f * Mathf.Min(1f, HazeCrowd / Mathf.Max(1, crowd));
+			for (int i = 0; i < haze.Length; i++)
+			{
+				if (haze[i] == null)
+				{
+					continue;
+				}
+				ParticleSystem.EmissionModule emission = haze[i].emission;
+				emission.rateOverTimeMultiplier = hazeRates[i] * strength;
+				emission.rateOverDistanceMultiplier = hazeDistanceRates[i] * strength;
 			}
 		}
 

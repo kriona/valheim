@@ -21,7 +21,7 @@ namespace ZombieApocalypse
 		/// <summary>
 		/// The keys of settings each player keeps their own value of
 		/// </summary>
-		private static readonly HashSet<string> LocalSettings = new HashSet<string> { "ZombieBuzzVolume" };
+		private static readonly HashSet<string> LocalSettings = new HashSet<string> { "ZombieBuzzVolume", "ZombieHazeStrength" };
 
 		/// <summary>
 		/// The connections of the clients with the mod, on the server

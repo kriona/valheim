@@ -82,7 +82,7 @@ Creatures that do not turn into zombies:
 
 `BepInEx\config\kriona.ZombieApocalypse.cfg` is created on first run, and changes take effect as soon as the file is saved. You do not need to restart Valheim or rejoin the world.
 
-In multiplayer, every player uses the server's settings while connected to it, and gets its changes as soon as they're saved - except `ZombieBuzzVolume`, which each player sets for themselves. A player's own settings come back when they leave the server.
+In multiplayer, every player uses the server's settings while connected to it, and gets its changes as soon as they're saved - except `ZombieBuzzVolume` and `ZombieHazeStrength`, which each player sets for themselves. A player's own settings come back when they leave the server.
 
 Rising:
 
@@ -109,6 +109,7 @@ Zombies:
 - `ZombieEyeColor` - color zombies' eyes glow, as `RRGGBBAA` hex (default `FF1A0DFF`)
 - `ZombieFlies` - zombies carry the draugr's flies and green haze (default `true`)
 - `ZombieBuzzVolume` - how loud zombies' flies buzz, from `0` for silent to `1`, where a beehive is `0.8` (default `0.4`)
+- `ZombieHazeStrength` - how much green haze a zombie gives off, as a percent of a draugr's. Zombies crowded together thin theirs further, so a crowd's haze adds up to about three zombies' worth (default `50`)
 
 Death:
 
