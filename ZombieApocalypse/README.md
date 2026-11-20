@@ -66,6 +66,7 @@ Creatures that do not turn into zombies:
 - The charred, Bonemaw serpents, and fallen valkyries
 - The Deep North's skeletons and shadows
 - Bosses
+- Creatures killed by spirit damage (e.g., silver weapons or dvergr mages' spells)
 - Summons, stone golems or creatures that leave no corpse to get up from, like seekers, ticks, serpents, surtlings and deathsquitos
 
 ## Configuration

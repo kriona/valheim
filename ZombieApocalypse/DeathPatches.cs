@@ -151,6 +151,38 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
+	/// Notes whether each hit that becomes a creature's last dealt spirit damage, so a creature killed by one stays
+	/// dead
+	/// </summary>
+	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
+	public static class SpiritHitPatch
+	{
+		/// <summary>
+		/// Reads the hit's spirit damage before the creature's resistances take it away
+		/// </summary>
+		/// <param name="__instance">The creature being hit</param>
+		/// <param name="hit">The hit</param>
+		/// <param name="__state">The creature's last hit before this one, and whether this one deals spirit damage</param>
+		private static void Prefix(Character __instance, HitData hit, out (HitData lastHit, bool spirit) __state)
+		{
+			__state = (__instance.m_lastHit, hit != null && hit.m_damage.m_spirit > 0f);
+		}
+
+		/// <summary>
+		/// Keeps whether the hit dealt spirit damage when the game made it the creature's last
+		/// </summary>
+		/// <param name="__instance">The creature that was hit</param>
+		/// <param name="__state">The creature's last hit before this one, and whether this one deals spirit damage</param>
+		private static void Postfix(Character __instance, (HitData lastHit, bool spirit) __state)
+		{
+			if (__instance.m_lastHit != __state.lastHit)
+			{
+				SpiritKills.SetLastHit(__instance, __state.spirit);
+			}
+		}
+	}
+
+	/// <summary>
 	/// Marks the corpse of a creature that rises, or of a zombie, as it's set up on the owner
 	/// </summary>
 	[HarmonyPatch(typeof(Ragdoll), nameof(Ragdoll.Setup))]

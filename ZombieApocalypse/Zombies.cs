@@ -154,7 +154,7 @@ namespace ZombieApocalypse
 
 		/// <summary>
 		/// Decides whether a creature that's dying rises as a zombie, rolling RiseChance for one that can - never on a
-		/// server without the mod, or when a player with corpse run killed it
+		/// server without the mod, or when it was killed by spirit damage or by a player with corpse run
 		/// </summary>
 		/// <param name="character">The dying creature</param>
 		/// <returns>True when it rises</returns>
@@ -191,7 +191,7 @@ namespace ZombieApocalypse
 			{
 				return(false);
 			}
-			if (CorpseRun.Protects(character.m_lastHit?.GetAttacker()))
+			if (SpiritKills.LastHitWasSpirit(character) || CorpseRun.Protects(character.m_lastHit?.GetAttacker()))
 			{
 				return(false);
 			}
