@@ -267,18 +267,6 @@ namespace ZombieApocalypse
 		private const float PowerRange = 10f;
 
 		/// <summary>
-		/// The chance a tombstone viking uses its power when a player first comes near, and a viking of the world when it
-		/// first spots an enemy
-		/// </summary>
-		private const float TombstonePowerChance = 0.5f;
-		private const float WorldPowerChance = 0.1f;
-
-		/// <summary>
-		/// Seconds after any viking uses a forsaken power before another may
-		/// </summary>
-		private const float PowerCooldown = 30f;
-
-		/// <summary>
 		/// The routed RPC that tells every client a viking has used a power, with when the cooldown ends in ticks
 		/// </summary>
 		public const string PowerRpc = "kriona.ZombieApocalypse.VikingPower";
@@ -1667,7 +1655,7 @@ namespace ZombieApocalypse
 		/// <summary>
 		/// Gives the viking its one chance to use its forsaken power once it's standing - a tombstone viking the first
 		/// time a player comes near, a viking of the world the first time it spots an enemy - unless another viking has
-		/// used one within PowerCooldown
+		/// used one within the config's PowerCooldown
 		/// </summary>
 		private void UpdatePower()
 		{
@@ -1683,7 +1671,7 @@ namespace ZombieApocalypse
 				{
 					return;
 				}
-				chance = TombstonePowerChance;
+				chance = Plugin.TombstonePowerChance.Value;
 			}
 			else
 			{
@@ -1691,15 +1679,15 @@ namespace ZombieApocalypse
 				{
 					return;
 				}
-				chance = WorldPowerChance;
+				chance = Plugin.WorldPowerChance.Value;
 			}
 			zdo.Set(PowerUsedKey, true);
 			long now = Zombies.Now();
-			if (Random.value >= chance || now < powerCooldownUntil)
+			if (Random.value * 100f >= chance || now < powerCooldownUntil)
 			{
 				return;
 			}
-			powerCooldownUntil = now + Zombies.Ticks(PowerCooldown);
+			powerCooldownUntil = now + Zombies.Ticks(Plugin.PowerCooldown.Value);
 			if (ZRoutedRpc.instance != null)
 			{
 				ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, PowerRpc, powerCooldownUntil);

@@ -6,17 +6,16 @@ namespace ZombieApocalypse
 	/// Gives a zombie or corpse its rotten look - ZombieColor, ZombieSaturation and dark patches from Mottling
 	/// </summary>
 	/// <remarks>
-	/// The look goes in each renderer's property blocks on top of its materials' own color, saturation and texture,
-	/// so a starred creature keeps its level's colors underneath. The patches swap each material's texture for its
-	/// mottled copy, which a corpse darkens through in steps while it lies there. It's applied again every second to
-	/// catch equipment and level materials added after the zombie spawned, and changes to the settings
+	/// The look goes in each renderer's property blocks on top of its materials' own color and texture, so a starred
+	/// creature keeps its level's colors underneath. Each material's texture is swapped for its washed-out, mottled
+	/// copy, which a corpse turns through in steps while it lies there. It's applied again every second to catch
+	/// equipment and level materials added after the zombie spawned, and changes to the settings
 	/// </remarks>
 	internal class ZombieLook : MonoBehaviour
 	{
 		private const float RefreshInterval = 1f;
 
 		private static readonly int ColorId = Shader.PropertyToID("_Color");
-		private static readonly int SaturationId = Shader.PropertyToID("_Saturation");
 		private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
 
 		/// <summary>
@@ -51,7 +50,6 @@ namespace ZombieApocalypse
 			appliedAmount = Amount;
 			nextRefresh = Time.time + RefreshInterval;
 			Color tint = Color.Lerp(Color.white, Plugin.ZombieColor.Value, Amount);
-			float saturation = Plugin.ZombieSaturation.Value * Amount;
 			int step = Mathf.CeilToInt(Amount * Mottling.Steps);
 			foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
 			{
@@ -69,9 +67,8 @@ namespace ZombieApocalypse
 						continue;
 					}
 					bool hasColor = material.HasProperty(ColorId);
-					bool hasSaturation = material.HasProperty(SaturationId);
 					Texture texture = (material.HasProperty(MainTexId) ? material.GetTexture(MainTexId) : null);
-					if (!hasColor && !hasSaturation && texture == null)
+					if (!hasColor && texture == null)
 					{
 						continue;
 					}
@@ -80,13 +77,9 @@ namespace ZombieApocalypse
 					{
 						block.SetColor(ColorId, material.GetColor(ColorId) * tint);
 					}
-					if (hasSaturation)
-					{
-						block.SetFloat(SaturationId, material.GetFloat(SaturationId) + saturation);
-					}
 					if (texture != null)
 					{
-						block.SetTexture(MainTexId, Mottling.Get(texture, step, !hasSaturation));
+						block.SetTexture(MainTexId, Mottling.Get(texture, step));
 					}
 					renderer.SetPropertyBlock(block, i);
 				}

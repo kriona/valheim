@@ -4,16 +4,15 @@ using UnityEngine;
 namespace ZombieApocalypse
 {
 	/// <summary>
-	/// Makes mottled copies of creature textures, darkened in patches with Perlin noise, and washed out for materials
-	/// whose shader can't wash them out itself
+	/// Makes zombie copies of creature textures, washed out by ZombieSaturation and darkened in patches with Perlin noise
 	/// </summary>
 	/// <remarks>
 	/// The game's textures can't be read directly, so each one is drawn into a render texture on the GPU and read back.
-	/// The noise is laid over the texture image, offset by the texture's name so different creatures get different
-	/// patches. A material with the creature shader is washed out by its _Saturation, but one with another shader (e.g.,
-	/// the Standard shader on an asksvin's teeth) has none, so its copy has ZombieSaturation baked into it instead.
-	/// Each copy is made once for each texture, strength step and kind and shared by every zombie that uses it, and all
-	/// of them are made again when ZombieMottling, ZombieMottleSize or ZombieSaturation changes
+	/// The colors are washed out in the copy rather than through the creature shader's _Saturation, which leaves some
+	/// color at -1 and which other shaders (e.g., the Standard shader on an asksvin's teeth) don't have. The noise is laid
+	/// over the texture image, offset by the texture's name so different creatures get different patches. Each copy is
+	/// made once for each texture and strength step and shared by every zombie that uses it, and all of them are made
+	/// again when ZombieMottling, ZombieMottleSize or ZombieSaturation changes
 	/// </remarks>
 	internal static class Mottling
 	{
@@ -31,11 +30,6 @@ namespace ZombieApocalypse
 		private static readonly Dictionary<Texture, Texture2D[]> copies = new Dictionary<Texture, Texture2D[]>();
 
 		/// <summary>
-		/// Copies with ZombieSaturation baked in, for materials whose shader can't wash them out
-		/// </summary>
-		private static readonly Dictionary<Texture, Texture2D[]> washedCopies = new Dictionary<Texture, Texture2D[]>();
-
-		/// <summary>
 		/// The ZombieMottling, ZombieMottleSize and ZombieSaturation the copies were made with
 		/// </summary>
 		private static float madeStrength = -1f;
@@ -43,39 +37,32 @@ namespace ZombieApocalypse
 		private static float madeSaturation = float.NaN;
 
 		/// <summary>
-		/// Gets the mottled copy of a texture at a strength step, making it the first time
+		/// Gets the zombie copy of a texture at a strength step, making it the first time
 		/// </summary>
 		/// <param name="source">The creature's texture</param>
 		/// <param name="step">The strength step, from 1 to Steps</param>
-		/// <param name="washOut">Whether to bake ZombieSaturation into the copy, for a shader without _Saturation</param>
 		/// <returns>The copy, or the source when there's nothing to change or the texture can't be copied</returns>
-		public static Texture Get(Texture source, int step, bool washOut)
+		public static Texture Get(Texture source, int step)
 		{
 			float strength = Plugin.ZombieMottling.Value;
 			float size = Plugin.ZombieMottleSize.Value;
 			float saturation = Plugin.ZombieSaturation.Value;
 			if (strength != madeStrength || size != madeSize || saturation != madeSaturation)
 			{
-				Clear(copies);
-				Clear(washedCopies);
+				Clear();
 				madeStrength = strength;
 				madeSize = size;
 				madeSaturation = saturation;
-			}
-			if (!washOut)
-			{
-				saturation = 0f;
 			}
 			if ((strength <= 0f && saturation == 0f) || step <= 0 || !(source is Texture2D) || source.width <= 0 || source.height <= 0)
 			{
 				return(source);
 			}
 			step = Mathf.Min(step, Steps);
-			Dictionary<Texture, Texture2D[]> cache = (washOut ? washedCopies : copies);
-			if (!cache.TryGetValue(source, out Texture2D[] steps))
+			if (!copies.TryGetValue(source, out Texture2D[] steps))
 			{
 				steps = new Texture2D[Steps];
-				cache[source] = steps;
+				copies[source] = steps;
 			}
 			if (steps[step - 1] == null)
 			{
@@ -86,12 +73,11 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Removes every copy in a cache, for when the settings change
+		/// Removes every copy, for when the settings change
 		/// </summary>
-		/// <param name="cache">The cache to empty</param>
-		private static void Clear(Dictionary<Texture, Texture2D[]> cache)
+		private static void Clear()
 		{
-			foreach (Texture2D[] steps in cache.Values)
+			foreach (Texture2D[] steps in copies.Values)
 			{
 				foreach (Texture2D copy in steps)
 				{
@@ -101,7 +87,7 @@ namespace ZombieApocalypse
 					}
 				}
 			}
-			cache.Clear();
+			copies.Clear();
 		}
 
 		/// <summary>

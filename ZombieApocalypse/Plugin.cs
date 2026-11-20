@@ -17,6 +17,7 @@ namespace ZombieApocalypse
 		private const string ZombiesSection = "Zombies";
 		private const string DeathSection = "Death";
 		private const string VikingGearSection = "Viking Gear";
+		private const string PowersSection = "Forsaken Powers";
 
 		/// <summary>
 		/// Undead creatures outside the Undead faction, and creatures that were never alive
@@ -54,6 +55,9 @@ namespace ZombieApocalypse
 		public static ConfigEntry<float> GearDropChance;
 		public static ConfigEntry<int> GearDropMax;
 		public static ConfigEntry<int> ArmorEffectiveness;
+		public static ConfigEntry<float> WorldPowerChance;
+		public static ConfigEntry<float> TombstonePowerChance;
+		public static ConfigEntry<float> PowerCooldown;
 
 		/// <summary>
 		/// The plugin's log
@@ -99,6 +103,9 @@ namespace ZombieApocalypse
 			GearDropChance = Config.Bind(VikingGearSection, "GearDropChance", 5f, new ConfigDescription("Percent chance that a zombie viking of the world drops each piece of its gear, as worn as it is, when it dies", new AcceptableValueRange<float>(0f, 100f)));
 			GearDropMax = Config.Bind(VikingGearSection, "GearDropMax", 2, new ConfigDescription("Most pieces of gear a zombie viking of the world drops", new AcceptableValueRange<int>(0, 10)));
 			ArmorEffectiveness = Config.Bind(VikingGearSection, "ArmorEffectiveness", 50, new ConfigDescription("How well armor protects any zombie viking, tombstone ones included, as a percent of how well it protects a player - armor is made for creatures' hits, so at 100 a viking is about twice as hard to kill", new AcceptableValueRange<int>(0, 200)));
+			WorldPowerChance = Config.Bind(PowersSection, "WorldPowerChance", 10f, new ConfigDescription("Percent chance that a zombie viking of the world uses its biome's forsaken power the first time it spots an enemy", new AcceptableValueRange<float>(0f, 100f)));
+			TombstonePowerChance = Config.Bind(PowersSection, "TombstonePowerChance", 50f, new ConfigDescription("Percent chance that a tombstone zombie viking uses your forsaken power when a player first comes near, if the power was ready when you died", new AcceptableValueRange<float>(0f, 100f)));
+			PowerCooldown = Config.Bind(PowersSection, "PowerCooldown", 30f, new ConfigDescription("Seconds after any zombie viking uses a forsaken power before another can - a viking whose chance comes up during it loses its chance", new AcceptableValueRange<float>(0f, 3600f)));
 			watcher = new ConfigWatcher(Config, Logger, PluginName);
 			Log = Logger;
 			harmony = new Harmony(PluginGuid);
