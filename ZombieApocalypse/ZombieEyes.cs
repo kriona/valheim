@@ -13,7 +13,8 @@ namespace ZombieApocalypse
 	/// which recolors anything else the map lights up too. A creature with its eyes painted into its skin but a bone
 	/// for each eye (e.g., a boar, wolf or troll) gets a small glowing eyeball on each of those bones, made from the
 	/// greydwarf brute's red eye material so it glows like the game's own eyes. A creature with none of these keeps its
-	/// eyes as they are. The color is applied again every second so changes to the settings show
+	/// eyes as they are. On a zombie's corpse the eyes stay ZombieEyeColor but stop glowing, and glowing skin goes
+	/// dark. The color is applied again every second so changes to the settings show
 	/// </remarks>
 	internal class ZombieEyes : MonoBehaviour
 	{
@@ -60,6 +61,11 @@ namespace ZombieApocalypse
 		private float nextRefresh;
 
 		/// <summary>
+		/// Whether the eyes are on a corpse, which doesn't glow
+		/// </summary>
+		private bool dead;
+
+		/// <summary>
 		/// Checks whether a material is an eye's, which the zombie's skin look leaves alone
 		/// </summary>
 		/// <param name="material">The material</param>
@@ -88,6 +94,7 @@ namespace ZombieApocalypse
 		/// </summary>
 		private void Start()
 		{
+			dead = (GetComponent<Ragdoll>() != null);
 			foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
 			{
 				bool eye = false;
@@ -128,7 +135,8 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Colors the eye materials, glowing skin and added eyeballs, or puts them back when ZombieEyes is off
+		/// Colors the eye materials, glowing skin and added eyeballs, without a glow on a corpse, or puts them back when
+		/// ZombieEyes is off
 		/// </summary>
 		private void Refresh()
 		{
@@ -139,7 +147,7 @@ namespace ZombieApocalypse
 			}
 			bool on = Plugin.ZombieEyes.Value;
 			Color color = Plugin.ZombieEyeColor.Value;
-			Color glow = color * GlowIntensity;
+			Color glow = (dead ? Color.black : color * GlowIntensity);
 			foreach (Renderer renderer in eyeRenderers)
 			{
 				if (renderer == null)
@@ -182,8 +190,9 @@ namespace ZombieApocalypse
 					}
 					// The glow keeps the brightness of the creature's own
 					Color original = material.GetColor(EmissionColorId);
+					Color recolored = (dead ? Color.black : color * original.maxColorComponent);
 					renderer.GetPropertyBlock(block, i);
-					block.SetColor(EmissionColorId, (on ? color * original.maxColorComponent : original));
+					block.SetColor(EmissionColorId, (on ? recolored : original));
 					renderer.SetPropertyBlock(block, i);
 				}
 			}

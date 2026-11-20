@@ -157,8 +157,8 @@ namespace ZombieApocalypse
 	public static class CorpseSetupPatch
 	{
 		/// <summary>
-		/// Stores the rise in the corpse's ZDO and starts it waiting, or tints a zombie's corpse and gives it the
-		/// zombie's loot to drop
+		/// Stores the rise in the corpse's ZDO and starts it waiting, or tints a zombie's corpse, keeps its eyes
+		/// glowing and gives it the zombie's loot to drop
 		/// </summary>
 		/// <param name="__instance">The corpse</param>
 		private static void Postfix(Ragdoll __instance)
@@ -175,6 +175,10 @@ namespace ZombieApocalypse
 				if (__instance.GetComponent<ZombieLook>() == null)
 				{
 					__instance.gameObject.AddComponent<ZombieLook>();
+				}
+				if (__instance.GetComponent<ZombieEyes>() == null)
+				{
+					__instance.gameObject.AddComponent<ZombieEyes>();
 				}
 				// A corpse with m_dropItems drops the loot in its ZDO when the game removes it
 				if (__instance.m_dropItems && Dying.ZombieLoot != null)
@@ -214,7 +218,7 @@ namespace ZombieApocalypse
 	public static class CorpseAwakePatch
 	{
 		/// <summary>
-		/// Adds the rising or the tint the corpse's ZDO asks for
+		/// Adds the rising, or the tint and glowing eyes, the corpse's ZDO asks for
 		/// </summary>
 		/// <param name="__instance">The corpse</param>
 		private static void Postfix(Ragdoll __instance)
@@ -232,6 +236,7 @@ namespace ZombieApocalypse
 			else if (zdo.GetBool(Zombies.ZombieKey))
 			{
 				__instance.gameObject.AddComponent<ZombieLook>();
+				__instance.gameObject.AddComponent<ZombieEyes>();
 			}
 		}
 	}
