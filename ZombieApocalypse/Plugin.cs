@@ -35,6 +35,7 @@ namespace ZombieApocalypse
 		public static ConfigEntry<string> ExcludedCreatures;
 		public static ConfigEntry<int> ZombieHealth;
 		public static ConfigEntry<int> WoundedSpeed;
+		public static ConfigEntry<float> PoisonCloudChance;
 		public static ConfigEntry<bool> UndeadWeaknesses;
 		public static ConfigEntry<string> ZombieName;
 		public static ConfigEntry<Color> ZombieColor;
@@ -86,6 +87,7 @@ namespace ZombieApocalypse
 			AnimalDamage = Config.Bind(ZombiesSection, "AnimalDamage", 10f, new ConfigDescription("Blunt damage a zombie animal's ram does, plus half as much again for each star", new AcceptableValueRange<float>(0f, 500f)));
 			ZombieHealth = Config.Bind(ZombiesSection, "ZombieHealth", 100, new ConfigDescription("A zombie's health as a percent of the creature's", new AcceptableValueRange<int>(10, 1000)));
 			WoundedSpeed = Config.Bind(ZombiesSection, "WoundedSpeed", 66, new ConfigDescription("How fast a zombie moves as its health runs out, as a percent of its full speed - it moves at full speed down to half health, then slows steadily to this", new AcceptableValueRange<int>(10, 100)));
+			PoisonCloudChance = Config.Bind(ZombiesSection, "PoisonCloudChance", 25f, new ConfigDescription("Percent chance that a zombie's corpse leaves a small cloud of weak poison for a few seconds when it rots away, from the Black Forest on", new AcceptableValueRange<float>(0f, 100f)));
 			UndeadWeaknesses = Config.Bind(ZombiesSection, "UndeadWeaknesses", true, "Zombies take damage like the undead - immune to poison, weak to spirit (silver) and fire, and tougher against arrows and other pierce damage. Takes effect for zombies that rise or load after it's changed");
 			ZombieName = Config.Bind(ZombiesSection, "ZombieName", "Zombie", "Word put in front of a zombie's name, or empty to leave its name as it is");
 			ZombieColor = Config.Bind(ZombiesSection, "ZombieColor", (Color)new Color32(178, 217, 153, 255), "Color a zombie's skin is multiplied by, as RRGGBBAA hex - white leaves the color as it is");

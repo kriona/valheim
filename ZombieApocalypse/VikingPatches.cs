@@ -18,6 +18,7 @@ namespace ZombieApocalypse
 		private static void Postfix(ZNetScene __instance)
 		{
 			ZombieViking.Register(__instance);
+			PoisonCloud.Register(__instance);
 			VikingSpawns.AddToBodyPiles(__instance);
 			ZRoutedRpc.instance?.Register<long>(ZombieViking.PowerRpc, ZombieViking.OnPowerUsed);
 		}

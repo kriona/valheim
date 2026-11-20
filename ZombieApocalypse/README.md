@@ -12,6 +12,7 @@ Slain creatures don't stay dead - a few seconds after a creature dies, its corps
 - Zombies slow down as they're hurt - at full speed down to half health, then slowing steadily to two-thirds speed as their health runs out
 - While you have corpse run from picking up your tombstone, nothing you kill rises
 - A creature's loot drops only drops when its zombie dies, after killing it a second time
+- From the Black Forest on, a zombie's corpse has a 25% chance to leave a small cloud of weak poison for a few seconds when it poofs
 
 <img src="images/deer.jpg" alt="Zombie deer" width="750">
 
@@ -98,6 +99,7 @@ Zombies:
 
 - `ZombieHealth` - a zombie's health as a percent of the creature's (default `100`)
 - `WoundedSpeed` - how fast a zombie moves as its health runs out, as a percent of its full speed - it moves at full speed down to half health, then slows steadily to this (default `66`)
+- `PoisonCloudChance` - percent chance that a zombie's corpse leaves a small cloud of weak poison when it rots away, from the Black Forest on (default `25`)
 - `UndeadWeaknesses` - zombies take damage like the undead (default `true`)
 - `AnimalDamage` - blunt damage a zombie animal's ram does, plus half as much again for each star (default `10`)
 - `ZombieName` - word put in front of a zombie's name, or empty to leave it as it is (default `Zombie`)

@@ -274,19 +274,25 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
-	/// Keeps a rising corpse until its zombie is standing, since RisingCorpse removes it then
+	/// Keeps a rising corpse until its zombie is standing, since RisingCorpse removes it then, and lets a zombie's
+	/// corpse leave a poison cloud as it rots away
 	/// </summary>
 	[HarmonyPatch(typeof(Ragdoll), nameof(Ragdoll.DestroyNow))]
 	public static class CorpseRemovePatch
 	{
 		/// <summary>
-		/// Skips the game's removal of a rising corpse
+		/// Skips the game's removal of a rising corpse, or maybe leaves a poison cloud where a zombie's lies
 		/// </summary>
 		/// <param name="__instance">The corpse</param>
 		/// <returns>False for a rising corpse, to skip the removal</returns>
 		private static bool Prefix(Ragdoll __instance)
 		{
-			return(__instance.GetComponent<RisingCorpse>() == null);
+			if (__instance.GetComponent<RisingCorpse>() != null)
+			{
+				return(false);
+			}
+			PoisonCloud.OnCorpseRemoved(__instance);
+			return(true);
 		}
 	}
 }
