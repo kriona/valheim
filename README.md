@@ -38,6 +38,8 @@ dotnet build Valheim.slnx -c Release
 
 If Valheim isn't installed at `C:\Program Files (x86)\Steam\steamapps\common\Valheim`, pass the path with `-p:ValheimPath="D:\Games\Valheim"` or set a `ValheimPath` environment variable.
 
+To build on a machine without the game, run `tools\setup-external.ps1` on one that has it (it also needs `dotnet tool install -g ilspycmd`) and copy the `external` folder it fills to the other machine. Its `external\Valheim` holds the game's and BepInEx's DLLs, which the build uses when the game folder doesn't exist, and `external\decompiled` holds the game's code decompiled one class per file. The folder is gitignored - don't share it publicly, since it's the game's code. Run the script again after a game update.
+
 Each DLL is written to `<Mod>\bin\Release\netstandard2.1\`.
 
 ## Releasing

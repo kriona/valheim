@@ -11,6 +11,8 @@
 		<MSBuildWarningsAsMessages>MSB3277</MSBuildWarningsAsMessages>
 		<!-- Override with -p:ValheimPath=... or a ValheimPath environment variable when the game is installed elsewhere -->
 		<ValheimPath Condition="'$(ValheimPath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Valheim</ValheimPath>
+		<!-- Without the game installed, builds use the copy of its DLLs in external\Valheim -->
+		<ValheimPath Condition="!Exists('$(ValheimPath)')">$(MSBuildThisFileDirectory)external\Valheim</ValheimPath>
 		<ManagedPath>$(ValheimPath)\valheim_Data\Managed</ManagedPath>
 		<BepInExPath>$(ValheimPath)\BepInEx</BepInExPath>
 	</PropertyGroup>
