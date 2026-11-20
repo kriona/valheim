@@ -50,6 +50,30 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
+	/// Keeps zombies from casting healing spells, like the greydwarf shaman's heal or the dvergr healer's
+	/// </summary>
+	/// <remarks>
+	/// A creature only aims a spell at a hurt ally to heal it, so a zombie can't use any spell aimed that way
+	/// </remarks>
+	[HarmonyPatch(typeof(BaseAI), nameof(BaseAI.CanUseAttack))]
+	public static class ZombieHealPatch
+	{
+		/// <summary>
+		/// Refuses a healing spell to a zombie
+		/// </summary>
+		/// <param name="__instance">The AI checking the attack</param>
+		/// <param name="item">The attack</param>
+		/// <param name="__result">Whether the attack can be used, set to false for a zombie's healing spell</param>
+		private static void Postfix(BaseAI __instance, ItemDrop.ItemData item, ref bool __result)
+		{
+			if (__result && item.m_shared.m_aiTargetType == ItemDrop.ItemData.AiTarget.FriendHurt && Zombies.IsZombie(__instance.m_character))
+			{
+				__result = false;
+			}
+		}
+	}
+
+	/// <summary>
 	/// Makes a zombie immune to damage while it gets up
 	/// </summary>
 	/// <remarks>

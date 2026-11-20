@@ -68,6 +68,12 @@ Zombie Vikings can raid your base:
 
 Zombie Viking have a chance to use a forsaken power appropriate for their biome the first time it spots an enemy. A tombstone zombie Viking a 50% chance to use your last selected power when a player first comes near. Once a zombie Viking uses its forsaken power, there is a global 30 second cooldown.
 
+## Dvergr Mages
+
+Every living dvergr mage can cast a powerful white bolt of spirit damage that deals a lot of damage to undead, and a white nova of spirit damage that bursts out around them when the undead get close. When fighting the undead, these are their preferred spells.
+
+Note that zombies don't cast healing spells, so a zombie greydwarf shaman or dvergr healer can't heal its allies.
+
 ## Immune to Zombification
 
 Creatures that do not turn into zombies:

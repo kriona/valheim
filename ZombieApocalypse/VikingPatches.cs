@@ -19,6 +19,7 @@ namespace ZombieApocalypse
 		{
 			ZombieViking.Register(__instance);
 			PoisonCloud.Register(__instance);
+			SpiritSpells.Register(__instance);
 			VikingSpawns.AddToBodyPiles(__instance);
 			ZRoutedRpc.instance?.Register<long>(ZombieViking.PowerRpc, ZombieViking.OnPowerUsed);
 		}
