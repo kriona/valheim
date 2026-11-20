@@ -176,12 +176,13 @@ namespace ZombieApocalypse
 	/// </summary>
 	/// <remarks>
 	/// The viking is its own prefab, built from the player's prefab with the player's parts swapped for a monster's and
-	/// the draugr's AI. A tombstone viking carries everything the player had but food and spirit weapons, and keeps it in
-	/// its ZDO as it's used up, so it never despawns or loses it. It drops it in a tombstone of the player's when it's
-	/// killed. Equipment the world let the player keep is copied to it marked as kept, so it fights with it but never
-	/// drops it. A viking of the world rolls its gear the first time it loads, and drops coins and maybe some of its gear.
-	/// Each wields its chosen weapon, or else its best one, and switches when that breaks or runs out of ammo. Its armor
-	/// protects it and wears down, and it raises its shield against attacks, better the more skilled it is
+	/// the draugr's AI. A tombstone viking carries everything the player had but food, silver and spirit weapons, and
+	/// keeps it in its ZDO as it's used up, so it never despawns or loses it. It drops it in a tombstone of the player's
+	/// when it's killed. Equipment the world let the player keep is copied to it marked as kept, so it fights with it
+	/// but never drops it. A viking of the world rolls its gear the first time it loads, and drops coins and maybe some
+	/// of its gear. Each wields its chosen weapon, or else its best one, and switches when that breaks or runs out of
+	/// ammo. Its armor protects it and wears down, and it raises its shield against attacks, better the more skilled it
+	/// is
 	/// </remarks>
 	internal class ZombieViking : MonoBehaviour
 	{
@@ -207,6 +208,11 @@ namespace ZombieApocalypse
 		/// Custom data on an item the player kept when they died, which the viking uses but never drops
 		/// </summary>
 		private const string KeptKey = "kriona.ZombieApocalypse.kept";
+
+		/// <summary>
+		/// The prefabs of silver ore and silver ingots, which stay in the player's tombstone like spirit weapons
+		/// </summary>
+		private static readonly HashSet<string> SilverPrefabs = new HashSet<string> { "SilverOre", "Silver" };
 
 		/// <summary>
 		/// How far from its home the viking wanders while it has nothing to fight
@@ -554,9 +560,9 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Takes everything but food and spirit weapons from the dead player's tombstone, copies the equipment they
-		/// kept, and sets their corpse to rise as a viking carrying it - or raises the viking at once when there's no
-		/// corpse
+		/// Takes everything but food, silver and spirit weapons from the dead player's tombstone, copies the equipment
+		/// they kept, and sets their corpse to rise as a viking carrying it - or raises the viking at once when there's
+		/// no corpse
 		/// </summary>
 		/// <param name="death">The death, once the player's OnDeath has made their corpse and tombstone</param>
 		public static void FinishPlayerDeath(PlayerDeath death)
@@ -638,8 +644,8 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Checks whether an item stays in the player's tombstone instead of going with their viking - food, and
-		/// weapons and ammo that deal spirit damage, which the undead can't bear
+		/// Checks whether an item stays in the player's tombstone instead of going with their viking - food, silver
+		/// ore and ingots, and weapons and ammo that deal spirit damage, which the undead can't bear
 		/// </summary>
 		/// <param name="item">The item</param>
 		/// <returns>True when it stays</returns>
@@ -647,6 +653,10 @@ namespace ZombieApocalypse
 		{
 			ItemDrop.ItemData.SharedData shared = item.m_shared;
 			if (shared.m_food > 0f)
+			{
+				return(true);
+			}
+			if (item.m_dropPrefab != null && SilverPrefabs.Contains(item.m_dropPrefab.name))
 			{
 				return(true);
 			}

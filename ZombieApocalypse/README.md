@@ -25,7 +25,7 @@ Even the fauna will fight you.
 
 ## Your Death
 
-When a zombie kills you, your own body gets back up as a tombstone zombie Viking with your name, looks and health, wearing your armor and carrying everything you had (except food and spirit weapons / ammo). If you still have corpse run from picking up your tombstone, your body stays dead.
+When a zombie kills you, your own body gets back up as a tombstone zombie Viking with your name, looks and health, wearing your armor and carrying everything you had (except food, silver ore and ingots, and spirit weapons / ammo). If you still have corpse run from picking up your tombstone, your body stays dead.
 
 - It guards your tombstone (or where you fell, if there isn't one)
 - It won't chase anything more than 20 meters from the tombstone, and if it ends up much farther out than that, it gives up the fight and returns to the spot you died
