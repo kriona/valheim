@@ -122,7 +122,7 @@ Zombies:
 - `WoundedSpeed` - how fast a zombie moves as its health runs out, as a percent of its full speed - it moves at full speed down to half health, then slows steadily to this (default `66`)
 - `PoisonCloudChance` - percent chance that a zombie's corpse leaves a small cloud of weak poison when it rots away, from the Black Forest on (default `25`)
 - `UndeadWeaknesses` - zombies take damage like the undead (default `true`)
-- `AnimalDamage` - blunt damage a zombie animal's ram does, plus half as much again for each star (default `10`)
+- `AnimalDamage` - blunt damage a zombie animal's ram does, plus half as much again for each star, and two and a half times as much for a Deep North seal (default `10`)
 - `ZombieName` - word put in front of a zombie's name, or empty to leave it as it is (default `Zombie`)
 - `ZombieColor` - color a zombie's skin is multiplied by, as `RRGGBBAA` hex, where white leaves it as it is (default `B2D999FF`)
 - `ZombieSaturation` - how much a zombie's colors are washed out, from `0` for not at all to `-1` for gray (default `-1`)

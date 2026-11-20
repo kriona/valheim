@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 
@@ -56,8 +57,23 @@ namespace ZombieApocalypse
 		private const float MinRetreatTime = 2f;
 		private const float MaxRetreatTime = 3.5f;
 
+		/// <summary>
+		/// Animals whose rams do more than AnimalDamage, by prefab, as a multiple of it - Deep North seals would barely
+		/// scratch anyone dressed for the Deep North otherwise
+		/// </summary>
+		private static readonly Dictionary<string, float> DamageScales = new Dictionary<string, float>
+		{
+			{ "Seal", 2.5f },
+			{ "Seal_Pup", 2.5f }
+		};
+
 		private Character character;
 		private AnimalAI ai;
+
+		/// <summary>
+		/// What the animal's rams do as a multiple of AnimalDamage
+		/// </summary>
+		private float damageScale = 1f;
 		private Character target;
 		private float targetTimer;
 		private float ramTimer;
@@ -68,12 +84,16 @@ namespace ZombieApocalypse
 		private float retreatTimer;
 
 		/// <summary>
-		/// Finds the zombie's creature and AI
+		/// Finds the zombie's creature, AI and damage scale
 		/// </summary>
 		private void Awake()
 		{
 			character = GetComponent<Character>();
 			ai = GetComponent<AnimalAI>();
+			if (DamageScales.TryGetValue(Utils.GetPrefabName(gameObject), out float scale))
+			{
+				damageScale = scale;
+			}
 		}
 
 		/// <summary>
@@ -154,7 +174,7 @@ namespace ZombieApocalypse
 		private void Ram(Vector3 direction)
 		{
 			HitData hit = new HitData();
-			hit.m_damage.m_blunt = Plugin.AnimalDamage.Value * (1f + DamagePerStar * (character.GetLevel() - 1));
+			hit.m_damage.m_blunt = Plugin.AnimalDamage.Value * damageScale * (1f + DamagePerStar * (character.GetLevel() - 1));
 			hit.m_point = target.GetCenterPoint();
 			hit.m_dir = direction;
 			hit.m_pushForce = RamPushForce;
