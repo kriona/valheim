@@ -69,6 +69,8 @@ Creatures that do not turn into zombies:
 
 `BepInEx\config\kriona.ZombieApocalypse.cfg` is created on first run, and changes take effect as soon as the file is saved. You do not need to restart Valheim or rejoin the world.
 
+In multiplayer, every player uses the server's settings while connected to it, and gets its changes as soon as they're saved - except `ZombieBuzzVolume`, which each player sets for themselves. A player's own settings come back when they leave the server.
+
 Rising:
 
 - `RiseChance` - percent chance that a slain creature rises (default `100`)

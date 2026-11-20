@@ -44,6 +44,7 @@ namespace ZombieApocalypse
 				return;
 			}
 			peer.m_rpc.Register<string>(WelcomeRpc, RPC_Welcome);
+			ConfigSync.Register(peer);
 			peer.m_rpc.Invoke(HelloRpc, Plugin.PluginVersion);
 		}
 
@@ -56,13 +57,14 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Answers a client with the mod, on the server
+		/// Answers a client with the mod and sends it the server's settings, on the server
 		/// </summary>
 		/// <param name="rpc">The client's connection</param>
 		/// <param name="version">The client's version of the mod</param>
 		private static void RPC_Hello(ZRpc rpc, string version)
 		{
 			rpc.Invoke(WelcomeRpc, Plugin.PluginVersion);
+			ConfigSync.AddClient(rpc);
 		}
 
 		/// <summary>
@@ -94,17 +96,18 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
-	/// Forgets the server when leaving a world
+	/// Forgets the server and its settings when leaving a world
 	/// </summary>
 	[HarmonyPatch(typeof(ZNet), nameof(ZNet.OnDestroy))]
 	public static class ServerCheckLeavePatch
 	{
 		/// <summary>
-		/// Turns the mod off until the next server answers
+		/// Turns the mod off until the next server answers, and goes back to this game's own settings
 		/// </summary>
 		private static void Postfix()
 		{
 			ServerCheck.Clear();
+			ConfigSync.Leave();
 		}
 	}
 }

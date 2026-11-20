@@ -108,17 +108,20 @@ namespace ZombieApocalypse
 			PowerCooldown = Config.Bind(PowersSection, "PowerCooldown", 30f, new ConfigDescription("Seconds after any zombie viking uses a forsaken power before another can - a viking whose chance comes up during it loses its chance", new AcceptableValueRange<float>(0f, 3600f)));
 			watcher = new ConfigWatcher(Config, Logger, PluginName);
 			Log = Logger;
+			ConfigSync.Init(Config);
 			harmony = new Harmony(PluginGuid);
 			harmony.PatchAll();
 			Logger.LogInfo(PluginName + " " + PluginVersion + " loaded");
 		}
 
 		/// <summary>
-		/// Reads the config file again once it has been saved
+		/// Reads the config file again once it has been saved, and shares or puts back the server's settings after a
+		/// change
 		/// </summary>
 		private void Update()
 		{
 			watcher.Update();
+			ConfigSync.Update();
 		}
 
 		/// <summary>
