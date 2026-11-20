@@ -4,8 +4,13 @@ Slain creatures don't stay dead - a few seconds after a creature dies, its corps
 
 <img src="images/troll.jpg" alt="Zombie troll" width="750">
 
+**This mod makes Valheim significantly harder.**
+
+You will now need to fight many mobs twice, and zombie Vikings are a challenging enemy.
+
 - A zombie rises with 25-75% of its health, so it looks battered as it gets up
 - A zombie first aggros whoever killed it
+- A creature's corpse keeps what it held, and its zombie gets up holding the same thing - a troll that dies with a log keeps it, and a fuling keeps its weapon and shield
 - Zombies take damage like the undead - they're immune to poison, weak to spirit damage (e.g., silver weapons) and fire, and tougher against arrows and spears
 - Zombies are undead and always hostile, and like all undead, they leave other undead alone
 - Animals that normally run away (e.g., deer, hares, seals and young animals) will, as zombies, hunt you down instead

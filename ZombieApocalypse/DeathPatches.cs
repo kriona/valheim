@@ -20,6 +20,11 @@ namespace ZombieApocalypse
 		public static bool IsZombie;
 
 		/// <summary>
+		/// The dying creature, whose held items its corpse keeps
+		/// </summary>
+		public static Character Creature;
+
+		/// <summary>
 		/// What the dying creature rises as, or null when it stays dead
 		/// </summary>
 		public static PendingRise Rise;
@@ -56,6 +61,7 @@ namespace ZombieApocalypse
 		{
 			Active = false;
 			IsZombie = false;
+			Creature = null;
 			Rise = null;
 			Corpse = null;
 			CorpseHasLoot = false;
@@ -90,6 +96,7 @@ namespace ZombieApocalypse
 			}
 			Dying.Active = true;
 			Dying.IsZombie = Zombies.IsZombie(__instance);
+			Dying.Creature = __instance;
 			Dying.DropPosition = __instance.GetCenterPoint();
 			if (Dying.IsZombie)
 			{
@@ -212,6 +219,10 @@ namespace ZombieApocalypse
 				{
 					__instance.gameObject.AddComponent<ZombieEyes>();
 				}
+				if (CorpseItems.Store(zdo, Dying.Creature))
+				{
+					__instance.gameObject.AddComponent<CorpseItems>();
+				}
 				// A corpse with m_dropItems drops the loot in its ZDO when the game removes it
 				if (__instance.m_dropItems && Dying.ZombieLoot != null)
 				{
@@ -235,9 +246,17 @@ namespace ZombieApocalypse
 			zdo.Set(Zombies.DiedAtKey, Zombies.Now());
 			zdo.Set(Zombies.RiseAtKey, rise.RiseAt);
 			zdo.Set(Zombies.RisePrefabKey, rise.PrefabHash);
+			if (rise.Seed != 0)
+			{
+				zdo.Set(Zombies.RiseSeedKey, rise.Seed);
+			}
 			if (!rise.KillerId.IsNone())
 			{
 				zdo.Set(Zombies.KillerIdKey, rise.KillerId);
+			}
+			if (CorpseItems.Store(zdo, Dying.Creature))
+			{
+				__instance.gameObject.AddComponent<CorpseItems>();
 			}
 			__instance.gameObject.AddComponent<RisingCorpse>();
 		}
@@ -269,6 +288,10 @@ namespace ZombieApocalypse
 			{
 				__instance.gameObject.AddComponent<ZombieLook>();
 				__instance.gameObject.AddComponent<ZombieEyes>();
+			}
+			if (CorpseItems.Has(zdo))
+			{
+				__instance.gameObject.AddComponent<CorpseItems>();
 			}
 		}
 	}

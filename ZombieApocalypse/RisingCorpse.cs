@@ -124,6 +124,7 @@ namespace ZombieApocalypse
 			PendingRise rise = new PendingRise();
 			rise.PrefabHash = zdo.GetInt(Zombies.RisePrefabKey);
 			rise.Level = zdo.GetInt(ZDOVars.s_level, 1);
+			rise.Seed = zdo.GetInt(Zombies.RiseSeedKey);
 			rise.Loot = Loot.Read(zdo, Loot.CorpseKeys);
 			rise.LootCheated = zdo.IsCheated();
 			rise.KillerId = zdo.GetZDOID(Zombies.KillerIdKey);

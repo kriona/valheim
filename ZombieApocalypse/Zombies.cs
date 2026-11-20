@@ -13,6 +13,11 @@ namespace ZombieApocalypse
 		public int Level;
 
 		/// <summary>
+		/// The seed the creature picked its random items with (e.g., whether a troll carries a log), or 0 for none
+		/// </summary>
+		public int Seed;
+
+		/// <summary>
 		/// When the corpse gets up, in ZNet time ticks
 		/// </summary>
 		public long RiseAt;
@@ -83,6 +88,11 @@ namespace ZombieApocalypse
 		/// The prefab of a corpse's creature
 		/// </summary>
 		public static readonly int RisePrefabKey = "kriona.ZombieApocalypse.risePrefab".GetStableHashCode();
+
+		/// <summary>
+		/// The seed a corpse's creature picked its random items with, so its zombie picks the same ones
+		/// </summary>
+		public static readonly int RiseSeedKey = "kriona.ZombieApocalypse.riseSeed".GetStableHashCode();
 
 		/// <summary>
 		/// When a risen corpse is removed, in ZNet time ticks
@@ -208,6 +218,8 @@ namespace ZombieApocalypse
 			PendingRise rise = new PendingRise();
 			rise.PrefabHash = character.m_nview.GetZDO().GetPrefab();
 			rise.Level = character.GetLevel();
+			Humanoid humanoid = character as Humanoid;
+			rise.Seed = ((humanoid != null) ? humanoid.m_seed : 0);
 			rise.RiseAt = Now() + Ticks(Plugin.RiseDelay.Value);
 			rise.LootCheated = character.m_nview.GetZDO().IsCheated();
 			return(rise);
@@ -241,6 +253,13 @@ namespace ZombieApocalypse
 			zdo.Set(RiseStartKey, riseStart);
 			zdo.Set(RiseEndKey, riseEnd);
 			zdo.Set(RiseHealthKey, UnityEngine.Random.Range(RiseHealthMin, RiseHealthMax));
+			Humanoid humanoid = character as Humanoid;
+			if (humanoid != null && rise.Seed != 0)
+			{
+				// Set before Start, where the creature picks its random items, and in the ZDO for other clients' copies
+				humanoid.m_seed = rise.Seed;
+				zdo.Set(ZDOVars.s_seed, rise.Seed);
+			}
 			character.SetLevel(rise.Level);
 			if (rise.Loot != null && rise.Loot.Count > 0)
 			{
