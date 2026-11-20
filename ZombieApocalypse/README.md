@@ -73,6 +73,17 @@ Every living dvergr mage can cast a powerful white bolt of spirit damage that de
 
 Note that zombies don't cast healing spells, so a zombie greydwarf shaman or dvergr healer can't heal its allies.
 
+## Silver-Lined Weapons
+
+Line your weapons with silver so the creatures you kill with them stay dead.
+
+- At a forge of level 3, the Upgrade tab has a "Silver-line" entry for each weapon you carry that can be lined - any weapon with metal in its recipe that doesn't already deal spirit damage
+- Lining costs silver - a quarter of the metal in the weapon's recipe, at least 1 - and 1 ectoplasm
+- A silver-lined weapon deals extra spirit damage - 5% of its damage at level 1, at least 5. Only the undead and zombies take spirit damage, so it doesn't change how hard it hits anything living, but a creature it kills doesn't rise
+- The lining stays on the weapon through upgrades and repairs, in chests, when traded, and in other worlds. In a world without the mod, it does nothing
+- Like other spirit weapons, a silver-lined weapon stays in your tombstone rather than going with your tombstone zombie Viking
+- The first time you have smelted silver, Hugin tells you about silver-lining
+
 ## Immune to Zombification
 
 Creatures that do not turn into zombies:
@@ -81,7 +92,7 @@ Creatures that do not turn into zombies:
 - The charred, Bonemaw serpents, and fallen valkyries
 - The Deep North's skeletons and shadows
 - Bosses
-- Creatures killed by spirit damage (e.g., silver weapons or dvergr mages' spells)
+- Creatures killed by spirit damage (e.g., silver or silver-lined weapons, or dvergr mages' spells)
 - Summons, stone golems or creatures that leave no corpse to get up from, like seekers, ticks, serpents, surtlings and deathsquitos
 
 ## Configuration
