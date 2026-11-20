@@ -9,6 +9,7 @@ Slain creatures don't stay dead - a few seconds after a creature dies, its corps
 - Zombies take damage like the undead - they're immune to poison, weak to spirit damage (e.g., silver weapons) and fire, and tougher against arrows and spears
 - Zombies are undead and always hostile, and like all undead, they leave other undead alone
 - Animals that normally run away (e.g., deer, hares, seals and young animals) will, as zombies, hunt you down instead
+- Zombies slow down as they're hurt - at full speed down to half health, then slowing steadily to two-thirds speed as their health runs out
 - A creature's loot drops only drops when its zombie dies, after killing it a second time
 
 <img src="images/deer.jpg" alt="Zombie deer" width="750">
@@ -85,6 +86,7 @@ Rising:
 Zombies:
 
 - `ZombieHealth` - a zombie's health as a percent of the creature's (default `100`)
+- `WoundedSpeed` - how fast a zombie moves as its health runs out, as a percent of its full speed - it moves at full speed down to half health, then slows steadily to this (default `66`)
 - `UndeadWeaknesses` - zombies take damage like the undead (default `true`)
 - `AnimalDamage` - blunt damage a zombie animal's ram does, plus half as much again for each star (default `10`)
 - `ZombieName` - word put in front of a zombie's name, or empty to leave it as it is (default `Zombie`)

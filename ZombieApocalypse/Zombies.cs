@@ -261,7 +261,7 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Turns a creature into a zombie - its faction, hostility, loot, breeding, look and getting up - and scales
+		/// Turns a creature into a zombie - its faction, hostility, loot, breeding, look, limp and getting up - and scales
 		/// its health when this client owns it and it's unhurt
 		/// </summary>
 		/// <remarks>
@@ -323,6 +323,10 @@ namespace ZombieApocalypse
 			if (character.GetComponent<ZombieFlies>() == null)
 			{
 				character.gameObject.AddComponent<ZombieFlies>();
+			}
+			if (character.GetComponent<ZombieLimp>() == null)
+			{
+				character.gameObject.AddComponent<ZombieLimp>();
 			}
 			if (Now() < zdo.GetLong(RiseEndKey) && character.GetComponent<RiseBlend>() == null)
 			{
