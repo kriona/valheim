@@ -258,6 +258,7 @@ namespace ZombieApocalypse
 			{
 				__instance.gameObject.AddComponent<CorpseItems>();
 			}
+			ZombieViking.HandToCorpse(Dying.Creature, zdo);
 			__instance.gameObject.AddComponent<RisingCorpse>();
 		}
 	}

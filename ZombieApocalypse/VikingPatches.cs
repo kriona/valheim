@@ -481,21 +481,26 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
-	/// Drops a zombie viking's things in the player's tombstone as it dies on its owner
+	/// Drops a viking's things in the player's tombstone, or its coins and gear, as it dies on its owner, or keeps a
+	/// living viking's things for the zombie it rises as
 	/// </summary>
+	/// <remarks>
+	/// Runs after DeathPatch has decided whether the viking rises
+	/// </remarks>
 	[HarmonyPatch(typeof(Character), nameof(Character.OnDeath))]
 	public static class VikingDeathPatch
 	{
 		/// <summary>
-		/// Makes the tombstone before the viking is removed
+		/// Makes the tombstone or drops the loot before the viking is removed
 		/// </summary>
 		/// <param name="__instance">The creature dying</param>
+		[HarmonyPriority(Priority.Low)]
 		private static void Prefix(Character __instance)
 		{
 			ZNetView nview = __instance.m_nview;
 			if (nview != null && nview.IsValid() && nview.IsOwner() && __instance.TryGetComponent(out ZombieViking viking))
 			{
-				viking.DropGrave();
+				viking.DropGrave(Dying.Creature == __instance && Dying.Rise != null);
 			}
 		}
 	}

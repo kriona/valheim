@@ -171,12 +171,15 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
-	/// A zombie viking - a player killed by a zombie, risen from their corpse with their looks, health, armor and things,
-	/// or one of the world's, with a random look and gear from VikingGear
+	/// A viking - a zombie viking, which is a player killed by a zombie, risen from their corpse with their looks,
+	/// health, armor and things, or one of the world's, with a random look and gear from VikingGear, or a living viking
+	/// of the world
 	/// </summary>
 	/// <remarks>
-	/// The viking is its own prefab, built from the player's prefab with the player's parts swapped for a monster's and
-	/// the draugr's AI. A tombstone viking carries everything the player had but food, silver and spirit weapons, and
+	/// Each kind is its own prefab, built from the player's prefab with the player's parts swapped for a monster's and
+	/// the draugr's AI. A zombie viking is in the Undead faction. A living viking is in the dvergr's, so it fights
+	/// zombies and monsters and leaves players alone until one attacks it or another viking nearby, and its corpse rises
+	/// as a zombie viking with its looks and gear, which drops its coins when it's killed in turn. A tombstone viking carries everything the player had but food, silver and spirit weapons, and
 	/// keeps it in its ZDO as it's used up, so it never despawns or loses it. It drops it in a tombstone of the player's
 	/// when it's killed. Equipment the world let the player keep is copied to it marked as kept, so it fights with it
 	/// but never drops it. A viking of the world rolls its gear the first time it loads, and drops coins and maybe some
@@ -188,6 +191,12 @@ namespace ZombieApocalypse
 	{
 		public const string PrefabName = "ZombieViking";
 		public static readonly int PrefabHash = PrefabName.GetStableHashCode();
+
+		/// <summary>
+		/// The living viking's prefab
+		/// </summary>
+		public const string LivingPrefabName = "Viking";
+		public static readonly int LivingPrefabHash = LivingPrefabName.GetStableHashCode();
 
 		/// <summary>
 		/// On a viking and the corpse it rises from, its VikingData
@@ -258,6 +267,11 @@ namespace ZombieApocalypse
 		/// </summary>
 		private const float RunSpeed = 5f;
 
+		/// <summary>
+		/// The torch a living viking carries at night
+		/// </summary>
+		private const string TorchPrefab = "Torch";
+
 		private const float SyncInterval = 1f;
 
 		/// <summary>
@@ -322,6 +336,7 @@ namespace ZombieApocalypse
 
 		private static GameObject prefabHolder;
 		private static GameObject prefab;
+		private static GameObject livingPrefab;
 
 		private Humanoid humanoid;
 		private ZNetView nview;
@@ -405,41 +420,69 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Adds the viking prefab to a world's prefabs, building it the first time
+		/// Checks whether a creature is a living viking
+		/// </summary>
+		/// <param name="character">The creature</param>
+		/// <returns>True when it is</returns>
+		public static bool IsLivingViking(Character character)
+		{
+			ZNetView view = character.m_nview;
+			return(view != null && view.IsValid() && view.GetZDO().GetPrefab() == LivingPrefabHash);
+		}
+
+		/// <summary>
+		/// Adds the zombie and living viking prefabs to a world's prefabs, building them the first time
 		/// </summary>
 		/// <param name="scene">The world's ZNetScene, as it wakes</param>
 		public static void Register(ZNetScene scene)
 		{
-			if (scene.m_namedPrefabs.ContainsKey(PrefabHash))
+			if (prefab == null)
 			{
+				prefab = BuildPrefab(scene, PrefabName, Character.Faction.Undead);
+			}
+			if (livingPrefab == null)
+			{
+				livingPrefab = BuildPrefab(scene, LivingPrefabName, Character.Faction.Dverger);
+			}
+			if (prefab == null || livingPrefab == null)
+			{
+				Plugin.Log.LogWarning("Couldn't build the vikings - the Player or Draugr prefab is missing");
 				return;
 			}
-			GameObject built = BuildPrefab(scene);
-			if (built == null)
-			{
-				Plugin.Log.LogWarning("Couldn't build the zombie viking - the Player or Draugr prefab is missing");
-				return;
-			}
-			scene.m_prefabs.Add(built);
-			scene.m_namedPrefabs.Add(PrefabHash, built);
+			AddPrefab(scene, prefab, PrefabHash);
+			AddPrefab(scene, livingPrefab, LivingPrefabHash);
 		}
 
 		/// <summary>
-		/// Builds the viking prefab from the player's prefab, swapping the player's parts for a monster's with the
+		/// Adds a prefab to a world's prefabs, unless it's already there
+		/// </summary>
+		/// <param name="scene">The world's ZNetScene</param>
+		/// <param name="built">The prefab</param>
+		/// <param name="hash">Its name hash</param>
+		private static void AddPrefab(ZNetScene scene, GameObject built, int hash)
+		{
+			if (!scene.m_namedPrefabs.ContainsKey(hash))
+			{
+				scene.m_prefabs.Add(built);
+				scene.m_namedPrefabs.Add(hash, built);
+			}
+		}
+
+		/// <summary>
+		/// Builds a viking prefab from the player's prefab, swapping the player's parts for a monster's with the
 		/// draugr's AI
 		/// </summary>
 		/// <remarks>
 		/// The copy sits under an inactive object, so none of its parts wake while it's changed, and it's kept across
-		/// worlds
+		/// worlds. A viking outside the Undead faction is provoked like the dvergr - by a player hurting it or another
+		/// viking near it
 		/// </remarks>
 		/// <param name="scene">The world's ZNetScene</param>
+		/// <param name="name">The prefab's name</param>
+		/// <param name="faction">The viking's faction</param>
 		/// <returns>The prefab, or null when the player's or draugr's prefab is missing</returns>
-		private static GameObject BuildPrefab(ZNetScene scene)
+		private static GameObject BuildPrefab(ZNetScene scene, string name, Character.Faction faction)
 		{
-			if (prefab != null)
-			{
-				return(prefab);
-			}
 			GameObject playerPrefab = scene.GetPrefab("Player");
 			GameObject draugrPrefab = scene.GetPrefab("Draugr");
 			if (playerPrefab == null || draugrPrefab == null || draugrPrefab.GetComponent<MonsterAI>() == null)
@@ -453,7 +496,7 @@ namespace ZombieApocalypse
 				Object.DontDestroyOnLoad(prefabHolder);
 			}
 			GameObject viking = Object.Instantiate(playerPrefab, prefabHolder.transform, false);
-			viking.name = PrefabName;
+			viking.name = name;
 			Player player = viking.GetComponent<Player>();
 			Humanoid body = viking.AddComponent<Humanoid>();
 			CopyFields(typeof(Character), player, body);
@@ -463,7 +506,7 @@ namespace ZombieApocalypse
 			RemoveComponent<Talker>(viking);
 			RemoveComponent<Skills>(viking);
 			body.m_name = "Viking";
-			body.m_faction = Character.Faction.Undead;
+			body.m_faction = faction;
 			body.m_runSpeed = RunSpeed;
 			body.m_defaultItems = new GameObject[0];
 			// A player's death shakes their own controller, which a viking's shouldn't
@@ -481,9 +524,15 @@ namespace ZombieApocalypse
 			ai.m_avoidWater = false;
 			ai.m_randomMoveRange = GuardRange;
 			ai.m_enableHuntPlayer = false;
+			if (faction != Character.Faction.Undead)
+			{
+				// A living viking doesn't groan like the draugr its AI comes from
+				ai.m_aggravatable = true;
+				ai.m_idleSound = new EffectList();
+				ai.m_alertedEffects = new EffectList();
+			}
 			viking.AddComponent<ZombieViking>();
-			prefab = viking;
-			return(prefab);
+			return(viking);
 		}
 
 		/// <summary>
@@ -665,6 +714,33 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
+		/// Hands a dying living viking's data and inventory to its corpse, for the zombie viking it rises as
+		/// </summary>
+		/// <param name="creature">The dying creature</param>
+		/// <param name="corpse">Its corpse's ZDO, owned by this client</param>
+		public static void HandToCorpse(Character creature, ZDO corpse)
+		{
+			if (creature == null || !IsLivingViking(creature))
+			{
+				return;
+			}
+			ZDO zdo = creature.m_nview.GetZDO();
+			byte[] dataBytes = zdo.GetByteArray(DataKey);
+			if (dataBytes == null)
+			{
+				return;
+			}
+			// The corpse holds the viking's things until its zombie rises, so it's kept with the world
+			corpse.Persistent = true;
+			corpse.Set(DataKey, dataBytes);
+			byte[] inventoryBytes = zdo.GetByteArray(InventoryKey);
+			if (inventoryBytes != null)
+			{
+				corpse.Set(InventoryKey, inventoryBytes);
+			}
+		}
+
+		/// <summary>
 		/// Gives a viking that's just been raised its data and inventory from the corpse it rose from
 		/// </summary>
 		/// <param name="corpse">The corpse's ZDO</param>
@@ -806,6 +882,7 @@ namespace ZombieApocalypse
 			{
 				nextSync = Time.time + SyncInterval;
 				DropBrokenShield();
+				UpdateTorch();
 				SaveInventory();
 			}
 			UpdateBlock();
@@ -813,20 +890,24 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Rolls a new viking of the world's look, health, skill, power and gear for the biome it's in, and marks it as a
-		/// zombie
+		/// Rolls a new viking of the world's look, health, skill, power and gear for the biome it's in, and marks a zombie
+		/// viking as a zombie
 		/// </summary>
 		private void Generate()
 		{
 			int index = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(transform.position));
 			VikingData rolled = VikingGear.RollData(index);
-			Inventory gear = VikingGear.RollLoadout(index, humanoid.GetLevel(), rolled);
+			// A living viking has kept its armor and weapon
+			Inventory gear = VikingGear.RollLoadout(index, humanoid.GetLevel(), rolled, IsLivingViking(humanoid));
 			ZPackage pkg = new ZPackage();
 			gear.Save(pkg);
 			ZDO zdo = nview.GetZDO();
 			zdo.Set(DataKey, rolled.ToBytes());
 			zdo.Set(InventoryKey, pkg.GetArray());
-			zdo.Set(Zombies.ZombieKey, true);
+			if (!IsLivingViking(humanoid))
+			{
+				zdo.Set(Zombies.ZombieKey, true);
+			}
 			data = null;
 		}
 
@@ -1364,9 +1445,11 @@ namespace ZombieApocalypse
 
 		/// <summary>
 		/// As the viking dies on its owner, drops everything a tombstone viking carries but kept items in a tombstone of
-		/// the player's, or a viking of the world's coins and maybe some of its gear
+		/// the player's, or a viking of the world's coins and maybe some of its gear - or, for a living viking that will
+		/// rise, keeps everything for its zombie
 		/// </summary>
-		public void DropGrave()
+		/// <param name="rises">Whether the viking's corpse will rise</param>
+		public void DropGrave(bool rises)
 		{
 			if (!loaded)
 			{
@@ -1374,6 +1457,11 @@ namespace ZombieApocalypse
 			}
 			if (!loaded)
 			{
+				return;
+			}
+			if (rises && IsLivingViking(humanoid))
+			{
+				SaveInventory();
 				return;
 			}
 			if (data.Tombstone)
@@ -1482,6 +1570,59 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
+		/// Has a living viking pull out a torch at night while it isn't fighting, and put it away by day
+		/// </summary>
+		/// <remarks>
+		/// The torch goes in the hand beside a one-handed weapon, or in place of another weapon. When the viking spots an
+		/// enemy its AI wields its weapon again, which puts the torch away for a shield or a weapon that takes both
+		/// hands, and keeps it beside a one-handed weapon with no shield. The torch is relit each night, so it never
+		/// burns out
+		/// </remarks>
+		private void UpdateTorch()
+		{
+			if (!IsLivingViking(humanoid) || ai == null)
+			{
+				return;
+			}
+			ItemDrop.ItemData torch = FindTorch();
+			bool night = EnvMan.IsNight();
+			bool fighting = (ai.IsAlerted() || ai.GetTargetCreature() != null);
+			if (night && !fighting)
+			{
+				if (torch == null)
+				{
+					torch = humanoid.GetInventory().AddItem(TorchPrefab, 1, 1, 0, 0L, "", false);
+				}
+				if (torch != null && !humanoid.IsItemEquiped(torch))
+				{
+					torch.m_durability = torch.GetMaxDurability();
+					humanoid.EquipItem(torch, false);
+				}
+			}
+			else if (!night && torch != null && humanoid.IsItemEquiped(torch))
+			{
+				humanoid.UnequipItem(torch, false);
+				EquipWeapon();
+			}
+		}
+
+		/// <summary>
+		/// Finds a torch in the viking's inventory
+		/// </summary>
+		/// <returns>The torch, or null when it has none</returns>
+		private ItemDrop.ItemData FindTorch()
+		{
+			foreach (ItemDrop.ItemData item in humanoid.GetInventory().GetAllItems())
+			{
+				if (item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch)
+				{
+					return(item);
+				}
+			}
+			return(null);
+		}
+
+		/// <summary>
 		/// Switches weapons before an attack when the one in hand has broken or run out of ammo
 		/// </summary>
 		public void CheckWeapon()
@@ -1550,14 +1691,14 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Checks whether the viking can fight with an item - a weapon that isn't broken, has ammo when it takes ammo,
-		/// doesn't need eitr, which the viking has none of, and deals damage
+		/// Checks whether the viking can fight with an item - a weapon other than a torch that isn't broken, has ammo when
+		/// it takes ammo, doesn't need eitr, which the viking has none of, and deals damage
 		/// </summary>
 		/// <param name="item">The item</param>
 		/// <returns>True when it can</returns>
 		private bool CanUse(ItemDrop.ItemData item)
 		{
-			if (!item.IsWeapon())
+			if (!item.IsWeapon() || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch)
 			{
 				return(false);
 			}
@@ -1703,7 +1844,8 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Plays the forsaken power animation, then gives the power to the viking and the undead around it
+		/// Plays the forsaken power animation, then gives the power to the viking and the creatures of its faction around
+		/// it
 		/// </summary>
 		/// <param name="power">The power's status effect name hash</param>
 		/// <returns>The coroutine</returns>
@@ -1719,8 +1861,8 @@ namespace ZombieApocalypse
 			Character.GetCharactersInRange(transform.position, PowerRange, nearby);
 			foreach (Character character in nearby)
 			{
-				bool undead = (!character.IsPlayer() && !character.IsDead() && character.GetFaction() == Character.Faction.Undead);
-				if (character == humanoid || undead)
+				bool ally = (!character.IsPlayer() && !character.IsDead() && character.GetFaction() == humanoid.GetFaction());
+				if (character == humanoid || ally)
 				{
 					character.GetSEMan().AddStatusEffect(power, true);
 				}

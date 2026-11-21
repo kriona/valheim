@@ -60,6 +60,17 @@ Zombie Vikings roam the world, each with gear appropriate to the biome it spawns
 - Its armor protects it half as well as a player's and wears down the same way, its weapons and shield wear down as it uses them, and it raises its shield against attacks, more often and with better timing the more skilled it is
 - When it dies it drops its coins, and 0-2 entrails from the Swamp on, multiplied by its stars, and each piece of its gear has a 5% chance to drop, at most 2
 
+## Living Vikings
+
+Not every Viking has turned yet.
+
+- They're armed and carry coins like zombie Vikings of the same biome, and fight the same way, but always wear armor and wield a weapon - the helmet, cape and shield are still left to chance
+- Spawn one with the console command `spawn Viking`, or a zombie one with `spawn ZombieViking`
+- Like the dvergr, they fight zombies and monsters and leave you alone - until you hurt one, which turns every Viking and dvergr nearby against you
+- A living Viking that dies rises as a zombie Viking with its looks and gear, which drops its coins when it's killed in turn
+- They don't groan like the draugr
+- At night they pull out a torch while they aren't fighting, beside a one-handed weapon or in place of another. In a fight they put it away for a shield or a two-handed weapon, but keep it beside a one-handed weapon with nothing else in their off hand
+
 ## Raids
 
 Zombie Vikings can raid your base:

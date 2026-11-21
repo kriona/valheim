@@ -237,8 +237,10 @@ namespace ZombieApocalypse
 		/// <param name="index">The index of its biome</param>
 		/// <param name="level">Its level, where 2 is one star</param>
 		/// <param name="data">Its data, given the slot of its weapon</param>
+		/// <param name="armed">True for a viking that always wears armor and wields a weapon, skipping ArmorChance and
+		/// WeaponChance - its helmet, cape and shield are still rolled</param>
 		/// <returns>The inventory holding the gear</returns>
-		public static Inventory RollLoadout(int index, int level, VikingData data)
+		public static Inventory RollLoadout(int index, int level, VikingData data, bool armed)
 		{
 			Inventory inventory = new Inventory(ZombieViking.PrefabName, null, data.Width, data.Height);
 			List<BiomeGear> pool = new List<BiomeGear>();
@@ -249,7 +251,7 @@ namespace ZombieApocalypse
 			}
 			bool deepNorth = (Get(index).Biome == Heightmap.Biome.DeepNorth);
 			int quality = (Plugin.StarsUpgradeGear.Value ? level : 1);
-			if (Roll(Plugin.ArmorChance))
+			if (armed || Roll(Plugin.ArmorChance))
 			{
 				List<ArmorSet> sets = new List<ArmorSet>();
 				foreach (BiomeGear gear in pool)
@@ -269,7 +271,7 @@ namespace ZombieApocalypse
 				}
 			}
 			ItemDrop.ItemData weapon = null;
-			if (Roll(Plugin.WeaponChance))
+			if (armed || Roll(Plugin.WeaponChance))
 			{
 				List<string> weapons = new List<string>();
 				foreach (BiomeGear gear in pool)
