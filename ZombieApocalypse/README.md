@@ -27,6 +27,7 @@ Even the fauna will fight you.
 - A zombie's skin is tinted, washed out and blotched with dark rotten patches
 - Creatures with glowing eyes (e.g., greydwarfs, dvergr, necks, lox and fenrings) have them turned red, and ones with eyes painted on but eye bones (e.g., boars, deer, wolves and trolls) get glowing red eyes
 - Zombies carry the draugr's swarm of flies and a faint green haze
+- Zombies on two legs (e.g., greydwarfs, fulings, trolls and Vikings) lurch as they walk - hunched over with their head lolling to one side, leaning onto a stiff leg they drag and letting the arm on that side hang. Zombies on four legs (e.g., wolves, boars and deer) limp on a stiff front leg with their head hung low. Both lurch harder as they're hurt
 
 ## Your Death
 
@@ -120,6 +121,7 @@ Zombies:
 
 - `ZombieHealth` - a zombie's health as a percent of the creature's (default `100`)
 - `WoundedSpeed` - how fast a zombie moves as its health runs out, as a percent of its full speed - it moves at full speed down to half health, then slows steadily to this (default `66`)
+- `ZombieLurch` - how much zombies lurch as they walk, from `0`, which leaves them walking as the creature does, to `100`. Each zombie lurches somewhere between this and twice this (default `100`)
 - `PoisonCloudChance` - percent chance that a zombie's corpse leaves a small cloud of weak poison when it rots away, from the Black Forest on (default `25`)
 - `UndeadWeaknesses` - zombies take damage like the undead (default `true`)
 - `AnimalDamage` - blunt damage a zombie animal's ram does, plus half as much again for each star, and two and a half times as much for a Deep North seal (default `10`)

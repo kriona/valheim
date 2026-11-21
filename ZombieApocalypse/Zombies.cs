@@ -284,7 +284,7 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Turns a creature into a zombie - its faction, hostility, loot, breeding, look, limp and getting up - and scales
+		/// Turns a creature into a zombie - its faction, hostility, loot, breeding, look, limp, lurch and getting up - and scales
 		/// its health when this client owns it and it's unhurt
 		/// </summary>
 		/// <remarks>
@@ -354,6 +354,10 @@ namespace ZombieApocalypse
 			if (Now() < zdo.GetLong(RiseEndKey) && character.GetComponent<RiseBlend>() == null)
 			{
 				character.gameObject.AddComponent<RiseBlend>();
+			}
+			if (character.GetComponent<ZombieLurch>() == null)
+			{
+				character.gameObject.AddComponent<ZombieLurch>();
 			}
 			// The game sets a creature's max health from its level each time it loads. A viking has the player's
 			// health instead, which it sets as it loads
