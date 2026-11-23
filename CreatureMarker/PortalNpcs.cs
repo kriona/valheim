@@ -268,6 +268,76 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
+		/// Whether a point is hidden behind a portal showing a view, with the line from the camera to it passing through
+		/// the opening, where PortalPreview draws the destination over whatever is behind the portal
+		/// </summary>
+		/// <remarks>
+		/// PortalPreview draws its views just before the camera renders, after the markers are placed, so a view drawn
+		/// in the frame before still counts
+		/// </remarks>
+		/// <param name="point">The world point the marker's arrow sits above</param>
+		/// <param name="eye">The camera's position</param>
+		/// <param name="source">The marked target, which its own portal's view doesn't hide</param>
+		/// <returns>True when a portal's view covers the point</returns>
+		public static bool IsHiddenByView(Vector3 point, Vector3 eye, Object source)
+		{
+			if (views.Count == 0)
+			{
+				return(false);
+			}
+			Component component = source as Component;
+			foreach (KeyValuePair<Transform, View> entry in views)
+			{
+				Transform portal = entry.Key;
+				View view = entry.Value;
+				if (portal == null || view.frame < Time.frameCount - 1)
+				{
+					continue;
+				}
+				if (component != null && portal.IsChildOf(component.transform))
+				{
+					continue;
+				}
+				// In the portal's own space, the view is drawn across it at a distance in front of its position
+				Quaternion inverse = Quaternion.Inverse(portal.rotation);
+				Vector3 from = inverse * (eye - portal.position);
+				Vector3 to = inverse * (point - portal.position);
+				float plane = ((from.z < 0f) ? view.backPlane : view.frontPlane);
+				if ((from.z > plane) == (to.z > plane))
+				{
+					continue;
+				}
+				Vector3 crossing = Vector3.Lerp(from, to, (plane - from.z) / (to.z - from.z));
+				if (IsInside(view.outline, new Vector2(crossing.x, crossing.y - view.centerHeight)))
+				{
+					return(true);
+				}
+			}
+			return(false);
+		}
+
+		/// <summary>
+		/// Whether a point is inside an outline, counting how many of its edges a line from the point crosses
+		/// </summary>
+		/// <param name="outline">The outline's points</param>
+		/// <param name="point">The point</param>
+		/// <returns>True when the point is inside</returns>
+		private static bool IsInside(Vector2[] outline, Vector2 point)
+		{
+			bool inside = false;
+			for (int i = 0, j = outline.Length - 1; i < outline.Length; j = i++)
+			{
+				Vector2 a = outline[i];
+				Vector2 b = outline[j];
+				if ((a.y > point.y) != (b.y > point.y) && point.x < a.x + (point.y - a.y) * (b.x - a.x) / (b.y - a.y))
+				{
+					inside = !inside;
+				}
+			}
+			return(inside);
+		}
+
+		/// <summary>
 		/// Fills the list with the recorded traders and pets on the far side of the portals showing a view, within Max
 		/// Distance of the player and on screen
 		/// </summary>

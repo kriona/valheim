@@ -63,11 +63,13 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Adds a tombstone
+		/// Adds a tombstone, removing the destroyed ones so the list stays as long as the tombstones loaded even while
+		/// tombstones aren't marked
 		/// </summary>
 		/// <param name="source">The tombstone that was just created</param>
 		public static void Add(TombStone source)
 		{
+			tombstones.RemoveAll((WorldTombstone entry) => (entry.source == null));
 			foreach (WorldTombstone existing in tombstones)
 			{
 				if (existing.source == source)

@@ -17,7 +17,8 @@ namespace CreatureMarker
 		public const string PortalPreviewGuid = "ru.ivest.portalpreview";
 
 		/// <summary>
-		/// Patches PortalPreview's capture and view drawing, logging a warning when its methods can't be found
+		/// Patches PortalPreview's capture and view drawing, logging a warning when its methods can't be found or
+		/// patched, so a PortalPreview update that changes them leaves the rest of the plugin working
 		/// </summary>
 		/// <param name="harmony">The plugin's Harmony instance</param>
 		public static void Apply(Harmony harmony)
@@ -26,7 +27,17 @@ namespace CreatureMarker
 			{
 				return;
 			}
-			if (!PortalCaptureStepsPatch.Apply(harmony) || !PortalViewRenderPatch.Apply(harmony))
+			bool patched;
+			try
+			{
+				patched = (PortalCaptureStepsPatch.Apply(harmony) && PortalViewRenderPatch.Apply(harmony));
+			}
+			catch (System.Exception exception)
+			{
+				Debug.LogWarning("[" + Plugin.PluginName + "] " + exception.Message);
+				patched = false;
+			}
+			if (!patched)
 			{
 				Debug.LogWarning("[" + Plugin.PluginName + "] Couldn't hook into PortalPreview, so traders and pets won't be marked in its portal views");
 			}

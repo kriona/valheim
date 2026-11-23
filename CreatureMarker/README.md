@@ -10,6 +10,7 @@ Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans, o
 - Can mark every portal, labeled with its tag, so you can find your way back to the one you came through
 - Marks tombstones, labeled with whose they are, so you can find your way back to your things after dying
 - Optional name, level and distance label on each marker, leaving out the name and level while the game shows its own above the creature
+- Markers of creatures side by side on screen stack rather than overlap, the nearest one's kept in place
 - A matching colored dot on the minimap and the large map for each marked creature
 - Choose which creatures are marked - passive ones, hostile ones, or creature by creature, with separate switches for fish, birds and leviathans and a lowest level for creatures and fish
 - Includes creatures added by other mods
@@ -88,6 +89,8 @@ When the player whose game runs a creature doesn't have the mod, nothing shares 
 With PortalPreview installed, traders and their pets get markers where you see them through a portal's preview of where it leads. PortalPreview saves a still picture of each portal's surroundings, and Creature Marker remembers the traders and pets that were there when it did, in `BepInEx\cache\kriona.CreatureMarker`. Other creatures aren't marked through portals, since they would have moved on by the time you look.
 
 These markers follow the same switches and colors as traders and pets on this side of the portal, only show within the portal's opening, never over its frame, and don't get a dot on the map.
+
+A portal showing a preview also hides the markers of whatever is behind it, since the preview covers them, while their dots stay on the map.
 
 ## Installation
 

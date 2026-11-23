@@ -356,16 +356,18 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Reads the config file again, writing it back with any new creatures when a world is loaded
+		/// Reads the config file again once it has been saved, without writing it back
 		/// </summary>
 		/// <remarks>
-		/// Writing the file back changes it again, which reads it once more, finds nothing new and leaves it alone
+		/// The file can be shared - by a dedicated server and the game whose config folder it links to, say - and each
+		/// writes the creatures it knows, so a reload that wrote its own list back would have the other read it and
+		/// write its own in turn, over and over. The file gets any new creatures the next time a world loads
 		/// </remarks>
 		public static void Reload()
 		{
 			if (ZNetScene.instance != null)
 			{
-				Load(ZNetScene.instance);
+				Load(ZNetScene.instance, false);
 			}
 			else
 			{
@@ -423,7 +425,19 @@ namespace CreatureMarker
 		/// <param name="scene">The scene holding the prefab list</param>
 		public static void Load(ZNetScene scene)
 		{
-			if (!TryRead(out Dictionary<string, string> values, out _))
+			Load(scene, true);
+		}
+
+		/// <summary>
+		/// Reads the config file and adds the creatures the scene's prefabs and the world have shown, writing it back
+		/// when asked - a line for a creature not known here keeps the name the file gives it, so a file shared with
+		/// another game that has seen a trader's pet this one hasn't is written the same by both
+		/// </summary>
+		/// <param name="scene">The scene holding the prefab list</param>
+		/// <param name="write">Whether to write the file back with what was added</param>
+		private static void Load(ZNetScene scene, bool write)
+		{
+			if (!TryRead(out Dictionary<string, string> values, out Dictionary<string, string> notes))
 			{
 				return;
 			}
@@ -475,12 +489,15 @@ namespace CreatureMarker
 			{
 				if (!names.ContainsKey(key))
 				{
-					names[key] = "";
+					names[key] = (notes.TryGetValue(key, out string note) ? note : "");
 				}
 			}
 			CreatureConfig.names = names;
 			Dictionary<string, bool?> states = BuildStates((string key) => (values.TryGetValue(key, out string text) ? ParseState(text) : null));
-			Write(FilePath, names, states);
+			if (write)
+			{
+				Write(FilePath, names, states);
+			}
 			SyncEntries(states);
 		}
 

@@ -3,6 +3,9 @@
 ## 1.12.0
 - With Zombie Apocalypse installed, zombie animals like deer and hares are now marked as hostile creatures, and turn to Angry Color when they're after you
 - Mark tombstones, with the All Tombstones switch, on by default, and the Tombstone Color setting, default #BBB (light gray). The name is the player who died there
+- With PortalPreview installed, a portal showing a preview hides the markers of creatures and things behind it
+- A dedicated server sharing the game's config folder no longer has the config file rewritten and reloaded over and over - reading the file after it's saved doesn't write it back, and a line for a creature this game hasn't seen keeps its name
+- Markers that would overlap on screen stack instead, the nearest creature's keeping its place and the others moved up above it. Arrows pinned to the screen edge still overlap
 
 ## 1.11.0
 - Support portals, with the All Portals switch, off by default, and the Portal Color setting, default #B08EFF (lavendar). Still not changing the mod name

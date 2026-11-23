@@ -10,7 +10,7 @@ namespace CreatureMarker
 	/// <remarks>
 	/// Only the game that owns a monster runs its AI, and the game itself only shares whether it has a target, not
 	/// which one. Setting a ZDO value to what it already holds doesn't sync anything, so this only adds traffic when
-	/// the target changes
+	/// the target changes, and a monster that has never had a target creature gets no keys in its ZDO
 	/// </remarks>
 	[HarmonyPatch(typeof(MonsterAI), nameof(MonsterAI.UpdateTarget))]
 	public static class MonsterTargetPatch
@@ -30,8 +30,13 @@ namespace CreatureMarker
 			{
 				return;
 			}
+			ZDO zdo = __instance.m_nview.GetZDO();
 			ZDOID target = ((__instance.m_targetCreature != null) ? __instance.m_targetCreature.GetZDOID() : ZDOID.None);
-			__instance.m_nview.GetZDO().Set(TargetHash, target);
+			if (target.IsNone() && zdo.GetZDOID(TargetHash).IsNone())
+			{
+				return;
+			}
+			zdo.Set(TargetHash, target);
 		}
 	}
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Kriona.Shared;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -28,12 +29,17 @@ namespace CreatureMarker
 		private const float GameHudGap = 4f;
 
 		/// <summary>
+		/// The space left between markers stacked over each other on screen, in screen pixels
+		/// </summary>
+		private const float StackGap = 2f;
+
+		/// <summary>
 		/// How many meters higher than the player a target has to be for its arrow to be pinned to the top half of the
 		/// screen, so uneven ground doesn't count as higher
 		/// </summary>
 		private const float HigherMargin = 1f;
 		private static readonly Vector2 ArrowSize = new Vector2(24f, 32f);
-		internal static readonly Color OutlineColor = new Color(0.1f, 0.1f, 0.1f, 1f);
+		internal static readonly Color OutlineColor = ArrowSprite.OutlineColor;
 
 		/// <summary>
 		/// One creature's, fish's or bird's arrow and name label
@@ -77,6 +83,12 @@ namespace CreatureMarker
 			public bool shownFish;
 			public Color shownColor;
 			public int shownDistance = -2;
+
+			/// <summary>
+			/// The label's text measured in canvas units, when the text is set, since TMP lays the text out again each
+			/// time it is measured
+			/// </summary>
+			public Vector2 labelSize;
 		}
 
 		private readonly List<Marker> markers = new List<Marker>();
@@ -118,6 +130,22 @@ namespace CreatureMarker
 		/// </summary>
 		private readonly List<Graphic> graphics = new List<Graphic>();
 		private readonly Vector3[] corners = new Vector3[4];
+
+		/// <summary>
+		/// An on-screen marker to stack, with how far its target is from the player, squared, and its scale
+		/// </summary>
+		private struct Stacked
+		{
+			public Marker marker;
+			public float distanceSquared;
+			public float size;
+		}
+
+		/// <summary>
+		/// Reused for the on-screen markers placed this frame, and the screen space each takes once stacked
+		/// </summary>
+		private readonly List<Stacked> stacking = new List<Stacked>();
+		private readonly List<Rect> stacked = new List<Rect>();
 
 		/// <summary>
 		/// Shows an arrow for each marked creature, fish and bird when Show On Screen is on and hides the spare ones,
@@ -167,6 +195,12 @@ namespace CreatureMarker
 							continue;
 						}
 						parent = mask.transform;
+					}
+					else if (PortalNpcs.IsHiddenByView(target.top, camera.transform.position, target.source))
+					{
+						SetActive(marker.arrow.gameObject, false);
+						SetActive(marker.label.gameObject, false);
+						continue;
 					}
 					if (marker.arrow.transform.parent != parent)
 					{
@@ -218,8 +252,15 @@ namespace CreatureMarker
 						marker.label.color = target.color;
 						PlaceLabel(marker, pointing);
 					}
+					// Markers seen through a portal stay where they are, inside its opening
+					if (onScreen && !target.throughPortal)
+					{
+						stacking.Add(new Stacked { marker = marker, distanceSquared = distanceSquared, size = scale.x });
+					}
 				}
+				Stack();
 			}
+			stacking.Clear();
 			for (int i = used; i < markers.Count; i++)
 			{
 				markers[i].source = null;
@@ -343,7 +384,8 @@ namespace CreatureMarker
 		private static Vector2 Place(RectTransform arrow, Camera camera, Vector3 target, float lift, Rect? dialog, float size, bool higher, out bool onScreen)
 		{
 			Vector3 screen = camera.WorldToScreenPointScaled(target);
-			onScreen = (screen.z > 0f && screen.x >= 0f && screen.x <= Screen.width && screen.y >= 0f && screen.y <= Screen.height);
+			Vector2 screenSize = new Vector2(Screen.width, Screen.height);
+			onScreen = ScreenEdge.OnScreen(screen, screenSize);
 			if (onScreen)
 			{
 				float tip = screen.y + lift;
@@ -356,36 +398,92 @@ namespace CreatureMarker
 						tip = bubble.yMax + GameHudGap;
 					}
 				}
-				float bob = Mathf.Abs(Mathf.Sin(Time.time * BobSpeed)) * CreatureConfig.BobHeight * size;
-				arrow.position = new Vector3(screen.x, tip + bob, 0f);
+				arrow.position = new Vector3(screen.x, tip + Bob(size), 0f);
 				arrow.localRotation = Quaternion.identity;
 				return(Vector2.down);
 			}
-			Vector2 center = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
-			Vector2 direction = new Vector2(screen.x, screen.y) - center;
-			if (screen.z < 0f)
-			{
-				// Points behind the camera project mirrored through the screen center
-				direction = -direction;
-			}
-			if (!higher && direction.y > 0f)
-			{
-				// An arrow at the top of the screen reads as the target being above the player
-				direction.y = -direction.y;
-			}
-			if (direction.sqrMagnitude < 0.01f)
-			{
-				direction = Vector2.down;
-			}
-			float halfWidth = center.x - EdgeMargin;
-			float halfHeight = center.y - EdgeMargin;
-			float scale = Mathf.Min(halfWidth / Mathf.Max(Mathf.Abs(direction.x), 0.001f), halfHeight / Mathf.Max(Mathf.Abs(direction.y), 0.001f));
-			Vector2 edge = center + direction * scale;
+			Vector2 edge = ScreenEdge.Pin(screen, screenSize, EdgeMargin, higher, out Vector2 direction);
 			arrow.position = new Vector3(edge.x, edge.y, 0f);
-			// The arrow graphic points down, so rotate down onto the direction
-			float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg + 90f;
-			arrow.localRotation = Quaternion.Euler(0f, 0f, angle);
-			return(direction.normalized);
+			arrow.localRotation = Quaternion.Euler(0f, 0f, ScreenEdge.Angle(direction));
+			return(direction);
+		}
+
+		/// <summary>
+		/// How far an on-screen arrow is bobbed up right now
+		/// </summary>
+		/// <param name="size">The marker's scale, which shrinks the bob along with the arrow</param>
+		/// <returns>The height, in screen pixels</returns>
+		private static float Bob(float size)
+		{
+			return(Mathf.Abs(Mathf.Sin(Time.time * BobSpeed)) * CreatureConfig.BobHeight * size);
+		}
+
+		/// <summary>
+		/// Stacks the on-screen markers placed this frame that would overlap - the nearest target's keeps its place, and
+		/// each farther one is moved up, arrow and label together, until it's clear of those below it
+		/// </summary>
+		/// <remarks>
+		/// The space each takes is measured without the bob, which every arrow shares, so markers that only touch at the
+		/// top of the bob don't stack and unstack as they bob
+		/// </remarks>
+		private void Stack()
+		{
+			if (stacking.Count < 2)
+			{
+				return;
+			}
+			stacking.Sort((Stacked a, Stacked b) => a.distanceSquared.CompareTo(b.distanceSquared));
+			stacked.Clear();
+			foreach (Stacked entry in stacking)
+			{
+				Rect space = Space(entry.marker);
+				space.y -= Bob(entry.size);
+				float shift = 0f;
+				bool moved = true;
+				for (int tries = 0; moved && tries <= stacked.Count; tries++)
+				{
+					moved = false;
+					foreach (Rect below in stacked)
+					{
+						Rect shifted = space;
+						shifted.y += shift;
+						if (shifted.Overlaps(below))
+						{
+							shift = below.yMax + StackGap - space.yMin;
+							moved = true;
+						}
+					}
+				}
+				if (shift > 0f)
+				{
+					Vector3 up = new Vector3(0f, shift, 0f);
+					entry.marker.arrow.rectTransform.position += up;
+					entry.marker.label.rectTransform.position += up;
+					space.y += shift;
+				}
+				stacked.Add(space);
+			}
+		}
+
+		/// <summary>
+		/// Measures the screen space a marker takes - its arrow, and its label when it's shown
+		/// </summary>
+		/// <param name="marker">The marker, placed on screen</param>
+		/// <returns>The space, in screen pixels</returns>
+		private static Rect Space(Marker marker)
+		{
+			RectTransform arrow = marker.arrow.rectTransform;
+			float scale = arrow.lossyScale.x;
+			Vector3 tip = arrow.position;
+			Rect space = new Rect(tip.x - ArrowSize.x * 0.5f * scale, tip.y, ArrowSize.x * scale, ArrowSize.y * scale);
+			if (marker.label.gameObject.activeSelf)
+			{
+				Vector2 size = marker.labelSize * scale;
+				Vector3 center = marker.label.rectTransform.position;
+				Rect label = new Rect(center.x - size.x * 0.5f, center.y - size.y * 0.5f, size.x, size.y);
+				space = Rect.MinMaxRect(Mathf.Min(space.xMin, label.xMin), Mathf.Min(space.yMin, label.yMin), Mathf.Max(space.xMax, label.xMax), Mathf.Max(space.yMax, label.yMax));
+			}
+			return(space);
 		}
 
 		/// <summary>
@@ -537,6 +635,8 @@ namespace CreatureMarker
 				text = ((text.Length > 0) ? text + " (" + distance + "m)" : distance + "m");
 			}
 			marker.label.text = text;
+			marker.labelSize = marker.label.GetPreferredValues();
+			marker.label.rectTransform.sizeDelta = marker.labelSize;
 		}
 
 		/// <summary>
@@ -550,15 +650,8 @@ namespace CreatureMarker
 			RectTransform label = marker.label.rectTransform;
 			// Sizes are in canvas units, positions in screen pixels
 			float scale = arrow.lossyScale.x;
-			Vector2 size = marker.label.GetPreferredValues();
-			label.sizeDelta = size;
-			Vector2 halfSize = size * scale * 0.5f;
-			// How far the label's center sits from its edge facing the arrow, along the pointing direction
-			float halfExtent = Mathf.Abs(pointing.x) * halfSize.x + Mathf.Abs(pointing.y) * halfSize.y;
-			Vector2 tip = arrow.position;
-			Vector2 center = tip - pointing * ((ArrowSize.y + LabelGap) * scale + halfExtent);
-			center.x = Mathf.Clamp(center.x, halfSize.x, Mathf.Max(halfSize.x, Screen.width - halfSize.x));
-			center.y = Mathf.Clamp(center.y, halfSize.y, Mathf.Max(halfSize.y, Screen.height - halfSize.y));
+			Vector2 halfSize = marker.labelSize * scale * 0.5f;
+			Vector2 center = ScreenEdge.Behind(arrow.position, pointing, (ArrowSize.y + LabelGap) * scale, halfSize, new Vector2(Screen.width, Screen.height));
 			label.position = new Vector3(center.x, center.y, 0f);
 		}
 
@@ -681,72 +774,16 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Draws a downward-pointing outlined arrow into a texture the first time it is needed
+		/// Draws the arrow (see ArrowSprite) the first time it is needed
 		/// </summary>
-		/// <remarks>
-		/// The fill is white so the image color tints it, while the dark outline stays dark under any tint
-		/// </remarks>
 		/// <returns>The arrow sprite</returns>
 		private Sprite GetSprite()
 		{
-			if (sprite != null)
+			if (sprite == null)
 			{
-				return(sprite);
+				sprite = ArrowSprite.Create();
 			}
-			const int width = 48;
-			const int height = 64;
-			const float outline = 3f;
-			Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
-			texture.wrapMode = TextureWrapMode.Clamp;
-			texture.filterMode = FilterMode.Bilinear;
-			Color[] pixels = new Color[width * height];
-			for (int y = 0; y < height; y++)
-			{
-				for (int x = 0; x < width; x++)
-				{
-					float px = Mathf.Abs(x + 0.5f - width * 0.5f);
-					float py = y + 0.5f;
-					Color color = Color.clear;
-					if (InArrow(px, py, outline, width, height))
-					{
-						color = Color.white;
-					}
-					else if (InArrow(px, py, 0f, width, height))
-					{
-						color = OutlineColor;
-					}
-					pixels[y * width + x] = color;
-				}
-			}
-			texture.SetPixels(pixels);
-			texture.Apply();
-			sprite = Sprite.Create(texture, new Rect(0f, 0f, width, height), new Vector2(0.5f, 0f));
 			return(sprite);
-		}
-
-		/// <summary>
-		/// Whether a point is inside the arrow shape shrunk by an inset
-		/// </summary>
-		/// <remarks>
-		/// The arrow is a triangular head with its tip at y = 0 and a shaft above it
-		/// </remarks>
-		/// <param name="px">Horizontal distance from the arrow's center line</param>
-		/// <param name="py">Height above the bottom of the texture</param>
-		/// <param name="inset">How far to shrink the shape on every side</param>
-		/// <param name="width">Texture width</param>
-		/// <param name="height">Texture height</param>
-		/// <returns>True when the point is inside</returns>
-		private static bool InArrow(float px, float py, float inset, int width, int height)
-		{
-			float headHeight = height * 0.55f;
-			float halfHead = width * 0.5f;
-			float halfShaft = width * 0.2f;
-			float slope = halfHead / headHeight;
-			// Horizontal distance that matches a perpendicular inset on the slanted edges
-			float slantInset = inset * Mathf.Sqrt(1f + slope * slope);
-			bool inHead = (py <= headHeight - inset && px <= py * slope - slantInset);
-			bool inShaft = (py >= headHeight * 0.5f && py <= height - inset && px <= halfShaft - inset);
-			return(inHead || inShaft);
 		}
 	}
 }

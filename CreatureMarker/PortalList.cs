@@ -68,11 +68,13 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Adds a portal
+		/// Adds a portal, removing the destroyed ones so the list stays as long as the portals loaded even while
+		/// portals aren't marked
 		/// </summary>
 		/// <param name="source">The portal that was just created</param>
 		public static void Add(TeleportWorld source)
 		{
+			portals.RemoveAll((WorldPortal entry) => (entry.source == null));
 			foreach (WorldPortal existing in portals)
 			{
 				if (existing.source == source)
