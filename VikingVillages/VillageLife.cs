@@ -1588,6 +1588,14 @@ namespace VikingVillages
 		private readonly Dictionary<ZDOID, float> avoided = new Dictionary<ZDOID, float>();
 
 		/// <summary>
+		/// What the vikings this client runs have all given up on reaching, and when it's next pruned of what's
+		/// forgotten, every GiveUpPruneInterval seconds
+		/// </summary>
+		private static readonly VillageGiveUps giveUps = new VillageGiveUps();
+		private static float nextGiveUpPrune;
+		private const float GiveUpPruneInterval = 60f;
+
+		/// <summary>
 		/// What the viking is doing, or null when it has nothing to do
 		/// </summary>
 		private Job job;
@@ -6493,7 +6501,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Leaves a chest, loot or piece the viking couldn't get to alone for a while
+		/// Leaves a chest, loot or piece the viking couldn't get to alone for a while, and notes the failed try for the
+		/// village, whose vikings all leave it alone for longer once enough of them have failed (see VillageGiveUps)
 		/// </summary>
 		/// <param name="view">The chest, loot or piece</param>
 		/// <param name="seconds">How long it's left alone</param>
@@ -6515,9 +6524,26 @@ namespace VikingVillages
 			{
 				avoided.Remove(id);
 			}
-			avoided[view.GetZDO().m_uid] = Time.time + seconds;
+			ZDOID thing = view.GetZDO().m_uid;
+			avoided[thing] = Time.time + seconds;
+			string name = Utils.GetPrefabName(view.gameObject);
 			TestLog.Count("Couldn't reach, by job", LogJobName());
-			TestLog.Count("Couldn't reach, by thing", Utils.GetPrefabName(view.gameObject));
+			TestLog.Count("Couldn't reach, by thing", name);
+			if (Time.time >= nextGiveUpPrune)
+			{
+				nextGiveUpPrune = Time.time + GiveUpPruneInterval;
+				giveUps.Prune(Time.time);
+			}
+			float shared = giveUps.Fail(thing, nview.GetZDO().m_uid, Time.time);
+			if (shared <= 0f)
+			{
+				return;
+			}
+			TestLog.Count("Given up on by every viking", name);
+			if (TestLog.On || Player.m_debugMode)
+			{
+				Plugin.Log.LogInfo("Given up: the vikings leave " + name + " at " + view.transform.position.ToString("F1") + " alone for " + (shared / 60f).ToString("F0") + " minutes, after " + VillageGiveUps.Tries + " tries by " + VillageGiveUps.Vikings + " or more of them failed to reach it - the last by " + LogName() + " (" + LogJobName() + ")");
+			}
 		}
 
 		/// <summary>
@@ -6623,13 +6649,14 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether the viking is leaving a chest or loot alone after it couldn't get to it
+		/// Checks whether the viking is leaving a chest or loot alone after it couldn't get to it, or every viking is
+		/// after they all gave up on it (see VillageGiveUps)
 		/// </summary>
 		/// <param name="id">The chest's or loot's ZDO</param>
 		/// <returns>True while it is</returns>
 		private bool Avoided(ZDOID id)
 		{
-			return(avoided.TryGetValue(id, out float until) && Time.time < until);
+			return((avoided.TryGetValue(id, out float until) && Time.time < until) || giveUps.GivenUp(id, Time.time));
 		}
 
 		/// <summary>
