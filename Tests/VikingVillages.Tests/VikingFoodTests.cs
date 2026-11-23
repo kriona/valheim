@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using Kriona.Vikings;
 
 namespace VikingVillages.Tests
 {
 	/// <summary>
 	/// Tests a viking's food - how the time left on it is written, how long it lasts, when it can eat, how much health a
-	/// food adds as it wears off, and how its meals are noted and put off while players sleep
+	/// food adds as it wears off, the floor its max health keeps to, and how its meals are noted and put off while
+	/// players sleep
 	/// </summary>
 	public class VikingFoodTests
 	{
@@ -173,6 +175,60 @@ namespace VikingVillages.Tests
 		public void PostponesNothingWithoutASkip(long skipped)
 		{
 			Assert.Empty(VikingFood.Postponed(new List<VikingFood.Meal> { Meal(1, 12000L) }, 10000L, skipped));
+		}
+
+		/// <summary>
+		/// Checks that every biome vikings come from has a health floor
+		/// </summary>
+		[Fact]
+		public void EveryBiomeHasAHealthFloor()
+		{
+			Assert.Equal(VikingGear.Biomes.Length, VikingFood.HealthFloors.Length);
+		}
+
+		/// <summary>
+		/// Checks each biome's health floor - the base health and the previous biome's three best foods
+		/// </summary>
+		/// <param name="biome">The biome</param>
+		/// <param name="expected">Its floor</param>
+		[Theory]
+		[InlineData(Heightmap.Biome.Meadows, 50f)]
+		[InlineData(Heightmap.Biome.BlackForest, 115f)]
+		[InlineData(Heightmap.Biome.Swamp, 155f)]
+		[InlineData(Heightmap.Biome.Mountain, 175f)]
+		[InlineData(Heightmap.Biome.Plains, 195f)]
+		[InlineData(Heightmap.Biome.Mistlands, 235f)]
+		[InlineData(Heightmap.Biome.AshLands, 270f)]
+		[InlineData(Heightmap.Biome.DeepNorth, 325f)]
+		public void HealthFloorFollowsThePreviousBiomesFood(Heightmap.Biome biome, float expected)
+		{
+			Assert.Equal(expected, VikingFood.HealthFloor(VikingGear.IndexOf(biome)));
+		}
+
+		/// <summary>
+		/// Checks that a biome index out of the table's range gets the nearest biome's floor
+		/// </summary>
+		[Fact]
+		public void HealthFloorKeepsWithinTheTable()
+		{
+			Assert.Equal(50f, VikingFood.HealthFloor(-1));
+			Assert.Equal(325f, VikingFood.HealthFloor(99));
+		}
+
+		/// <summary>
+		/// Checks that a viking's max health is the base and its food when that's above its floor, and the floor when
+		/// it isn't
+		/// </summary>
+		/// <param name="foodHealth">What its food adds</param>
+		/// <param name="expected">Its max health</param>
+		[Theory]
+		[InlineData(0f, 325f)]
+		[InlineData(250f, 325f)]
+		[InlineData(300f, 325f)]
+		[InlineData(325f, 350f)]
+		public void MaxHealthIsFoodOrTheFloor(float foodHealth, float expected)
+		{
+			Assert.Equal(expected, VikingFood.MaxHealth(325f, foodHealth), 3);
 		}
 	}
 }

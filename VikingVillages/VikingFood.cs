@@ -12,7 +12,8 @@ namespace VikingVillages
 	/// </summary>
 	/// <remarks>
 	/// The meals are noted in the viking's ZDO, so they carry over to whichever client owns it next. The food adds to
-	/// the viking's own health for its biome and stars, where a player's adds to a base of 25
+	/// a base of 25, the same as a player's, but the viking's max health never falls below the floor for its biome
+	/// (see HealthFloors), since a village can't make every food its biome's players eat. Only its food heals it
 	/// </remarks>
 	internal class VikingFood
 	{
@@ -41,6 +42,37 @@ namespace VikingVillages
 		/// How often a viking's max health follows its food as the food wears off, in seconds - the same as a player's
 		/// </summary>
 		private const float MaxHealthInterval = 1f;
+
+		/// <summary>
+		/// The health a viking's food adds to - the same as a player's base health (Player.m_baseHP)
+		/// </summary>
+		internal const float BaseHealth = 25f;
+
+		/// <summary>
+		/// The least a viking's max health can be, by the index of the biome its gear comes from (see VikingGear) - the
+		/// base health and the health of the previous biome's three best foods, so a village eats at least as well as
+		/// the land before its own, and its own biome's food brings it to full strength. A Meadows viking's is 25 above
+		/// the base, so it doesn't start out at a bare 25 before its first meal
+		/// </summary>
+		internal static readonly float[] HealthFloors =
+		{
+			// Meadows
+			50f,
+			// Black Forest - Cooked Deer Meat 35, Cooked Boar Meat 30, Grilled Neck Tail 25
+			115f,
+			// Swamp - Deer Stew 45, Cooked Fish 45, Minced Meat Sauce 40
+			155f,
+			// Mountains - Sausages 55, Black Soup 50, Deer Stew 45
+			175f,
+			// Plains - Wolf Skewer 65, Sausages 55, Black Soup 50
+			195f,
+			// Mistlands - Lox Meat Pie 75, Fish Wraps 70, Wolf Skewer 65
+			235f,
+			// Ashlands - Misthare Supreme 85, Meat Platter 80, Honey Glazed Chicken 80
+			270f,
+			// Deep North - Piquant Pie 105, Mashed Meat 100, Fiery Svinstew 95
+			325f
+		};
 
 		/// <summary>
 		/// The viking whose food this is
@@ -194,18 +226,52 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Sets the viking's max health to its own health and what its food adds, the way a player's follows its food -
-		/// its health drops with the max as food wears off, while a higher max fills in as it heals - on its owner
+		/// Gets the least a viking's max health can be for the biome its gear comes from
+		/// </summary>
+		/// <param name="biome">The biome's index in VikingGear's tables, kept within HealthFloors</param>
+		/// <returns>The floor</returns>
+		internal static float HealthFloor(int biome)
+		{
+			return(HealthFloors[Mathf.Clamp(biome, 0, HealthFloors.Length - 1)]);
+		}
+
+		/// <summary>
+		/// Works out a viking's max health - the base health and what its food adds, the way a player's is, or its
+		/// biome's floor when that's more
+		/// </summary>
+		/// <param name="floor">Its biome's floor (see HealthFloor)</param>
+		/// <param name="foodHealth">What its food adds (see FoodHealth)</param>
+		/// <returns>The max health</returns>
+		internal static float MaxHealth(float floor, float foodHealth)
+		{
+			return(Mathf.Max(floor, BaseHealth + foodHealth));
+		}
+
+		/// <summary>
+		/// Works out the viking's max health from its biome and what it has eaten (see MaxHealth)
+		/// </summary>
+		/// <returns>The max health, or 0 before its data is read</returns>
+		public float MaxHealth()
+		{
+			VikingCore core = viking.GetComponent<VikingCore>();
+			if (core == null || core.GetData() == null)
+			{
+				return(0f);
+			}
+			return(MaxHealth(HealthFloor(core.BiomeIndex()), FoodHealth()));
+		}
+
+		/// <summary>
+		/// Sets the viking's max health from its biome and food, the way a player's follows its food - its health drops
+		/// with the max as food wears off, while a higher max fills in as it heals - on its owner
 		/// </summary>
 		private void UpdateMaxHealth()
 		{
-			VikingCore core = viking.GetComponent<VikingCore>();
-			float baseHealth = ((core != null) ? core.BaseHealth() : 0f);
-			if (baseHealth <= 0f || viking.m_nview == null || !viking.m_nview.IsOwner())
+			float max = MaxHealth();
+			if (max <= 0f || viking.m_nview == null || !viking.m_nview.IsOwner())
 			{
 				return;
 			}
-			float max = baseHealth + FoodHealth();
 			if (Mathf.Abs(max - viking.GetMaxHealth()) > 0.05f)
 			{
 				viking.SetMaxHealth(max);
@@ -253,7 +319,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Describes what the viking has eaten for the debug hover text - each food that still lasts and how long it has
-		/// left, and how much they heal it together every TickTime seconds
+		/// left, the health they add over the base, the viking's floor (see HealthFloor), and how much they heal it
+		/// together every TickTime seconds
 		/// </summary>
 		/// <returns>The description</returns>
 		public string Describe()
@@ -280,7 +347,9 @@ namespace VikingVillages
 				}
 				foods.Add(name + " (" + Duration((float)(meal.Until - now) / System.TimeSpan.TicksPerSecond) + " left)");
 			}
-			return(string.Join(", ", foods) + " - +" + FoodHealth().ToString("0") + " max health, heals " + regen.ToString("0.#") + " every " + TickTime.ToString("0") + "s");
+			VikingCore core = viking.GetComponent<VikingCore>();
+			string floor = ((core != null) ? ", floor " + HealthFloor(core.BiomeIndex()).ToString("0") : "");
+			return(string.Join(", ", foods) + " - +" + FoodHealth().ToString("0") + " health over the base " + BaseHealth.ToString("0") + floor + ", heals " + regen.ToString("0.#") + " every " + TickTime.ToString("0") + "s");
 		}
 
 		/// <summary>

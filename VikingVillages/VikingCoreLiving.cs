@@ -127,14 +127,14 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Adds the health the living viking's food gives it
+		/// Sets the living viking's max health from its biome and what it has eaten (see VikingFood.MaxHealth)
 		/// </summary>
-		/// <param name="health">Its health, added to here</param>
-		partial void AddFoodHealth(ref float health)
+		/// <param name="health">Its max health, set here</param>
+		partial void LivingMaxHealth(ref float health)
 		{
 			if (humanoid is LivingVikingBody living)
 			{
-				health += living.Food.FoodHealth();
+				health = living.Food.MaxHealth();
 			}
 		}
 

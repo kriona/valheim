@@ -1680,7 +1680,7 @@ namespace Kriona.Vikings
 			SetHome();
 			SetLooks(humanoid.m_visEquipment);
 			float health = BaseHealth();
-			AddFoodHealth(ref health);
+			LivingMaxHealth(ref health);
 			bool unhurt = humanoid.GetHealth() >= humanoid.GetMaxHealth();
 			if (health > 0f)
 			{
@@ -1694,8 +1694,9 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Gets the viking's health before what it has eaten - a viking of the world's is multiplied by its stars like
-		/// any creature's, and a tombstone viking's is the player's own
+		/// Gets the viking's health from its data - a viking of the world's is multiplied by its stars like any
+		/// creature's, and a tombstone viking's is the player's own. A living viking's biome and food set its health
+		/// instead (see LivingMaxHealth)
 		/// </summary>
 		/// <returns>The health, or 0 before the viking's data is read</returns>
 		public float BaseHealth()
@@ -1704,10 +1705,10 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Adds the health a living viking's food gives it
+		/// Sets a living viking's max health, which its biome and what it has eaten decide
 		/// </summary>
-		/// <param name="health">Its health, added to here</param>
-		partial void AddFoodHealth(ref float health);
+		/// <param name="health">Its max health, set here</param>
+		partial void LivingMaxHealth(ref float health);
 
 		/// <summary>
 		/// Makes the player's tombstone the viking's home, which its AI wanders around and its spawn point, so it's
