@@ -78,6 +78,22 @@ namespace VikingVillages
 	}
 
 	/// <summary>
+	/// Shows only as many cells in a village's stock as its chests have slots, hiding the rest of its last row
+	/// </summary>
+	[HarmonyPatch(typeof(InventoryGrid), nameof(InventoryGrid.UpdateInventory))]
+	public static class VillageStockCellsPatch
+	{
+		/// <summary>
+		/// Hides the cells past the chests' last slot once the grid is drawn
+		/// </summary>
+		/// <param name="__instance">The grid drawn</param>
+		private static void Postfix(InventoryGrid __instance)
+		{
+			VillageStock.HideExtraCells(__instance);
+		}
+	}
+
+	/// <summary>
 	/// Keeps a village's stock to look at only when the place-stacks button is pressed, which is hidden for it
 	/// </summary>
 	[HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnStackAll))]
