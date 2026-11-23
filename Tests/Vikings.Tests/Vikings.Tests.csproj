@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!-- The shared viking code in Shared\Vikings has no project of its own, so its tests test Viking Villages' copy -->
+	<PropertyGroup>
+		<ModName>VikingVillages</ModName>
+	</PropertyGroup>
+
+</Project>

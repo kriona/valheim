@@ -1,3 +1,5 @@
+using Kriona.Vikings;
+
 namespace ZombieApocalypse
 {
 	/// <summary>

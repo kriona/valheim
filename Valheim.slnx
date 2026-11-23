@@ -1,5 +1,7 @@
 <Solution>
   <Folder Name="/Tests/">
+    <Project Path="Tests/Vikings.Tests/Vikings.Tests.csproj" />
+    <Project Path="Tests/VikingVillages.Tests/VikingVillages.Tests.csproj" />
     <Project Path="Tests/ZombieApocalypse.Tests/ZombieApocalypse.Tests.csproj" />
   </Folder>
   <Project Path="ChestPeek/ChestPeek.csproj" />
@@ -13,6 +15,7 @@
   <Project Path="SwapGear/SwapGear.csproj" />
   <Project Path="TooLow/TooLow.csproj" />
   <Project Path="TweakStats/TweakStats.csproj" />
+  <Project Path="VikingVillages/VikingVillages.csproj" />
   <Project Path="WeightDisplay/WeightDisplay.csproj" />
   <Project Path="WhosOnline/WhosOnline.csproj" />
   <Project Path="ZombieApocalypse/ZombieApocalypse.csproj" />

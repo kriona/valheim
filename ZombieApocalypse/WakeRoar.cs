@@ -1,3 +1,4 @@
+using Kriona.Vikings;
 using UnityEngine;
 
 namespace ZombieApocalypse

@@ -43,4 +43,9 @@
 		</Reference>
 	</ItemGroup>
 
+	<!-- The viking code Viking Villages shares, compiled into each mod so neither needs the other -->
+	<ItemGroup>
+		<Compile Include="$(MSBuildThisFileDirectory)..\Shared\Vikings\*.cs" Link="Shared\Vikings\%(Filename)%(Extension)" />
+	</ItemGroup>
+
 </Project>

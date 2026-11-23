@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Kriona.Vikings;
 using UnityEngine;
 
 namespace ZombieApocalypse
@@ -133,7 +134,7 @@ namespace ZombieApocalypse
 		public static void OnCorpseRemoved(Ragdoll corpse)
 		{
 			ZNetView nview = corpse.m_nview;
-			if (nview == null || !nview.IsValid() || !nview.IsOwner() || !nview.GetZDO().GetBool(Zombies.ZombieKey) || ZNetScene.instance == null)
+			if (nview == null || !nview.IsValid() || !nview.IsOwner() || !nview.GetZDO().GetBool(ZombieState.ZombieKey) || ZNetScene.instance == null)
 			{
 				return;
 			}

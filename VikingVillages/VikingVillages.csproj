@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<Reference Include="UnityEngine.AIModule">
+			<HintPath>$(ManagedPath)\UnityEngine.AIModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.AnimationModule">
+			<HintPath>$(ManagedPath)\UnityEngine.AnimationModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.AudioModule">
+			<HintPath>$(ManagedPath)\UnityEngine.AudioModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.ParticleSystemModule">
+			<HintPath>$(ManagedPath)\UnityEngine.ParticleSystemModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.PhysicsModule">
+			<HintPath>$(ManagedPath)\UnityEngine.PhysicsModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="SoftReferenceableAssets">
+			<HintPath>$(ManagedPath)\SoftReferenceableAssets.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UI">
+			<HintPath>$(ManagedPath)\UnityEngine.UI.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UIModule">
+			<HintPath>$(ManagedPath)\UnityEngine.UIModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Unity.TextMeshPro">
+			<HintPath>$(ManagedPath)\Unity.TextMeshPro.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Splatform">
+			<HintPath>$(ManagedPath)\Splatform.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<!-- The viking code Zombie Apocalypse shares, compiled into each mod so neither needs the other. The shared code's
+	tests in Tests\Vikings.Tests test this mod's copy -->
+	<ItemGroup>
+		<Compile Include="$(MSBuildThisFileDirectory)..\Shared\Vikings\*.cs" Link="Shared\Vikings\%(Filename)%(Extension)" />
+		<InternalsVisibleTo Include="Vikings.Tests" />
+	</ItemGroup>
+
+</Project>

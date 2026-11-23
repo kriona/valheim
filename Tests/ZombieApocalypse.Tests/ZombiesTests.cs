@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Kriona.Vikings;
 
 namespace ZombieApocalypse.Tests
 {
@@ -21,7 +22,7 @@ namespace ZombieApocalypse.Tests
 		[InlineData(-2f, -20000000L)]
 		public void TicksConvertsSeconds(float seconds, long expected)
 		{
-			Assert.Equal(expected, Zombies.Ticks(seconds));
+			Assert.Equal(expected, NetTime.Ticks(seconds));
 		}
 
 		/// <summary>

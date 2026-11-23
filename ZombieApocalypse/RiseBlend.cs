@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Kriona.Vikings;
 using UnityEngine;
 
 namespace ZombieApocalypse
@@ -132,8 +133,8 @@ namespace ZombieApocalypse
 			character = GetComponent<Character>();
 			ai = GetComponent<BaseAI>();
 			ZDO zdo = character.m_nview.GetZDO();
-			riseStart = zdo.GetLong(Zombies.RiseStartKey);
-			riseEnd = zdo.GetLong(Zombies.RiseEndKey);
+			riseStart = zdo.GetLong(ZombieState.RiseStartKey);
+			riseEnd = zdo.GetLong(ZombieState.RiseEndKey);
 			if (ai != null)
 			{
 				heldAIs.Add(ai);
@@ -399,7 +400,7 @@ namespace ZombieApocalypse
 		/// </summary>
 		private void LateUpdate()
 		{
-			long now = Zombies.Now();
+			long now = NetTime.Now();
 			if (!posed)
 			{
 				// Equipment can be added after spawning, so it's hidden again until the corpse hands over
@@ -589,7 +590,7 @@ namespace ZombieApocalypse
 		/// </remarks>
 		private void TargetKiller()
 		{
-			ZDOID killerId = character.m_nview.GetZDO().GetZDOID(Zombies.KillerIdKey);
+			ZDOID killerId = character.m_nview.GetZDO().GetZDOID(ZombieState.KillerIdKey);
 			if (killerId.IsNone())
 			{
 				return;

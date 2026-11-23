@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HarmonyLib;
+using Kriona.Vikings;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -117,7 +118,7 @@ namespace ZombieApocalypse
 		/// <param name="humanoid">The creature just given its items</param>
 		public static void Give(Humanoid humanoid)
 		{
-			if (spells.Count == 0 || !Mages.Contains(Utils.GetPrefabName(humanoid.gameObject)) || Zombies.IsZombie(humanoid))
+			if (spells.Count == 0 || !Mages.Contains(Utils.GetPrefabName(humanoid.gameObject)) || ZombieState.IsZombie(humanoid))
 			{
 				return;
 			}

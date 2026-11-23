@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Kriona.Vikings;
 using UnityEngine;
 
 namespace ZombieApocalypse
@@ -78,15 +79,15 @@ namespace ZombieApocalypse
 				return;
 			}
 			ZDO zdo = nview.GetZDO();
-			long now = Zombies.Now();
-			long diedAt = zdo.GetLong(Zombies.DiedAtKey);
-			long riseAt = zdo.GetLong(Zombies.RiseAtKey);
+			long now = NetTime.Now();
+			long diedAt = zdo.GetLong(ZombieState.DiedAtKey);
+			long riseAt = zdo.GetLong(ZombieState.RiseAtKey);
 			if (!handedOver)
 			{
 				float amount = ((riseAt > diedAt) ? Mathf.Clamp01((float)(now - diedAt) / (riseAt - diedAt)) : 1f);
 				look.Amount = (Mathf.Round(amount * TintSteps) / TintSteps);
 			}
-			ZDOID zombieId = zdo.GetZDOID(Zombies.ZombieIdKey);
+			ZDOID zombieId = zdo.GetZDOID(ZombieState.ZombieIdKey);
 			if (zombieId.IsNone())
 			{
 				if (nview.IsOwner() && now >= riseAt)
@@ -113,7 +114,7 @@ namespace ZombieApocalypse
 				standing = false;
 				Hide();
 			}
-			if (nview.IsOwner() && now >= zdo.GetLong(Zombies.RemoveAtKey) && !Watched())
+			if (nview.IsOwner() && now >= zdo.GetLong(ZombieState.RemoveAtKey) && !Watched())
 			{
 				ZNetScene.instance.Destroy(gameObject);
 			}
@@ -140,13 +141,13 @@ namespace ZombieApocalypse
 		{
 			Vector3 middle = ragdoll.GetAverageBodyPosition();
 			PendingRise rise = new PendingRise();
-			rise.PrefabHash = zdo.GetInt(Zombies.RisePrefabKey);
+			rise.PrefabHash = zdo.GetInt(ZombieState.RisePrefabKey);
 			rise.Level = zdo.GetInt(ZDOVars.s_level, 1);
-			rise.Seed = zdo.GetInt(Zombies.RiseSeedKey);
+			rise.Seed = zdo.GetInt(ZombieState.RiseSeedKey);
 			rise.Loot = Loot.Read(zdo, Loot.CorpseKeys);
 			rise.LootCheated = zdo.IsCheated();
-			rise.KillerId = zdo.GetZDOID(Zombies.KillerIdKey);
-			long riseEnd = now + Zombies.Ticks(Plugin.RiseDuration.Value);
+			rise.KillerId = zdo.GetZDOID(ZombieState.KillerIdKey);
+			long riseEnd = now + NetTime.Ticks(Plugin.RiseDuration.Value);
 			Quaternion facing = Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
 			Character zombie = Zombies.Raise(rise, Zombies.GroundUnder(middle), facing, now, riseEnd);
 			if (zombie == null)
@@ -167,9 +168,9 @@ namespace ZombieApocalypse
 				RaidHunt.Join(zombie, middle);
 			}
 			Loot.Clear(zdo, Loot.CorpseKeys);
-			zdo.Set(Zombies.ZombieIdKey, zombie.GetZDOID());
+			zdo.Set(ZombieState.ZombieIdKey, zombie.GetZDOID());
 			// Kept a moment past the blend so a client that hears about the zombie late still has the pose
-			zdo.Set(Zombies.RemoveAtKey, riseEnd + Zombies.Ticks(1f));
+			zdo.Set(ZombieState.RemoveAtKey, riseEnd + NetTime.Ticks(1f));
 		}
 
 		/// <summary>
@@ -181,7 +182,7 @@ namespace ZombieApocalypse
 			{
 				return;
 			}
-			long now = Zombies.Now();
+			long now = NetTime.Now();
 			float t = ((standEnd > standStart) ? Mathf.Clamp01((float)(now - standStart) / (standEnd - standStart)) : 1f);
 			t = t * t * (3f - 2f * t);
 			hips.position = Vector3.Lerp(hipsFromPosition, hipsToPosition, t);
@@ -215,8 +216,8 @@ namespace ZombieApocalypse
 			}
 			StopPhysics();
 			ZDO zombieZdo = zombie.GetComponent<ZNetView>().GetZDO();
-			standStart = zombieZdo.GetLong(Zombies.RiseStartKey);
-			standEnd = zombieZdo.GetLong(Zombies.RiseEndKey);
+			standStart = zombieZdo.GetLong(ZombieState.RiseStartKey);
+			standEnd = zombieZdo.GetLong(ZombieState.RiseEndKey);
 			hipsFromPosition = hips.position;
 			hipsFromRotation = hips.rotation;
 			// Where the hips sit in the standing prefab, placed on the zombie at the corpse's own scale

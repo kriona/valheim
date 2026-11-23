@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
+using Kriona.Vikings;
 using UnityEngine;
 
 namespace ZombieApocalypse
@@ -39,8 +40,7 @@ namespace ZombieApocalypse
 		private static RandomEvent raid;
 
 		/// <summary>
-		/// Turns the raid on or off by VikingRaids and Zombies, which a raid already underway doesn't notice since it runs
-		/// as a copy
+		/// Turns the raid on or off by VikingRaids, which a raid already underway doesn't notice since it runs as a copy
 		/// </summary>
 		public static void UpdateEnabled()
 		{
@@ -51,12 +51,12 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Checks whether the raid is on - VikingRaids, with zombies on (see Plugin.Zombies)
+		/// Checks whether the raid is on (see Plugin.VikingRaids)
 		/// </summary>
 		/// <returns>True when it is</returns>
 		private static bool Enabled()
 		{
-			return(Plugin.VikingRaids.Value && Plugin.Zombies.Value);
+			return(Plugin.VikingRaids.Value);
 		}
 
 		/// <summary>

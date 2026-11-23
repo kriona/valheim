@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Kriona.Vikings;
 using UnityEngine;
 
 namespace ZombieApocalypse
@@ -39,75 +40,15 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
-	/// Decides which creatures rise, raises them and turns them into zombies
+	/// Decides which creatures rise, raises them and turns them into zombies, marking them as ZombieState describes
 	/// </summary>
-	/// <remarks>
-	/// A zombie is the creature's own prefab marked with ZombieKey in its ZDO, so it's turned into a zombie again
-	/// whenever it loads, on every client. A corpse that's going to rise is the creature's ragdoll marked with RiseAtKey
-	/// and the other corpse keys, so it keeps waiting through a reload or a change of owner
-	/// </remarks>
 	internal static class Zombies
 	{
-		/// <summary>
-		/// On a creature, that it's a zombie, and on a corpse, that it's a zombie's corpse
-		/// </summary>
-		public static readonly int ZombieKey = "kriona.ZombieApocalypse.zombie".GetStableHashCode();
-
-		/// <summary>
-		/// When a zombie starts getting up, in ZNet time ticks
-		/// </summary>
-		public static readonly int RiseStartKey = "kriona.ZombieApocalypse.riseStart".GetStableHashCode();
-
-		/// <summary>
-		/// When a zombie is standing and its AI takes over, in ZNet time ticks
-		/// </summary>
-		public static readonly int RiseEndKey = "kriona.ZombieApocalypse.riseEnd".GetStableHashCode();
-
-		/// <summary>
-		/// The share of its max health a zombie rises with, until its owner first sets its health - 0 once it's set
-		/// </summary>
-		public static readonly int RiseHealthKey = "kriona.ZombieApocalypse.riseHealth".GetStableHashCode();
-
 		/// <summary>
 		/// The fewest and most of its max health a zombie rises with, so it looks hurt as it gets up
 		/// </summary>
 		private const float RiseHealthMin = 0.25f;
 		private const float RiseHealthMax = 0.75f;
-
-		/// <summary>
-		/// When a corpse's creature died, in ZNet time ticks
-		/// </summary>
-		public static readonly int DiedAtKey = "kriona.ZombieApocalypse.diedAt".GetStableHashCode();
-
-		/// <summary>
-		/// When a corpse starts getting up, in ZNet time ticks
-		/// </summary>
-		public static readonly int RiseAtKey = "kriona.ZombieApocalypse.riseAt".GetStableHashCode();
-
-		/// <summary>
-		/// The prefab of a corpse's creature
-		/// </summary>
-		public static readonly int RisePrefabKey = "kriona.ZombieApocalypse.risePrefab".GetStableHashCode();
-
-		/// <summary>
-		/// The seed a corpse's creature picked its random items with, so its zombie picks the same ones
-		/// </summary>
-		public static readonly int RiseSeedKey = "kriona.ZombieApocalypse.riseSeed".GetStableHashCode();
-
-		/// <summary>
-		/// When a risen corpse is removed, in ZNet time ticks
-		/// </summary>
-		public static readonly int RemoveAtKey = "kriona.ZombieApocalypse.removeAt".GetStableHashCode();
-
-		/// <summary>
-		/// The zombie a corpse rose as - a ZDOID, which is stored under a pair of keys made from this name
-		/// </summary>
-		public const string ZombieIdKey = "kriona.ZombieApocalypse.zombieId";
-
-		/// <summary>
-		/// On a corpse and its zombie, who dealt the creature's killing blow - a ZDOID, stored like ZombieIdKey
-		/// </summary>
-		public const string KillerIdKey = "kriona.ZombieApocalypse.killerId";
 
 		/// <summary>
 		/// The animator parameter that puts a creature to sleep
@@ -123,55 +64,15 @@ namespace ZombieApocalypse
 		private static string excludedText;
 
 		/// <summary>
-		/// The network time all clients share
-		/// </summary>
-		/// <returns>The time in ticks, or 0 outside a world</returns>
-		public static long Now()
-		{
-			return((ZNet.instance != null) ? ZNet.instance.GetTime().Ticks : 0L);
-		}
-
-		/// <summary>
-		/// Converts seconds to ticks
-		/// </summary>
-		/// <param name="seconds">The number of seconds</param>
-		/// <returns>The number of ticks</returns>
-		public static long Ticks(float seconds)
-		{
-			return((long)(seconds * TimeSpan.TicksPerSecond));
-		}
-
-		/// <summary>
-		/// Checks whether a creature is a zombie
-		/// </summary>
-		/// <param name="character">The creature</param>
-		/// <returns>True when it's a zombie</returns>
-		public static bool IsZombie(Character character)
-		{
-			ZNetView nview = character.m_nview;
-			return(nview != null && nview.IsValid() && nview.GetZDO().GetBool(ZombieKey));
-		}
-
-		/// <summary>
-		/// Checks whether a creature is a zombie that's still getting up
-		/// </summary>
-		/// <param name="character">The creature</param>
-		/// <returns>True until the zombie is standing</returns>
-		public static bool IsRising(Character character)
-		{
-			return(IsZombie(character) && Now() < character.m_nview.GetZDO().GetLong(RiseEndKey));
-		}
-
-		/// <summary>
-		/// Decides whether a creature that's dying rises as a zombie, rolling RiseChance for one that can - never with
-		/// zombies off (see Plugin.Zombies), on a server without the mod, when it was killed by spirit damage, or when it
-		/// took FireStaysDead of its damage as fire
+		/// Decides whether a creature that's dying rises as a zombie, rolling RiseChance for one that can - never on a
+		/// server without the mod, when it was killed by spirit damage, or when it took FireStaysDead of its damage as
+		/// fire
 		/// </summary>
 		/// <param name="character">The dying creature</param>
 		/// <returns>True when it rises</returns>
 		public static bool ShouldRise(Character character)
 		{
-			if (!Plugin.Zombies.Value || !ServerCheck.Active || character.IsPlayer() || character.IsBoss() || IsZombie(character))
+			if (!ServerCheck.Active || character.IsPlayer() || character.IsBoss() || ZombieState.IsZombie(character))
 			{
 				return(false);
 			}
@@ -222,7 +123,7 @@ namespace ZombieApocalypse
 			rise.Level = character.GetLevel();
 			Humanoid humanoid = character as Humanoid;
 			rise.Seed = ((humanoid != null) ? humanoid.m_seed : 0);
-			rise.RiseAt = Now() + Ticks(Plugin.RiseDelay.Value);
+			rise.RiseAt = NetTime.Now() + NetTime.Ticks(Plugin.RiseDelay.Value);
 			rise.LootCheated = character.m_nview.GetZDO().IsCheated();
 			return(rise);
 		}
@@ -251,10 +152,10 @@ namespace ZombieApocalypse
 				return(null);
 			}
 			ZDO zdo = nview.GetZDO();
-			zdo.Set(ZombieKey, true);
-			zdo.Set(RiseStartKey, riseStart);
-			zdo.Set(RiseEndKey, riseEnd);
-			zdo.Set(RiseHealthKey, UnityEngine.Random.Range(RiseHealthMin, RiseHealthMax));
+			zdo.Set(ZombieState.ZombieKey, true);
+			zdo.Set(ZombieState.RiseStartKey, riseStart);
+			zdo.Set(ZombieState.RiseEndKey, riseEnd);
+			zdo.Set(ZombieState.RiseHealthKey, UnityEngine.Random.Range(RiseHealthMin, RiseHealthMax));
 			Humanoid humanoid = character as Humanoid;
 			if (humanoid != null && rise.Seed != 0)
 			{
@@ -270,7 +171,7 @@ namespace ZombieApocalypse
 			}
 			if (!rise.KillerId.IsNone())
 			{
-				zdo.Set(KillerIdKey, rise.KillerId);
+				zdo.Set(ZombieState.KillerIdKey, rise.KillerId);
 			}
 			MonsterAI ai = instance.GetComponent<MonsterAI>();
 			if (ai != null && HasSleepAnimation(character))
@@ -296,7 +197,7 @@ namespace ZombieApocalypse
 		/// through ZombieCharge instead of fleeing from them. It rolls no loot of its own, since it drops the
 		/// loot its creature rolled when it first died
 		/// </remarks>
-		/// <param name="character">The creature, already marked with ZombieKey</param>
+		/// <param name="character">The creature, already marked with ZombieState.ZombieKey</param>
 		public static void Apply(Character character)
 		{
 			character.m_faction = Character.Faction.Undead;
@@ -353,7 +254,7 @@ namespace ZombieApocalypse
 			{
 				character.gameObject.AddComponent<ZombieLimp>();
 			}
-			if (Now() < zdo.GetLong(RiseEndKey) && character.GetComponent<RiseBlend>() == null)
+			if (NetTime.Now() < zdo.GetLong(ZombieState.RiseEndKey) && character.GetComponent<RiseBlend>() == null)
 			{
 				character.gameObject.AddComponent<RiseBlend>();
 			}
@@ -368,29 +269,7 @@ namespace ZombieApocalypse
 				bool unhurt = character.GetHealth() >= character.GetMaxHealth();
 				float health = character.GetMaxHealthBase() * character.GetLevel() * Plugin.ZombieHealth.Value / 100f;
 				character.SetMaxHealth(health);
-				SetHealth(character, health, unhurt);
-			}
-		}
-
-		/// <summary>
-		/// Sets a zombie's health on its owner after its max health - part of it the first time, as it rises, and all
-		/// of it when it's unhurt
-		/// </summary>
-		/// <param name="character">The zombie</param>
-		/// <param name="maxHealth">Its max health</param>
-		/// <param name="unhurt">Whether it was unhurt before its max health was set</param>
-		public static void SetHealth(Character character, float maxHealth, bool unhurt)
-		{
-			ZDO zdo = character.m_nview.GetZDO();
-			float share = zdo.GetFloat(RiseHealthKey);
-			if (share > 0f)
-			{
-				zdo.Set(RiseHealthKey, 0f);
-				character.SetHealth(maxHealth * share);
-			}
-			else if (unhurt)
-			{
-				character.SetHealth(maxHealth);
+				ZombieState.SetHealth(character, health, unhurt);
 			}
 		}
 

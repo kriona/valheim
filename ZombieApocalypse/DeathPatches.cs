@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HarmonyLib;
+using Kriona.Vikings;
 using UnityEngine;
 
 namespace ZombieApocalypse
@@ -95,7 +96,7 @@ namespace ZombieApocalypse
 				return;
 			}
 			Dying.Active = true;
-			Dying.IsZombie = Zombies.IsZombie(__instance);
+			Dying.IsZombie = ZombieState.IsZombie(__instance);
 			Dying.Creature = __instance;
 			Dying.DropPosition = __instance.GetCenterPoint();
 			if (Dying.IsZombie)
@@ -247,7 +248,7 @@ namespace ZombieApocalypse
 			if (Dying.IsZombie)
 			{
 				Dying.Corpse = zdo;
-				zdo.Set(Zombies.ZombieKey, true);
+				zdo.Set(ZombieState.ZombieKey, true);
 				if (__instance.GetComponent<ZombieLook>() == null)
 				{
 					__instance.gameObject.AddComponent<ZombieLook>();
@@ -280,16 +281,16 @@ namespace ZombieApocalypse
 			Dying.Corpse = zdo;
 			// Setup has already stored the creature's loot in a corpse with m_dropItems
 			Dying.CorpseHasLoot = __instance.m_dropItems;
-			zdo.Set(Zombies.DiedAtKey, Zombies.Now());
-			zdo.Set(Zombies.RiseAtKey, rise.RiseAt);
-			zdo.Set(Zombies.RisePrefabKey, rise.PrefabHash);
+			zdo.Set(ZombieState.DiedAtKey, NetTime.Now());
+			zdo.Set(ZombieState.RiseAtKey, rise.RiseAt);
+			zdo.Set(ZombieState.RisePrefabKey, rise.PrefabHash);
 			if (rise.Seed != 0)
 			{
-				zdo.Set(Zombies.RiseSeedKey, rise.Seed);
+				zdo.Set(ZombieState.RiseSeedKey, rise.Seed);
 			}
 			if (!rise.KillerId.IsNone())
 			{
-				zdo.Set(Zombies.KillerIdKey, rise.KillerId);
+				zdo.Set(ZombieState.KillerIdKey, rise.KillerId);
 			}
 			if (CorpseItems.Store(zdo, Dying.Creature))
 			{
@@ -318,11 +319,11 @@ namespace ZombieApocalypse
 				return;
 			}
 			ZDO zdo = nview.GetZDO();
-			if (zdo.GetLong(Zombies.RiseAtKey) != 0L)
+			if (zdo.GetLong(ZombieState.RiseAtKey) != 0L)
 			{
 				__instance.gameObject.AddComponent<RisingCorpse>();
 			}
-			else if (zdo.GetBool(Zombies.ZombieKey))
+			else if (zdo.GetBool(ZombieState.ZombieKey))
 			{
 				__instance.gameObject.AddComponent<ZombieLook>();
 				__instance.gameObject.AddComponent<ZombieEyes>();

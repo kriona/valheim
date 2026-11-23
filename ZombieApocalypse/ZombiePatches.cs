@@ -1,4 +1,5 @@
 using HarmonyLib;
+using Kriona.Vikings;
 
 namespace ZombieApocalypse
 {
@@ -18,7 +19,7 @@ namespace ZombieApocalypse
 		/// <param name="__instance">The creature loading</param>
 		private static void Postfix(Character __instance)
 		{
-			if (!__instance.IsPlayer() && (Zombies.IsZombie(__instance) || VikingCore.IsZombieViking(__instance)))
+			if (!__instance.IsPlayer() && (ZombieState.IsZombie(__instance) || VikingCore.IsZombieViking(__instance)))
 			{
 				Zombies.Apply(__instance);
 			}
@@ -66,7 +67,7 @@ namespace ZombieApocalypse
 		/// <param name="__result">Whether the attack can be used, set to false for a zombie's healing spell</param>
 		private static void Postfix(BaseAI __instance, ItemDrop.ItemData item, ref bool __result)
 		{
-			if (__result && item.m_shared.m_aiTargetType == ItemDrop.ItemData.AiTarget.FriendHurt && Zombies.IsZombie(__instance.m_character))
+			if (__result && item.m_shared.m_aiTargetType == ItemDrop.ItemData.AiTarget.FriendHurt && ZombieState.IsZombie(__instance.m_character))
 			{
 				__result = false;
 			}
@@ -90,7 +91,7 @@ namespace ZombieApocalypse
 		/// <returns>False to skip the damage</returns>
 		private static bool Prefix(Character __instance)
 		{
-			return(__instance.IsPlayer() || !Zombies.IsRising(__instance));
+			return(__instance.IsPlayer() || !ZombieState.IsRising(__instance));
 		}
 	}
 
@@ -108,7 +109,7 @@ namespace ZombieApocalypse
 		/// <returns>False to skip taming a zombie</returns>
 		private static bool Prefix(Character __instance, bool tamed)
 		{
-			return(!tamed || !Zombies.IsZombie(__instance));
+			return(!tamed || !ZombieState.IsZombie(__instance));
 		}
 	}
 
@@ -125,7 +126,7 @@ namespace ZombieApocalypse
 		/// <returns>False to skip the update for a zombie</returns>
 		private static bool Prefix(Tameable __instance)
 		{
-			return(__instance.m_character == null || !Zombies.IsZombie(__instance.m_character));
+			return(__instance.m_character == null || !ZombieState.IsZombie(__instance.m_character));
 		}
 	}
 
@@ -143,7 +144,7 @@ namespace ZombieApocalypse
 		private static void Postfix(Character __instance, ref string __result)
 		{
 			string word = Plugin.ZombieName.Value;
-			if (!string.IsNullOrEmpty(word) && Zombies.IsZombie(__instance))
+			if (!string.IsNullOrEmpty(word) && ZombieState.IsZombie(__instance))
 			{
 				__result = word + " " + __result;
 			}
