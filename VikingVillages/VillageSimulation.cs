@@ -219,8 +219,21 @@ namespace VikingVillages
 				covers[session] = cover;
 			}
 			cover.FoundAt = Time.time;
+			cover.Found = FindCircle(reference, out cover.Middle, out cover.Radius);
+			return(cover);
+		}
+
+		/// <summary>
+		/// Finds the village a point is in, from the middles and radii noted on the generators around it
+		/// </summary>
+		/// <param name="point">The point</param>
+		/// <param name="middle">Set to the village's middle</param>
+		/// <param name="radius">Set to its radius</param>
+		/// <returns>False when it's in no village</returns>
+		public static bool FindCircle(Vector3 point, out Vector3 middle, out float radius)
+		{
 			List<ZDO> zdos = new List<ZDO>();
-			VillageRespawn.ZdosNear(reference, FindReach, zdos);
+			VillageRespawn.ZdosNear(point, FindReach, zdos);
 			List<KeyValuePair<Vector3, float>> circles = new List<KeyValuePair<Vector3, float>>();
 			foreach (ZDO zdo in zdos)
 			{
@@ -229,17 +242,16 @@ namespace VikingVillages
 				{
 					continue;
 				}
-				float radius = zdo.GetFloat(RadiusKey, 0f);
-				if (radius > 0f)
+				float reach = zdo.GetFloat(RadiusKey, 0f);
+				if (reach > 0f)
 				{
-					circles.Add(new KeyValuePair<Vector3, float>(zdo.GetVec3(MiddleKey, zdo.GetPosition()), radius));
+					circles.Add(new KeyValuePair<Vector3, float>(zdo.GetVec3(MiddleKey, zdo.GetPosition()), reach));
 				}
 			}
-			int picked = PickCircle(circles, reference);
-			cover.Found = (picked >= 0);
-			cover.Middle = (cover.Found ? circles[picked].Key : Vector3.zero);
-			cover.Radius = (cover.Found ? circles[picked].Value : 0f);
-			return(cover);
+			int picked = PickCircle(circles, point);
+			middle = ((picked >= 0) ? circles[picked].Key : Vector3.zero);
+			radius = ((picked >= 0) ? circles[picked].Value : 0f);
+			return(picked >= 0);
 		}
 
 		/// <summary>

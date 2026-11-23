@@ -316,19 +316,21 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Takes up the first village near the player for a run started with none
+		/// Takes up the first village near the player for a run started with none - or, on a dedicated server, which has
+		/// no player, near where the server runs the world (see ServerVillageRun)
 		/// </summary>
 		private static void Adopt()
 		{
 			Player player = Player.m_localPlayer;
-			Village village = ((player != null) ? Village.Find(player.transform.position) : null);
+			Vector3 at = ((player != null) ? player.transform.position : ZNet.instance.GetReferencePosition());
+			Village village = Village.Find(at);
 			if (village == null)
 			{
 				return;
 			}
 			runAdopting = false;
 			runVillage = VillageLabel(village);
-			Plugin.Log.LogInfo("Test run took up " + runVillage + ", as it was set up near the player");
+			Plugin.Log.LogInfo("Test run took up " + runVillage + ", as it was set up near " + ((player != null) ? "the player" : "where the server runs the world"));
 		}
 
 		/// <summary>

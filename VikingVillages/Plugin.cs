@@ -46,7 +46,8 @@ namespace VikingVillages
 		/// change, lays the paths of villages as they load, keeps track of the villages this client looks after -
 		/// their night watch, their records and the vikings they're missing - tames the farms' pen animals that came
 		/// out wild, shows the villages' areas the player turns on, notes the villages' reach for running all of a village
-		/// the player is in (see VillageSimulation), and runs the test log's checks (see TestLog)
+		/// the player is in (see VillageSimulation), moves a dedicated server's own area to the village it runs (see
+		/// ServerVillageRun), and runs the test log's checks (see TestLog)
 		/// </summary>
 		private void Update()
 		{
@@ -69,6 +70,7 @@ namespace VikingVillages
 			VillageGroundPaths.Update();
 			VillageStock.Update();
 			VillageSimulation.Update();
+			ServerVillageRun.Update();
 			TestLog.Update();
 		}
 
