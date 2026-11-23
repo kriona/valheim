@@ -632,7 +632,10 @@ namespace SnapPoints
 			{
 				return;
 			}
-			if (PieceConfig.GetState(Utils.GetPrefabName(__instance.gameObject)) == false)
+			// A built piece is looked up by its ZDO's prefab, and the placement ghost, which has no ZDO, by its name
+			ZNetView nview = __instance.m_nview;
+			bool? state = ((nview != null && nview.IsValid()) ? PieceConfig.GetState(nview.GetZDO().GetPrefab()) : PieceConfig.GetState(Utils.GetPrefabName(__instance.gameObject)));
+			if (state == false)
 			{
 				points.RemoveRange(__state, points.Count - __state);
 			}

@@ -66,6 +66,12 @@ namespace SnapPoints
 		private static readonly Dictionary<string, bool> states = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>
+		/// The same states by the stable hash of the prefab name, as a piece's ZDO stores its prefab, so the snap point
+		/// search can look a piece up without building its name
+		/// </summary>
+		private static readonly Dictionary<int, bool> statesByHash = new Dictionary<int, bool>();
+
+		/// <summary>
 		/// Mirrors the piece lines as entries for Configuration Manager
 		/// </summary>
 		private static ConfigMirror mirror;
@@ -121,17 +127,33 @@ namespace SnapPoints
 		}
 
 		/// <summary>
-		/// Reads the config file again and updates the snap points when a world is loaded - without one, the file is
-		/// read when the next world loads
+		/// The value set for a piece, by its prefab hash
+		/// </summary>
+		/// <param name="prefabHash">The stable hash of the piece's prefab name, as its ZDO stores it</param>
+		/// <returns>True or false as set, or null for inherit</returns>
+		public static bool? GetState(int prefabHash)
+		{
+			if (statesByHash.TryGetValue(prefabHash, out bool value))
+			{
+				return(value);
+			}
+			return(null);
+		}
+
+		/// <summary>
+		/// Reads the config file again once it has been saved and updates the snap points when a world is loaded,
+		/// without writing it back - without a world, the file is read when the next world loads
 		/// </summary>
 		/// <remarks>
-		/// Writing the file back changes it again, which reads it once more, finds nothing new and leaves it alone
+		/// The file can be shared - by a dedicated server and the game whose config folder it links to, say - and each
+		/// writes the pieces it knows, so a reload that wrote its own list back could have the other read it and write
+		/// its own in turn, over and over. The file gets any new pieces the next time a world loads
 		/// </remarks>
 		public static void Reload()
 		{
 			if (ZNetScene.instance != null)
 			{
-				Load(ZNetScene.instance);
+				Load(ZNetScene.instance, false);
 				Snapping.ApplyAll();
 			}
 		}
@@ -141,6 +163,16 @@ namespace SnapPoints
 		/// </summary>
 		/// <param name="scene">The scene holding the prefab list</param>
 		public static void Load(ZNetScene scene)
+		{
+			Load(scene, true);
+		}
+
+		/// <summary>
+		/// Reads the config file and adds any build pieces it doesn't list yet, writing it back when asked
+		/// </summary>
+		/// <param name="scene">The scene holding the prefab list</param>
+		/// <param name="write">Whether to write the file back with what was added</param>
+		private static void Load(ZNetScene scene, bool write)
 		{
 			string path = FilePath;
 			Dictionary<string, string> values;
@@ -182,7 +214,10 @@ namespace SnapPoints
 			SetStates(lineStates);
 			lastGroups = groups;
 			lastNotLoaded = notLoaded;
-			Write(path, groups, notLoaded, lineStates);
+			if (write)
+			{
+				Write(path, groups, notLoaded, lineStates);
+			}
 			SyncEntries(lineStates);
 		}
 
@@ -193,11 +228,13 @@ namespace SnapPoints
 		private static void SetStates(Dictionary<string, bool?> lineStates)
 		{
 			states.Clear();
+			statesByHash.Clear();
 			foreach (KeyValuePair<string, bool?> line in lineStates)
 			{
 				if (line.Value.HasValue)
 				{
 					states[line.Key] = line.Value.Value;
+					statesByHash[line.Key.GetStableHashCode()] = line.Value.Value;
 				}
 			}
 			AnyOff = states.ContainsValue(false);

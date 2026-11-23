@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2
+- Faster snapping while building next to many pieces
+- Reading the config file after it's saved no longer writes it back, so a dedicated server sharing the game's config folder can't keep rewriting it
+
 ## 1.1.1
 - Support BepInEx Configuration Manager (reported by DB451)
 
