@@ -127,7 +127,7 @@ namespace VikingVillages
 			WriteIds(zdo, WatchersKey, watchers);
 			WriteIds(zdo, WatchedKey, watched);
 			WriteIds(zdo, ReliefsKey, reliefs);
-			Plugin.Log.LogInfo("A viking of the village at " + village.Farm.ToString("F0") + " saw its watch die and took its place");
+			Plugin.Log.LogInfo(TestLog.Name(ZDOMan.instance.GetZDO(claimant)) + " of the village at " + village.Farm.ToString("F0") + " saw " + TestLog.Name(ZDOMan.instance.GetZDO(dead)) + " die keeping watch and took its place");
 		}
 
 		/// <summary>

@@ -1107,7 +1107,8 @@ namespace VikingVillages
 			}
 			VillagePaths.House home = (chosen.HasValue ? chosen.Value : FewestClaimed(village, vikings));
 			village.Adopt(zdo, home);
-			Plugin.Log.LogInfo("A living viking came to the village at " + village.Farm.ToString("F0") + ", calling the house at " + home.Center.ToString("F0") + " home");
+			TestLog.Count("Vikings", (returned ? "came back to a village" : "came to a village"));
+			Plugin.Log.LogInfo(TestLog.Name(zdo) + (returned ? " came back" : " came") + " to the village at " + village.Farm.ToString("F0") + ", calling the house at " + home.Center.ToString("F0") + " home");
 			return(zdo);
 		}
 

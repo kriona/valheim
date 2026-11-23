@@ -1,0 +1,583 @@
+using System.Collections.Generic;
+using System.Text;
+using Kriona.Vikings;
+using UnityEngine;
+
+namespace VikingVillages
+{
+	/// <summary>
+	/// What the test log (see TestLog) watches in a viking's life on the client that owns it - leaving the village,
+	/// ending up under the ground or in the water, being badly hurt, going hungry with no food in the chests, its gear
+	/// breaking, the hits it took before it died - and why loot that despawned was left lying
+	/// </summary>
+	internal partial class VillageLife
+	{
+		/// <summary>
+		/// How many of the viking's last hits are kept for its death line
+		/// </summary>
+		private const int LogHitsKept = 6;
+
+		/// <summary>
+		/// How far past the village's edge the viking has to go to be written as having left it, in meters
+		/// </summary>
+		private const float LogLeaveMargin = 5f;
+
+		/// <summary>
+		/// How far under the ground the viking has to be to be written as under it, in meters
+		/// </summary>
+		private const float LogUnderDepth = 1f;
+
+		/// <summary>
+		/// The share of its health the viking has to fall below to be written as badly hurt, and climb back to before it
+		/// counts as recovered
+		/// </summary>
+		private const float LogLowShare = 0.3f;
+		private const float LogRecoveredShare = 0.6f;
+
+		/// <summary>
+		/// Seconds between checks on whether the viking has food, which looks through the village's chests
+		/// </summary>
+		private const float LogFoodInterval = 10f;
+
+		/// <summary>
+		/// The viking's last hits, each with when it was taken, by Time.time
+		/// </summary>
+		private readonly List<KeyValuePair<float, string>> logHits = new List<KeyValuePair<float, string>>();
+
+		/// <summary>
+		/// What the viking was last written as - out of the village, under the ground, swimming, badly hurt, hungry with
+		/// no food - and since when, and the farthest it has been out of the village this time
+		/// </summary>
+		private bool logOutside;
+		private float logOutsideSince;
+		private float logFarthest;
+		private bool logUnder;
+		private bool logSwimming;
+		private float logSwimmingSince;
+		private bool logLow;
+		private bool logHungry;
+		private float logHungrySince;
+		private float logFoodCheckAt;
+
+		/// <summary>
+		/// The viking's equipped gear that was broken at the last check
+		/// </summary>
+		private HashSet<ItemDrop.ItemData> logBroken = new HashSet<ItemDrop.ItemData>();
+
+		/// <summary>
+		/// The job the viking was last counted as doing, so each one is counted once as it starts
+		/// </summary>
+		private Job logJob;
+
+		/// <summary>
+		/// Where the viking was at the last check, for the meters it walks, and whether that's known yet
+		/// </summary>
+		private Vector3 logLastPosition;
+		private bool logPositioned;
+
+		/// <summary>
+		/// The farthest the viking can move between two checks and still count as walking, in meters - more is a
+		/// teleport or a respawn
+		/// </summary>
+		private const float LogWalkMax = 30f;
+
+		/// <summary>
+		/// Loot about to despawn that the vikings could have put away, for the test log
+		/// </summary>
+		internal class LootLeft
+		{
+			/// <summary>
+			/// The line for the log, why the vikings left it in a few words for the totals, its name and how many there
+			/// were
+			/// </summary>
+			public string Report;
+			public string Reason;
+			public string Item;
+			public int Stack;
+		}
+
+		/// <summary>
+		/// Names the viking and where it is, for the log
+		/// </summary>
+		/// <returns>The name and position</returns>
+		public string LogName()
+		{
+			return(TestLog.Name(humanoid));
+		}
+
+		/// <summary>
+		/// Forgets what the test log noted about the viking, as a run starts, so the run counts its job and its troubles
+		/// from now
+		/// </summary>
+		public void LogReset()
+		{
+			logHits.Clear();
+			logOutside = false;
+			logUnder = false;
+			logSwimming = false;
+			logLow = false;
+			logHungry = false;
+			logFoodCheckAt = 0f;
+			logBroken = new HashSet<ItemDrop.ItemData>();
+			logJob = null;
+			logPositioned = false;
+		}
+
+		/// <summary>
+		/// Names the viking's job for the totals, by its kind
+		/// </summary>
+		/// <returns>The kind, like "Fuel", or "no job"</returns>
+		public string LogJobName()
+		{
+			return(JobName(job));
+		}
+
+		/// <summary>
+		/// Names a kind of job for the totals - its class without "Job" at the end
+		/// </summary>
+		/// <param name="kind">The job</param>
+		/// <returns>The kind, like "Fuel", or "no job"</returns>
+		private static string JobName(Job kind)
+		{
+			if (kind == null)
+			{
+				return("no job");
+			}
+			string name = kind.GetType().Name;
+			return(name.EndsWith("Job") ? name.Substring(0, name.Length - 3) : name);
+		}
+
+		/// <summary>
+		/// Counts the viking's job as started the first time it carries it on
+		/// </summary>
+		private void LogJobTick()
+		{
+			if (job == logJob || !TestLog.On)
+			{
+				return;
+			}
+			logJob = job;
+			TestLog.Count("Jobs started", JobName(job));
+		}
+
+		/// <summary>
+		/// Counts a job ending, as finished or as given up or interrupted before it was, and the time spent on it
+		/// </summary>
+		/// <param name="ending">The job</param>
+		/// <param name="done">Whether it finished</param>
+		private void LogJobStopped(Job ending, bool done)
+		{
+			if (!TestLog.On)
+			{
+				return;
+			}
+			string name = JobName(ending);
+			TestLog.Count(done ? "Jobs finished" : "Jobs stopped before finishing", name);
+			TestLog.Count("Minutes spent on jobs", name, (Time.time - ending.StartedAt) / 60f);
+		}
+
+		/// <summary>
+		/// Notes a hit the viking took, keeping the last LogHitsKept
+		/// </summary>
+		/// <param name="line">What hit it and how much it took</param>
+		public void NoteHit(string line)
+		{
+			logHits.Add(new KeyValuePair<float, string>(Time.time, line));
+			if (logHits.Count > LogHitsKept)
+			{
+				logHits.RemoveAt(0);
+			}
+		}
+
+		/// <summary>
+		/// Checks the viking for what the test log writes as it starts and ends - leaving the village, being under the
+		/// ground, swimming, being badly hurt, its equipped gear breaking, and having eaten nothing with no food in the
+		/// chests - on the client that runs its life
+		/// </summary>
+		public void LogCheck()
+		{
+			if (!active || village == null || humanoid == null || nview == null || !nview.IsValid() || !nview.IsOwner() || humanoid.IsDead())
+			{
+				return;
+			}
+			Vector3 position = transform.position;
+			if (logPositioned)
+			{
+				float walked = Utils.DistanceXZ(position, logLastPosition);
+				if (walked <= LogWalkMax)
+				{
+					TestLog.Count("Meters walked, by job", LogJobName(), walked);
+				}
+			}
+			logLastPosition = position;
+			logPositioned = true;
+			string farm = village.Farm.ToString("F0");
+			float outside = village.DistanceOutside(position);
+			if (!logOutside && outside > LogLeaveMargin)
+			{
+				logOutside = true;
+				logOutsideSince = Time.time;
+				logFarthest = outside;
+				TestLog.Count("Troubles", "left the village");
+				TestLog.Count("Left the village, by job", LogJobName());
+				Plugin.Log.LogInfo("Left: " + LogName() + " left the village at " + farm + " - " + LogDoing());
+			}
+			else if (logOutside)
+			{
+				logFarthest = Mathf.Max(logFarthest, outside);
+				if (outside <= 0f)
+				{
+					logOutside = false;
+					TestLog.Count("Minutes", "outside the village", (Time.time - logOutsideSince) / 60f);
+					Plugin.Log.LogInfo("Back: " + LogName() + " is back in the village at " + farm + " after " + (Time.time - logOutsideSince).ToString("F0") + "s, " + logFarthest.ToString("F0") + "m out at the farthest - " + LogDoing());
+				}
+			}
+			if (ZoneSystem.instance != null)
+			{
+				float depth = ZoneSystem.instance.GetGroundHeight(position) - position.y;
+				bool under = (depth > LogUnderDepth);
+				if (under != logUnder)
+				{
+					logUnder = under;
+					if (under)
+					{
+						TestLog.Count("Troubles", "under the ground");
+						Plugin.Log.LogWarning("Under: " + LogName() + " is " + depth.ToString("F1") + "m under the ground - " + LogDoing());
+					}
+					else
+					{
+						Plugin.Log.LogInfo("Under: " + LogName() + " is back above the ground");
+					}
+				}
+			}
+			bool swimming = humanoid.IsSwimming();
+			if (swimming != logSwimming)
+			{
+				logSwimming = swimming;
+				if (swimming)
+				{
+					logSwimmingSince = Time.time;
+					TestLog.Count("Troubles", "swimming");
+					Plugin.Log.LogInfo("Swim: " + LogName() + " is swimming, " + outside.ToString("F0") + "m outside the village - " + LogDoing());
+				}
+				else
+				{
+					TestLog.Count("Minutes", "swimming", (Time.time - logSwimmingSince) / 60f);
+					Plugin.Log.LogInfo("Swim: " + LogName() + " is out of the water after " + (Time.time - logSwimmingSince).ToString("F0") + "s");
+				}
+			}
+			float max = humanoid.GetMaxHealth();
+			float share = ((max > 0f) ? humanoid.GetHealth() / max : 1f);
+			string health = humanoid.GetHealth().ToString("F0") + "/" + max.ToString("F0");
+			if (!logLow && share < LogLowShare)
+			{
+				logLow = true;
+				TestLog.Count("Troubles", "badly hurt");
+				HitData hit = humanoid.m_lastHit;
+				Plugin.Log.LogWarning("Hurt: " + LogName() + " is down to " + health + " health, " + ((hit != null) ? "last hit by " + TestLog.Source(hit) : "no hit noted") + " - " + LogDoing());
+			}
+			else if (logLow && share >= LogRecoveredShare)
+			{
+				logLow = false;
+				Plugin.Log.LogInfo("Hurt: " + LogName() + " is back up to " + health + " health");
+			}
+			LogBrokenGear();
+			LogHunger();
+		}
+
+		/// <summary>
+		/// Writes the viking's equipped gear that broke since the last check
+		/// </summary>
+		private void LogBrokenGear()
+		{
+			HashSet<ItemDrop.ItemData> broken = new HashSet<ItemDrop.ItemData>();
+			foreach (ItemDrop.ItemData item in humanoid.GetInventory().GetEquippedItems())
+			{
+				if (!item.m_shared.m_useDurability || item.m_durability > 0f)
+				{
+					continue;
+				}
+				broken.Add(item);
+				if (!logBroken.Contains(item))
+				{
+					TestLog.Count("Troubles", "gear broken");
+					TestLog.Count("Gear broken", TestLog.ItemName(item));
+					Plugin.Log.LogWarning("Broke: " + LogName() + " has broken its " + Localization.instance.Localize(item.m_shared.m_name) + " - " + LogDoing());
+				}
+			}
+			logBroken = broken;
+		}
+
+		/// <summary>
+		/// Writes the viking having eaten nothing with no food in the village's chests it can eat, and having food again,
+		/// every LogFoodInterval seconds
+		/// </summary>
+		private void LogHunger()
+		{
+			if (Time.time < logFoodCheckAt)
+			{
+				return;
+			}
+			logFoodCheckAt = Time.time + LogFoodInterval;
+			bool hungry = (body.Food.FoodHealth() <= 0f && FindFoodChest() == null);
+			if (hungry == logHungry)
+			{
+				return;
+			}
+			logHungry = hungry;
+			if (hungry)
+			{
+				logHungrySince = Time.time;
+				TestLog.Count("Troubles", "hungry with no food");
+				Plugin.Log.LogWarning("Hungry: " + LogName() + " has eaten nothing, and none of the " + UsableChests().Count + " chests it can use holds food it can eat - " + LogDoing());
+			}
+			else
+			{
+				TestLog.Count("Minutes", "hungry with no food", (Time.time - logHungrySince) / 60f);
+				Plugin.Log.LogInfo("Hungry: " + LogName() + " has food again after " + (Time.time - logHungrySince).ToString("F0") + "s - eaten: " + body.Food.Describe());
+			}
+		}
+
+		/// <summary>
+		/// Describes what the viking is doing, for the log - its job, what it's fighting, and whether it's fleeing,
+		/// walking back, in a raid or out at night
+		/// </summary>
+		/// <returns>The description</returns>
+		private string LogDoing()
+		{
+			StringBuilder text = new StringBuilder();
+			text.Append("job: " + ((job != null) ? job.Describe() : "none"));
+			Character target = ((ai != null) ? ai.m_targetCreature : null);
+			if (target != null)
+			{
+				text.Append(", fighting " + TestLog.Name(target));
+			}
+			if (fleeing)
+			{
+				text.Append(", fleeing");
+			}
+			if (returning)
+			{
+				text.Append(", walking back to the village");
+			}
+			if (VillageRaids.On(village))
+			{
+				text.Append(", raid on");
+			}
+			if (IsNight())
+			{
+				text.Append(", at night");
+			}
+			return(text.ToString());
+		}
+
+		/// <summary>
+		/// Describes how the viking was doing as it died, for its death line - what it was doing, where it was, what it
+		/// had eaten, how rested it was, and its last hits
+		/// </summary>
+		/// <returns>The description, starting with "; ", or "" when its life doesn't run here</returns>
+		public string DeathReport()
+		{
+			if (!active || village == null)
+			{
+				return("");
+			}
+			StringBuilder text = new StringBuilder();
+			float outside = village.DistanceOutside(transform.position);
+			text.Append("; " + LogDoing());
+			text.Append("; " + ((outside > 0f) ? outside.ToString("F0") + "m outside" : "inside") + " the village at " + village.Farm.ToString("F0"));
+			text.Append("; max health " + humanoid.GetMaxHealth().ToString("F0") + ", eaten: " + body.Food.Describe() + ", rest: " + body.Rest.Describe());
+			text.Append("; gear: " + LogGear());
+			if (logHits.Count > 0)
+			{
+				List<string> hits = new List<string>();
+				foreach (KeyValuePair<float, string> hit in logHits)
+				{
+					hits.Add((Time.time - hit.Key).ToString("F1") + "s before: " + hit.Value);
+				}
+				text.Append("; last hits, oldest first: " + string.Join(" / ", hits));
+			}
+			return(text.ToString());
+		}
+
+		/// <summary>
+		/// Describes the viking for the snapshot - its debug summary and its gear
+		/// </summary>
+		/// <returns>The line</returns>
+		public string LogSnapshot()
+		{
+			if (viking == null)
+			{
+				return("no viking core");
+			}
+			if (nview == null || !nview.IsValid() || !nview.IsOwner())
+			{
+				return("run by another client");
+			}
+			return(TestLog.Flatten(viking.DebugSummary()) + " | Gear: " + LogGear());
+		}
+
+		/// <summary>
+		/// Describes the viking's equipped gear, with how worn each piece is, and its arrows and inventory
+		/// </summary>
+		/// <returns>The description</returns>
+		private string LogGear()
+		{
+			Inventory inventory = humanoid.GetInventory();
+			List<string> gear = new List<string>();
+			foreach (ItemDrop.ItemData item in inventory.GetEquippedItems())
+			{
+				string worn = (item.m_shared.m_useDurability ? " " + Mathf.RoundToInt(item.GetDurabilityPercentage() * 100f) + "%" : "");
+				gear.Add(Localization.instance.Localize(item.m_shared.m_name) + " q" + item.m_quality + worn);
+			}
+			int arrows = 0;
+			foreach (ItemDrop.ItemData item in inventory.GetAllItems())
+			{
+				ItemDrop.ItemData.ItemType type = item.m_shared.m_itemType;
+				if ((type == ItemDrop.ItemData.ItemType.Ammo || type == ItemDrop.ItemData.ItemType.AmmoNonEquipable) && !VikingItems.IsCarried(item))
+				{
+					arrows += item.m_stack;
+				}
+			}
+			string equipped = ((gear.Count > 0) ? string.Join(", ", gear) : "nothing equipped");
+			return(equipped + ", " + arrows + " ammo, " + inventory.GetAllItems().Count + "/" + (inventory.GetWidth() * inventory.GetHeight()) + " slots used");
+		}
+
+		/// <summary>
+		/// Describes the items lying in and around a village for the snapshot - how many, how many of them are loot the
+		/// vikings would put away, and how long the oldest of that has lain
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>The line, ending in a line break</returns>
+		public static string DescribeLyingLoot(Village village)
+		{
+			int lying = 0;
+			int loot = 0;
+			double oldest = 0.0;
+			foreach (ItemDrop drop in LoadedDrops())
+			{
+				ZNetView view = ((drop != null) ? drop.m_nview : null);
+				if (view == null || !view.IsValid() || village.DistanceOutside(view.transform.position) > LootReach)
+				{
+					continue;
+				}
+				lying++;
+				if (IsLoot(view))
+				{
+					loot++;
+					oldest = System.Math.Max(oldest, drop.GetTimeSinceSpawned());
+				}
+			}
+			return("Items lying within " + LootReach.ToString("F0") + "m: " + lying + ", " + loot + " of them loot" + ((loot > 0) ? ", the oldest lying " + (oldest / 60.0).ToString("F0") + " minutes" : "") + "\n");
+		}
+
+		/// <summary>
+		/// Describes loot about to despawn that the vikings of a village could have put away - lying within LootReach of
+		/// it - and why they left it
+		/// </summary>
+		/// <param name="drop">The item</param>
+		/// <returns>The report, or null when it's not loot near a village</returns>
+		public static LootLeft LootLeftReport(ItemDrop drop)
+		{
+			ZNetView view = drop.m_nview;
+			if (view == null || !IsLoot(view))
+			{
+				return(null);
+			}
+			Vector3 position = view.transform.position;
+			Village village = Village.Find(position);
+			if (village == null)
+			{
+				return(null);
+			}
+			float outside = village.DistanceOutside(position);
+			if (outside > LootReach)
+			{
+				return(null);
+			}
+			List<VillageLife> lives = new List<VillageLife>();
+			foreach (VillageLife life in All)
+			{
+				if (life != null && life.active && life.village == village)
+				{
+					lives.Add(life);
+				}
+			}
+			ItemDrop.ItemData item = drop.m_itemData;
+			string name = TestLog.ItemName(item);
+			string where = ((outside > 0f) ? outside.ToString("F0") + "m outside" : "inside") + " the village at " + village.Farm.ToString("F0");
+			string why = LootLeftWhy(drop, lives, position, outside, out string reason);
+			LootLeft left = new LootLeft();
+			left.Report = name + " x" + item.m_stack + " at " + position.ToString("F0") + ", " + where + ", after lying " + (drop.GetTimeSinceSpawned() / 60.0).ToString("F0") + " minutes - " + why;
+			left.Reason = reason;
+			left.Item = name;
+			left.Stack = item.m_stack;
+			return(left);
+		}
+
+		/// <summary>
+		/// Works out why a village's vikings left loot lying, the way FindLoot judges it
+		/// </summary>
+		/// <param name="drop">The loot</param>
+		/// <param name="lives">The village's vikings whose lives run on this client</param>
+		/// <param name="position">Where the loot lies</param>
+		/// <param name="outside">How far past the village's edge it lies, in meters</param>
+		/// <param name="reason">Set to why in a few words, the same for every item left for the same reason</param>
+		/// <returns>Why, with the vikings it's about</returns>
+		private static string LootLeftWhy(ItemDrop drop, List<VillageLife> lives, Vector3 position, float outside, out string reason)
+		{
+			if (lives.Count == 0)
+			{
+				reason = "no viking of the village here";
+				return("none of the village's vikings run on this client");
+			}
+			ItemDrop.ItemData item = drop.m_itemData;
+			List<Container> chests = lives[0].UsableChests();
+			if (chests.Count == 0)
+			{
+				reason = "no usable chests";
+				return("the village has no chests its vikings can use");
+			}
+			bool mayLeave = lives.Exists((VillageLife life) => life.MayLeave());
+			if (outside > 0f && !mayLeave)
+			{
+				reason = "outside, none may leave";
+				return("it lies outside the village while no viking may leave it");
+			}
+			if (!WantsLoot(item, chests, mayLeave))
+			{
+				reason = "no chest room";
+				return("no chest has room for it");
+			}
+			if (!lives.Exists((VillageLife life) => life.CarryRoom(item, CarryLoot) > 0))
+			{
+				reason = "no carrying room";
+				return("no viking has room to carry it");
+			}
+			ZDOID id = drop.m_nview.GetZDO().m_uid;
+			int avoiding = lives.FindAll((VillageLife life) => life.Avoided(id)).Count;
+			if (avoiding > 0)
+			{
+				reason = "unreachable";
+				return(avoiding + " of " + lives.Count + " vikings gave up on reaching it");
+			}
+			if (workClaims.TryGetValue(id, out VillageLife holder) && holder != null && holder.job != null)
+			{
+				reason = "claimed but not taken";
+				return(holder.LogName() + " has claimed it - " + holder.LogDoing());
+			}
+			if (outside > 0f && lives[0].DangerNear(position))
+			{
+				reason = "monster near it";
+				return("it lies outside the village with a monster near it");
+			}
+			List<string> doing = new List<string>();
+			foreach (VillageLife life in lives)
+			{
+				doing.Add(life.LogName() + " (" + ((life.job != null) ? life.job.Describe() : "no job") + ")");
+			}
+			reason = "vikings busy";
+			return("the vikings would take it but never got to it - " + string.Join(", ", doing));
+		}
+	}
+}

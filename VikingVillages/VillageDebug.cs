@@ -63,7 +63,7 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <returns>The lines, ending in a line break</returns>
-		private static string Describe(Village village)
+		internal static string Describe(Village village)
 		{
 			StringBuilder text = new StringBuilder();
 			// The zones go largest first, so the first is the farm's fenced ground or its biggest house

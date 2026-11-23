@@ -16,9 +16,9 @@ namespace VikingVillages
 		private const string VikingGearSection = "Viking Gear";
 
 		/// <summary>
-		/// The plugin's log
+		/// The plugin's log, with the time in front of each line while a test run is going (see TestLog)
 		/// </summary>
-		internal static BepInEx.Logging.ManualLogSource Log;
+		internal static StampedLog Log;
 
 		private Harmony harmony;
 		private ConfigWatcher watcher;
@@ -28,7 +28,8 @@ namespace VikingVillages
 		/// </summary>
 		private void Awake()
 		{
-			Log = Logger;
+			Log = new StampedLog(Logger);
+			TestLog.Start(Logger);
 			VikingMod.Init(PluginGuid, PluginName, PluginVersion, Logger);
 			VikingSettings.HelmetChance = Config.Bind(VikingGearSection, "HelmetChance", 50, new ConfigDescription("Percent chance that a living viking also wears its armor set's helmet - from the Mountains on, every one wears one", new AcceptableValueRange<int>(0, 100)));
 			VikingSettings.CapeChance = Config.Bind(VikingGearSection, "CapeChance", 50, new ConfigDescription("Percent chance that a living viking also wears its armor set's cape - from the Mountains on, every one wears one", new AcceptableValueRange<int>(0, 100)));
@@ -44,7 +45,7 @@ namespace VikingVillages
 		/// Reads the config file again once it has been saved, shares or puts back the server's settings after a
 		/// change, lays the paths of villages as they load, keeps track of the villages this client looks after -
 		/// their night watch, their records and the vikings they're missing - tames the farms' pen animals that came
-		/// out wild, and shows the villages' areas the player turns on
+		/// out wild, shows the villages' areas the player turns on, and runs the test log's checks (see TestLog)
 		/// </summary>
 		private void Update()
 		{
@@ -66,14 +67,17 @@ namespace VikingVillages
 			VillageFireSound.Update();
 			VillageGroundPaths.Update();
 			VillageStock.Update();
+			TestLog.Update();
 		}
 
 		/// <summary>
-		/// Stops watching the config file and removes the patches when the plugin unloads
+		/// Stops watching the config file, ends a test run and stops watching Unity's exceptions, and removes the patches
+		/// when the plugin unloads
 		/// </summary>
 		private void OnDestroy()
 		{
 			watcher?.Dispose();
+			TestLog.Stop();
 			harmony?.UnpatchSelf();
 		}
 	}

@@ -19,7 +19,7 @@ namespace VikingVillages
 	/// far outside. Its AI fights as it always does - this only takes over while it has nothing to fight, and dulls its
 	/// senses while it rests at night
 	/// </remarks>
-	internal class VillageLife : MonoBehaviour, Interactable, TextReceiver, IVikingLife
+	internal partial class VillageLife : MonoBehaviour, Interactable, TextReceiver, IVikingLife
 	{
 		/// <summary>
 		/// The RPCs a player sends a viking's owner when they talk to it, with the player's ZDO, and when they name it,
@@ -1280,7 +1280,9 @@ namespace VikingVillages
 				return;
 			}
 			loggedStuck = job;
-			Plugin.Log.LogWarning("The viking at " + transform.position.ToString("F0") + " of the village at " + ((village != null) ? village.Farm.ToString("F0") : "none") + " has stood still for " + (Time.time - stillSince).ToString("F0") + "s at its job: " + job.Describe() + ", for " + (Time.time - job.StartedAt).ToString("F0") + "s, moved by " + mover + (VillageRaids.On(village) ? ", with a raid on" : "") + (IsNight() ? ", at night" : ""));
+			TestLog.Count("Troubles", "stuck at a job");
+			TestLog.Count("Stuck, by job", LogJobName());
+			Plugin.Log.LogWarning("Stuck: " + LogName() + " of the village at " + ((village != null) ? village.Farm.ToString("F0") : "none") + " has stood still for " + (Time.time - stillSince).ToString("F0") + "s at its job: " + job.Describe() + ", for " + (Time.time - job.StartedAt).ToString("F0") + "s, moved by " + mover + (VillageRaids.On(village) ? ", with a raid on" : "") + (IsNight() ? ", at night" : ""));
 		}
 
 		/// <summary>
@@ -3281,11 +3283,14 @@ namespace VikingVillages
 			{
 				ai.StopMoving();
 			}
-			if (Utils.DistanceXZ(transform.position, stillAt) > StillReach)
+			// A viking whose life didn't run here for a while - run by another client, or by none while it was out of
+			// every player's simulated area - starts standing still over, rather than counting the time it wasn't run
+			if (Utils.DistanceXZ(transform.position, stillAt) > StillReach || Time.time - stillCheckedAt > StillGap)
 			{
 				stillAt = transform.position;
 				stillSince = Time.time;
 			}
+			stillCheckedAt = Time.time;
 			LogIfStuck();
 			Vector3 move = humanoid.GetMoveDir();
 			MoveSample sample = new MoveSample();
@@ -4396,10 +4401,11 @@ namespace VikingVillages
 				job = ChooseJob();
 				job.Begin();
 			}
+			LogJobTick();
 			UpdateJobPower();
 			if (job.Tick(dt))
 			{
-				StopJob();
+				StopJob(true);
 			}
 			if (Time.time >= nextRestCheck)
 			{
@@ -4631,7 +4637,7 @@ namespace VikingVillages
 				}
 				here.Adopt(zdo, newHome);
 				zdo.Set(AwaySinceKey, 0L);
-				Plugin.Log.LogInfo("The viking at " + transform.position.ToString("F0") + " was away from its village long enough, and joined the village at " + here.Farm.ToString("F0"));
+				Plugin.Log.LogInfo(LogName() + " was away from its village long enough, and joined the village at " + here.Farm.ToString("F0"));
 				return(here);
 			}
 			if (here != null && here.NearestCoreHouse(transform.position, out VillagePaths.House house))
@@ -5246,6 +5252,7 @@ namespace VikingVillages
 			hit.SetAttacker(humanoid);
 			tree.Damage(hit);
 			RaiseSkill(Skills.SkillType.WoodCutting, 1f);
+			TestLog.Count("Work done", "axe swings at trees");
 		}
 
 		/// <summary>
@@ -6480,6 +6487,8 @@ namespace VikingVillages
 				avoided.Remove(id);
 			}
 			avoided[view.GetZDO().m_uid] = Time.time + seconds;
+			TestLog.Count("Couldn't reach, by job", LogJobName());
+			TestLog.Count("Couldn't reach, by thing", Utils.GetPrefabName(view.gameObject));
 		}
 
 		/// <summary>
@@ -6549,7 +6558,7 @@ namespace VikingVillages
 			{
 				return;
 			}
-			Plugin.Log.LogInfo("Loot: the viking at " + transform.position.ToString("F1") + " (" + ((job != null) ? job.Describe() : "no job") + ") leaves " + Utils.GetPrefabName(view.gameObject) + " at " + view.transform.position.ToString("F1") + " alone for " + AvoidTime.ToString("F0") + "s - " + why);
+			Plugin.Log.LogInfo("Loot: " + TestLog.Name(humanoid, "F1") + " (" + ((job != null) ? job.Describe() : "no job") + ") leaves " + Utils.GetPrefabName(view.gameObject) + " at " + view.transform.position.ToString("F1") + " alone for " + AvoidTime.ToString("F0") + "s - " + why);
 		}
 
 		/// <summary>
@@ -7087,6 +7096,7 @@ namespace VikingVillages
 			{
 				return(false);
 			}
+			TestLog.Count("Put in chests", TestLog.ItemName(item), item.m_stack);
 			humanoid.GetInventory().RemoveItem(loot);
 			chest.m_closeEffects.Create(chest.transform.position, chest.transform.rotation);
 			return(true);
@@ -7106,6 +7116,7 @@ namespace VikingVillages
 			}
 			humanoid.GetInventory().RemoveItem(loot);
 			loot.m_customData.Remove(VikingItems.CarryKey);
+			TestLog.Count(discard ? "Dropped outside, as the chests hold enough" : "Put down, with no chest for it", TestLog.ItemName(loot), loot.m_stack);
 			ItemDrop dropped = ItemDrop.DropItem(loot, loot.m_stack, transform.position + transform.forward * 0.6f + Vector3.up * 0.5f, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
 			if (discard && dropped != null && dropped.m_nview != null && dropped.m_nview.IsValid())
 			{
@@ -7472,6 +7483,7 @@ namespace VikingVillages
 			{
 				drop.SetStack(stack - taken);
 			}
+			TestLog.Count("Looted", TestLog.ItemName(item), taken);
 			TakeUpGear();
 			return(true);
 		}
@@ -7562,7 +7574,8 @@ namespace VikingVillages
 				replaced.m_customData[VikingItems.CarryKey] = CarryLoot;
 				humanoid.GetInventory().Changed();
 			}
-			Plugin.Log.LogInfo("A viking took up " + Localization.instance.Localize(item.m_shared.m_name) + ((replaced != null) ? " in place of " + Localization.instance.Localize(replaced.m_shared.m_name) : ""));
+			TestLog.Count("Gear taken up", TestLog.ItemName(item));
+			Plugin.Log.LogInfo(LogName() + " took up " + Localization.instance.Localize(item.m_shared.m_name) + ((replaced != null) ? " in place of " + Localization.instance.Localize(replaced.m_shared.m_name) : ""));
 		}
 
 		/// <summary>
@@ -7841,6 +7854,7 @@ namespace VikingVillages
 				{
 					ItemDrop.DropItem(item, count - carried, transform.position + transform.forward * 0.6f + Vector3.up * 0.5f, Quaternion.identity);
 				}
+				TestLog.Count("Cooked", TestLog.ItemName(item) + ((name == burnt) ? " (burnt)" : ""), count);
 			}
 		}
 
@@ -7962,6 +7976,7 @@ namespace VikingVillages
 			{
 				drop.SetStack(stack - taken);
 			}
+			TestLog.Count("Looted from kills", TestLog.ItemName(item), taken);
 			return(true);
 		}
 
@@ -8058,6 +8073,7 @@ namespace VikingVillages
 			int taken = Carry(honey, amount, CarryLoot);
 			if (taken > 0)
 			{
+				TestLog.Count("Gathered", TestLog.ItemName(honey), taken);
 				hive.ResetLevel();
 				hive.m_spawnEffect.Create(hive.m_spawnPoint.position, Quaternion.identity);
 			}
@@ -8259,7 +8275,9 @@ namespace VikingVillages
 			{
 				VillageSignals.SendForageBonus(pickable.m_nview.GetZDO().m_uid, nview.GetZDO().m_uid, bonus);
 			}
-			return(Carry(food, amount + bonus, CarryLoot));
+			int carried = Carry(food, amount + bonus, CarryLoot);
+			TestLog.Count("Gathered", TestLog.ItemName(food), carried);
+			return(carried);
 		}
 
 		/// <summary>
@@ -8325,6 +8343,7 @@ namespace VikingVillages
 			{
 				return(false);
 			}
+			TestLog.Count("Eaten", TestLog.ItemName(food));
 			chest.GetInventory().RemoveItem(food, 1);
 			chest.m_closeEffects.Create(chest.transform.position, chest.transform.rotation);
 			humanoid.m_consumeItemEffects.Create(transform.position, Quaternion.identity);
@@ -8449,12 +8468,14 @@ namespace VikingVillages
 		/// <summary>
 		/// Ends the viking's job
 		/// </summary>
-		private void StopJob()
+		/// <param name="done">Whether the job finished, rather than being interrupted, for the test log</param>
+		private void StopJob(bool done = false)
 		{
 			Job ending = job;
 			job = null;
 			if (ending != null)
 			{
+				LogJobStopped(ending, done);
 				ending.End();
 			}
 			Detach();
@@ -8956,6 +8977,7 @@ namespace VikingVillages
 			}
 			ai.StopMoving();
 			moveFailed = true;
+			TestLog.Count("Walks given up, by job", LogJobName());
 			ResetStuck();
 			return(true);
 		}
@@ -9929,7 +9951,7 @@ namespace VikingVillages
 			if (Player.m_debugMode)
 			{
 				string piece = Utils.GetPrefabName(obstacle.collider.GetComponentInParent<WearNTear>().gameObject);
-				Plugin.Log.LogInfo("Hop: the viking at " + feet.ToString("F1") + " (" + ((job != null) ? job.Describe() : "no job") + ") takes a run-up to jump " + piece + ", " + top.ToString("F2") + "m high at " + obstacle.point.ToString("F1") + ", toward " + toward.ToString("F1") + ", finding no path there" + (VikingDoors.IsCrossing(humanoid) ? ", while crossing a doorway" : ""));
+				Plugin.Log.LogInfo("Hop: " + TestLog.Label(humanoid) + " at " + feet.ToString("F1") + " (" + ((job != null) ? job.Describe() : "no job") + ") takes a run-up to jump " + piece + ", " + top.ToString("F2") + "m high at " + obstacle.point.ToString("F1") + ", toward " + toward.ToString("F1") + ", finding no path there" + (VikingDoors.IsCrossing(humanoid) ? ", while crossing a doorway" : ""));
 			}
 			return(true);
 		}
@@ -10505,6 +10527,7 @@ namespace VikingVillages
 			}
 			branch.m_pickEffector.Create(branch.transform.position, Quaternion.identity);
 			branch.m_nview.InvokeRPC(ZNetView.Everybody, "RPC_SetPicked", true);
+			TestLog.Count("Work done", "branches picked up");
 			return(true);
 		}
 
@@ -11645,6 +11668,7 @@ namespace VikingVillages
 					{
 						view.InvokeRPC("RPC_AddFuel");
 						life.UseWood(1);
+						TestLog.Count("Work done", "wood put on fires");
 					}
 					addAt = -1f;
 					trips++;
@@ -11916,7 +11940,7 @@ namespace VikingVillages
 				{
 					if (Player.m_debugMode)
 					{
-						Plugin.Log.LogInfo("Repair: the viking at " + life.transform.position.ToString("F1") + " gives up on " + Utils.GetPrefabName(piece.gameObject) + " at " + piece.transform.position.ToString("F1") + " after " + RepairGiveUpTime.ToString("F0") + "s without reaching it, leaving it alone for " + RepairAvoidTime.ToString("F0") + "s");
+						Plugin.Log.LogInfo("Repair: " + TestLog.Name(life.humanoid, "F1") + " gives up on " + Utils.GetPrefabName(piece.gameObject) + " at " + piece.transform.position.ToString("F1") + " after " + RepairGiveUpTime.ToString("F0") + "s without reaching it, leaving it alone for " + RepairAvoidTime.ToString("F0") + "s");
 					}
 					life.ai.StopMoving();
 					life.Avoid(piece.m_nview, RepairAvoidTime);
@@ -11946,6 +11970,7 @@ namespace VikingVillages
 				if (piece.Repair())
 				{
 					VillageSignals.SendEffect(VillageSignals.RepairEffect, pieceId);
+					TestLog.Count("Work done", "pieces repaired");
 				}
 				return(true);
 			}
@@ -12563,6 +12588,7 @@ namespace VikingVillages
 				else
 				{
 					VillageCooking.Add(roomy, raw.m_dropPrefab.name);
+					TestLog.Count("Put on to cook", TestLog.ItemName(raw));
 					life.UseCarried(raw, 1);
 					life.RaiseSkill(StationSkill(roomy.m_skill), CookAddSkill);
 				}
@@ -15014,7 +15040,7 @@ namespace VikingVillages
 					{
 						if (bed != null)
 						{
-							Plugin.Log.LogInfo("A viking at " + life.transform.position.ToString("F0") + " couldn't reach the bed at " + bed.transform.position.ToString("F0") + ", so it rests on the floor instead");
+							Plugin.Log.LogInfo(life.LogName() + " couldn't reach the bed at " + bed.transform.position.ToString("F0") + ", so it rests on the floor instead");
 							life.ReleaseObject(bed.GetComponent<ZNetView>());
 						}
 						if (chair != null)
@@ -16466,7 +16492,7 @@ namespace VikingVillages
 			{
 				own.Changed();
 				ReadyBestArrows();
-				Plugin.Log.LogInfo("A viking archer filled its quiver from a chest, " + OwnArrows(ammoType, out float _) + " arrows now");
+				Plugin.Log.LogInfo(LogName() + " filled its quiver from a chest, " + OwnArrows(ammoType, out float _) + " arrows now");
 			}
 			return(changed);
 		}
@@ -16894,7 +16920,8 @@ namespace VikingVillages
 			item.m_durability = item.GetMaxDurability();
 			item.m_worldLevel = (byte)Game.m_worldLevel;
 			humanoid.GetInventory().Changed();
-			Plugin.Log.LogInfo("The viking at " + transform.position.ToString("F0") + " upgraded its " + Localization.instance.Localize(item.m_shared.m_name) + " to quality " + item.m_quality);
+			TestLog.Count("Gear upgraded", TestLog.ItemName(item));
+			Plugin.Log.LogInfo(LogName() + " upgraded its " + Localization.instance.Localize(item.m_shared.m_name) + " to quality " + item.m_quality);
 			return(item);
 		}
 
@@ -17512,7 +17539,9 @@ namespace VikingVillages
 					if (life.CarriedWood() >= plan.Wood && life.UseCraft(plan))
 					{
 						life.UseWood(plan.Wood);
-						life.AddArrows(plan.Prefab, plan.Batch + life.CraftBonus(bench));
+						int made = plan.Batch + life.CraftBonus(bench);
+						life.AddArrows(plan.Prefab, made);
+						TestLog.Count("Crafted", TestLog.ItemName(ItemOf(plan.Prefab)), made);
 						VillageSignals.SendEffect(VillageSignals.CraftDoneEffect, bench.GetComponent<ZNetView>().GetZDO().m_uid);
 					}
 					// The next batch is the best the village can make now, at this station
@@ -18246,6 +18275,10 @@ namespace VikingVillages
 					}
 					life.UseWood(craft.Wood);
 					got = ((craft.Upgrade != null) ? life.UpgradeGear(craft) : life.humanoid.GetInventory().AddItem(craft.Prefab, 1, 1, 0, 0L, "", false));
+					if (got != null && craft.Upgrade == null)
+					{
+						TestLog.Count("Crafted", TestLog.ItemName(got));
+					}
 					life.RaiseSkill(((bench != null && bench.m_craftingSkill != Skills.SkillType.None) ? bench.m_craftingSkill : Skills.SkillType.Crafting), 1f);
 					if (bench != null)
 					{
