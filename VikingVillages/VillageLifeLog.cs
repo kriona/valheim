@@ -70,6 +70,23 @@ namespace VikingVillages
 		private Job logJob;
 
 		/// <summary>
+		/// Who runs the viking, as the test log last saw it, and since when
+		/// </summary>
+		private Runner logRunner = Runner.Unknown;
+		private float logRunnerSince;
+
+		/// <summary>
+		/// Who runs a viking - this client, another one, or none, when it's out of every player's simulated area
+		/// </summary>
+		private enum Runner
+		{
+			Unknown,
+			Here,
+			Elsewhere,
+			Nobody
+		}
+
+		/// <summary>
 		/// Where the viking was at the last check, for the meters it walks, and whether that's known yet
 		/// </summary>
 		private Vector3 logLastPosition;
@@ -121,6 +138,52 @@ namespace VikingVillages
 			logBroken = new HashSet<ItemDrop.ItemData>();
 			logJob = null;
 			logPositioned = false;
+			logRunner = Runner.Unknown;
+		}
+
+		/// <summary>
+		/// Writes the viking changing hands - stopping being run when it's out of every player's simulated area, where
+		/// it stands frozen, being run by another client, or being run here again - with where it stands against the
+		/// area the game runs around the player
+		/// </summary>
+		public void LogRunner()
+		{
+			if (nview == null || !nview.IsValid() || humanoid == null)
+			{
+				return;
+			}
+			ZDO zdo = nview.GetZDO();
+			Runner runner = (nview.IsOwner() ? Runner.Here : (zdo.HasOwner() ? Runner.Elsewhere : Runner.Nobody));
+			if (runner == logRunner)
+			{
+				return;
+			}
+			Runner was = logRunner;
+			float minutes = (Time.time - logRunnerSince) / 60f;
+			logRunner = runner;
+			logRunnerSince = Time.time;
+			if (was == Runner.Unknown)
+			{
+				return;
+			}
+			if (was == Runner.Nobody)
+			{
+				TestLog.Count("Minutes", "frozen, run by nobody", minutes);
+			}
+			string area = TestLog.DescribeSimulatedArea(transform.position);
+			if (runner == Runner.Nobody)
+			{
+				TestLog.Count("Troubles", "frozen, run by nobody");
+				Plugin.Log.LogWarning("Frozen: " + LogName() + " is run by nobody, out of every player's simulated area - " + area + " - " + LogDoing());
+			}
+			else if (runner == Runner.Elsewhere)
+			{
+				Plugin.Log.LogInfo("Runner: " + LogName() + " is run by another client now - " + area);
+			}
+			else
+			{
+				Plugin.Log.LogInfo("Runner: " + LogName() + " is run by this client again, after " + (minutes * 60f).ToString("F0") + "s " + ((was == Runner.Nobody) ? "frozen" : "run by another client") + " - " + area);
+			}
 		}
 
 		/// <summary>
@@ -410,9 +473,14 @@ namespace VikingVillages
 			{
 				return("no viking core");
 			}
-			if (nview == null || !nview.IsValid() || !nview.IsOwner())
+			if (nview == null || !nview.IsValid())
 			{
-				return("run by another client");
+				return("not loaded");
+			}
+			if (!nview.IsOwner())
+			{
+				string area = TestLog.DescribeSimulatedArea(transform.position);
+				return((nview.GetZDO().HasOwner() ? "run by another client" : "run by nobody, frozen out of every player's simulated area") + " - " + area);
 			}
 			return(TestLog.Flatten(viking.DebugSummary()) + " | Gear: " + LogGear());
 		}

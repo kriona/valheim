@@ -86,6 +86,31 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that the simulated square reaches one zone at a near simulation distance of 1 and a zone and a half
+		/// at any other, the way the game judges it
+		/// </summary>
+		[Fact]
+		public void SquareReachFollowsNearDistance()
+		{
+			Assert.Equal(1f, TestLog.SquareReach(1));
+			Assert.Equal(1.5f, TestLog.SquareReach(2));
+			Assert.Equal(1.5f, TestLog.SquareReach(3));
+		}
+
+		/// <summary>
+		/// Checks that the distance across the square is the farther of the two ways along the ground, leaving out height
+		/// - the last Meadows run's frozen vikings stood just past 96m from the middle of the zone at (-320, -512)
+		/// </summary>
+		[Fact]
+		public void SquareDistanceTakesTheFartherWay()
+		{
+			UnityEngine.Vector3 middle = new UnityEngine.Vector3(-320f, 0f, -512f);
+			Assert.Equal(98f, TestLog.SquareDistance(middle, new UnityEngine.Vector3(-418f, 43f, -503f)));
+			Assert.Equal(99f, TestLog.SquareDistance(middle, new UnityEngine.Vector3(-372f, 57f, -413f)));
+			Assert.Equal(0f, TestLog.SquareDistance(middle, new UnityEngine.Vector3(-320f, 500f, -512f)));
+		}
+
+		/// <summary>
 		/// Checks that an exception with no stack trace is keyed by its message alone
 		/// </summary>
 		[Fact]

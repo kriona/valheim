@@ -251,6 +251,60 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// How far the game runs things from the middle of the player's zone, in zones, the way ZNetScene's
+		/// PointInsideActiveArea judges it - out to this far in a square, and with a near simulation distance of 2 that
+		/// isn't the classic one, no farther than RoundReach in a circle too
+		/// </summary>
+		private const float RoundReach = 1.75f;
+
+		/// <summary>
+		/// How far across the square the game runs things in reaches from the middle of the player's zone, in zones, the
+		/// way ZNetScene's PointInsideActiveArea judges it
+		/// </summary>
+		/// <param name="nearDistance">The near simulation distance, in zones</param>
+		/// <returns>The reach</returns>
+		internal static float SquareReach(int nearDistance)
+		{
+			return((nearDistance == 1) ? 1f : 1.5f);
+		}
+
+		/// <summary>
+		/// Measures how far a point is from another across a square, seen from above - the farther of the two ways along
+		/// the ground, the way the game measures its simulated area
+		/// </summary>
+		/// <param name="middle">The square's middle</param>
+		/// <param name="point">The point</param>
+		/// <returns>The distance, in meters</returns>
+		internal static float SquareDistance(Vector3 middle, Vector3 point)
+		{
+			return(Mathf.Max(Mathf.Abs(point.x - middle.x), Mathf.Abs(point.z - middle.z)));
+		}
+
+		/// <summary>
+		/// Describes where a point stands against the area the game runs things in around this client's player - how far
+		/// it is from the middle of the player's zone, against how far the area reaches, and where the player is
+		/// </summary>
+		/// <param name="point">The point</param>
+		/// <returns>The description</returns>
+		public static string DescribeSimulatedArea(Vector3 point)
+		{
+			if (ZNet.instance == null || ZoneSystem.instance == null)
+			{
+				return("the simulated area isn't known");
+			}
+			Vector3 middle = ZoneSystem.GetZonePos(ZoneSystem.GetZone(ZNet.instance.GetReferencePosition()));
+			SimulationDistance distance = ZNet.instance.GetSyncedSimulationDistance();
+			float zoneSize = ZoneSystem.instance.m_zoneSize;
+			string text = SquareDistance(middle, point).ToString("F0") + "m out on a square reaching " + (SquareReach(distance.NearSimulationDistance) * zoneSize).ToString("F0") + "m";
+			if (distance.NearSimulationDistance == 2 && !distance.IsClassic)
+			{
+				text += " and " + Utils.DistanceXZ(middle, point).ToString("F0") + "m out on a circle reaching " + (RoundReach * zoneSize).ToString("F0") + "m";
+			}
+			Player player = Player.m_localPlayer;
+			return(text + ", from " + middle.ToString("F0") + ", the middle of the zone " + ((player != null) ? "of the player at " + player.transform.position.ToString("F0") : "this client runs around"));
+		}
+
+		/// <summary>
 		/// Names a village for the run's file and status
 		/// </summary>
 		/// <param name="village">The village</param>
@@ -422,6 +476,7 @@ namespace VikingVillages
 			{
 				if (life != null)
 				{
+					life.LogRunner();
 					life.LogCheck();
 				}
 			}
@@ -770,7 +825,7 @@ namespace VikingVillages
 		{
 			float average = ((frames > 0) ? frameTime / frames : 0f);
 			string fps = ((average > 0f) ? (1f / average).ToString("F0") : "?");
-			Plugin.Log.LogInfo("Snapshot: " + fps + " fps on average, slowest frame " + (worstFrame * 1000f).ToString("F0") + "ms, " + hitches + " hitches - " + ZDOMan.instance.NrOfObjects() + " ZDOs, " + ZNetScene.instance.m_instances.Count + " objects loaded, " + ItemDrop.s_instances.Count + " items lying loaded, " + VillageLife.All.Count + " vikings loaded");
+			Plugin.Log.LogInfo("Snapshot: " + fps + " fps on average, slowest frame " + (worstFrame * 1000f).ToString("F0") + "ms, " + hitches + " hitches - " + ZDOMan.instance.NrOfObjects() + " ZDOs, " + ZNetScene.instance.m_instances.Count + " objects loaded, " + ItemDrop.s_instances.Count + " items lying loaded, " + VillageLife.All.Count + " vikings loaded - " + PlayerPlace());
 			frames = 0;
 			frameTime = 0f;
 			worstFrame = 0f;
@@ -799,6 +854,24 @@ namespace VikingVillages
 			}
 			WriteTotals("so far");
 			Flush();
+		}
+
+		/// <summary>
+		/// Describes where the player is for the snapshot, and how far that is from the middle of the village they're in
+		/// or near
+		/// </summary>
+		/// <returns>The description</returns>
+		private static string PlayerPlace()
+		{
+			Player player = Player.m_localPlayer;
+			if (player == null)
+			{
+				return("no player");
+			}
+			Vector3 position = player.transform.position;
+			Village village = Village.Find(position);
+			string near = ((village != null) ? ", " + Utils.DistanceXZ(position, village.Farm).ToString("F0") + "m from the middle of " + VillageLabel(village) : "");
+			return("the player at " + position.ToString("F0") + near);
 		}
 
 		/// <summary>

@@ -1257,6 +1257,13 @@ namespace VikingVillages
 		private const float StillReach = 1f;
 
 		/// <summary>
+		/// When the viking's stillness was last checked, and how long it can go unchecked before it starts over, in
+		/// seconds - longer means its life wasn't running here
+		/// </summary>
+		private float stillCheckedAt;
+		private const float StillGap = 5f;
+
+		/// <summary>
 		/// How long the viking has to stand still for the debug hover text to say so, and to be logged as stuck at a job
 		/// that shouldn't keep it still that long (see LogIfStuck), in seconds
 		/// </summary>
@@ -3359,10 +3366,10 @@ namespace VikingVillages
 		private string TwitchReport(int starts, int reversals)
 		{
 			System.Text.StringBuilder text = new System.Text.StringBuilder();
-			text.Append("Twitching: " + humanoid.GetHoverName() + " at " + transform.position.ToString("F1") + " started moving " + starts + " times and turned back " + reversals + " times in " + TwitchWindow.ToString("F0") + "s\n");
+			text.Append("Twitching: " + TestLog.Name(humanoid, "F1") + " started moving " + starts + " times and turned back " + reversals + " times in " + TwitchWindow.ToString("F0") + "s\n");
 			text.Append("  Job: " + ((job != null) ? job.Describe() : "none") + "\n");
 			Character target = ((ai != null) ? ai.m_targetCreature : null);
-			text.Append("  Target: " + ((target != null) ? target.GetHoverName() + " at " + Vector3.Distance(target.transform.position, transform.position).ToString("F1") + "m" : "none") + ", alerted " + (ai != null && ai.IsAlerted()) + "\n");
+			text.Append("  Target: " + ((target != null) ? TestLog.Label(target) + " at " + Vector3.Distance(target.transform.position, transform.position).ToString("F1") + "m" : "none") + ", alerted " + (ai != null && ai.IsAlerted()) + "\n");
 			if (ai != null && ai.m_path != null && ai.m_path.Count > 0)
 			{
 				text.Append("  Path: " + ai.m_path.Count + " points left, next " + Utils.DistanceXZ(ai.m_path[0], transform.position).ToString("F1") + "m away at " + ai.m_path[0].ToString("F1") + "\n");
@@ -3372,7 +3379,7 @@ namespace VikingVillages
 				text.Append("  Path: none\n");
 			}
 			text.Append("  Stuck: " + ((stuckSince > 0f) ? (Time.time - stuckSince).ToString("F1") + "s without progress" : "no") + ", hops " + hops + ", door " + (VikingDoors.IsWaiting(humanoid) ? "waiting" : (VikingDoors.IsCrossing(humanoid) ? "crossing" : "none")) + "\n");
-			text.Append("  Steering around: " + ((steeredAround != null && Time.time - steeredAt < SteeredShowTime) ? steeredAround.GetHoverName() + " at " + Vector3.Distance(steeredAround.transform.position, transform.position).ToString("F1") + "m" : "no one") + "\n");
+			text.Append("  Steering around: " + ((steeredAround != null && Time.time - steeredAt < SteeredShowTime) ? TestLog.Label(steeredAround) + " at " + Vector3.Distance(steeredAround.transform.position, transform.position).ToString("F1") + "m" : "no one") + "\n");
 			Dictionary<string, int> movers = new Dictionary<string, int>();
 			foreach (MoveSample sample in moveSamples)
 			{

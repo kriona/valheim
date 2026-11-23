@@ -83,6 +83,10 @@ namespace Kriona.Vikings
 			ZDO zdo = SaveGenerated(rolled, gear);
 			// It's named for whether it's a man or a woman - model 1 is a woman's
 			VikingNames.GiveName(zdo, rolled, false);
+			if (TestLog.On)
+			{
+				Plugin.Log.LogInfo("New viking: " + TestLog.Name(humanoid) + ", rolled up for the " + VikingGear.Biomes[index].Biome + (zdo.GetBool(ArcherKey) ? " as the village's archer" : ""));
+			}
 		}
 
 		/// <summary>
@@ -145,6 +149,15 @@ namespace Kriona.Vikings
 		partial void AddDebugLines(System.Text.StringBuilder text)
 		{
 			text.Append(VikingDoors.DebugLine(humanoid));
+		}
+
+		/// <summary>
+		/// Names the living viking for the log by the name its village knows it by (see VikingNames)
+		/// </summary>
+		/// <param name="label">Set to its name</param>
+		partial void NameForLog(ref string label)
+		{
+			label = TestLog.Label(humanoid);
 		}
 
 		/// <summary>

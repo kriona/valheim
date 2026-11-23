@@ -1012,7 +1012,9 @@ namespace Kriona.Vikings
 			OnLevelUp(skill, raised);
 			if (Player.m_debugMode)
 			{
-				VikingMod.Log.LogInfo("Skill: " + data.Name + " at " + transform.position.ToString("F0") + " reached " + skill + " " + Mathf.Floor(raised));
+				string label = data.Name;
+				NameForLog(ref label);
+				VikingMod.Log.LogInfo("Skill: " + label + " at " + transform.position.ToString("F0") + " reached " + skill + " " + Mathf.Floor(raised));
 			}
 		}
 
@@ -2371,6 +2373,12 @@ namespace Kriona.Vikings
 		/// </summary>
 		/// <param name="text">The summary so far</param>
 		partial void AddDebugLines(System.Text.StringBuilder text);
+
+		/// <summary>
+		/// Names the viking for the log the way its kind knows it, for a kind whose name isn't the one in its data
+		/// </summary>
+		/// <param name="label">Its name from its data, set to the name to log</param>
+		partial void NameForLog(ref string label);
 
 		/// <summary>
 		/// Finds the best shield a living viking has of its own - not one it carries for a chest - that isn't broken
