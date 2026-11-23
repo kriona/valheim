@@ -1287,20 +1287,38 @@ namespace VikingVillages
 		private Job loggedStuck;
 
 		/// <summary>
+		/// When the viking was last resting, sitting, lying, in bed, on something or gathering at a fire, which keep it
+		/// still without it being stuck (see LogIfStuck)
+		/// </summary>
+		private float stillRestedAt;
+
+		/// <summary>
 		/// Writes to the log when the viking has stood still for StuckLogTime at a job that shouldn't keep it still that
-		/// long - anything but resting, sitting, lying or sitting on something, or gathering at a fire - with what the job
-		/// says it's doing and what moved the viking last, once for each job, so a job that never finishes can be found
+		/// long - anything but resting, sitting, lying, in bed or sitting on something, or gathering at a fire, counting
+		/// only from when it last stopped doing those, so a night in bed isn't taken for being stuck the morning after -
+		/// with what the job says it's doing and what moved the viking last, once for each job, so a job that never
+		/// finishes can be found
 		/// </summary>
 		private void LogIfStuck()
 		{
-			if (job == null || job == loggedStuck || Time.time - stillSince < StuckLogTime || attachPoint != null || job.Resting() || job.Sitting() || job is GatherJob)
+			if (job == null)
+			{
+				return;
+			}
+			if (attachPoint != null || inBed || job.Resting() || job.Sitting() || job is GatherJob)
+			{
+				stillRestedAt = Time.time;
+				return;
+			}
+			float still = Time.time - Mathf.Max(stillSince, stillRestedAt);
+			if (job == loggedStuck || still < StuckLogTime)
 			{
 				return;
 			}
 			loggedStuck = job;
 			TestLog.Count("Troubles", "stuck at a job");
 			TestLog.Count("Stuck, by job", LogJobName());
-			Plugin.Log.LogWarning("Stuck: " + LogName() + " of the village at " + ((village != null) ? village.Farm.ToString("F0") : "none") + " has stood still for " + (Time.time - stillSince).ToString("F0") + "s at its job: " + job.Describe() + ", for " + (Time.time - job.StartedAt).ToString("F0") + "s, moved by " + mover + (VillageRaids.On(village) ? ", with a raid on" : "") + (IsNight() ? ", at night" : ""));
+			Plugin.Log.LogWarning("Stuck: " + LogName() + " of the village at " + ((village != null) ? village.Farm.ToString("F0") : "none") + " has stood still for " + still.ToString("F0") + "s at its job: " + job.Describe() + ", for " + (Time.time - job.StartedAt).ToString("F0") + "s, moved by " + mover + (VillageRaids.On(village) ? ", with a raid on" : "") + (IsNight() ? ", at night" : ""));
 		}
 
 		/// <summary>
@@ -7152,7 +7170,7 @@ namespace VikingVillages
 			{
 				return(false);
 			}
-			TestLog.Count("Put in chests", TestLog.ItemName(item), item.m_stack);
+			TestLog.Count(LoggedCraftLeftover(loot) ? "Put back after crafting" : "Put in chests", TestLog.ItemName(item), item.m_stack);
 			humanoid.GetInventory().RemoveItem(loot);
 			chest.m_closeEffects.Create(chest.transform.position, chest.transform.rotation);
 			return(true);
@@ -16460,6 +16478,7 @@ namespace VikingVillages
 			foreach (ItemDrop.ItemData item in inventory.m_inventory.FindAll((ItemDrop.ItemData carried) => IsCarriedFor(carried, CarryCraft)))
 			{
 				item.m_customData[VikingItems.CarryKey] = CarryLoot;
+				LogCraftLeftover(item);
 				changed = true;
 			}
 			if (changed)

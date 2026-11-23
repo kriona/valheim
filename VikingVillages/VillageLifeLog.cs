@@ -114,6 +114,37 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// What the viking carries back to the chests left over from crafting, so the totals tell it from loot it found
+		/// </summary>
+		private readonly HashSet<ItemDrop.ItemData> logLeftovers = new HashSet<ItemDrop.ItemData>();
+
+		/// <summary>
+		/// Notes an item the viking carries back to the chests left over from crafting, while the test log is on,
+		/// forgetting what it no longer carries
+		/// </summary>
+		/// <param name="item">The item</param>
+		private void LogCraftLeftover(ItemDrop.ItemData item)
+		{
+			if (!TestLog.On)
+			{
+				return;
+			}
+			Inventory inventory = humanoid.GetInventory();
+			logLeftovers.RemoveWhere((ItemDrop.ItemData carried) => !inventory.ContainsItem(carried));
+			logLeftovers.Add(item);
+		}
+
+		/// <summary>
+		/// Checks whether loot the viking puts in a chest is left over from crafting, forgetting it
+		/// </summary>
+		/// <param name="loot">The loot</param>
+		/// <returns>True when it is</returns>
+		private bool LoggedCraftLeftover(ItemDrop.ItemData loot)
+		{
+			return(logLeftovers.Remove(loot));
+		}
+
+		/// <summary>
 		/// Names the viking and where it is, for the log
 		/// </summary>
 		/// <returns>The name and position</returns>

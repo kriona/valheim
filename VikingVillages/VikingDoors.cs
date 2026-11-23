@@ -542,7 +542,7 @@ namespace VikingVillages
 		/// <returns>The name</returns>
 		private static string DebugName(Character character)
 		{
-			return(Utils.GetPrefabName(character.gameObject) + " '" + character.GetHoverName() + "' at " + character.transform.position.ToString("F1"));
+			return(TestLog.Name(character, "F1"));
 		}
 
 		/// <summary>
