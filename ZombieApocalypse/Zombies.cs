@@ -114,8 +114,8 @@ namespace ZombieApocalypse
 		/// </summary>
 		private const string SleepingParameter = "sleeping";
 
-		private static readonly HashSet<string> excludedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-		private static readonly List<string> excludedPrefixes = new List<string>();
+		private static HashSet<string> excludedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		private static List<string> excludedPrefixes = new List<string>();
 
 		/// <summary>
 		/// The ExcludedCreatures text that excludedNames and excludedPrefixes were read from
@@ -163,14 +163,15 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Decides whether a creature that's dying rises as a zombie, rolling RiseChance for one that can - never on a
-		/// server without the mod, or when it was killed by spirit damage
+		/// Decides whether a creature that's dying rises as a zombie, rolling RiseChance for one that can - never with
+		/// zombies off (see Plugin.Zombies), on a server without the mod, when it was killed by spirit damage, or when it
+		/// took FireStaysDead of its damage as fire
 		/// </summary>
 		/// <param name="character">The dying creature</param>
 		/// <returns>True when it rises</returns>
 		public static bool ShouldRise(Character character)
 		{
-			if (!ServerCheck.Active || character.IsPlayer() || character.IsBoss() || IsZombie(character))
+			if (!Plugin.Zombies.Value || !ServerCheck.Active || character.IsPlayer() || character.IsBoss() || IsZombie(character))
 			{
 				return(false);
 			}
@@ -201,7 +202,7 @@ namespace ZombieApocalypse
 			{
 				return(false);
 			}
-			if (SpiritKills.LastHitWasSpirit(character))
+			if (SpiritKills.LastHitWasSpirit(character) || FireKills.Burned(character))
 			{
 				return(false);
 			}
@@ -217,7 +218,7 @@ namespace ZombieApocalypse
 		{
 			PendingRise rise = new PendingRise();
 			// A living viking rises as a zombie viking
-			rise.PrefabHash = (ZombieViking.IsLivingViking(character) ? ZombieViking.PrefabHash : character.m_nview.GetZDO().GetPrefab());
+			rise.PrefabHash = (VikingCore.IsLivingViking(character) ? VikingCore.ZombiePrefabHash : character.m_nview.GetZDO().GetPrefab());
 			rise.Level = character.GetLevel();
 			Humanoid humanoid = character as Humanoid;
 			rise.Seed = ((humanoid != null) ? humanoid.m_seed : 0);
@@ -362,7 +363,7 @@ namespace ZombieApocalypse
 			}
 			// The game sets a creature's max health from its level each time it loads. A viking has the player's
 			// health instead, which it sets as it loads
-			if (nview.IsOwner() && !ZombieViking.IsViking(character))
+			if (nview.IsOwner() && !VikingCore.IsZombieViking(character))
 			{
 				bool unhurt = character.GetHealth() >= character.GetMaxHealth();
 				float health = character.GetMaxHealthBase() * character.GetLevel() * Plugin.ZombieHealth.Value / 100f;
@@ -405,32 +406,45 @@ namespace ZombieApocalypse
 		/// <param name="character">The zombie</param>
 		private static void ApplyUndeadWeaknesses(Character character)
 		{
-			character.m_damageModifiers.m_poison = HitData.DamageModifier.Immune;
-			if (character.m_damageModifiers.m_spirit != HitData.DamageModifier.VeryWeak)
+			character.m_damageModifiers = UndeadModifiers(character.m_damageModifiers);
+		}
+
+		/// <summary>
+		/// Works out how a zombie takes damage from how its creature did (see ApplyUndeadWeaknesses) - immune to poison,
+		/// weak to spirit, weak to fire unless the creature resisted it or was already weak to it, and a step more
+		/// resistant to pierce
+		/// </summary>
+		/// <param name="modifiers">The creature's resistances</param>
+		/// <returns>The zombie's</returns>
+		internal static HitData.DamageModifiers UndeadModifiers(HitData.DamageModifiers modifiers)
+		{
+			modifiers.m_poison = HitData.DamageModifier.Immune;
+			if (modifiers.m_spirit != HitData.DamageModifier.VeryWeak)
 			{
-				character.m_damageModifiers.m_spirit = HitData.DamageModifier.Weak;
+				modifiers.m_spirit = HitData.DamageModifier.Weak;
 			}
-			switch (character.m_damageModifiers.m_fire)
+			switch (modifiers.m_fire)
 			{
 				case HitData.DamageModifier.Normal:
 				case HitData.DamageModifier.SlightlyWeak:
 				case HitData.DamageModifier.SlightlyResistant:
-					character.m_damageModifiers.m_fire = HitData.DamageModifier.Weak;
+					modifiers.m_fire = HitData.DamageModifier.Weak;
 					break;
 			}
-			switch (character.m_damageModifiers.m_pierce)
+			switch (modifiers.m_pierce)
 			{
 				case HitData.DamageModifier.Normal:
-					character.m_damageModifiers.m_pierce = HitData.DamageModifier.Resistant;
+					modifiers.m_pierce = HitData.DamageModifier.Resistant;
 					break;
 				case HitData.DamageModifier.SlightlyWeak:
 				case HitData.DamageModifier.Weak:
-					character.m_damageModifiers.m_pierce = HitData.DamageModifier.Normal;
+					modifiers.m_pierce = HitData.DamageModifier.Normal;
 					break;
 				case HitData.DamageModifier.VeryWeak:
-					character.m_damageModifiers.m_pierce = HitData.DamageModifier.Weak;
+					modifiers.m_pierce = HitData.DamageModifier.Weak;
 					break;
 			}
+			return(modifiers);
 		}
 
 		/// <summary>
@@ -502,26 +516,51 @@ namespace ZombieApocalypse
 			if (text != excludedText)
 			{
 				excludedText = text;
-				excludedNames.Clear();
-				excludedPrefixes.Clear();
-				foreach (string part in text.Split(','))
+				ParseExcluded(text, out excludedNames, out excludedPrefixes);
+			}
+			return(Matches(prefabName, excludedNames, excludedPrefixes));
+		}
+
+		/// <summary>
+		/// Reads an ExcludedCreatures list - comma-separated prefab names, where one ending in * is the start of the
+		/// names it matches, so a lone * matches every creature
+		/// </summary>
+		/// <param name="text">The list</param>
+		/// <param name="names">The whole names in it, matched whatever their case</param>
+		/// <param name="prefixes">The starts of names in it, without their *</param>
+		internal static void ParseExcluded(string text, out HashSet<string> names, out List<string> prefixes)
+		{
+			names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+			prefixes = new List<string>();
+			foreach (string part in text.Split(','))
+			{
+				string name = part.Trim();
+				if (name.EndsWith("*"))
 				{
-					string name = part.Trim();
-					if (name.EndsWith("*"))
-					{
-						excludedPrefixes.Add(name.Substring(0, name.Length - 1));
-					}
-					else if (name.Length > 0)
-					{
-						excludedNames.Add(name);
-					}
+					prefixes.Add(name.Substring(0, name.Length - 1).Trim());
+				}
+				else if (name.Length > 0)
+				{
+					names.Add(name);
 				}
 			}
-			if (excludedNames.Contains(prefabName))
+		}
+
+		/// <summary>
+		/// Checks a prefab name against the names and starts of names read from an ExcludedCreatures list, whatever their
+		/// case (see ParseExcluded)
+		/// </summary>
+		/// <param name="prefabName">The creature's prefab name</param>
+		/// <param name="names">The whole names</param>
+		/// <param name="prefixes">The starts of names</param>
+		/// <returns>True when it matches one</returns>
+		internal static bool Matches(string prefabName, HashSet<string> names, List<string> prefixes)
+		{
+			if (names.Contains(prefabName))
 			{
 				return(true);
 			}
-			foreach (string prefix in excludedPrefixes)
+			foreach (string prefix in prefixes)
 			{
 				if (prefabName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
 				{

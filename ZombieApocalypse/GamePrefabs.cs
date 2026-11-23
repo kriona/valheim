@@ -8,14 +8,26 @@ namespace ZombieApocalypse
 	/// </summary>
 	internal static class GamePrefabs
 	{
+		/// <summary>
+		/// Seconds before a prefab that wasn't found is looked for again, since looking through every loaded object is
+		/// slow
+		/// </summary>
+		private const float RetryInterval = 60f;
+
 		private static readonly Dictionary<string, GameObject> found = new Dictionary<string, GameObject>();
 
 		/// <summary>
-		/// Finds a prefab by name, once
+		/// When each prefab that wasn't found was last looked for, as a Time.realtimeSinceStartup value
+		/// </summary>
+		private static readonly Dictionary<string, float> missedAt = new Dictionary<string, float>();
+
+		/// <summary>
+		/// Finds a prefab by name, keeping it for later calls while it exists
 		/// </summary>
 		/// <remarks>
 		/// Not every prefab is registered with ZNetScene, but one already loaded from the game's files can still be
-		/// found among the loaded objects
+		/// found among the loaded objects. A prefab that wasn't found is looked for again at most once every
+		/// RetryInterval seconds, since it may only be loaded later
 		/// </remarks>
 		/// <param name="name">The prefab's name</param>
 		/// <returns>The prefab, or null when it isn't loaded</returns>
@@ -23,7 +35,15 @@ namespace ZombieApocalypse
 		{
 			if (found.TryGetValue(name, out GameObject prefab))
 			{
-				return(prefab);
+				if (prefab != null)
+				{
+					return(prefab);
+				}
+				found.Remove(name);
+			}
+			if (missedAt.TryGetValue(name, out float at) && Time.realtimeSinceStartup - at < RetryInterval)
+			{
+				return(null);
 			}
 			prefab = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(name) : null);
 			if (prefab == null)
@@ -37,7 +57,15 @@ namespace ZombieApocalypse
 					}
 				}
 			}
-			found[name] = prefab;
+			if (prefab != null)
+			{
+				found[name] = prefab;
+				missedAt.Remove(name);
+			}
+			else
+			{
+				missedAt[name] = Time.realtimeSinceStartup;
+			}
 			return(prefab);
 		}
 

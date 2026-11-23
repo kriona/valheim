@@ -31,6 +31,18 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
+	/// The weapons a viking starts with - one of any kind, a melee weapon only, a bow or crossbow only, or a bow or
+	/// crossbow and a melee weapon to fight up close with
+	/// </summary>
+	internal enum Arms
+	{
+		Any,
+		Melee,
+		Ranged,
+		Both
+	}
+
+	/// <summary>
 	/// What vikings of one biome carry, how tough and skilled they are and what they drop
 	/// </summary>
 	internal class BiomeGear
@@ -44,6 +56,12 @@ namespace ZombieApocalypse
 		public string[] Ammo;
 		public string[] Shields;
 		public ArmorSet[] Armor;
+
+		/// <summary>
+		/// The cape a viking of the biome wears when its armor set has none or it wears no armor, for a biome whose
+		/// vikings always wear one (see VikingGear.AlwaysCaped), or null
+		/// </summary>
+		public string Cape;
 		public float Health;
 		public float SkillMin;
 		public float SkillMax;
@@ -86,7 +104,7 @@ namespace ZombieApocalypse
 		/// <summary>
 		/// The weapon Deep North vikings never carry, though it's in the Ashlands gear they draw from
 		/// </summary>
-		private const string DeepNorthBanned = "SwordDyrnwyn";
+		internal const string DeepNorthBanned = "SwordDyrnwyn";
 
 		/// <summary>
 		/// Skin tones from palest to darkest, and hair colors, as the player's customization stores them
@@ -105,6 +123,11 @@ namespace ZombieApocalypse
 		private const int BeardStyles = 21;
 		private const float BeardChance = 0.7f;
 
+		/// <summary>
+		/// The beard item of a viking with no beard, as the player's customization stores it
+		/// </summary>
+		public const string NoBeard = "BeardNone";
+
 		public static readonly BiomeGear[] Biomes = new BiomeGear[]
 		{
 			new BiomeGear
@@ -114,7 +137,7 @@ namespace ZombieApocalypse
 				Ammo = new[] { "ArrowWood", "ArrowFlint", "ArrowFire" },
 				Shields = new[] { "ShieldWood" },
 				Armor = new[] { new ArmorSet("ArmorRagsChest", "ArmorRagsLegs", null, null), new ArmorSet("ArmorLeatherChest", "ArmorLeatherLegs", "HelmetLeather", "CapeDeerHide") },
-				Health = 50f, SkillMin = 0f, SkillMax = 12f, CoinsMin = 0, CoinsMax = 10, Remains = null, Unarmed = 25f, MeleeScale = 1.4f, Power = null
+				Health = 50f, SkillMin = VikingCore.SkillFloor, SkillMax = 12f, CoinsMin = 0, CoinsMax = 10, Remains = null, Unarmed = 25f, MeleeScale = 1.4f, Power = null
 			},
 			new BiomeGear
 			{
@@ -141,6 +164,7 @@ namespace ZombieApocalypse
 				Ammo = new[] { "ArrowObsidian", "ArrowFrost" },
 				Shields = new[] { "ShieldSilver" },
 				Armor = new[] { new ArmorSet("ArmorFenringChest", "ArmorFenringLegs", "HelmetFenring", null) },
+				Cape = "CapeWolf",
 				Health = 300f, SkillMin = 38f, SkillMax = 50f, CoinsMin = 40, CoinsMax = 70, Unarmed = 95f, MeleeScale = 1.75f, Power = "GP_Bonemass"
 			},
 			new BiomeGear
@@ -150,6 +174,7 @@ namespace ZombieApocalypse
 				Ammo = new[] { "ArrowNeedle" },
 				Shields = new[] { "ShieldBlackmetal" },
 				Armor = new[] { new ArmorSet("ArmorLoxChest", "ArmorLoxLegs", "HelmetLox", "CapeLox"), new ArmorSet("ArmorBerserkerUndeadChest", "ArmorBerserkerUndeadLegs", "HelmetBerserkerUndead", null), new ArmorSet("ArmorPaddedCuirass", "ArmorPaddedGreaves", "HelmetPadded", "CapeLinen") },
+				Cape = "CapeLox",
 				Health = 450f, SkillMin = 50f, SkillMax = 62f, CoinsMin = 70, CoinsMax = 100, Unarmed = 110f, MeleeScale = 1.25f, Power = "GP_Moder"
 			},
 			new BiomeGear
@@ -159,6 +184,7 @@ namespace ZombieApocalypse
 				Ammo = new[] { "ArrowCarapace", "BoltBone", "BoltIron" },
 				Shields = new[] { "ShieldCarapace", "ShieldCarapaceBuckler" },
 				Armor = new[] { new ArmorSet("ArmorCarapaceChest", "ArmorCarapaceLegs", "HelmetCarapace", "CapeFeather") },
+				Cape = "CapeFeather",
 				Health = 650f, SkillMin = 63f, SkillMax = 75f, CoinsMin = 100, CoinsMax = 140, Unarmed = 125f, Power = "GP_Yagluth"
 			},
 			new BiomeGear
@@ -168,6 +194,7 @@ namespace ZombieApocalypse
 				Ammo = new[] { "ArrowCharred", "BoltBlackmetal", "BoltCarapace", "BoltCharred" },
 				Shields = new[] { "ShieldFlametal" },
 				Armor = new[] { new ArmorSet("ArmorAshlandsMediumChest", "ArmorAshlandsMediumlegs", "HelmetAshlandsMediumHood", "CapeAsksvin"), new ArmorSet("ArmorFlametalChest", "ArmorFlametalLegs", "HelmetFlametal", "CapeAsh") },
+				Cape = "CapeAsksvin",
 				Health = 900f, SkillMin = 76f, SkillMax = 87f, CoinsMin = 140, CoinsMax = 200, Unarmed = 145f, Power = "GP_Queen"
 			},
 			new BiomeGear
@@ -177,6 +204,7 @@ namespace ZombieApocalypse
 				Ammo = new[] { "ArrowBloodGold", "BoltBloodGold" },
 				Shields = new[] { "ShieldGold", "ShieldGoldBuckler" },
 				Armor = new[] { new ArmorSet("ArmorDeepNorthMediumChest", "ArmorDeepNorthMediumlegs", "HelmetDNMediumHood", "CapeDeepNorth"), new ArmorSet("ArmorDeepNorthHeavyChest", "ArmorDeepNorthHeavylegs", "HelmetDNHeavy", "CapeDeepNorth") },
+				Cape = "CapeDeepNorth",
 				Health = 1200f, SkillMin = 88f, SkillMax = 100f, CoinsMin = 200, CoinsMax = 300, Unarmed = 165f, Power = "GP_Fader"
 			}
 		};
@@ -209,7 +237,8 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Rolls a viking of the world's looks, health, skill and power for its biome
+		/// Rolls a viking of the world's looks, health, skills and power for its biome - each skill its own level within
+		/// the biome's range, and one more kept for a skill the game adds later
 		/// </summary>
 		/// <param name="index">The index of its biome</param>
 		/// <returns>Its data, without its weapon slot, which RollLoadout sets</returns>
@@ -223,75 +252,149 @@ namespace ZombieApocalypse
 			data.SkinColor = Vector3.Lerp(PaleSkin, DarkSkin, Random.value);
 			data.HairColor = HairColors[Random.Range(0, HairColors.Length)] * Random.Range(0.85f, 1.1f);
 			data.Hair = "Hair" + Random.Range(1, HairStyles + 1);
-			data.Beard = ((data.Model == 0 && Random.value < BeardChance) ? "Beard" + Random.Range(1, BeardStyles + 1) : "BeardNone");
+			data.Beard = ((data.Model == 0 && Random.value < BeardChance) ? "Beard" + Random.Range(1, BeardStyles + 1) : NoBeard);
 			data.MaxHealth = gear.Health;
 			data.Skill = Random.Range(gear.SkillMin, gear.SkillMax);
+			foreach (Skills.SkillType skill in System.Enum.GetValues(typeof(Skills.SkillType)))
+			{
+				if (skill != Skills.SkillType.None && skill != Skills.SkillType.All)
+				{
+					data.Skills[(int)skill] = Random.Range(gear.SkillMin, gear.SkillMax);
+				}
+			}
 			data.Power = (string.IsNullOrEmpty(gear.Power) ? 0 : gear.Power.GetStableHashCode());
 			return(data);
 		}
 
 		/// <summary>
+		/// The share of a biome's living vikings that start with only a bow or crossbow and the share that start with
+		/// only a melee weapon, the rest starting with both
+		/// </summary>
+		internal class ArmsSplit
+		{
+			public float Ranged;
+			public float Melee;
+		}
+
+		/// <summary>
+		/// How the living vikings of the biomes before the Mountains are split between bows, melee weapons and both -
+		/// a biome not listed, like the Meadows, gives its village's archer both and the rest one weapon of any kind
+		/// </summary>
+		internal static readonly Dictionary<Heightmap.Biome, ArmsSplit> ArmsSplits = new Dictionary<Heightmap.Biome, ArmsSplit>()
+		{
+			{ Heightmap.Biome.BlackForest, new ArmsSplit { Ranged = 1f / 3f, Melee = 1f / 3f } },
+			{ Heightmap.Biome.Swamp, new ArmsSplit { Ranged = 0.2f, Melee = 0.2f } }
+		};
+
+		/// <summary>
+		/// Picks the weapons a living viking of a biome starts with. From the Mountains on, every one has a bow or
+		/// crossbow and a melee weapon. A biome in ArmsSplits splits them by its shares - except one marked as its
+		/// village's archer, which has a bow either way, alone or with a melee weapon in the same proportion as the
+		/// rest. Elsewhere one marked as its village's archer has both, and the rest one weapon of any kind
+		/// </summary>
+		/// <param name="index">The index of its biome</param>
+		/// <param name="marked">Whether it's marked as its village's archer (see VikingCore.ArcherKey)</param>
+		/// <param name="roll">A random number from 0 to 1</param>
+		/// <returns>Its weapons</returns>
+		internal static Arms LivingArms(int index, bool marked, float roll)
+		{
+			if (index >= IndexOf(Heightmap.Biome.Mountain))
+			{
+				return(Arms.Both);
+			}
+			if (ArmsSplits.TryGetValue(Get(index).Biome, out ArmsSplit split))
+			{
+				if (marked)
+				{
+					return((roll * (1f - split.Melee) < split.Ranged) ? Arms.Ranged : Arms.Both);
+				}
+				if (roll < split.Ranged)
+				{
+					return(Arms.Ranged);
+				}
+				return((roll < split.Ranged + split.Melee) ? Arms.Melee : Arms.Both);
+			}
+			return(marked ? Arms.Both : Arms.Any);
+		}
+
+		/// <summary>
 		/// Rolls a viking of the world's armor, weapon, ammo and shield from its biome and the one before, by the chances
-		/// in the config, upgraded once for each of its stars when StarsUpgradeGear is on, with each piece marked as worn
+		/// in the config, upgraded once for each of its stars when ZombieStarsUpgradeGear is on, with each piece marked as
+		/// worn. From the Mountains on it always wears a cape - its set's, or its biome's when its set has none or it
+		/// wears no armor (see AlwaysCaped)
 		/// </summary>
 		/// <param name="index">The index of its biome</param>
 		/// <param name="level">Its level, where 2 is one star</param>
 		/// <param name="data">Its data, given the slot of its weapon</param>
-		/// <param name="armed">True for a viking that always wears armor and wields a weapon, skipping ArmorChance and
-		/// WeaponChance - its helmet, cape and shield are still rolled</param>
+		/// <param name="armed">True for a viking that always wears armor and wields a weapon, skipping ZombieArmorChance
+		/// and ZombieWeaponChance - its helmet and shield are still rolled, but for its helmet from the Mountains on
+		/// (see AlwaysHelmeted)</param>
+		/// <param name="arms">The weapons it wields - any but Any always gives it one, skipping ZombieWeaponChance, and
+		/// a bow or crossbow comes with its arrows or bolts</param>
+		/// <param name="repaired">True for gear that's fully repaired, like a living viking's, rather than worn down
+		/// between ZombieDurabilityMin and ZombieDurabilityMax like a zombie viking's</param>
+		/// <param name="ownBiome">True for gear only from its own biome, like a living viking's, each piece falling back
+		/// to the nearest biome below with some that will do only when its own has none - like a bow, for a biome with
+		/// none</param>
 		/// <returns>The inventory holding the gear</returns>
-		public static Inventory RollLoadout(int index, int level, VikingData data, bool armed)
+		public static Inventory RollLoadout(int index, int level, VikingData data, bool armed, Arms arms, bool repaired, bool ownBiome)
 		{
-			Inventory inventory = new Inventory(ZombieViking.PrefabName, null, data.Width, data.Height);
-			List<BiomeGear> pool = new List<BiomeGear>();
-			pool.Add(Get(index));
-			if (index > 0)
-			{
-				pool.Add(Get(index - 1));
-			}
+			bool worn = !repaired;
+			Inventory inventory = new Inventory(VikingCore.ZombiePrefabName, null, data.Width, data.Height);
 			bool deepNorth = (Get(index).Biome == Heightmap.Biome.DeepNorth);
-			int quality = (Plugin.StarsUpgradeGear.Value ? level : 1);
-			if (armed || Roll(Plugin.ArmorChance))
+			int quality = (Plugin.ZombieStarsUpgradeGear.Value ? level : 1);
+			System.Predicate<string> allowed = (string name) => !(deepNorth && name == DeepNorthBanned) && IsAllowed(name);
+			// A living viking from the Mountains on always wears its set's helmet, which every set there has, and every
+			// viking from there on wears a cape
+			bool helmeted = (armed && AlwaysHelmeted(index));
+			bool caped = AlwaysCaped(index);
+			bool capeWorn = false;
+			if (armed || Roll(Plugin.ZombieArmorChance))
 			{
-				List<ArmorSet> sets = new List<ArmorSet>();
-				foreach (BiomeGear gear in pool)
-				{
-					sets.AddRange(gear.Armor);
-				}
+				List<ArmorSet> sets = Gather(index, ownBiome, (BiomeGear gear) => gear.Armor, null);
 				ArmorSet set = sets[Random.Range(0, sets.Count)];
-				Wear(inventory, MakeItem(set.Chest, quality, 1));
-				Wear(inventory, MakeItem(set.Legs, quality, 1));
-				if (set.Helmet != null && Roll(Plugin.HelmetChance))
+				Wear(inventory, MakeItem(set.Chest, quality, 1), worn);
+				Wear(inventory, MakeItem(set.Legs, quality, 1), worn);
+				if (set.Helmet != null && (helmeted || Roll(Plugin.HelmetChance)))
 				{
-					Wear(inventory, MakeItem(set.Helmet, quality, 1));
+					Wear(inventory, MakeItem(set.Helmet, quality, 1), worn);
 				}
-				if (set.Cape != null && Roll(Plugin.CapeChance))
+				if (set.Cape != null && (caped || Roll(Plugin.CapeChance)))
 				{
-					Wear(inventory, MakeItem(set.Cape, quality, 1));
+					Wear(inventory, MakeItem(set.Cape, quality, 1), worn);
+					capeWorn = true;
 				}
+			}
+			if (caped && !capeWorn && Get(index).Cape != null)
+			{
+				Wear(inventory, MakeItem(Get(index).Cape, quality, 1), worn);
 			}
 			ItemDrop.ItemData weapon = null;
-			if (armed || Roll(Plugin.WeaponChance))
+			bool shoots = (arms == Arms.Ranged || arms == Arms.Both);
+			if (armed || arms != Arms.Any || Roll(Plugin.ZombieWeaponChance))
 			{
-				List<string> weapons = new List<string>();
-				foreach (BiomeGear gear in pool)
+				System.Predicate<string> wanted = allowed;
+				if (shoots)
 				{
-					foreach (string name in gear.Weapons)
-					{
-						if (!(deepNorth && name == DeepNorthBanned) && IsAllowed(name))
-						{
-							weapons.Add(name);
-						}
-					}
+					wanted = (string name) => allowed(name) && IsBow(name);
+				}
+				else if (arms == Arms.Melee)
+				{
+					wanted = (string name) => allowed(name) && !IsRangedWeapon(name);
+				}
+				List<string> weapons = Gather(index, ownBiome, (BiomeGear gear) => gear.Weapons, wanted);
+				if (weapons.Count == 0)
+				{
+					weapons = Gather(index, ownBiome, (BiomeGear gear) => gear.Weapons, allowed);
 				}
 				if (weapons.Count > 0)
 				{
 					weapon = MakeItem(weapons[Random.Range(0, weapons.Count)], quality, 1);
 				}
 			}
-			if (weapon != null)
+			if (weapon != null && worn)
 			{
-				Wear(weapon);
+				WearDown(weapon);
 			}
 			if (weapon != null && inventory.AddItem(weapon))
 			{
@@ -300,16 +403,9 @@ namespace ZombieApocalypse
 				if (!string.IsNullOrEmpty(ammoType))
 				{
 					List<ItemDrop.ItemData> ammo = new List<ItemDrop.ItemData>();
-					foreach (BiomeGear gear in pool)
+					foreach (string name in Gather(index, ownBiome, (BiomeGear gear) => gear.Ammo, (string name) => Fits(name, ammoType)))
 					{
-						foreach (string name in gear.Ammo)
-						{
-							ItemDrop.ItemData candidate = MakeItem(name, 1, AmmoStack);
-							if (candidate != null && candidate.m_shared.m_ammoType == ammoType && candidate.GetDamage().m_spirit <= 0f)
-							{
-								ammo.Add(candidate);
-							}
-						}
+						ammo.Add(MakeItem(name, 1, AmmoStack));
 					}
 					if (ammo.Count > 0)
 					{
@@ -317,17 +413,122 @@ namespace ZombieApocalypse
 					}
 				}
 			}
-			bool freeHand = (weapon == null || !weapon.IsTwoHanded());
+			// A viking given both carries a melee weapon of its biome beside its bow, to fight up close with
+			ItemDrop.ItemData sidearm = null;
+			if (arms == Arms.Both)
+			{
+				List<string> melee = Gather(index, ownBiome, (BiomeGear gear) => gear.Weapons, (string name) => allowed(name) && !IsRangedWeapon(name));
+				sidearm = ((melee.Count > 0) ? MakeItem(melee[Random.Range(0, melee.Count)], quality, 1) : null);
+				if (sidearm != null && !inventory.AddItem(sidearm))
+				{
+					sidearm = null;
+				}
+			}
+			ItemDrop.ItemData handed = (sidearm ?? weapon);
+			bool freeHand = (handed == null || !handed.IsTwoHanded());
 			if (freeHand && Roll(Plugin.ShieldChance))
 			{
-				List<string> shields = new List<string>();
-				foreach (BiomeGear gear in pool)
-				{
-					shields.AddRange(gear.Shields);
-				}
-				Wear(inventory, MakeItem(shields[Random.Range(0, shields.Count)], quality, 1));
+				List<string> shields = Gather(index, ownBiome, (BiomeGear gear) => gear.Shields, null);
+				Wear(inventory, MakeItem(shields[Random.Range(0, shields.Count)], quality, 1), worn);
 			}
 			return(inventory);
+		}
+
+		/// <summary>
+		/// Gathers what a piece of a viking's gear is picked from - its biome's and the one before's, or only its own
+		/// biome's when it should have that, falling back to the nearest biome below with some that will do when its
+		/// own has none
+		/// </summary>
+		/// <typeparam name="T">What's gathered, like a weapon's prefab name or an armor set</typeparam>
+		/// <param name="index">The index of its biome</param>
+		/// <param name="ownBiome">True to keep to its own biome's when it has any</param>
+		/// <param name="part">What each biome has of it</param>
+		/// <param name="wanted">Which of them will do, or null for all</param>
+		/// <returns>What will do, its own biome's first</returns>
+		private static List<T> Gather<T>(int index, bool ownBiome, System.Func<BiomeGear, IEnumerable<T>> part, System.Predicate<T> wanted)
+		{
+			List<T> found = new List<T>();
+			int lowest = (ownBiome ? 0 : Mathf.Max(0, index - 1));
+			for (int i = index; i >= lowest; i--)
+			{
+				foreach (T item in part(Get(i)))
+				{
+					if (wanted == null || wanted(item))
+					{
+						found.Add(item);
+					}
+				}
+				if (ownBiome && found.Count > 0)
+				{
+					break;
+				}
+			}
+			return(found);
+		}
+
+		/// <summary>
+		/// Checks whether ammo fits a weapon - its ammo type, with no spirit damage, which a viking couldn't use well
+		/// </summary>
+		/// <param name="name">The ammo's prefab name</param>
+		/// <param name="ammoType">The weapon's ammo type</param>
+		/// <returns>True when it fits</returns>
+		private static bool Fits(string name, string ammoType)
+		{
+			ItemDrop.ItemData candidate = MakeItem(name, 1, AmmoStack);
+			return(candidate != null && candidate.m_shared.m_ammoType == ammoType && candidate.GetDamage().m_spirit <= 0f);
+		}
+
+		/// <summary>
+		/// Checks whether every living viking of a biome wears a helmet - the Mountains and every biome after, by Biomes'
+		/// order
+		/// </summary>
+		/// <param name="index">The index of the biome</param>
+		/// <returns>True when it does</returns>
+		internal static bool AlwaysHelmeted(int index)
+		{
+			return(index >= IndexOf(Heightmap.Biome.Mountain));
+		}
+
+		/// <summary>
+		/// Checks whether every viking of a biome, living or zombie, wears a cape - the Mountains and every biome after,
+		/// by Biomes' order
+		/// </summary>
+		/// <param name="index">The index of the biome</param>
+		/// <returns>True when it does</returns>
+		internal static bool AlwaysCaped(int index)
+		{
+			return(index >= IndexOf(Heightmap.Biome.Mountain));
+		}
+
+		/// <summary>
+		/// Checks whether a biome's weather freezes - the Mountains and the Deep North
+		/// </summary>
+		/// <param name="index">The index of the biome</param>
+		/// <returns>True when it does</returns>
+		public static bool Freezes(int index)
+		{
+			Heightmap.Biome biome = Get(index).Biome;
+			return(biome == Heightmap.Biome.Mountain || biome == Heightmap.Biome.DeepNorth);
+		}
+
+		/// <summary>
+		/// Checks whether a spot is in a biome whose weather freezes (see Freezes)
+		/// </summary>
+		/// <param name="position">The spot</param>
+		/// <returns>True when it is</returns>
+		public static bool FreezesAt(Vector3 position)
+		{
+			return(WorldGenerator.instance != null && Freezes(IndexOf(WorldGenerator.instance.GetBiome(position))));
+		}
+
+		/// <summary>
+		/// Checks whether a piece of gear resists frost, so wearing it keeps the cold off the way it does a player
+		/// </summary>
+		/// <param name="item">The piece, or null</param>
+		/// <returns>True when it does</returns>
+		public static bool KeepsOffFrost(ItemDrop.ItemData item)
+		{
+			return(item != null && item.m_shared.m_damageModifiers.Exists((HitData.DamageModPair mod) => mod.m_type == HitData.DamageType.Frost && VikingWeather.KeepsOffFrost(mod.m_modifier)));
 		}
 
 		/// <summary>
@@ -345,27 +546,32 @@ namespace ZombieApocalypse
 		/// </summary>
 		/// <param name="inventory">The inventory</param>
 		/// <param name="item">The item, or null when it couldn't be made</param>
-		private static void Wear(Inventory inventory, ItemDrop.ItemData item)
+		/// <param name="wornDown">True to wear it down first (see WearDown), false to leave it fully repaired</param>
+		private static void Wear(Inventory inventory, ItemDrop.ItemData item, bool wornDown)
 		{
 			if (item == null)
 			{
 				return;
 			}
 			item.m_equipped = true;
-			Wear(item);
+			if (wornDown)
+			{
+				WearDown(item);
+			}
 			inventory.AddItem(item);
 		}
 
 		/// <summary>
-		/// Wears an item down to between the config's DurabilityMin and DurabilityMax percent of its full durability
+		/// Wears an item down to between the config's ZombieDurabilityMin and ZombieDurabilityMax percent of its full
+		/// durability
 		/// </summary>
 		/// <param name="item">The item</param>
-		private static void Wear(ItemDrop.ItemData item)
+		private static void WearDown(ItemDrop.ItemData item)
 		{
 			if (item.m_shared.m_useDurability)
 			{
-				float min = Mathf.Min(Plugin.DurabilityMin.Value, Plugin.DurabilityMax.Value);
-				float max = Mathf.Max(Plugin.DurabilityMin.Value, Plugin.DurabilityMax.Value);
+				float min = Mathf.Min(Plugin.ZombieDurabilityMin.Value, Plugin.ZombieDurabilityMax.Value);
+				float max = Mathf.Max(Plugin.ZombieDurabilityMin.Value, Plugin.ZombieDurabilityMax.Value);
 				item.m_durability = item.GetMaxDurability() * Random.Range(min, max) / 100f;
 			}
 		}
@@ -379,6 +585,27 @@ namespace ZombieApocalypse
 		{
 			ItemDrop.ItemData item = MakeItem(name, 1, 1);
 			return(item != null && item.GetDamage().m_spirit <= 0f);
+		}
+
+		/// <summary>
+		/// Checks whether a weapon is a bow, one that shoots arrows
+		/// </summary>
+		/// <param name="name">The weapon's prefab name</param>
+		/// <returns>True when it is</returns>
+		private static bool IsBow(string name)
+		{
+			ItemDrop.ItemData item = MakeItem(name, 1, 1);
+			return(item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Bow && !string.IsNullOrEmpty(item.m_shared.m_ammoType));
+		}
+
+		/// <summary>
+		/// Checks whether a weapon shoots - a bow or crossbow
+		/// </summary>
+		/// <param name="name">The weapon's prefab name</param>
+		/// <returns>True when it does</returns>
+		private static bool IsRangedWeapon(string name)
+		{
+			return(VikingCore.IsRanged(MakeItem(name, 1, 1)));
 		}
 
 		/// <summary>

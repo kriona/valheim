@@ -81,6 +81,17 @@ namespace ZombieApocalypse
 		private float[] hazeDistanceRates;
 
 		/// <summary>
+		/// Turns the effects off on a dedicated server, which has nobody to show them to, so Start and Update don't run
+		/// </summary>
+		private void Awake()
+		{
+			if (ZNet.instance != null && ZNet.instance.IsDedicated())
+			{
+				enabled = false;
+			}
+		}
+
+		/// <summary>
 		/// Counts the zombie in the crowds of the others
 		/// </summary>
 		private void OnEnable()
@@ -114,7 +125,7 @@ namespace ZombieApocalypse
 			Transform bone = FindBodyBone(center);
 			CapsuleCollider sourceCollider = source.GetComponent<CapsuleCollider>();
 			float sourceRadius = ((sourceCollider != null) ? sourceCollider.radius * source.transform.lossyScale.x : 0.5f);
-			float size = Mathf.Clamp(creature.GetRadius() / sourceRadius, MinScale, MaxScale);
+			float size = EffectSize(creature.GetRadius(), sourceRadius);
 			effects = new GameObject[SourcePaths.Length + 1];
 			for (int i = 0; i < SourcePaths.Length; i++)
 			{
@@ -252,7 +263,7 @@ namespace ZombieApocalypse
 					crowd++;
 				}
 			}
-			float strength = Plugin.ZombieHazeStrength.Value / 100f * Mathf.Min(1f, HazeCrowd / Mathf.Max(1, crowd));
+			float strength = HazeStrength(Plugin.ZombieHazeStrength.Value, crowd);
 			for (int i = 0; i < haze.Length; i++)
 			{
 				if (haze[i] == null)
@@ -263,6 +274,30 @@ namespace ZombieApocalypse
 				emission.rateOverTimeMultiplier = hazeRates[i] * strength;
 				emission.rateOverDistanceMultiplier = hazeDistanceRates[i] * strength;
 			}
+		}
+
+		/// <summary>
+		/// Works out how strong a zombie's haze is next to a draugr's - lowered when more than HazeCrowd zombies are
+		/// near, so the crowd's haze adds up to about HazeCrowd zombies' worth
+		/// </summary>
+		/// <param name="percent">How strong a lone zombie's haze is, in percent of a draugr's</param>
+		/// <param name="crowd">How many zombies are within HazeRange of it, itself included</param>
+		/// <returns>The strength, as a share of a draugr's haze</returns>
+		internal static float HazeStrength(int percent, int crowd)
+		{
+			return(percent / 100f * Mathf.Min(1f, HazeCrowd / Mathf.Max(1, crowd)));
+		}
+
+		/// <summary>
+		/// Works out how big a creature's effects are next to their size on a draugr, from how wide each is, kept from
+		/// MinScale to MaxScale
+		/// </summary>
+		/// <param name="radius">How wide the creature is, in meters</param>
+		/// <param name="sourceRadius">How wide the draugr is, in meters - one too small to divide by counts as 1</param>
+		/// <returns>The scale</returns>
+		internal static float EffectSize(float radius, float sourceRadius)
+		{
+			return(Mathf.Clamp(SafeDivide(radius, sourceRadius), MinScale, MaxScale));
 		}
 
 		/// <summary>
@@ -331,7 +366,7 @@ namespace ZombieApocalypse
 		/// <param name="value">The numerator</param>
 		/// <param name="divisor">The divisor</param>
 		/// <returns>The quotient</returns>
-		private static float SafeDivide(float value, float divisor)
+		internal static float SafeDivide(float value, float divisor)
 		{
 			return((Mathf.Abs(divisor) > 0.0001f) ? value / divisor : value);
 		}

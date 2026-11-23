@@ -140,7 +140,7 @@ namespace Kriona.Shared
 		/// <param name="key">The prefab name</param>
 		/// <param name="displayName">The name in game, or blank when it isn't known</param>
 		/// <returns>The name in game followed by the prefab name when they differ, or the prefab name alone</returns>
-		private static string GetEntryName(string key, string displayName)
+		internal static string GetEntryName(string key, string displayName)
 		{
 			string name = displayName.Trim();
 			if (name.Length == 0 || name.Equals(key, StringComparison.OrdinalIgnoreCase))

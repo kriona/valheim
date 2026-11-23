@@ -13,19 +13,23 @@ namespace ZombieApocalypse
 		public const string PluginName = "Zombie Apocalypse";
 		public const string PluginVersion = "1.0.0";
 
+		private const string GeneralSection = "General";
 		private const string RisingSection = "Rising";
 		private const string ZombiesSection = "Zombies";
 		private const string DeathSection = "Death";
 		private const string VikingGearSection = "Viking Gear";
 		private const string PowersSection = "Forsaken Powers";
 		private const string RaidsSection = "Raids";
+		private const string VillagesSection = "Villages";
 
 		/// <summary>
 		/// Undead creatures outside the Undead faction, and creatures that were never alive
 		/// </summary>
 		private const string DefaultExcludedCreatures = "Charred_*, Skeleton_DeepNorth, BonemawSerpent, FallenValkyrie, ShadowPerson, StoneGolem, Mistile";
 
+		public static ConfigEntry<bool> Zombies;
 		public static ConfigEntry<int> RiseChance;
+		public static ConfigEntry<int> FireStaysDead;
 		public static ConfigEntry<float> RiseDelay;
 		public static ConfigEntry<float> RiseDuration;
 		public static ConfigEntry<bool> WakeUpAnimation;
@@ -50,17 +54,18 @@ namespace ZombieApocalypse
 		public static ConfigEntry<int> ZombieHazeStrength;
 		public static ConfigEntry<bool> TombstoneZombies;
 		public static ConfigEntry<bool> VikingRaids;
-		public static ConfigEntry<int> ArmorChance;
+		public static ConfigEntry<bool> VikingVillages;
+		public static ConfigEntry<int> ZombieArmorChance;
 		public static ConfigEntry<int> HelmetChance;
 		public static ConfigEntry<int> CapeChance;
-		public static ConfigEntry<int> WeaponChance;
+		public static ConfigEntry<int> ZombieWeaponChance;
 		public static ConfigEntry<int> ShieldChance;
-		public static ConfigEntry<bool> StarsUpgradeGear;
-		public static ConfigEntry<int> DurabilityMin;
-		public static ConfigEntry<int> DurabilityMax;
+		public static ConfigEntry<bool> ZombieStarsUpgradeGear;
+		public static ConfigEntry<int> ZombieDurabilityMin;
+		public static ConfigEntry<int> ZombieDurabilityMax;
 		public static ConfigEntry<float> GearDropChance;
 		public static ConfigEntry<int> GearDropMax;
-		public static ConfigEntry<int> ArmorEffectiveness;
+		public static ConfigEntry<int> ZombieArmorEffectiveness;
 		public static ConfigEntry<float> WorldPowerChance;
 		public static ConfigEntry<float> TombstonePowerChance;
 		public static ConfigEntry<float> PowerCooldown;
@@ -78,7 +83,9 @@ namespace ZombieApocalypse
 		/// </summary>
 		private void Awake()
 		{
+			Zombies = Config.Bind(GeneralSection, "Zombies", true, "Zombies of every kind - slain creatures rising, zombie vikings roaming the world, holding abandoned houses and raiding, and your body rising from your tombstone - false turns them all off, leaving the living vikings and their villages, who then never talk of the dead walking. Zombies already in the world stay");
 			RiseChance = Config.Bind(RisingSection, "RiseChance", 100, new ConfigDescription("Percent chance that a slain creature rises as a zombie", new AcceptableValueRange<int>(0, 100)));
+			FireStaysDead = Config.Bind(RisingSection, "FireStaysDead", 25, new ConfigDescription("A creature that took at least this percent of the damage that killed it as fire (e.g., burning, fire arrows or a fire staff) stays dead - 0 to let burned creatures rise too", new AcceptableValueRange<int>(0, 100)));
 			RiseDelay = Config.Bind(RisingSection, "RiseDelay", 5f, new ConfigDescription("Seconds a corpse lies on the ground before it starts to get up", new AcceptableValueRange<float>(0f, 120f)));
 			RiseDuration = Config.Bind(RisingSection, "RiseDuration", 2.5f, new ConfigDescription("Seconds a corpse takes to get up", new AcceptableValueRange<float>(0.5f, 10f)));
 			WakeUpAnimation = Config.Bind(RisingSection, "WakeUpAnimation", true, "Creatures that can sleep (e.g., trolls and bears) get up with their own wake-up animation");
@@ -104,17 +111,19 @@ namespace ZombieApocalypse
 			TombstoneZombies = Config.Bind(DeathSection, "TombstoneZombies", true, "When a zombie kills you, your body gets back up as a zombie viking with your health, wearing your armor and carrying your things, and leaves them in your tombstone when it's killed - food, silver ore and ingots, and spirit weapons stay in your tombstone");
 			VikingRaids = Config.Bind(RaidsSection, "VikingRaids", true, "Zombie vikings can raid your base in any biome, armed for the biome it's in - false leaves them out of the raids, though a raid already underway carries on");
 			VikingRaids.SettingChanged += (sender, args) => VikingRaid.UpdateEnabled();
-			ArmorChance = Config.Bind(VikingGearSection, "ArmorChance", 65, new ConfigDescription("Percent chance that a zombie viking of the world wears armor - always the set's chest and legs", new AcceptableValueRange<int>(0, 100)));
-			HelmetChance = Config.Bind(VikingGearSection, "HelmetChance", 50, new ConfigDescription("Percent chance that a viking wearing armor also wears the set's helmet", new AcceptableValueRange<int>(0, 100)));
-			CapeChance = Config.Bind(VikingGearSection, "CapeChance", 50, new ConfigDescription("Percent chance that a viking wearing armor also wears the set's cape", new AcceptableValueRange<int>(0, 100)));
-			WeaponChance = Config.Bind(VikingGearSection, "WeaponChance", 85, new ConfigDescription("Percent chance that a zombie viking of the world wields a weapon - without one, it fights with its fists", new AcceptableValueRange<int>(0, 100)));
-			ShieldChance = Config.Bind(VikingGearSection, "ShieldChance", 40, new ConfigDescription("Percent chance that a zombie viking of the world carries a shield, unless its weapon takes both hands", new AcceptableValueRange<int>(0, 100)));
-			StarsUpgradeGear = Config.Bind(VikingGearSection, "StarsUpgradeGear", true, "Each of a zombie viking's stars upgrades its gear one level - false leaves it all at level 1");
-			DurabilityMin = Config.Bind(VikingGearSection, "DurabilityMin", 50, new ConfigDescription("Least durability a zombie viking's gear spawns with, as a percent of full", new AcceptableValueRange<int>(1, 100)));
-			DurabilityMax = Config.Bind(VikingGearSection, "DurabilityMax", 95, new ConfigDescription("Most durability a zombie viking's gear spawns with, as a percent of full", new AcceptableValueRange<int>(1, 100)));
-			GearDropChance = Config.Bind(VikingGearSection, "GearDropChance", 5f, new ConfigDescription("Percent chance that a zombie viking of the world drops each piece of its gear, as worn as it is, when it dies", new AcceptableValueRange<float>(0f, 100f)));
-			GearDropMax = Config.Bind(VikingGearSection, "GearDropMax", 2, new ConfigDescription("Most pieces of gear a zombie viking of the world drops", new AcceptableValueRange<int>(0, 10)));
-			ArmorEffectiveness = Config.Bind(VikingGearSection, "ArmorEffectiveness", 50, new ConfigDescription("How well armor protects any zombie viking, tombstone ones included, as a percent of how well it protects a player - armor is made for creatures' hits, so at 100 a viking is about twice as hard to kill", new AcceptableValueRange<int>(0, 200)));
+			Zombies.SettingChanged += (sender, args) => VikingRaid.UpdateEnabled();
+			VikingVillages = Config.Bind(VillagesSection, "VikingVillages", true, "Living vikings live in the Meadows' abandoned farms - they spawn in the farms and the empty houses near them, keep the village in repair, lay its paths and bonfire, keep its boars, go about their day and sleep at night, and come back after they die. False spawns no new living vikings, leaves new farms as the game makes them, and has the living vikings already in the world wander by where they stand. Zombie vikings spawn either way");
+			ZombieArmorChance = Config.Bind(VikingGearSection, "ZombieArmorChance", 65, new ConfigDescription("Percent chance that a zombie viking of the world wears armor - always the set's chest and legs. Living vikings always wear armor", new AcceptableValueRange<int>(0, 100)));
+			HelmetChance = Config.Bind(VikingGearSection, "HelmetChance", 50, new ConfigDescription("Percent chance that a viking wearing armor, living or zombie, also wears the set's helmet - from the Mountains on, every living viking wears one", new AcceptableValueRange<int>(0, 100)));
+			CapeChance = Config.Bind(VikingGearSection, "CapeChance", 50, new ConfigDescription("Percent chance that a viking wearing armor, living or zombie, also wears the set's cape - from the Mountains on, every viking wears one", new AcceptableValueRange<int>(0, 100)));
+			ZombieWeaponChance = Config.Bind(VikingGearSection, "ZombieWeaponChance", 85, new ConfigDescription("Percent chance that a zombie viking of the world wields a weapon - without one, it fights with its fists. Living vikings always have a weapon", new AcceptableValueRange<int>(0, 100)));
+			ShieldChance = Config.Bind(VikingGearSection, "ShieldChance", 40, new ConfigDescription("Percent chance that a viking, living or zombie, carries a shield, unless its weapon takes both hands", new AcceptableValueRange<int>(0, 100)));
+			ZombieStarsUpgradeGear = Config.Bind(VikingGearSection, "ZombieStarsUpgradeGear", true, "Each of a zombie viking's stars upgrades its gear one level - false leaves it all at level 1. Living vikings are never starred");
+			ZombieDurabilityMin = Config.Bind(VikingGearSection, "ZombieDurabilityMin", 50, new ConfigDescription("Least durability a zombie viking's gear spawns with, as a percent of full. Living vikings' gear spawns fully repaired", new AcceptableValueRange<int>(1, 100)));
+			ZombieDurabilityMax = Config.Bind(VikingGearSection, "ZombieDurabilityMax", 95, new ConfigDescription("Most durability a zombie viking's gear spawns with, as a percent of full", new AcceptableValueRange<int>(1, 100)));
+			GearDropChance = Config.Bind(VikingGearSection, "GearDropChance", 5f, new ConfigDescription("Percent chance that a zombie viking drops each piece of its gear, as worn as it is, when it dies - a living one that stays dead drops everything it has instead", new AcceptableValueRange<float>(0f, 100f)));
+			GearDropMax = Config.Bind(VikingGearSection, "GearDropMax", 2, new ConfigDescription("Most pieces of gear a zombie viking drops", new AcceptableValueRange<int>(0, 10)));
+			ZombieArmorEffectiveness = Config.Bind(VikingGearSection, "ZombieArmorEffectiveness", 50, new ConfigDescription("How well armor protects a zombie viking, tombstone ones included, as a percent of how well it protects a player - armor is made for creatures' hits, so at 100 a zombie viking is about twice as hard to kill. Living vikings get all of their armor's protection, the same as a player", new AcceptableValueRange<int>(0, 200)));
 			WorldPowerChance = Config.Bind(PowersSection, "WorldPowerChance", 10f, new ConfigDescription("Percent chance that a zombie viking of the world uses its biome's forsaken power the first time it spots an enemy", new AcceptableValueRange<float>(0f, 100f)));
 			TombstonePowerChance = Config.Bind(PowersSection, "TombstonePowerChance", 50f, new ConfigDescription("Percent chance that a tombstone zombie viking uses your forsaken power when a player first comes near, if the power was ready when you died", new AcceptableValueRange<float>(0f, 100f)));
 			PowerCooldown = Config.Bind(PowersSection, "PowerCooldown", 30f, new ConfigDescription("Seconds after any zombie viking uses a forsaken power before another can - a viking whose chance comes up during it loses its chance", new AcceptableValueRange<float>(0f, 3600f)));
@@ -127,13 +136,31 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Reads the config file again once it has been saved, and shares or puts back the server's settings after a
-		/// change
+		/// Reads the config file again once it has been saved, shares or puts back the server's settings after a
+		/// change, lays the paths of villages as they load, keeps track of the villages this client looks after -
+		/// their night watch, their records and the vikings they're missing - tames the farms' pen animals that came
+		/// out wild, and shows the villages' areas the player turns on
 		/// </summary>
 		private void Update()
 		{
 			watcher.Update();
 			ConfigSync.Update();
+			VillagePaths.Update();
+			VillageWatch.Update();
+			VillageRespawn.Update();
+			VillageLivestock.Update();
+			VillageLife.UpdateNaming();
+			VikingInventory.Update();
+			VikingConcernSpeech.Update();
+			VillageArea.Update();
+			VillageMapPins.Update();
+			VillageNameList.Update();
+			VillagePlannedNames.Update();
+			VillageBases.Update();
+			SleepSkip.Update();
+			VillageFireSound.Update();
+			VillageGroundPaths.Update();
+			VillageStock.Update();
 		}
 
 		/// <summary>

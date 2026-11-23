@@ -117,33 +117,12 @@ namespace Kriona.Shared
 		/// <summary>
 		/// Whether every setting is in the file with the value it holds
 		/// </summary>
-		/// <remarks>
-		/// Reads the file the same way as ConfigFile.Reload
-		/// </remarks>
 		/// <param name="config">The config file to check</param>
 		/// <returns>True when saving would write the same values</returns>
+		/// <exception cref="IOException">The file couldn't be read, as when an editor has it open mid-save</exception>
 		private static bool MatchesFile(ConfigFile config)
 		{
-			Dictionary<ConfigDefinition, string> values = new Dictionary<ConfigDefinition, string>();
-			string section = string.Empty;
-			foreach (string line in File.ReadAllLines(config.ConfigFilePath))
-			{
-				string text = line.Trim();
-				if (text.StartsWith("#"))
-				{
-					continue;
-				}
-				if (text.StartsWith("[") && text.EndsWith("]"))
-				{
-					section = text.Substring(1, text.Length - 2);
-					continue;
-				}
-				string[] parts = text.Split(new char[] { '=' }, 2);
-				if (parts.Length == 2)
-				{
-					values[new ConfigDefinition(section, parts[0].Trim())] = parts[1].Trim();
-				}
-			}
+			Dictionary<ConfigDefinition, string> values = ReadValues(File.ReadAllLines(config.ConfigFilePath));
 			foreach (KeyValuePair<ConfigDefinition, ConfigEntryBase> entry in config)
 			{
 				if (!values.TryGetValue(entry.Key, out string text))
@@ -163,6 +142,39 @@ namespace Kriona.Shared
 				}
 			}
 			return(true);
+		}
+
+		/// <summary>
+		/// Reads a BepInEx config file's values from its lines, the same way as ConfigFile.Reload - comments skipped, each
+		/// "[Section]" line starting a section, and each "Key = Value" line split at its first "=", trimmed
+		/// </summary>
+		/// <param name="lines">The file's lines</param>
+		/// <returns>The values, by section and key - those before any section in the section ""</returns>
+		/// <exception cref="ArgumentException">A section or key holds a character BepInEx doesn't allow, which
+		/// ConfigFile.Reload throws for too</exception>
+		internal static Dictionary<ConfigDefinition, string> ReadValues(string[] lines)
+		{
+			Dictionary<ConfigDefinition, string> values = new Dictionary<ConfigDefinition, string>();
+			string section = string.Empty;
+			foreach (string line in lines)
+			{
+				string text = line.Trim();
+				if (text.StartsWith("#"))
+				{
+					continue;
+				}
+				if (text.StartsWith("[") && text.EndsWith("]"))
+				{
+					section = text.Substring(1, text.Length - 2);
+					continue;
+				}
+				string[] parts = text.Split(new char[] { '=' }, 2);
+				if (parts.Length == 2)
+				{
+					values[new ConfigDefinition(section, parts[0].Trim())] = parts[1].Trim();
+				}
+			}
+			return(values);
 		}
 
 		/// <summary>
@@ -200,7 +212,16 @@ namespace Kriona.Shared
 			{
 				return;
 			}
-			reload();
+			try
+			{
+				reload();
+			}
+			catch (IOException)
+			{
+				// The file was locked again between being read here and in the callback, so it's all read again shortly
+				reloadTime = Time.realtimeSinceStartup + ReloadDelay;
+				return;
+			}
 			Remember();
 			if (pluginName != null)
 			{

@@ -90,6 +90,17 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
+		/// Turns the eyes off on a dedicated server, which has nobody to show them to, so Start and Update don't run
+		/// </summary>
+		private void Awake()
+		{
+			if (ZNet.instance != null && ZNet.instance.IsDedicated())
+			{
+				enabled = false;
+			}
+		}
+
+		/// <summary>
 		/// Finds the creature's eye materials and glowing skin, or adds eyeballs to its eye bones when it has neither
 		/// </summary>
 		private void Start()

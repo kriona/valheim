@@ -6,7 +6,8 @@ Builds a mod in Release and packages it for GitHub Releases, Nexus Mods and Thun
 Reads the version from the mod's Plugin.cs, builds it, runs its tests in Tests\<Mod>.Tests if it has any, and writes two
 zips:
 - release\packages\<Mod>-<Version>.zip with the DLL at BepInEx\plugins\<Mod>\<Mod>.dll, for GitHub Releases, Nexus Mods
-  and installing by hand
+  and installing by hand, and the .blueprint files in the mod's Blueprints folder, if it has one, beside it in
+  BepInEx\plugins\<Mod>\Blueprints
 - release\thunderstore\Kriona-<Mod>-<Version>.zip with the same DLL plus manifest.json, icon.png, README.md and
   CHANGELOG.md at its root. The README's images and links point at GitHub, and the manifest's description is the mod's
   description in the root README's table
@@ -164,6 +165,33 @@ function Add-ZipText([System.IO.Compression.ZipArchive]$zip, [string]$entryName,
 
 <#
 .SYNOPSIS
+Adds the mod's Blueprints folder, when it has one, to a zip beside its DLL - the house designs a mod builds with
+
+.PARAMETER zip
+The open ZipArchive
+
+.PARAMETER modDir
+The mod's folder
+
+.PARAMETER mod
+The mod's name
+#>
+function Add-ZipBlueprints([System.IO.Compression.ZipArchive]$zip, [string]$modDir, [string]$mod)
+{
+	$folder = Join-Path $modDir 'Blueprints'
+	if (-not (Test-Path $folder))
+	{
+		return
+	}
+	foreach ($file in (Get-ChildItem $folder -Recurse -File -Filter '*.blueprint'))
+	{
+		$relative = $file.FullName.Substring($folder.Length + 1).Replace('\', '/')
+		[System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $file.FullName, 'BepInEx/plugins/' + $mod + '/Blueprints/' + $relative) | Out-Null
+	}
+}
+
+<#
+.SYNOPSIS
 Checks whether a GitHub release exists for a tag
 
 .PARAMETER tag
@@ -290,6 +318,7 @@ $zip = [System.IO.Compression.ZipFile]::Open($zipPath, 'Create')
 try
 {
 	[System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $dll, $dllEntry) | Out-Null
+	Add-ZipBlueprints $zip $modDir $mod
 }
 finally
 {
@@ -322,6 +351,7 @@ try
 		Add-ZipText $zip 'CHANGELOG.md' ([IO.File]::ReadAllText($changelogFile))
 	}
 	[System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $dll, $dllEntry) | Out-Null
+	Add-ZipBlueprints $zip $modDir $mod
 }
 finally
 {

@@ -39,23 +39,33 @@ namespace ZombieApocalypse
 		private static RandomEvent raid;
 
 		/// <summary>
-		/// Turns the raid on or off by VikingRaids, which a raid already underway doesn't notice since it runs as a copy
+		/// Turns the raid on or off by VikingRaids and Zombies, which a raid already underway doesn't notice since it runs
+		/// as a copy
 		/// </summary>
 		public static void UpdateEnabled()
 		{
 			if (raid != null)
 			{
-				raid.m_enabled = Plugin.VikingRaids.Value;
+				raid.m_enabled = Enabled();
 			}
 		}
 
 		/// <summary>
-		/// Adds the raid to the game's raids, once, turned on by VikingRaids
+		/// Checks whether the raid is on - VikingRaids, with zombies on (see Plugin.Zombies)
+		/// </summary>
+		/// <returns>True when it is</returns>
+		private static bool Enabled()
+		{
+			return(Plugin.VikingRaids.Value && Plugin.Zombies.Value);
+		}
+
+		/// <summary>
+		/// Adds the raid to the game's raids, once, turned on by VikingRaids and Zombies
 		/// </summary>
 		/// <param name="system">The raid system as it starts</param>
 		public static void Add(RandEventSystem system)
 		{
-			GameObject viking = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(ZombieViking.PrefabHash) : null);
+			GameObject viking = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(VikingCore.ZombiePrefabHash) : null);
 			if (viking == null || system.m_events.Any((RandomEvent existing) => existing.m_name == EventName))
 			{
 				return;
@@ -69,7 +79,7 @@ namespace ZombieApocalypse
 			}
 			raid = template.Clone();
 			raid.m_name = EventName;
-			raid.m_enabled = Plugin.VikingRaids.Value;
+			raid.m_enabled = Enabled();
 			raid.m_devDisabled = false;
 			raid.m_random = true;
 			raid.m_standaloneInterval = 0f;
@@ -146,10 +156,21 @@ namespace ZombieApocalypse
 			spawn.m_outsideForest = true;
 			spawn.m_minDistanceFromCenter = 0f;
 			spawn.m_maxDistanceFromCenter = 0f;
-			spawn.m_maxSpawned = Mathf.Max(1, Mathf.RoundToInt(template.m_maxSpawned * SpawnScale));
+			spawn.m_maxSpawned = Scaled(template.m_maxSpawned);
 			spawn.m_groupSizeMin = 1;
-			spawn.m_groupSizeMax = Mathf.Max(1, Mathf.RoundToInt(template.m_groupSizeMax * SpawnScale));
+			spawn.m_groupSizeMax = Scaled(template.m_groupSizeMax);
 			return(spawn);
+		}
+
+		/// <summary>
+		/// Works out how many vikings come for a number of the draugr of the raid it copies - SpawnScale as many, rounded,
+		/// and at least one
+		/// </summary>
+		/// <param name="draugr">How many draugr</param>
+		/// <returns>How many vikings</returns>
+		internal static int Scaled(int draugr)
+		{
+			return(Mathf.Max(1, Mathf.RoundToInt(draugr * SpawnScale)));
 		}
 	}
 

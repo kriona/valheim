@@ -55,7 +55,7 @@ namespace ZombieApocalypse
 		/// </summary>
 		private void Update()
 		{
-			float scale = SpeedScale();
+			float scale = SpeedScale(character.GetHealth(), character.GetMaxHealth(), Plugin.WoundedSpeed.Value);
 			for (int i = 0; i < SpeedCount; i++)
 			{
 				float speed = GetSpeed(i);
@@ -69,22 +69,25 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Works out how fast the zombie moves for its health
+		/// Works out how fast a zombie moves for its health, as a fraction of its full speed
 		/// </summary>
-		/// <returns>1 at half health or more, down to WoundedSpeed as a fraction at none</returns>
-		private float SpeedScale()
+		/// <param name="health">Its health</param>
+		/// <param name="maxHealth">Its health when unhurt</param>
+		/// <param name="woundedSpeed">How fast it moves as its health runs out, as a percent of its full speed (see
+		/// Plugin.WoundedSpeed)</param>
+		/// <returns>1 at half health or more, or with no health to lose, down to woundedSpeed as a fraction at none</returns>
+		internal static float SpeedScale(float health, float maxHealth, int woundedSpeed)
 		{
-			float maxHealth = character.GetMaxHealth();
 			if (maxHealth <= 0f)
 			{
 				return(1f);
 			}
-			float health = Mathf.Clamp01(character.GetHealth() / maxHealth);
-			if (health >= SlowBelow)
+			float share = Mathf.Clamp01(health / maxHealth);
+			if (share >= SlowBelow)
 			{
 				return(1f);
 			}
-			return(Mathf.Lerp(Plugin.WoundedSpeed.Value / 100f, 1f, health / SlowBelow));
+			return(Mathf.Lerp(woundedSpeed / 100f, 1f, share / SlowBelow));
 		}
 
 		/// <summary>

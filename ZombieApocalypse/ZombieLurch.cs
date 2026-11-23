@@ -228,6 +228,12 @@ namespace ZombieApocalypse
 		private bool applied;
 
 		/// <summary>
+		/// The zombie's skinned meshes, inactive ones and every level of detail included, so the bones are only bent
+		/// while one of them is drawn
+		/// </summary>
+		private SkinnedMeshRenderer[] bodies;
+
+		/// <summary>
 		/// 1 when the stiff leg and hanging arm are on the right, -1 on the left
 		/// </summary>
 		private int side;
@@ -317,6 +323,7 @@ namespace ZombieApocalypse
 				return;
 			}
 			ai = GetComponent<MonsterAI>();
+			bodies = GetComponentsInChildren<SkinnedMeshRenderer>(true);
 			lastPosition = transform.position;
 			StartCoroutine(PutBack());
 		}
@@ -351,7 +358,7 @@ namespace ZombieApocalypse
 			weight = Mathf.MoveTowards(weight, (able && stance != Stance.Unknown ? 1f : 0f), dt / FadeTime);
 			freeWeight = Mathf.MoveTowards(freeWeight, (busy ? 0f : 1f), dt / ActionFadeTime);
 			float amount = weight * lurchScore * Plugin.ZombieLurch.Value / 100f;
-			if (amount <= 0f)
+			if (amount <= 0f || !IsDrawn())
 			{
 				return;
 			}
@@ -529,6 +536,32 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
+		/// Checks whether any camera draws one of the zombie's skinned meshes, its shadow included
+		/// </summary>
+		/// <returns>True when one is drawn, or when the zombie has none left to check</returns>
+		private bool IsDrawn()
+		{
+			if (bodies == null)
+			{
+				return(true);
+			}
+			bool any = false;
+			foreach (SkinnedMeshRenderer body in bodies)
+			{
+				if (body == null)
+				{
+					continue;
+				}
+				if (body.isVisible)
+				{
+					return(true);
+				}
+				any = true;
+			}
+			return(!any);
+		}
+
+		/// <summary>
 		/// Turns a bone part of the way so a direction from it points another way
 		/// </summary>
 		/// <param name="bone">The bone</param>
@@ -673,7 +706,7 @@ namespace ZombieApocalypse
 		/// </summary>
 		/// <param name="name">The bone's name, in lower case</param>
 		/// <returns>-1 for the left, 1 for the right, or 0 when its name doesn't say</returns>
-		private static int Side(string name)
+		internal static int Side(string name)
 		{
 			if (name.StartsWith("left"))
 			{

@@ -37,13 +37,26 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Stops a zombie hunting players once the raid it joined has ended
+		/// Stops a zombie hunting players once the raid it joined has ended - on every client that has it loaded, so a
+		/// client that takes it over later doesn't keep it hunting, while only its owner writes its ZDO
 		/// </summary>
-		/// <param name="ai">The zombie's AI, owned by this client</param>
+		/// <remarks>
+		/// The game only reads a creature's hunt from its ZDO as it wakes, so a client that loaded the zombie during the
+		/// raid also takes the owner's end of the hunt from the ZDO
+		/// </remarks>
+		/// <param name="ai">The zombie's AI</param>
 		public static void Update(MonsterAI ai)
 		{
 			ZDO zdo = ai.m_nview.GetZDO();
-			if (zdo == null || !zdo.GetBool(HuntKey))
+			if (zdo == null)
+			{
+				return;
+			}
+			if (ai.m_huntPlayer && !ai.m_nview.IsOwner() && !zdo.GetBool(ZDOVars.s_huntPlayer, true))
+			{
+				ai.m_huntPlayer = false;
+			}
+			if (!zdo.GetBool(HuntKey))
 			{
 				return;
 			}
@@ -51,8 +64,12 @@ namespace ZombieApocalypse
 			{
 				return;
 			}
+			// Only the owner writes the game's own hunt flag to the ZDO, so on other clients this sets the AI's alone
 			ai.SetHuntPlayer(false);
-			zdo.Set(HuntKey, false);
+			if (ai.m_nview.IsOwner())
+			{
+				zdo.Set(HuntKey, false);
+			}
 		}
 	}
 

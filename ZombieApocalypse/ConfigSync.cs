@@ -103,6 +103,7 @@ namespace ZombieApocalypse
 		/// <param name="rpc">The client's connection</param>
 		public static void AddClient(ZRpc rpc)
 		{
+			ForgetDisconnected();
 			clients.Add(rpc);
 			Send(rpc);
 		}
@@ -110,6 +111,10 @@ namespace ZombieApocalypse
 		/// <summary>
 		/// Forgets the clients on a server, and reads the client's own settings again on a client, when leaving a world
 		/// </summary>
+		/// <remarks>
+		/// The settings in LocalSettings keep the values they had while connected, and are saved to the player's file
+		/// when they differ from it, since they're the player's own
+		/// </remarks>
 		public static void Leave()
 		{
 			clients.Clear();
@@ -119,17 +124,55 @@ namespace ZombieApocalypse
 				return;
 			}
 			serverValues = null;
+			Dictionary<ConfigDefinition, object> local = new Dictionary<ConfigDefinition, object>();
+			foreach (KeyValuePair<ConfigDefinition, ConfigEntryBase> pair in config)
+			{
+				if (LocalSettings.Contains(pair.Key.Key))
+				{
+					local[pair.Key] = pair.Value.BoxedValue;
+				}
+			}
+			bool differs = false;
 			applying = true;
 			try
 			{
 				config.Reload();
+				foreach (KeyValuePair<ConfigDefinition, object> pair in local)
+				{
+					ConfigEntryBase entry = config[pair.Key];
+					if (!Equals(entry.BoxedValue, pair.Value))
+					{
+						entry.BoxedValue = pair.Value;
+						differs = true;
+					}
+				}
 			}
 			finally
 			{
 				applying = false;
 				config.SaveOnConfigSet = savedSaveOnConfigSet;
 			}
+			if (differs && savedSaveOnConfigSet)
+			{
+				config.Save();
+			}
 			Plugin.Log.LogInfo("Left the server, so using this game's own settings again");
+		}
+
+		/// <summary>
+		/// Forgets the clients on a server that have disconnected
+		/// </summary>
+		private static void ForgetDisconnected()
+		{
+			HashSet<ZRpc> connected = new HashSet<ZRpc>();
+			foreach (ZNetPeer peer in ZNet.instance.GetPeers())
+			{
+				if (peer.m_rpc != null)
+				{
+					connected.Add(peer.m_rpc);
+				}
+			}
+			clients.IntersectWith(connected);
 		}
 
 		/// <summary>

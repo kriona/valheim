@@ -159,13 +159,13 @@ namespace ZombieApocalypse
 
 	/// <summary>
 	/// Notes whether each hit that becomes a creature's last dealt spirit damage, so a creature killed by one stays
-	/// dead
+	/// dead, and counts the fire each hit deals, so a creature burned enough stays dead too
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
 	public static class SpiritHitPatch
 	{
 		/// <summary>
-		/// Reads the hit's spirit damage before the creature's resistances take it away
+		/// Reads the hit's spirit damage before the creature's resistances take it away, and counts its fire
 		/// </summary>
 		/// <param name="__instance">The creature being hit</param>
 		/// <param name="hit">The hit</param>
@@ -173,6 +173,10 @@ namespace ZombieApocalypse
 		private static void Prefix(Character __instance, HitData hit, out (HitData lastHit, bool spirit) __state)
 		{
 			__state = (__instance.m_lastHit, hit != null && hit.m_damage.m_spirit > 0f);
+			if (__instance.m_nview != null && __instance.m_nview.IsValid() && __instance.m_nview.IsOwner() && !__instance.IsDead())
+			{
+				FireKills.Count(__instance, hit);
+			}
 		}
 
 		/// <summary>
@@ -186,6 +190,39 @@ namespace ZombieApocalypse
 			{
 				SpiritKills.SetLastHit(__instance, __state.spirit);
 			}
+		}
+	}
+
+	/// <summary>
+	/// Takes the health a creature gets back off the damage counted for it, however it heals (see FireKills)
+	/// </summary>
+	[HarmonyPatch(typeof(Character), nameof(Character.SetHealth))]
+	public static class FireHealPatch
+	{
+		/// <summary>
+		/// Reads the creature's health before it's set
+		/// </summary>
+		/// <param name="__instance">The creature</param>
+		/// <param name="__state">Its health before, or -1 when this client doesn't own it</param>
+		private static void Prefix(Character __instance, out float __state)
+		{
+			ZDO zdo = ((__instance.m_nview != null) ? __instance.m_nview.GetZDO() : null);
+			__state = ((zdo != null && __instance.m_nview.IsOwner()) ? __instance.GetHealth() : -1f);
+		}
+
+		/// <summary>
+		/// Takes what the creature got back off its counted damage
+		/// </summary>
+		/// <param name="__instance">The creature</param>
+		/// <param name="health">The health it was set to</param>
+		/// <param name="__state">Its health before</param>
+		private static void Postfix(Character __instance, float health, float __state)
+		{
+			if (__state < 0f || health <= __state)
+			{
+				return;
+			}
+			FireKills.Heal(__instance, health - __state, health >= __instance.GetMaxHealth());
 		}
 	}
 
@@ -258,7 +295,7 @@ namespace ZombieApocalypse
 			{
 				__instance.gameObject.AddComponent<CorpseItems>();
 			}
-			ZombieViking.HandToCorpse(Dying.Creature, zdo);
+			VikingCore.HandToCorpse(Dying.Creature, zdo);
 			__instance.gameObject.AddComponent<RisingCorpse>();
 		}
 	}

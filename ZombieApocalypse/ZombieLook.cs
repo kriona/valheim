@@ -28,6 +28,18 @@ namespace ZombieApocalypse
 		private float nextRefresh;
 
 		/// <summary>
+		/// Turns the look off on a dedicated server, which has nobody to show it to, leaving the component for others to
+		/// set Amount on
+		/// </summary>
+		private void Awake()
+		{
+			if (ZNet.instance != null && ZNet.instance.IsDedicated())
+			{
+				enabled = false;
+			}
+		}
+
+		/// <summary>
 		/// Applies the look when Amount has changed or a second has passed
 		/// </summary>
 		private void Update()
@@ -50,7 +62,7 @@ namespace ZombieApocalypse
 			appliedAmount = Amount;
 			nextRefresh = Time.time + RefreshInterval;
 			Color tint = Color.Lerp(Color.white, Plugin.ZombieColor.Value, Amount);
-			int step = Mathf.CeilToInt(Amount * Mottling.Steps);
+			int step = Mottling.StepFor(Amount);
 			foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
 			{
 				if (!(renderer is SkinnedMeshRenderer) && !(renderer is MeshRenderer))

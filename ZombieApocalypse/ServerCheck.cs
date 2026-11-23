@@ -96,18 +96,25 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
-	/// Forgets the server and its settings when leaving a world
+	/// Forgets the server, its settings and what was noted in its world when leaving a world
 	/// </summary>
 	[HarmonyPatch(typeof(ZNet), nameof(ZNet.OnDestroy))]
 	public static class ServerCheckLeavePatch
 	{
 		/// <summary>
-		/// Turns the mod off until the next server answers, and goes back to this game's own settings
+		/// Turns the mod off until the next server answers, goes back to this game's own settings, and forgets what was
+		/// noted in the world - the villages' timers, what was read from them and the server's answers about them, which
+		/// are by the world's ZDOs, and the forsaken power's cooldown, which is in the world's time
 		/// </summary>
 		private static void Postfix()
 		{
 			ServerCheck.Clear();
 			ConfigSync.Leave();
+			VillageRespawn.Forget();
+			VillageRecords.Forget();
+			VillageLocations.Forget();
+			FarmLayout.Forget();
+			VikingCore.ResetPowerCooldown();
 		}
 	}
 }

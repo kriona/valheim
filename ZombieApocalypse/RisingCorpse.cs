@@ -17,6 +17,12 @@ namespace ZombieApocalypse
 	/// </remarks>
 	internal class RisingCorpse : MonoBehaviour
 	{
+		/// <summary>
+		/// How many steps the corpse's tint takes on its way to the zombie's, since the look is applied again each time
+		/// its amount changes
+		/// </summary>
+		private const float TintSteps = 20f;
+
 		private Ragdoll ragdoll;
 		private ZNetView nview;
 		private ZombieLook look;
@@ -77,7 +83,8 @@ namespace ZombieApocalypse
 			long riseAt = zdo.GetLong(Zombies.RiseAtKey);
 			if (!handedOver)
 			{
-				look.Amount = ((riseAt > diedAt) ? Mathf.Clamp01((float)(now - diedAt) / (riseAt - diedAt)) : 1f);
+				float amount = ((riseAt > diedAt) ? Mathf.Clamp01((float)(now - diedAt) / (riseAt - diedAt)) : 1f);
+				look.Amount = (Mathf.Round(amount * TintSteps) / TintSteps);
 			}
 			ZDOID zombieId = zdo.GetZDOID(Zombies.ZombieIdKey);
 			if (zombieId.IsNone())
@@ -145,15 +152,15 @@ namespace ZombieApocalypse
 			if (zombie == null)
 			{
 				ragdoll.SpawnLoot((ragdoll.m_lootSpawnJoint != null) ? ragdoll.m_lootSpawnJoint.transform.position : middle);
-				ZombieViking.DropGrave(zdo, middle, facing);
+				VikingCore.DropGrave(zdo, middle, facing);
 				ZNetScene.instance.Destroy(gameObject);
 				return;
 			}
 			// A player's corpse holds the things their viking carries, and the viking guards their tombstone rather than
 			// joining a raid
-			if (zdo.GetByteArray(ZombieViking.DataKey) != null)
+			if (zdo.GetByteArray(VikingCore.DataKey) != null)
 			{
-				ZombieViking.HandOver(zdo, zombie);
+				VikingCore.HandOver(zdo, zombie);
 			}
 			else
 			{

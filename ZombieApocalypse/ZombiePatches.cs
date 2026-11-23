@@ -18,7 +18,7 @@ namespace ZombieApocalypse
 		/// <param name="__instance">The creature loading</param>
 		private static void Postfix(Character __instance)
 		{
-			if (!__instance.IsPlayer() && (Zombies.IsZombie(__instance) || ZombieViking.IsViking(__instance)))
+			if (!__instance.IsPlayer() && (Zombies.IsZombie(__instance) || VikingCore.IsZombieViking(__instance)))
 			{
 				Zombies.Apply(__instance);
 			}

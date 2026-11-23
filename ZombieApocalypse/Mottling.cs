@@ -130,9 +130,7 @@ namespace ZombieApocalypse
 			Texture2D copy = ReadableCopy(source);
 			Color32[] pixels = copy.GetPixels32();
 			// Offsets the noise by the texture's name so each creature gets its own patches
-			int seed = source.name.GetStableHashCode();
-			float offsetX = (seed & 0xFFFF) / 97f;
-			float offsetY = ((seed >> 16) & 0xFFFF) / 89f;
+			NoiseOffsets(source.name.GetStableHashCode(), out float offsetX, out float offsetY);
 			for (int y = 0; y < height; y++)
 			{
 				float v = (float)y / height * size;
@@ -140,32 +138,77 @@ namespace ZombieApocalypse
 				{
 					float u = (float)x / width * size;
 					float noise = 0.65f * Mathf.PerlinNoise(u + offsetX, v + offsetY) + 0.35f * Mathf.PerlinNoise(u * 2.3f + offsetY, v * 2.3f + offsetX);
-					float patch = Mathf.Clamp01((noise - PatchStart) / (PatchFull - PatchStart));
-					float shade = 1f - strength * patch * patch * (3f - 2f * patch);
 					int index = y * width + x;
-					Color32 pixel = pixels[index];
-					float r = pixel.r;
-					float g = pixel.g;
-					float b = pixel.b;
-					if (saturation != 0f)
-					{
-						// Moves each channel toward or away from the pixel's gray, by its brightness as the eye sees it
-						float gray = 0.299f * r + 0.587f * g + 0.114f * b;
-						float keep = 1f + saturation;
-						r = gray + (r - gray) * keep;
-						g = gray + (g - gray) * keep;
-						b = gray + (b - gray) * keep;
-					}
-					pixel.r = (byte)Mathf.Clamp(r * shade, 0f, 255f);
-					pixel.g = (byte)Mathf.Clamp(g * shade, 0f, 255f);
-					pixel.b = (byte)Mathf.Clamp(b * shade, 0f, 255f);
-					pixels[index] = pixel;
+					pixels[index] = Tint(pixels[index], Shade(noise, strength), saturation);
 				}
 			}
 			copy.SetPixels32(pixels);
 			copy.Apply(true, true);
 			copy.name = source.name + " (zombie)";
 			return(copy);
+		}
+
+		/// <summary>
+		/// Works out how far a texture's noise is offset, from a seed, so each texture gets its own patches
+		/// </summary>
+		/// <param name="seed">The seed, from the texture's name</param>
+		/// <param name="offsetX">How far the noise is offset across</param>
+		/// <param name="offsetY">How far the noise is offset down</param>
+		internal static void NoiseOffsets(int seed, out float offsetX, out float offsetY)
+		{
+			offsetX = (seed & 0xFFFF) / 97f;
+			offsetY = ((seed >> 16) & 0xFFFF) / 89f;
+		}
+
+		/// <summary>
+		/// Works out how much a pixel is darkened for the noise there - not at all below PatchStart, fully at PatchFull and
+		/// above, and smoothly between
+		/// </summary>
+		/// <param name="noise">The noise at the pixel</param>
+		/// <param name="strength">How dark the darkest patches are, from 0 for not at all to 1 for black</param>
+		/// <returns>What the pixel's color is multiplied by, from 1 for unchanged</returns>
+		internal static float Shade(float noise, float strength)
+		{
+			float patch = Mathf.Clamp01((noise - PatchStart) / (PatchFull - PatchStart));
+			return(1f - strength * patch * patch * (3f - 2f * patch));
+		}
+
+		/// <summary>
+		/// Washes out or strengthens a pixel's color and darkens it, keeping its alpha
+		/// </summary>
+		/// <param name="pixel">The pixel</param>
+		/// <param name="shade">What its color is multiplied by (see Shade)</param>
+		/// <param name="saturation">How much to wash out the color, from 0 for not at all to -1 for gray, or above 0 to
+		/// strengthen it</param>
+		/// <returns>The changed pixel</returns>
+		internal static Color32 Tint(Color32 pixel, float shade, float saturation)
+		{
+			float r = pixel.r;
+			float g = pixel.g;
+			float b = pixel.b;
+			if (saturation != 0f)
+			{
+				// Moves each channel toward or away from the pixel's gray, by its brightness as the eye sees it
+				float gray = 0.299f * r + 0.587f * g + 0.114f * b;
+				float keep = 1f + saturation;
+				r = gray + (r - gray) * keep;
+				g = gray + (g - gray) * keep;
+				b = gray + (b - gray) * keep;
+			}
+			pixel.r = (byte)Mathf.Clamp(r * shade, 0f, 255f);
+			pixel.g = (byte)Mathf.Clamp(g * shade, 0f, 255f);
+			pixel.b = (byte)Mathf.Clamp(b * shade, 0f, 255f);
+			return(pixel);
+		}
+
+		/// <summary>
+		/// Works out which strength step a zombie's look is at
+		/// </summary>
+		/// <param name="amount">How far the look has come on, from 0 to 1</param>
+		/// <returns>The step, from 0 for none to Steps for full strength</returns>
+		internal static int StepFor(float amount)
+		{
+			return(Mathf.CeilToInt(amount * Steps));
 		}
 	}
 }

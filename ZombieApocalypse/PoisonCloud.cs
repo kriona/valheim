@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ZombieApocalypse
@@ -111,6 +112,21 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
+		/// Checks whether a zombie's corpse at a point might leave a cloud as it rots away - from FirstBiome on, while
+		/// PoisonCloudChance is above 0
+		/// </summary>
+		/// <param name="position">Where the corpse lies</param>
+		/// <returns>True when it might</returns>
+		public static bool CanLeaveCloud(Vector3 position)
+		{
+			if (Plugin.PoisonCloudChance.Value <= 0f || WorldGenerator.instance == null)
+			{
+				return(false);
+			}
+			return(VikingGear.IndexOf(WorldGenerator.instance.GetBiome(position)) >= VikingGear.IndexOf(FirstBiome));
+		}
+
+		/// <summary>
 		/// Leaves a cloud where a zombie's corpse rots away, by the config's PoisonCloudChance, from FirstBiome on
 		/// </summary>
 		/// <param name="corpse">The corpse, owned by this client, as it's removed</param>
@@ -140,8 +156,29 @@ namespace ZombieApocalypse
 	/// </summary>
 	internal class PoisonCloudFade : MonoBehaviour
 	{
+		/// <summary>
+		/// The clouds in the world, so they can be found without looking through every loaded object
+		/// </summary>
+		public static readonly List<PoisonCloudFade> Clouds = new List<PoisonCloudFade>();
+
 		private float stopTime;
 		private bool stopped;
+
+		/// <summary>
+		/// Adds the cloud to Clouds
+		/// </summary>
+		private void Awake()
+		{
+			Clouds.Add(this);
+		}
+
+		/// <summary>
+		/// Takes the cloud out of Clouds as it's removed
+		/// </summary>
+		private void OnDestroy()
+		{
+			Clouds.Remove(this);
+		}
 
 		/// <summary>
 		/// Sets when the particles stop
