@@ -12,7 +12,7 @@ namespace TweakStats
 	{
 		public const string PluginGuid = "kriona.TweakStats";
 		public const string PluginName = "Tweak Stats";
-		public const string PluginVersion = "1.0.0";
+		public const string PluginVersion = "1.0.1";
 
 		public static ManualLogSource Log;
 

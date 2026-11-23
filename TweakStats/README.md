@@ -245,7 +245,7 @@ requireMod = auto
 | `true` | Always requires the mod |
 | `false` | Lets anyone join |
 
-A refused player sees the game's "incompatible version" message, and a player with a different version of the mod also gets the reason in their log.
+A refused player sees the game's "incompatible version" message. When they have Tweak Stats or any other mod by Kriona installed, the message also says which version of Tweak Stats the server requires and which they have, so a player who only has Zombie Apocalypse finds out they need Tweak Stats too. The server's log names each player it refuses and why.
 
 With `requireMod = false`, a player without the mod runs the creatures and build pieces near them with the game's own values, so the same creature can have different stats depending on who's near it.
 

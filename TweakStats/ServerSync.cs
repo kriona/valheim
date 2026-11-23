@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Kriona.Shared;
 
 namespace TweakStats
 {
@@ -15,7 +16,6 @@ namespace TweakStats
 	{
 		private const string VersionRpc = Plugin.PluginGuid + ".Version";
 		private const string ConfigRpc = Plugin.PluginGuid + ".Config";
-		private const string RefusedRpc = Plugin.PluginGuid + ".Refused";
 
 		/// <summary>
 		/// The version each connected client with the mod sent, by its connection
@@ -35,7 +35,6 @@ namespace TweakStats
 				return;
 			}
 			peer.m_rpc.Register<ZPackage>(ConfigRpc, RPC_Config);
-			peer.m_rpc.Register<string>(RefusedRpc, RPC_Refused);
 			peer.m_rpc.Invoke(VersionRpc, Plugin.PluginVersion);
 		}
 
@@ -50,17 +49,18 @@ namespace TweakStats
 			{
 				return(true);
 			}
+			string player = rpc.GetSocket().GetHostName();
+			string required = "This server requires " + Plugin.PluginName + " " + MinorVersion(Plugin.PluginVersion);
 			if (!clientVersions.TryGetValue(rpc, out string version))
 			{
-				Plugin.Log.LogInfo("Refused a player without " + Plugin.PluginName + ", which this server requires");
-				rpc.Invoke("Error", (int)ZNet.ConnectionStatus.ErrorVersion);
+				Plugin.Log.LogWarning("Refused " + player + ", who doesn't have " + Plugin.PluginName + ", which this server requires");
+				ConnectRefusal.Refuse(rpc, required + ", and you don't have it");
 				return(false);
 			}
 			if (!SameMinorVersion(version, Plugin.PluginVersion))
 			{
-				Plugin.Log.LogInfo("Refused a player with " + Plugin.PluginName + " " + version + ", since this server has " + Plugin.PluginVersion);
-				rpc.Invoke(RefusedRpc, "This server requires " + Plugin.PluginName + " " + MinorVersion(Plugin.PluginVersion) + ", and you have " + version);
-				rpc.Invoke("Error", (int)ZNet.ConnectionStatus.ErrorVersion);
+				Plugin.Log.LogWarning("Refused " + player + ", who has " + Plugin.PluginName + " " + version + ", since this server has " + Plugin.PluginVersion);
+				ConnectRefusal.Refuse(rpc, required + ", and you have " + version);
 				return(false);
 			}
 			return(true);
@@ -150,16 +150,6 @@ namespace TweakStats
 		private static void RPC_Config(ZRpc rpc, ZPackage package)
 		{
 			Tweaks.UseServerConfig(package.ReadString());
-		}
-
-		/// <summary>
-		/// Logs why the server refused this game, since the game itself only says the version doesn't match
-		/// </summary>
-		/// <param name="rpc">The server's connection</param>
-		/// <param name="reason">Why the server refused it</param>
-		private static void RPC_Refused(ZRpc rpc, string reason)
-		{
-			Plugin.Log.LogWarning(reason);
 		}
 
 		/// <summary>
