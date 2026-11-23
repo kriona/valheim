@@ -47,7 +47,8 @@ namespace VikingVillages
 		/// their night watch, their records and the vikings they're missing - tames the farms' pen animals that came
 		/// out wild, shows the villages' areas the player turns on, notes the villages' reach for running all of a village
 		/// the player is in (see VillageSimulation), moves a dedicated server's own area to the village it runs (see
-		/// ServerVillageRun), and runs the test log's checks (see TestLog)
+		/// ServerVillageRun), keeps the news the vikings tell and watches for more (see VikingNewsStore and
+		/// VikingNewsWatch), and runs the test log's checks (see TestLog)
 		/// </summary>
 		private void Update()
 		{
@@ -71,6 +72,8 @@ namespace VikingVillages
 			VillageStock.Update();
 			VillageSimulation.Update();
 			ServerVillageRun.Update();
+			VikingNewsStore.Update();
+			VikingNewsWatch.Update();
 			TestLog.Update();
 		}
 

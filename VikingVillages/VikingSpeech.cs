@@ -13,7 +13,7 @@ namespace VikingVillages
 	/// corpse of one of their village
 	/// </summary>
 	/// <remarks>
-	/// Every line here is listed in the "What Vikings Say" tables of the mod's README, which change along with them
+	/// Every line here is listed in the mod's DIALOG.md, which changes along with them
 	/// </remarks>
 	internal static class VikingSpeech
 	{
@@ -1276,7 +1276,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Notes that a viking knows a player, forgetting the one it met longest ago once it knows KnownMax
+		/// Notes that a viking knows a player, forgetting the one it met longest ago once it knows KnownMax - and that it
+		/// talked to them now, so it only tells them news from after they met (see VikingIdentity)
 		/// </summary>
 		/// <param name="viking">The viking, owned by this client</param>
 		/// <param name="playerId">The player's ID</param>
@@ -1293,6 +1294,7 @@ namespace VikingVillages
 				return;
 			}
 			known.Add(playerId);
+			VikingIdentity.Talked(zdo, playerId, NetTime.Now());
 			if (known.Count > KnownMax)
 			{
 				known.RemoveAt(0);

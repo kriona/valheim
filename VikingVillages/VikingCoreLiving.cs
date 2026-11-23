@@ -143,11 +143,13 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Adds the living viking's door line to its debug summary (see VikingDoors.DebugLine)
+		/// Adds the living viking's ID (see VikingIdentity) and door line (see VikingDoors.DebugLine) to its debug summary
 		/// </summary>
 		/// <param name="text">The summary so far</param>
 		partial void AddDebugLines(System.Text.StringBuilder text)
 		{
+			string id = ((humanoid.m_nview != null) ? VikingIdentity.Get(humanoid.m_nview.GetZDO()) : "");
+			text.Append("ID: " + ((id.Length > 0) ? id : "none yet") + "\n");
 			text.Append(VikingDoors.DebugLine(humanoid));
 		}
 

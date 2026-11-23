@@ -72,6 +72,11 @@ namespace VikingVillages
 		private float nextAnswer;
 
 		/// <summary>
+		/// Whether the viking has its ID, so its owner stops checking (see VikingIdentity)
+		/// </summary>
+		private bool hasId;
+
+		/// <summary>
 		/// On a bed or fire, the viking that has claimed it, and until when in ZNet time ticks
 		/// </summary>
 		private const string ClaimKey = "kriona.VikingVillages.vikingClaim";
@@ -2140,8 +2145,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Answers a player talking to the viking, on its owner - in a fight it's busy and asleep it's sleepy, it greets
-		/// a player it has never met as a stranger with a wave and remembers them, and chats with one it knows, turning
-		/// to them either way
+		/// a player it has never met as a stranger with a wave and remembers them, and chats with one it knows or tells
+		/// them its news of them (see VikingNewsStore), turning to them either way
 		/// </summary>
 		/// <param name="sender">The client that sent it</param>
 		/// <param name="playerId">The player's ZDO</param>
@@ -2171,7 +2176,8 @@ namespace VikingVillages
 			playerLastNear[player.GetZDOID()] = Time.time;
 			if (VikingSpeech.Knows(humanoid, player.GetPlayerID()))
 			{
-				VikingSpeech.Say(humanoid, VikingSpeech.Answer(player, IsNight(), VillageNames.Get(village)), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+				string news = VikingNewsStore.Tell(humanoid, player, NewsBiome());
+				VikingSpeech.Say(humanoid, news ?? VikingSpeech.Answer(player, IsNight(), VillageNames.Get(village)), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 				greeting = player;
 				greetUntil = Time.time + GreetFaceTime;
 				return;
@@ -2197,7 +2203,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Greets a player - turning to them with a wave and a word, by name for a player it knows and as a stranger
-		/// otherwise - and remembers them
+		/// otherwise - and remembers them. A player it knows may hear its news of them in place of the word (see
+		/// VikingNewsStore)
 		/// </summary>
 		/// <param name="player">The player</param>
 		private void Greet(Player player)
@@ -2206,8 +2213,19 @@ namespace VikingVillages
 			greeting = player;
 			greetUntil = Time.time + GreetFaceTime;
 			VikingPoses.Wave(humanoid);
-			VikingSpeech.Say(humanoid, VikingSpeech.Greeting(player, IsNight(), known, VikingNames.Get(humanoid), VillageNames.Get(village)), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+			string news = (known ? VikingNewsStore.Tell(humanoid, player, NewsBiome()) : null);
+			VikingSpeech.Say(humanoid, news ?? VikingSpeech.Greeting(player, IsNight(), known, VikingNames.Get(humanoid), VillageNames.Get(village)), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 			VikingSpeech.Meet(humanoid, player.GetPlayerID());
+		}
+
+		/// <summary>
+		/// Gets the index of the viking's biome, for how impressed it is by news of a boss or biome beyond it (see
+		/// VikingNewsLines.ImpressedKey)
+		/// </summary>
+		/// <returns>The index into VikingGear's tables</returns>
+		private int NewsBiome()
+		{
+			return((viking != null) ? viking.BiomeIndex() : 0);
 		}
 
 		/// <summary>
@@ -2226,11 +2244,16 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Keeps a viking lying in bed or sitting on a chair where it lies or sits, puts on and takes off its gear, and
-		/// closes the chest it opened once it's done with it, on its owner
+		/// closes the chest it opened once it's done with it, on its owner - and gives it an ID of its own the first
+		/// time (see VikingIdentity)
 		/// </summary>
 		private void FixedUpdate()
 		{
 			bool owner = (nview != null && nview.IsValid() && nview.IsOwner());
+			if (owner && !hasId)
+			{
+				hasId = (VikingIdentity.Ensure(nview).Length > 0);
+			}
 			if (attachPoint != null && owner)
 			{
 				HoldAttached();
