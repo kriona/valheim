@@ -1,0 +1,42 @@
+<Project>
+
+	<!-- Shared by every test project below this folder. Each is named <Mod>.Tests, references its mod's project and
+	sees the mod's internal code, and builds against the same game DLLs as the mods through the root
+	Directory.Build.props -->
+
+	<PropertyGroup>
+		<IsModTests>true</IsModTests>
+		<ModName>$(MSBuildProjectName.Replace('.Tests', ''))</ModName>
+	</PropertyGroup>
+
+	<Import Project="$(MSBuildThisFileDirectory)..\Directory.Build.props" />
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+		<Nullable>disable</Nullable>
+	</PropertyGroup>
+
+	<!-- xunit.v3 runs on Microsoft.Testing.Platform, which global.json in the root turns on for dotnet test -->
+	<ItemGroup>
+		<PackageReference Include="xunit.v3" Version="4.0.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="Xunit" />
+		<Compile Include="$(MSBuildThisFileDirectory)Shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+		<ProjectReference Include="$(MSBuildThisFileDirectory)..\$(ModName)\$(ModName).csproj" />
+		<!-- The game and BepInEx DLLs aren't copied beside the tests - these let GameAssemblies load them from where
+		the build found them -->
+		<AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+			<_Parameter1>GameFolder</_Parameter1>
+			<_Parameter2>$(ManagedPath)</_Parameter2>
+		</AssemblyAttribute>
+		<AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+			<_Parameter1>GameFolder</_Parameter1>
+			<_Parameter2>$(BepInExPath)\core</_Parameter2>
+		</AssemblyAttribute>
+	</ItemGroup>
+
+</Project>

@@ -3,7 +3,8 @@
 Builds a mod in Release and packages it for GitHub Releases, Nexus Mods and Thunderstore, optionally publishing it
 
 .DESCRIPTION
-Reads the version from the mod's Plugin.cs, builds it and writes two zips:
+Reads the version from the mod's Plugin.cs, builds it, runs its tests in Tests\<Mod>.Tests if it has any, and writes two
+zips:
 - release\packages\<Mod>-<Version>.zip with the DLL at BepInEx\plugins\<Mod>\<Mod>.dll, for GitHub Releases, Nexus Mods
   and installing by hand
 - release\thunderstore\Kriona-<Mod>-<Version>.zip with the same DLL plus manifest.json, icon.png, README.md and
@@ -260,6 +261,16 @@ dotnet build $project -c Release
 if ($LASTEXITCODE -ne 0)
 {
 	throw ('Build failed for ' + $mod)
+}
+
+$testProject = Join-Path $root ('Tests\' + $mod + '.Tests\' + $mod + '.Tests.csproj')
+if (Test-Path $testProject)
+{
+	dotnet test --project $testProject -c Release
+	if ($LASTEXITCODE -ne 0)
+	{
+		throw ('Tests failed for ' + $mod)
+	}
 }
 
 $dll = Join-Path $modDir ('bin\Release\netstandard2.1\' + $mod + '.dll')

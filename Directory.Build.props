@@ -1,9 +1,11 @@
 <Project>
 
-	<!-- Shared by every mod project below this folder - each .csproj only adds the references it needs on top of these -->
+	<!-- Shared by every mod project below this folder - each .csproj only adds the references it needs on top of these.
+	Test projects under Tests\ import this too, through Tests\Directory.Build.props, which sets IsModTests first -->
 
 	<PropertyGroup>
-		<TargetFramework>netstandard2.1</TargetFramework>
+		<TargetFramework Condition="'$(IsModTests)' != 'true'">netstandard2.1</TargetFramework>
+		<TargetFramework Condition="'$(IsModTests)' == 'true'">net10.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -32,9 +34,11 @@
 		<PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3" PrivateAssets="all" />
 	</ItemGroup>
 
-	<!-- Code shared by every mod, compiled into each one so nothing extra has to be installed -->
-	<ItemGroup>
+	<!-- Code shared by every mod, compiled into each one so nothing extra has to be installed. A mod's tests reach its
+	copy, and the rest of its internal code, through InternalsVisibleTo -->
+	<ItemGroup Condition="'$(IsModTests)' != 'true'">
 		<Compile Include="$(MSBuildThisFileDirectory)Shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+		<InternalsVisibleTo Include="$(MSBuildProjectName).Tests" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -69,7 +73,7 @@
 	</ItemGroup>
 
 	<!-- A Release build also copies the mod's DLL into release\dlls, beside the packages and bbcode folders the scripts write -->
-	<Target Name="CopyToReleaseFolder" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+	<Target Name="CopyToReleaseFolder" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' And '$(IsModTests)' != 'true'">
 		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MSBuildThisFileDirectory)release\dlls" SkipUnchangedFiles="true" />
 	</Target>
 
