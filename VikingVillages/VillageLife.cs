@@ -1993,8 +1993,9 @@ namespace VikingVillages
 				return;
 			}
 			// Weapons are left out - the viking picks the best of its own as each fight calls for (see
-			// VikingCore.ChooseWeapon)
-			List<ItemDrop.ItemData> unworn = humanoid.GetInventory().GetAllItems().FindAll((ItemDrop.ItemData item) => IsGear(item) && !item.IsWeapon() && !VikingItems.IsCarried(item) && !VikingItems.IsProp(item) && !humanoid.IsItemEquiped(item) && viking.WouldTakeUp(item));
+			// VikingCore.ChooseWeapon) - and so are its dverger circlet and helmets, while it puts those on and takes them
+			// off as it wants light (see VikingCore.UpdateTorch)
+			List<ItemDrop.ItemData> unworn = humanoid.GetInventory().GetAllItems().FindAll((ItemDrop.ItemData item) => IsGear(item) && !item.IsWeapon() && !VikingItems.IsCarried(item) && !VikingItems.IsProp(item) && !humanoid.IsItemEquiped(item) && !viking.SwapsForLight(item) && viking.WouldTakeUp(item));
 			List<ItemDrop.ItemData> forgotten = new List<ItemDrop.ItemData>();
 			foreach (ItemDrop.ItemData item in unwornSince.Keys)
 			{
@@ -16014,11 +16015,15 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Checks whether the viking needs a new torch - it has none of its own, or its only one has burnt down to
-		/// TorchReplaceShare of its strength
+		/// TorchReplaceShare of its strength - which it never does with a dverger circlet of its own to light its way
 		/// </summary>
 		/// <returns>True when it does</returns>
 		private bool NeedsTorch()
 		{
+			if (viking != null && viking.HasCirclet())
+			{
+				return(false);
+			}
 			List<ItemDrop.ItemData> torches = humanoid.GetInventory().GetAllItems().FindAll((ItemDrop.ItemData item) => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch && !VikingItems.IsCarried(item));
 			if (torches.Count != 1)
 			{
@@ -16031,11 +16036,15 @@ namespace VikingVillages
 		/// <summary>
 		/// Checks whether the viking's torches won't see it through the dark - for the night watch, when they don't hold
 		/// enough burn between them to last the rest of its shift (see WatchLeft), and for any other viking, when it has
-		/// none of its own at all
+		/// none of its own at all. A viking with a dverger circlet of its own needs no torches
 		/// </summary>
 		/// <returns>True when they won't</returns>
 		private bool TorchShort()
 		{
+			if (viking != null && viking.HasCirclet())
+			{
+				return(false);
+			}
 			List<ItemDrop.ItemData> torches = humanoid.GetInventory().GetAllItems().FindAll((ItemDrop.ItemData item) => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch && !VikingItems.IsCarried(item));
 			if (torches.Count == 0)
 			{

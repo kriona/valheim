@@ -11,7 +11,8 @@ namespace Kriona.Vikings
 	internal partial class VikingCore
 	{
 		/// <summary>
-		/// The torch a living viking carries at night, which it starts with one of (see Generate)
+		/// The torch a living viking carries at night, which it starts with one of unless it starts with a dverger circlet
+		/// (see Generate)
 		/// </summary>
 		private const string TorchPrefab = "Torch";
 
@@ -78,8 +79,8 @@ namespace Kriona.Vikings
 			// archer has a bow
 			Arms arms = VikingGear.LivingArms(index, nview.GetZDO().GetBool(ArcherKey), Random.value);
 			Inventory gear = VikingGear.RollLoadout(index, humanoid.GetLevel(), rolled, true, arms, true, true);
-			// It starts with a torch of its own for the night
-			gear.AddItem(TorchPrefab, 1, 1, 0, 0L, "", false);
+			// It starts with a torch of its own for the night, or a dverger circlet, more often the harder its biome
+			gear.AddItem((VikingGear.LivingCirclet(index, Random.value) ? VikingGear.CircletPrefab : TorchPrefab), 1, 1, 0, 0L, "", false);
 			ZDO zdo = SaveGenerated(rolled, gear);
 			// It's named for whether it's a man or a woman - model 1 is a woman's
 			VikingNames.GiveName(zdo, rolled, false);

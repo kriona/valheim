@@ -318,6 +318,39 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
+		/// The dverger circlet a living viking can start with in place of a torch, which lights its way as it wears it
+		/// (see VikingCore.UpdateTorch)
+		/// </summary>
+		public const string CircletPrefab = "HelmetDverger";
+
+		/// <summary>
+		/// The chance that a living viking of a biome before the Mistlands starts with a dverger circlet rather than a
+		/// torch - a biome not listed, like the Meadows, never has one, and from the Mistlands on every one has
+		/// </summary>
+		internal static readonly Dictionary<Heightmap.Biome, float> CircletChances = new Dictionary<Heightmap.Biome, float>()
+		{
+			{ Heightmap.Biome.BlackForest, 0.1f },
+			{ Heightmap.Biome.Swamp, 0.3f },
+			{ Heightmap.Biome.Mountain, 0.5f },
+			{ Heightmap.Biome.Plains, 0.7f }
+		};
+
+		/// <summary>
+		/// Checks whether a living viking of a biome starts with a dverger circlet rather than a torch, by CircletChances
+		/// </summary>
+		/// <param name="index">The index of its biome</param>
+		/// <param name="roll">A random number from 0 to 1</param>
+		/// <returns>True for a circlet</returns>
+		internal static bool LivingCirclet(int index, float roll)
+		{
+			if (index >= IndexOf(Heightmap.Biome.Mistlands))
+			{
+				return(true);
+			}
+			return(CircletChances.TryGetValue(Get(index).Biome, out float chance) && roll < chance);
+		}
+
+		/// <summary>
 		/// Rolls a viking of the world's armor, weapon, ammo and shield from its biome and the one before, by the chances
 		/// in the config, upgraded once for each of its stars when ZombieStarsUpgradeGear is on, with each piece marked as
 		/// worn. From the Mountains on it always wears a cape - its set's, or its biome's when its set has none or it

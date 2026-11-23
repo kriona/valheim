@@ -308,5 +308,34 @@ namespace Kriona.Vikings.Tests
 				Assert.True(split.Ranged >= 0f && split.Melee >= 0f);
 			}
 		}
+
+		/// <summary>
+		/// Checks how many of 1000 evenly spaced rolls give a living viking of each biome a dverger circlet rather than
+		/// a torch
+		/// </summary>
+		/// <param name="biome">The biome</param>
+		/// <param name="circlets">How many rolls should give a circlet</param>
+		[Theory]
+		[InlineData(Heightmap.Biome.Meadows, 0)]
+		[InlineData(Heightmap.Biome.BlackForest, 100)]
+		[InlineData(Heightmap.Biome.Swamp, 300)]
+		[InlineData(Heightmap.Biome.Mountain, 500)]
+		[InlineData(Heightmap.Biome.Plains, 700)]
+		[InlineData(Heightmap.Biome.Mistlands, 1000)]
+		[InlineData(Heightmap.Biome.AshLands, 1000)]
+		[InlineData(Heightmap.Biome.DeepNorth, 1000)]
+		public void CircletChanceRisesByBiome(Heightmap.Biome biome, int circlets)
+		{
+			int index = VikingGear.IndexOf(biome);
+			int count = 0;
+			for (int i = 0; i < 1000; i++)
+			{
+				if (VikingGear.LivingCirclet(index, (i + 0.5f) / 1000f))
+				{
+					count++;
+				}
+			}
+			Assert.Equal(circlets, count);
+		}
 	}
 }
