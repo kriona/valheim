@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.2
+- Colored lights check for color changes from other players 4 times a second instead of every frame, which helps performance in bases with many lights
+
 ## 1.5.1
 - The longship and drakkar don't show the key in their hover text anymore, since their lamp is never lit
 

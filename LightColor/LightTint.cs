@@ -19,7 +19,18 @@ namespace LightColor
 
 		private const int CharacterLimit = 32;
 
+		/// <summary>
+		/// Seconds between checks for colors changed by other players
+		/// </summary>
+		private const float RefreshInterval = 0.25f;
+
 		private ZNetView nview;
+
+		/// <summary>
+		/// When Update next checks the ZDO, started at a random point in the first interval so the pieces loaded
+		/// together don't all check on the same frame
+		/// </summary>
+		private float nextRefresh;
 		private Tintable tintable;
 
 		/// <summary>
@@ -68,6 +79,7 @@ namespace LightColor
 		{
 			nview = view;
 			tintable = new Tintable(gameObject);
+			nextRefresh = Time.time + Random.value * RefreshInterval;
 			Refresh();
 		}
 
@@ -85,10 +97,16 @@ namespace LightColor
 		}
 
 		/// <summary>
-		/// Picks up colors changed by other players
+		/// Picks up colors changed by other players every RefreshInterval seconds, and every frame until the ZDO has
+		/// been read once
 		/// </summary>
 		private void Update()
 		{
+			if (checkedRevision && Time.time < nextRefresh)
+			{
+				return;
+			}
+			nextRefresh = Time.time + RefreshInterval;
 			Refresh();
 		}
 
