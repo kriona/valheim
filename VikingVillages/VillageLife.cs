@@ -11794,6 +11794,30 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Works out how near the viking walks to the spot it stands at to work on a piece - near enough that it's within
+		/// WorkReach of the piece once there, or right up to the spot when it's too far from the piece for that, as one
+		/// beside a piece whose own ground can't be stood on can be
+		/// </summary>
+		/// <param name="offset">How far the spot is from the part of the piece it works on, seen from above, in meters</param>
+		/// <returns>How near it walks to the spot, in meters</returns>
+		internal static float StandReach(float offset)
+		{
+			return(Mathf.Max(ArriveReach, WorkReach - offset));
+		}
+
+		/// <summary>
+		/// Checks whether the viking is within reach of a piece to work on it - within WorkReach of it, or at the spot it
+		/// walks to to reach it
+		/// </summary>
+		/// <param name="toPoint">How far it is from the part of the piece it works on, seen from above, in meters</param>
+		/// <param name="toStand">How far it is from the spot it walks to, seen from above, in meters</param>
+		/// <returns>True when it is</returns>
+		internal static bool InWorkReach(float toPoint, float toStand)
+		{
+			return(toPoint <= WorkReach || toStand <= ArriveReach);
+		}
+
+		/// <summary>
 		/// Swinging a hammer at a piece of the village, standing within reach of it
 		/// </summary>
 		private class HammerWork
@@ -11845,9 +11869,10 @@ namespace VikingVillages
 			/// <returns>True once the last swing's hammer has landed</returns>
 			public bool Tick(float dt, Vector3 point, Vector3 stand)
 			{
-				if (swings == 0 && Utils.DistanceXZ(point, life.transform.position) > WorkReach)
+				Vector3 at = life.transform.position;
+				if (swings == 0 && !InWorkReach(Utils.DistanceXZ(point, at), Utils.DistanceXZ(stand, at)))
 				{
-					life.Go(dt, stand, WorkReach, false);
+					life.Go(dt, stand, StandReach(Utils.DistanceXZ(stand, point)), false);
 					return(false);
 				}
 				life.Face(point);

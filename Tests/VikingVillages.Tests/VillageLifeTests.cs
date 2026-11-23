@@ -597,5 +597,47 @@ namespace VikingVillages.Tests
 			Assert.True(VillageLife.TargetDistance(11f, true) < VillageLife.TargetDistance(10f, false));
 			Assert.False(VillageLife.TargetDistance(15f, true) < VillageLife.TargetDistance(10f, false));
 		}
+
+		/// <summary>
+		/// Checks that a viking stopping as near the spot it stands at as it walks to is always within reach of the piece
+		/// - within 2.5m of it when the spot is near enough, or right at the spot when it's not, as when a sitting log's
+		/// own ground can't be stood on and the spot is 2m off
+		/// </summary>
+		[Theory]
+		[InlineData(0f)]
+		[InlineData(0.5f)]
+		[InlineData(1.5f)]
+		[InlineData(2f)]
+		[InlineData(2.5f)]
+		public void StoppingAtTheStandReachIsWithinWorkReach(float offset)
+		{
+			float reach = VillageLife.StandReach(offset);
+			// The farthest it can stop from the piece is the spot's offset plus how near it walks to the spot
+			Assert.True(VillageLife.InWorkReach(offset + reach, reach));
+		}
+
+		/// <summary>
+		/// Checks that a spot on the piece's own ground is walked to within the usual reach, and one far from the piece
+		/// is walked right up to
+		/// </summary>
+		[Fact]
+		public void StandReachShrinksAsTheSpotMovesOff()
+		{
+			Assert.Equal(2.5f, VillageLife.StandReach(0f));
+			Assert.Equal(1.5f, VillageLife.StandReach(1f));
+			Assert.Equal(1f, VillageLife.StandReach(2f));
+		}
+
+		/// <summary>
+		/// Checks that a viking 4m from a piece and 2m from its spot isn't within reach - the case that left vikings
+		/// standing still until they gave up on a repair
+		/// </summary>
+		[Fact]
+		public void FourMetersOffIsNotWithinReach()
+		{
+			Assert.False(VillageLife.InWorkReach(4f, 2f));
+			Assert.True(VillageLife.InWorkReach(2.5f, 2f));
+			Assert.True(VillageLife.InWorkReach(4f, 1f));
+		}
 	}
 }
