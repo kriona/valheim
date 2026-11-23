@@ -356,5 +356,19 @@ namespace VikingVillages.Tests
 			Vector2Int[] sides = VillageFurnishing.FloorGrid.StoolSides(new Vector2Int(2, 2), 2, 2);
 			Assert.Equal(new List<Vector2Int> { new Vector2Int(3, 1), new Vector2Int(3, 4), new Vector2Int(1, 3), new Vector2Int(4, 3) }, sides);
 		}
+
+		/// <summary>
+		/// Checks that every biome a village can be in has starter food, two different foods each
+		/// </summary>
+		[Fact]
+		public void EveryBiomeHasStarterFood()
+		{
+			Assert.Equal(Kriona.Vikings.VikingGear.Biomes.Length, VillageFurnishing.StarterFoods.Length);
+			foreach (string[] foods in VillageFurnishing.StarterFoods)
+			{
+				Assert.Equal(2, foods.Length);
+				Assert.NotEqual(foods[0], foods[1]);
+			}
+		}
 	}
 }

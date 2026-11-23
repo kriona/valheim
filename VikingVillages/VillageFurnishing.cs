@@ -244,8 +244,39 @@ namespace VikingVillages
 		private static readonly string[] Stock = { "Wood", "Stone", "Resin" };
 
 		/// <summary>
-		/// Puts a full stack of each of Stock in one of a village's own chests, picked at random among those with room -
-		/// the chests it was furnished or built with, not ones a player built
+		/// The food a newly furnished village's chests start out with, so its vikings have something to eat before they
+		/// forage, hunt and cook their own - by the index of the village's biome (see VikingGear), two foods of that
+		/// biome, StarterFood of each
+		/// </summary>
+		internal static readonly string[][] StarterFoods =
+		{
+			// Meadows
+			new[] { "CookedMeat", "Raspberry" },
+			// Black Forest
+			new[] { "CookedDeerMeat", "Blueberries" },
+			// Swamp
+			new[] { "DeerStew", "FishCooked" },
+			// Mountains
+			new[] { "Sausages", "OnionSoup" },
+			// Plains
+			new[] { "CookedLoxMeat", "Bread" },
+			// Mistlands
+			new[] { "CookedHareMeat", "CookedBugMeat" },
+			// Ashlands
+			new[] { "CookedAsksvinMeat", "CookedVoltureMeat" },
+			// Deep North
+			new[] { "CookedMooseMeat", "CookedSealBlubber" }
+		};
+
+		/// <summary>
+		/// How many of each of its biome's StarterFoods a newly furnished village's chests start out with
+		/// </summary>
+		internal const int StarterFood = 10;
+
+		/// <summary>
+		/// Puts a full stack of each of Stock, and StarterFood of each of its biome's StarterFoods, in one of a village's
+		/// own chests, picked at random among those with room - the chests it was furnished or built with, not ones a
+		/// player built
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns</param>
 		private static void StockChests(Village village)
@@ -270,15 +301,26 @@ namespace VikingVillages
 			{
 				return;
 			}
+			List<KeyValuePair<string, int>> stock = new List<KeyValuePair<string, int>>();
 			foreach (string name in Stock)
 			{
+				stock.Add(new KeyValuePair<string, int>(name, int.MaxValue));
+			}
+			int biome = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(village.Farm));
+			foreach (string name in StarterFoods[Mathf.Clamp(biome, 0, StarterFoods.Length - 1)])
+			{
+				stock.Add(new KeyValuePair<string, int>(name, StarterFood));
+			}
+			foreach (KeyValuePair<string, int> entry in stock)
+			{
+				string name = entry.Key;
 				GameObject prefab = ((ObjectDB.instance != null) ? ObjectDB.instance.GetItemPrefab(name) : null);
 				ItemDrop drop = ((prefab != null) ? prefab.GetComponent<ItemDrop>() : null);
 				if (drop == null)
 				{
 					continue;
 				}
-				int stack = Mathf.Max(1, drop.m_itemData.m_shared.m_maxStackSize);
+				int stack = Mathf.Clamp(entry.Value, 1, Mathf.Max(1, drop.m_itemData.m_shared.m_maxStackSize));
 				List<Container> room = chests.FindAll((Container chest) => chest.GetInventory().CanAddItem(drop.m_itemData, stack));
 				if (room.Count == 0)
 				{
