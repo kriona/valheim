@@ -685,7 +685,7 @@ namespace VikingVillages
 			}
 			float after = Mathf.Max(0f, character.GetHealth());
 			Count("Damage taken by vikings", SourceKey(hit), before - after);
-			life.NoteHit(Source(hit) + ", " + before.ToString("F0") + " -> " + after.ToString("F0") + "/" + character.GetMaxHealth().ToString("F0"));
+			life.NoteHit(Source(hit) + " at " + character.transform.position.ToString("F1") + ", " + before.ToString("F0") + " -> " + after.ToString("F0") + "/" + character.GetMaxHealth().ToString("F0"));
 		}
 
 		/// <summary>

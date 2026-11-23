@@ -813,9 +813,15 @@ namespace VikingVillages
 		private const float SightRange = 50f;
 
 		/// <summary>
-		/// How long a wounded viking leaves eating after it found no food it could eat, in seconds
+		/// How long a viking leaves eating after it found no food it could eat, in seconds
 		/// </summary>
 		private const float EatRetryTime = 60f;
+
+		/// <summary>
+		/// How many foods the village's chests have to hold for each of its vikings before they keep their foods up
+		/// rather than eating only when wounded - a full set of foods each, as many as a viking eats at once
+		/// </summary>
+		private const int SpareMeals = 3;
 
 		/// <summary>
 		/// The most of a chest's slots the vikings fill with wood
@@ -969,6 +975,11 @@ namespace VikingVillages
 		private const float HopAirTime = 1.5f;
 		private const float HopClearance = 0.1f;
 		private const float HopDepth = 0.25f;
+
+		/// <summary>
+		/// How far past where its run-up would take it the viking keeps from a fire's flames to back up for one, in meters
+		/// </summary>
+		private const float RunUpFireMargin = 1f;
 
 		/// <summary>
 		/// How a viking fighting hand to hand goes over a pen's fence between it and its enemy rather than swinging
@@ -4832,7 +4843,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Finds work for the viking, most needed first - when it's wounded, eating from a chest and then resting by the
-		/// fire until it's rested, then in freezing weather keeping warm by a lit fire, or inside its house when none is
+		/// fire until it's rested, then eating to keep its foods up while there's food enough to go around (see
+		/// FoodToSpare), then in freezing weather keeping warm by a lit fire, or inside its house when none is
 		/// burning, until the weather clears, then cooking the raw food it carries or the chests hold at a cooking station, then
 		/// putting away loot it already carries, then loot lying around the village to put in a chest, then gear in the
 		/// village's chests better than its own to take up, then for an archer arrows in a chest while it's missing a
@@ -4866,6 +4878,16 @@ namespace VikingVillages
 				if (!body.Rest.IsRested() && Time.time >= restAgainAt && village.GatherFires().Count > 0)
 				{
 					return(new GatherJob(this, true));
+				}
+			}
+			// With food enough in the chests to go around, it keeps its foods up the way a player does, for the health they
+			// add - otherwise the food is left for the wounded
+			if (Time.time >= eatAgainAt && FoodToSpare())
+			{
+				Container pantry = FindFoodChest();
+				if (pantry != null)
+				{
+					return(new EatJob(this, pantry));
 				}
 			}
 			// In freezing weather it keeps out of the cold, rather than working out in it until it freezes
@@ -8326,6 +8348,38 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Checks whether the chests the viking may use hold food enough to go around the village (see FoodEnough)
+		/// </summary>
+		/// <returns>True when they do</returns>
+		private bool FoodToSpare()
+		{
+			int food = 0;
+			foreach (Container chest in UsableChests())
+			{
+				foreach (ItemDrop.ItemData item in chest.GetInventory().GetAllItems())
+				{
+					if (VikingFood.IsFood(item))
+					{
+						food += item.m_stack;
+					}
+				}
+			}
+			return(FoodEnough(food, village.Vikings().Count));
+		}
+
+		/// <summary>
+		/// Checks whether there's food enough to go around a village - SpareMeals of it for each of its vikings, enough
+		/// for every one to eat a full set of foods
+		/// </summary>
+		/// <param name="food">How much food the chests hold</param>
+		/// <param name="vikings">How many vikings the village has loaded</param>
+		/// <returns>True when there is</returns>
+		internal static bool FoodEnough(int food, int vikings)
+		{
+			return(food >= Mathf.Max(1, vikings) * SpareMeals);
+		}
+
+		/// <summary>
 		/// Finds the nearest of the village's chests the viking may use with food in it that it can eat now
 		/// </summary>
 		/// <returns>The chest, or null when there's none</returns>
@@ -9952,7 +10006,9 @@ namespace VikingVillages
 			hopPoint = obstacle.point;
 			hopTop = top;
 			hopLeftGround = false;
-			bool backUp = (Ahead() < RunUpDistance);
+			// It only backs up for a run-up with no fire's flames within reach behind it, since it backs up without looking -
+			// beside a fire it jumps from where it stands
+			bool backUp = (Ahead() < RunUpDistance && !FireSafety.FlamesNear(feet, RunUpDistance + RunUpFireMargin, out Vector3 _, out float _));
 			hopPhase = (backUp ? HopPhase.BackUp : HopPhase.RunUp);
 			hopPhaseUntil = Time.time + (backUp ? BackUpTime : RunUpTime);
 			if (Player.m_debugMode)
@@ -13779,8 +13835,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Eating from a chest when wounded - walking to the nearest chest with food it can eat, opening it and eating the
-		/// food there that heals it fastest
+		/// Eating from a chest when wounded, or to keep its foods up while there's food enough to go around (see
+		/// FoodToSpare) - walking to the nearest chest with food it can eat, opening it and eating the food there that
+		/// heals it fastest
 		/// </summary>
 		private class EatJob : Job
 		{

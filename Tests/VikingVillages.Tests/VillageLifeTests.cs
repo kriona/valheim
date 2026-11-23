@@ -629,6 +629,22 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that there's food enough to go around with three foods for every viking, and not with fewer, and that a
+		/// village with no vikings loaded still needs three
+		/// </summary>
+		[Theory]
+		[InlineData(18, 6, true)]
+		[InlineData(30, 6, true)]
+		[InlineData(17, 6, false)]
+		[InlineData(0, 6, false)]
+		[InlineData(3, 0, true)]
+		[InlineData(2, 0, false)]
+		public void FoodEnoughForThreeEach(int food, int vikings, bool expected)
+		{
+			Assert.Equal(expected, VillageLife.FoodEnough(food, vikings));
+		}
+
+		/// <summary>
 		/// Checks that a viking 4m from a piece and 2m from its spot isn't within reach - the case that left vikings
 		/// standing still until they gave up on a repair
 		/// </summary>
