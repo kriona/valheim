@@ -40,3 +40,4 @@ Images in a mod's `README.md` only show on Nexus Mods and Thunderstore once the 
 - Build output stays in each project's `bin\Release\netstandard2.1\` folder, and a Release build also copies the DLL into `release\dlls\` (the `CopyToReleaseFolder` target in `Directory.Build.props`)
 - Don't copy built DLLs into the Valheim `BepInEx\plugins` directory - the user installs mods themselves
 - Don't add post-build copy steps or output paths that point at the plugins directory to any `.csproj`
+- The user may run several Claude sessions in this repo at once. Hooks in `.claude\settings.json` run `tools\session-guard.ps1`, which denies a `dotnet build` or `dotnet test` while another session is editing code and has the last session to finish build for both. When a build is denied, don't retry it or work around it - tell the user it was left to the other session. Errors in files another session changed are reported to the user, not fixed
