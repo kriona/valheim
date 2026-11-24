@@ -236,6 +236,11 @@ namespace VikingVillages
 					{
 						LogSetUp(village, "set up");
 					}
+					// After the pieces are noted, so the boat is never one of the village's own pieces
+					if (VillageRecords.IsNoted(village))
+					{
+						Timed("mooring a boat", village, () => VillageShoreBoat.TryPlace(village));
+					}
 				}
 				if (!EnsureHeadCount(village, settled) || !settled)
 				{

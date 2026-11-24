@@ -693,7 +693,7 @@ namespace VikingVillages
 		/// <param name="x">The point's x</param>
 		/// <param name="z">The point's z</param>
 		/// <returns>The square</returns>
-		private static TravelRoute.Cell Sample(float x, float z)
+		internal static TravelRoute.Cell Sample(float x, float z)
 		{
 			if (x * x + z * z > WorldEdge * WorldEdge)
 			{
