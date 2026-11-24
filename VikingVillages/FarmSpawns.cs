@@ -116,6 +116,18 @@ namespace VikingVillages
 		private static int clientDepth;
 
 		/// <summary>
+		/// Gets the hover text of the vikings' livestock - its name, and its village's name after it, or that it's the
+		/// vikings' when it stands in no loaded village or the village has no name
+		/// </summary>
+		/// <param name="animal">The animal's name</param>
+		/// <param name="village">Its village's name, or ""</param>
+		/// <returns>The hover text</returns>
+		internal static string LivestockHover(string animal, string village)
+		{
+			return(animal + " (" + (string.IsNullOrEmpty(village) ? "Viking livestock" : village) + ")");
+		}
+
+		/// <summary>
 		/// Checks whether an animal is a farm's livestock, which the vikings keep rather than players
 		/// </summary>
 		/// <param name="part">Any component on the animal</param>

@@ -147,5 +147,18 @@ namespace VikingVillages.Tests
 			Assert.Equal(10f, spot.x, 4);
 			Assert.Equal(15f, spot.z, 4);
 		}
+
+		[Fact]
+		public void LivestockIsShownAsItsVillages()
+		{
+			Assert.Equal("Boar (Oakhollow)", FarmSpawns.LivestockHover("Boar", "Oakhollow"));
+		}
+
+		[Fact]
+		public void LivestockWithNoVillageNameIsShownAsTheVikings()
+		{
+			Assert.Equal("Boar (Viking livestock)", FarmSpawns.LivestockHover("Boar", ""));
+			Assert.Equal("Boar (Viking livestock)", FarmSpawns.LivestockHover("Boar", null));
+		}
 	}
 }

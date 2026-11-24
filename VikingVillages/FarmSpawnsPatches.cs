@@ -73,13 +73,13 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Shows a farm's livestock as the vikings', without the prompts to pet or rename it
+	/// Shows a farm's livestock as its village's, without the prompts to pet or rename it
 	/// </summary>
 	[HarmonyPatch(typeof(Tameable), nameof(Tameable.GetHoverText))]
 	public static class VikingLivestockHoverPatch
 	{
 		/// <summary>
-		/// Replaces the hover text of the vikings' livestock
+		/// Replaces the hover text of the vikings' livestock with its name and its village's
 		/// </summary>
 		/// <param name="__instance">The animal's Tameable</param>
 		/// <param name="__result">Its hover text</param>
@@ -87,7 +87,7 @@ namespace VikingVillages
 		{
 			if (FarmSpawns.IsLivestock(__instance))
 			{
-				__result = __instance.GetName() + " (Viking livestock)";
+				__result = FarmSpawns.LivestockHover(__instance.GetName(), VillageNames.Get(Village.Find(__instance.transform.position)));
 			}
 		}
 	}
