@@ -275,12 +275,13 @@ namespace VikingVillages
 
 		/// <summary>
 		/// The pickaxe a newly furnished village's chests start out with, by the index of the village's biome (see
-		/// VikingGear) - the best its biome's own ore and the biomes before it give - and how many of them
+		/// VikingGear) - the best its biome's own ore and the biomes before it give, or null for none - and how many of
+		/// them
 		/// </summary>
 		internal static readonly string[] StarterPickaxes =
 		{
 			// Meadows
-			"PickaxeAntler",
+			null,
 			// Black Forest
 			"PickaxeAntler",
 			// Swamp
@@ -300,8 +301,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Puts a full stack of each of Stock, StarterFood of each of its biome's StarterFoods and StarterPickaxeCount of
-		/// its biome's StarterPickaxes, each stack in one of a village's own chests, picked at random among those with
-		/// room - the chests it was furnished or built with, not ones a player built
+		/// its biome's StarterPickaxes when it has one, each stack in one of a village's own chests, picked at random among
+		/// those with room - the chests it was furnished or built with, not ones a player built
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns</param>
 		private static void StockChests(Village village)
@@ -337,9 +338,10 @@ namespace VikingVillages
 				stock.Add(new KeyValuePair<string, int>(name, StarterFood));
 			}
 			// A pickaxe doesn't stack, so each is a stack of one
-			for (int i = 0; i < StarterPickaxeCount; i++)
+			string pickaxe = StarterPickaxes[Mathf.Clamp(biome, 0, StarterPickaxes.Length - 1)];
+			for (int i = 0; pickaxe != null && i < StarterPickaxeCount; i++)
 			{
-				stock.Add(new KeyValuePair<string, int>(StarterPickaxes[Mathf.Clamp(biome, 0, StarterPickaxes.Length - 1)], 1));
+				stock.Add(new KeyValuePair<string, int>(pickaxe, 1));
 			}
 			foreach (KeyValuePair<string, int> entry in stock)
 			{
