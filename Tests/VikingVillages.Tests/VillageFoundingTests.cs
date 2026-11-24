@@ -37,8 +37,8 @@ namespace VikingVillages.Tests
 		/// <param name="expected">The text</param>
 		[Theory]
 		[InlineData(0, "It has no Vikings yet. The bonfire stays.")]
-		[InlineData(1, "Its Viking says goodbye and leaves with everything they have. Start a village at this bonfire again, and they come back to its beds. The bonfire stays.")]
-		[InlineData(7, "Its 7 Vikings say goodbye and leave with everything they have. Start a village at this bonfire again, and they come back to its beds. The bonfire stays.")]
+		[InlineData(1, "Its Viking sets out for another village with everything they have. Start a village at this bonfire again before they settle there, and they come back to its beds. The bonfire stays.")]
+		[InlineData(7, "Its 7 Vikings gather at the fire, then set out together for another village with everything they have. Start a village at this bonfire again, and those who haven't settled there come back to its beds. The bonfire stays.")]
 		public void AsksBeforeDisbanding(int count, string expected)
 		{
 			Assert.Equal(expected, VillageFounding.DisbandText(count));

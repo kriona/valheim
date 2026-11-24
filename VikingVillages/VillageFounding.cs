@@ -261,8 +261,11 @@ namespace VikingVillages
 			{
 				return("It has no Vikings yet. The bonfire stays.");
 			}
-			string leaving = ((count == 1) ? "Its Viking says goodbye and leaves" : "Its " + count + " Vikings say goodbye and leave");
-			return(leaving + " with everything they have. Start a village at this bonfire again, and they come back to its beds. The bonfire stays.");
+			if (count == 1)
+			{
+				return("Its Viking sets out for another village with everything they have. Start a village at this bonfire again before they settle there, and they come back to its beds. The bonfire stays.");
+			}
+			return("Its " + count + " Vikings gather at the fire, then set out together for another village with everything they have. Start a village at this bonfire again, and those who haven't settled there come back to its beds. The bonfire stays.");
 		}
 
 		/// <summary>
@@ -322,6 +325,10 @@ namespace VikingVillages
 				VillageNames.KeepAt(village, fireZdo);
 			}
 			int left = SendAway(village, fireZdo);
+			if (fireZdo != null)
+			{
+				VillageDisband.Begin(village, fireZdo);
+			}
 			VillageBeds.Release(village);
 			VillageMapPins.Forget(village);
 			Vector3 position = village.Farm;
@@ -481,6 +488,7 @@ namespace VikingVillages
 				zdo.Set(LeavingKey, false);
 				zdo.Set(TurnedBackKey, true);
 				zdo.Set(Village.VillageKey, farm);
+				VillageTravel.Clear(zdo);
 				turned++;
 			}
 			return(turned);
@@ -548,6 +556,10 @@ namespace VikingVillages
 			fireView.GetZDO().Set(VillagePaths.BonfireKey, true);
 			returning = VillageDeparted.HandOver(fireView.GetZDO(), zdo) + TurnBack(fireView.GetZDO(), position);
 			VillageNames.Restore(fireView.GetZDO(), zdo);
+			// Those already on the road to another village come back as long as they've been gone (see
+			// VillageTravel.OnRecall)
+			VillageDisband.Clear(fireView.GetZDO());
+			VillageTravel.Recall(position, zdo.GetPosition());
 			Plugin.Log.LogInfo("A player started a village at the bonfire at " + position.ToString("F1") + ((returning > 0) ? ", with " + returning + " vikings that left it coming back" : ""));
 			return(true);
 		}

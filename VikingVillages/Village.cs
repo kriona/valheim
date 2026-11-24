@@ -322,14 +322,29 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Notes a living viking as belonging to a village, calling one of its houses home
+		/// Notes a living viking as belonging to a village, calling one of its houses home - one joining it is off the road
+		/// and no longer leaving the village it left, and is new to the village unless it's one of those the village
+		/// starts with, which all come at once as it's set up (see VillageNewcomers)
 		/// </summary>
 		/// <param name="viking">The viking's ZDO, owned by this client</param>
 		/// <param name="house">The house it calls home</param>
 		public void Adopt(ZDO viking, VillagePaths.House house)
 		{
+			bool joining = (Utils.DistanceXZ(viking.GetVec3(VillageKey, Vector3.zero), Farm) > FarmReach);
 			viking.Set(VillageKey, Farm);
 			viking.Set(HomeKey, house.Center);
+			if (joining)
+			{
+				VillageTravel.Clear(viking);
+				if (viking.GetBool(VillageFounding.LeavingKey))
+				{
+					viking.Set(VillageFounding.LeavingKey, false);
+				}
+				if (IsFounded() || Zdo.GetBool(VillageRespawn.PopulatedKey))
+				{
+					VillageNewcomers.NoteJoined(viking, VillageNames.Get(this));
+				}
+			}
 			// One coming in with a name it was given that another viking here goes by gets a byname after it - a new
 			// viking, not rolled yet, is named as it's rolled (see VikingCore.Generate)
 			VikingData data = VikingData.FromBytes(viking.GetByteArray(VikingCore.DataKey));

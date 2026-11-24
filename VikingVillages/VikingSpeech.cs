@@ -987,10 +987,20 @@ namespace VikingVillages
 		{
 			if (!known)
 			{
-				string first = string.Format(Pick(night ? NightFirstGreetings : DayFirstGreetings, village));
-				return((self.Length > 0) ? first + " " + string.Format(Pick(Introductions), self) : first);
+				return(Introduce(string.Format(Pick(night ? NightFirstGreetings : DayFirstGreetings, village)), self));
 			}
 			return(VikingWeatherSpeech.ForPlayer(player, night) ?? string.Format(Pick(night ? NightGreetings : DayGreetings, village), player.GetPlayerName()));
+		}
+
+		/// <summary>
+		/// Adds a viking's name after what it says to a player it has never met, when it has one
+		/// </summary>
+		/// <param name="first">What it says first</param>
+		/// <param name="self">Its name, or ""</param>
+		/// <returns>The line</returns>
+		internal static string Introduce(string first, string self)
+		{
+			return((self.Length > 0) ? first + " " + string.Format(Pick(Introductions), self) : first);
 		}
 
 		/// <summary>
@@ -1151,8 +1161,11 @@ namespace VikingVillages
 		/// <param name="linked">The name of the village on the other side of the village's portal, or "" (see
 		/// VillagePortalSpeech)</param>
 		/// <param name="biome">The biome that village stands in, as a viking says it, or ""</param>
+		/// <param name="newcomer">The name of a viking new to the village, talked about at "{newcomer}", or "" (see
+		/// VillageNewcomers)</param>
+		/// <param name="from">The name of the village a newcomer's group left, at "{from}", or ""</param>
 		/// <returns>The line to say</returns>
-		public static string Address(string line, string listener, string other, string item, string fallen, string village, string linked = "", string biome = "")
+		public static string Address(string line, string listener, string other, string item, string fallen, string village, string linked = "", string biome = "", string newcomer = "", string from = "")
 		{
 			if (listener.Length == 0)
 			{
@@ -1167,7 +1180,9 @@ namespace VikingVillages
 				{ "{fallen}", fallen },
 				{ VillageToken, village },
 				{ VillagePortalSpeech.LinkedToken, linked },
-				{ VillagePortalSpeech.BiomeToken, biome }
+				{ VillagePortalSpeech.BiomeToken, biome },
+				{ VillageNewcomers.NewcomerToken, newcomer },
+				{ VillageNewcomers.FromToken, from }
 			};
 			line = Regex.Replace(line, TalkTokens, (Match token) => values[token.Value]);
 			if (listener.Length == 0 && line.Length > 0)
@@ -1180,7 +1195,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The tokens a talk's lines are filled in at (see Address)
 		/// </summary>
-		private const string TalkTokens = "\\{(?:name|other|item|fallen|village|linked|biome)\\}";
+		private const string TalkTokens = "\\{(?:name|other|item|fallen|village|linked|biome|newcomer|from)\\}";
 
 		/// <summary>
 		/// The materials the vikings build and craft with, by prefab name, read once the game's items are loaded
@@ -1481,7 +1496,7 @@ namespace VikingVillages
 		/// <param name="lines">The lines, with "{village}" where the village's name goes</param>
 		/// <param name="village">The village's name, or ""</param>
 		/// <returns>One of them</returns>
-		private static string Pick(string[] lines, string village)
+		internal static string Pick(string[] lines, string village)
 		{
 			List<string> spoken = new List<string>(lines).FindAll((string line) => Says(line) && (village.Length > 0 || !line.Contains(VillageToken)));
 			if (spoken.Count == 0)

@@ -110,7 +110,7 @@ namespace VikingVillages
 		/// </summary>
 		private const float GeneratorReach = 16f;
 
-		private const string GeneratorPrefab = "DG_MeadowsFarm";
+		internal const string GeneratorPrefab = "DG_MeadowsFarm";
 		public static readonly int GeneratorHash = GeneratorPrefab.GetStableHashCode();
 
 		/// <summary>

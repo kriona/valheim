@@ -236,6 +236,7 @@ namespace VikingVillages
 				}
 				VillageBeds.Update(village, vikings);
 				VillageBeds.AssignBeds(village, vikings);
+				VillageTravel.Arrive(village, vikings);
 				CheckCount(village, vikings);
 				TryRespawn(village, vikings);
 			}
@@ -405,14 +406,21 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds where the farm of a living viking's village stands - the village it notes, or else the one it's in
+		/// Finds where the farm of a living viking's village stands - the village it notes, or else the one it's in. One
+		/// leaving a disbanded village or on the road to another belongs to none, even passing through one
 		/// </summary>
 		/// <param name="character">The viking</param>
 		/// <param name="farm">Where the farm stands</param>
 		/// <returns>False when it belongs to no village</returns>
 		public static bool FarmOf(Character character, out Vector3 farm)
 		{
-			farm = character.m_nview.GetZDO().GetVec3(Village.VillageKey, Vector3.zero);
+			ZDO zdo = character.m_nview.GetZDO();
+			if (zdo.GetBool(VillageFounding.LeavingKey) || VillageTravel.OnRoad(zdo))
+			{
+				farm = Vector3.zero;
+				return(false);
+			}
+			farm = zdo.GetVec3(Village.VillageKey, Vector3.zero);
 			if (farm != Vector3.zero)
 			{
 				return(true);
@@ -798,6 +806,9 @@ namespace VikingVillages
 					homeless.Add(zdo);
 				}
 			}
+			// One on its way to another village passes through, and one that comes before the village has every viking it
+			// starts with waits outside, so it doesn't take a new viking's place
+			homeless.RemoveAll((ZDO zdo) => !VillageTravel.Bound(zdo, village) || !VillageTravel.Takes(village));
 			foreach (ZDO zdo in homeless)
 			{
 				// A village a player started has no house to give one until its beds bring them
@@ -1004,6 +1015,21 @@ namespace VikingVillages
 		/// <returns>True when it can</returns>
 		private static bool ReadyToArrive(Village village, out Vector3 spot, out bool outside, out string why)
 		{
+			return(ReadyToArrive(village, Vector3.zero, out spot, out outside, out why));
+		}
+
+		/// <summary>
+		/// Checks whether a viking can come to a village now, from the side nearest a point when it can (see
+		/// FindArrivalSpot)
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="toward">The point it comes from, or zero for any side</param>
+		/// <param name="spot">Where it would come from</param>
+		/// <param name="outside">Whether that's outside the fence</param>
+		/// <param name="why">Set to why it can't, for the debug hover text, or "" when it can</param>
+		/// <returns>True when it can</returns>
+		private static bool ReadyToArrive(Village village, Vector3 toward, out Vector3 spot, out bool outside, out string why)
+		{
 			spot = Vector3.zero;
 			outside = false;
 			Character enemy = village.FindEnemy(EnemyReach);
@@ -1012,7 +1038,7 @@ namespace VikingVillages
 				why = "a hostile " + Utils.GetPrefabName(enemy.gameObject) + " in the village or within " + EnemyReach.ToString("F0") + "m of it, at " + enemy.transform.position.ToString("F0");
 				return(false);
 			}
-			if (!FindArrivalSpot(village, out spot, out outside))
+			if (!FindArrivalSpot(village, toward, out spot, out outside))
 			{
 				why = "no spot out of every player's sight and " + ArrivalClear.ToString("F0") + "m from every enemy for it to come from yet";
 				return(false);
@@ -1026,13 +1052,15 @@ namespace VikingVillages
 		/// fence, so it walks in, or beside one of the houses of its core when there's no open ground outside, like a
 		/// village with nothing but water or cliffs around its fence - with no enemy within ArrivalClear of it. When
 		/// there's open ground outside but a player can see every spot tried, it waits for another look - for up to
-		/// SpotPatience seconds, after which any spot clear of enemies will do, near a player or in their sight
+		/// SpotPatience seconds, after which any spot clear of enemies will do, near a player or in their sight. A viking
+		/// coming from a point comes from the spot nearest it of those tried
 		/// </summary>
 		/// <param name="village">The village</param>
+		/// <param name="toward">The point it comes from, or zero for any side</param>
 		/// <param name="spot">The spot</param>
 		/// <param name="outside">Whether it's outside the fence</param>
 		/// <returns>False when none was found</returns>
-		private static bool FindArrivalSpot(Village village, out Vector3 spot, out bool outside)
+		private static bool FindArrivalSpot(Village village, Vector3 toward, out Vector3 spot, out bool outside)
 		{
 			ZDOID id = village.Zdo.m_uid;
 			// A search broken off, by the village unloading or an enemy coming near, starts over
@@ -1046,6 +1074,8 @@ namespace VikingVillages
 			bool anywhere = (Time.time - since >= SpotPatience);
 			outside = true;
 			bool open = false;
+			bool found = false;
+			Vector3 best = Vector3.zero;
 			for (int i = 0; i < HiddenTries; i++)
 			{
 				if (!village.ArrivalSpot(out spot))
@@ -1055,9 +1085,23 @@ namespace VikingVillages
 				open = true;
 				if ((anywhere || Hidden(spot)) && Village.FindEnemyNear(spot, ArrivalClear) == null)
 				{
-					searchingSince.Remove(id);
-					return(true);
+					if (toward == Vector3.zero)
+					{
+						searchingSince.Remove(id);
+						return(true);
+					}
+					if (!found || Utils.DistanceXZ(spot, toward) < Utils.DistanceXZ(best, toward))
+					{
+						best = spot;
+					}
+					found = true;
 				}
+			}
+			if (found)
+			{
+				spot = best;
+				searchingSince.Remove(id);
+				return(true);
 			}
 			if (open)
 			{
@@ -1109,6 +1153,48 @@ namespace VikingVillages
 			village.Adopt(zdo, home);
 			TestLog.Count("Vikings", (returned ? "came back to a village" : "came to a village"));
 			Plugin.Log.LogInfo(TestLog.Name(zdo) + (returned ? " came back" : " came") + " to the village at " + village.Farm.ToString("F0") + ", calling the house at " + home.Center.ToString("F0") + " home");
+			return(zdo);
+		}
+
+		/// <summary>
+		/// Brings a viking that was on the road into a village as it was - walking in from the side it came from, when no
+		/// enemy is near and there's a spot out of every player's sight, and calling the house the fewest vikings call home
+		/// its home, the same as a stray taken in
+		/// </summary>
+		/// <param name="village">The village, whose generator this client owns</param>
+		/// <param name="vikings">Its living vikings' ZDOs, added to</param>
+		/// <param name="snapshot">The viking's values (see VillageDeparted.SnapshotOf)</param>
+		/// <param name="from">Where it comes from</param>
+		/// <returns>Its ZDO, or null when it couldn't come yet</returns>
+		public static ZDO SpawnArrival(Village village, List<ZDO> vikings, byte[] snapshot, Vector3 from)
+		{
+			// A village a player started has no house to give one until its beds bring them
+			if (village.Houses.Count == 0 || !ReadyToArrive(village, from, out Vector3 spot, out bool outside, out string _))
+			{
+				return(null);
+			}
+			GameObject prefab = ZNetScene.instance.GetPrefab(VikingCore.LivingPrefabHash);
+			if (prefab == null)
+			{
+				return(null);
+			}
+			GameObject instance = Object.Instantiate(prefab, spot, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
+			BaseAI ai = instance.GetComponent<BaseAI>();
+			if (ai != null)
+			{
+				ai.SetPatrolPoint();
+			}
+			ZDO zdo = instance.GetComponent<ZNetView>().GetZDO();
+			if (!VillageDeparted.ApplySnapshot(snapshot, zdo))
+			{
+				Plugin.Log.LogWarning("Couldn't read a viking arriving from the road at the village at " + village.Farm.ToString("F0") + ", so a new one came in its place");
+			}
+			VillagePaths.House home = FewestClaimed(village, vikings);
+			village.Adopt(zdo, home);
+			zdo.Set(VillageLife.ArrivingKey, outside);
+			vikings.Add(zdo);
+			TestLog.Count("Vikings", "arrived at a village from the road");
+			Plugin.Log.LogInfo(TestLog.Name(zdo) + " arrived from the road at the village at " + village.Farm.ToString("F0") + ", calling the house at " + home.Center.ToString("F0") + " home");
 			return(zdo);
 		}
 

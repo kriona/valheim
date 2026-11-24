@@ -99,6 +99,7 @@ namespace VikingVillages
 			VillageLocations.Register();
 			VillagePortals.Register();
 			VillageFounding.RegisterRpc();
+			VillageTravel.Register();
 			VikingNewsStore.Register();
 			ZRoutedRpc.instance.Register<ZDOID, ZDOID, int>(ForageBonusRpc, OnForageBonus);
 			lastDistress.Clear();

@@ -84,6 +84,7 @@ namespace Kriona.Vikings
 			ZDO zdo = SaveGenerated(rolled, gear);
 			// It's named for whether it's a man or a woman - model 1 is a woman's
 			VikingNames.GiveName(zdo, rolled, false);
+			VillageTravel.NoteSpawned(zdo);
 			if (TestLog.On)
 			{
 				Plugin.Log.LogInfo("New viking: " + TestLog.Name(humanoid) + ", rolled up for the " + VikingGear.Biomes[index].Biome + (zdo.GetBool(ArcherKey) ? " as the village's archer" : ""));

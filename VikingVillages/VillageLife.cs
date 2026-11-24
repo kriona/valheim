@@ -2179,13 +2179,30 @@ namespace VikingVillages
 			if (VikingSpeech.Knows(humanoid, player.GetPlayerID()))
 			{
 				string news = VikingNewsStore.Tell(humanoid, player, NewsBiome());
-				string answer = (news ?? VillagePortalSpeech.Chat(village, player.GetPlayerName()) ?? VikingSpeech.Answer(player, IsNight(), VillageNames.Get(village)));
+				string answer = (news ?? (active ? (VillagePortalSpeech.Chat(village, player.GetPlayerName()) ?? VikingSpeech.Answer(player, IsNight(), VillageNames.Get(village))) : RoadAnswer(player)));
 				VikingSpeech.Say(humanoid, answer, VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 				greeting = player;
 				greetUntil = Time.time + GreetFaceTime;
 				return;
 			}
 			Greet(player);
+		}
+
+		/// <summary>
+		/// Picks what a viking away from any village says when a player it knows talks to it - lost, on the road,
+		/// wandering, or gathering at the fire of a village a player disbanded
+		/// </summary>
+		/// <param name="player">The player</param>
+		/// <returns>The line</returns>
+		private string RoadAnswer(Player player)
+		{
+			ZDO zdo = nview.GetZDO();
+			bool onRoad = VillageTravel.OnRoad(zdo);
+			if (zdo.GetBool(VillageFounding.LeavingKey) && !onRoad)
+			{
+				return(VikingRoadSpeech.Disbanded(VillageNames.AtFire(VillageDeparted.LeftFire(zdo))));
+			}
+			return(VikingRoadSpeech.Answer(player, road == Road.Confused, onRoad, VillageTravel.DestinationName(zdo)));
 		}
 
 		/// <summary>
@@ -2217,7 +2234,9 @@ namespace VikingVillages
 			greetUntil = Time.time + GreetFaceTime;
 			VikingPoses.Wave(humanoid);
 			string news = (known ? VikingNewsStore.Tell(humanoid, player, NewsBiome()) : null);
-			VikingSpeech.Say(humanoid, news ?? VikingSpeech.Greeting(player, IsNight(), known, VikingNames.Get(humanoid), VillageNames.Get(village)), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+			// One away from any village greets them the way a traveler does, or a lost one asks where it is
+			string line = (active ? VikingSpeech.Greeting(player, IsNight(), known, VikingNames.Get(humanoid), VillageNames.Get(village)) : VikingRoadSpeech.Greeting(player, IsNight(), known, VikingNames.Get(humanoid), road == Road.Confused));
+			VikingSpeech.Say(humanoid, news ?? line, VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 			VikingSpeech.Meet(humanoid, player.GetPlayerID());
 		}
 
@@ -2242,6 +2261,10 @@ namespace VikingVillages
 			if (openChest != null)
 			{
 				ShowChestClosed();
+			}
+			if (onAnswer != null)
+			{
+				VillageTravel.Forget(onAnswer);
 			}
 		}
 
@@ -2356,10 +2379,12 @@ namespace VikingVillages
 		private void TurnBack()
 		{
 			leaving = false;
+			ForgetRoad();
 			if (ai == null || nview == null || !nview.IsValid() || !nview.IsOwner() || humanoid.IsDead())
 			{
 				return;
 			}
+			VillageTravel.Clear(nview.GetZDO());
 			ai.StopMoving();
 			Player near = Player.GetClosestPlayer(transform.position, GoodbyeRange);
 			if (near != null)
@@ -2369,11 +2394,13 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Has a viking leaving a village that was disbanded say goodbye to the nearest player within GoodbyeRange,
-		/// facing them with a wave, then run off the way night monsters do at dawn - away from the nearest player within
-		/// 40 meters until none is left that near, when it's gone (see BaseAI.MoveAwayAndDespawn), kept at its bonfire to
-		/// come back to a village started there again (see VillageDeparted) - fighting whatever it has to on the way, on
-		/// its owner
+		/// Has a viking leaving a village that was disbanded gather at its fire with the rest and set out with them for
+		/// another village (see UpdateGathering), travelling there like any viking with no village (see UpdateRoad). With
+		/// no village to go to, or no gathering noted at its bonfire (see VillageDisband), it says goodbye to the nearest player
+		/// within GoodbyeRange, facing them with a wave, then runs off the way night monsters do at dawn - away from the
+		/// nearest player within 40 meters until none is left that near, when it's gone (see BaseAI.MoveAwayAndDespawn),
+		/// kept at its bonfire to come back to a village started there again (see VillageDeparted) - fighting whatever it
+		/// has to on the way, on its owner
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <returns>True to skip the AI's own update, false while it fights or this client doesn't own it</returns>
@@ -2383,6 +2410,7 @@ namespace VikingVillages
 			{
 				return(false);
 			}
+			ZDO zdo = nview.GetZDO();
 			if (!leaving)
 			{
 				leaving = true;
@@ -2393,25 +2421,33 @@ namespace VikingVillages
 				}
 				active = false;
 				village = null;
-				goodbyeTo = Player.GetClosestPlayer(transform.position, GoodbyeRange);
-				goodbyeAt = Time.time + Random.Range(GoodbyeDelayMin, GoodbyeDelayMax);
-				runOffAt = ((goodbyeTo != null) ? goodbyeAt + GoodbyeStand : Time.time);
+				ForgetRoad();
+				goodbyeTo = null;
+				goodbyeAt = -1f;
+				runOffAt = Time.time;
+				nextGatherLine = Time.time + Random.Range(0f, GatherLineMin);
+			}
+			if (VillageTravel.OnRoad(zdo))
+			{
+				return(UpdateRoad(dt));
 			}
 			if (ai.m_targetCreature != null)
 			{
 				return(false);
 			}
+			ZDO fire = GatherFire(zdo);
+			if (VillageDisband.Gathers(fire) && UpdateGathering(dt, zdo, fire))
+			{
+				return(true);
+			}
+			if (!goodbyeStarted)
+			{
+				goodbyeStarted = true;
+				StartGoodbye();
+			}
 			if (goodbyeTo != null && Time.time < runOffAt)
 			{
-				mover = "saying goodbye";
-				ai.StopMoving();
-				ai.LookAt(goodbyeTo.GetEyePoint());
-				if (goodbyeAt >= 0f && Time.time >= goodbyeAt)
-				{
-					goodbyeAt = -1f;
-					VikingPoses.Wave(humanoid);
-					VikingSpeech.Say(humanoid, VikingSpeech.Leaving(goodbyeTo, VillageNames.AtFire(VillageDeparted.LeftFire(nview.GetZDO()))), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
-				}
+				SayGoodbye();
 				return(true);
 			}
 			mover = "leaving a disbanded village";
@@ -2445,7 +2481,11 @@ namespace VikingVillages
 			}
 			if (!UpdateActive())
 			{
-				return(false);
+				return(UpdateRoad(dt));
+			}
+			if (road != Road.None)
+			{
+				ForgetRoad();
 			}
 			if (ZombieState.IsRising(humanoid))
 			{
@@ -4403,7 +4443,7 @@ namespace VikingVillages
 		{
 			if (!active)
 			{
-				return(false);
+				return(RoadIdle(dt));
 			}
 			if (UpdateWary(dt))
 			{
@@ -4710,7 +4750,9 @@ namespace VikingVillages
 				Plugin.Log.LogInfo(LogName() + " was away from its village long enough, and joined the village at " + here.Farm.ToString("F0"));
 				return(here);
 			}
-			if (here != null && here.NearestCoreHouse(transform.position, out VillagePaths.House house))
+			// One on the road joins only the village it's going to, and none joins a village before it has every viking it
+			// starts with, so it doesn't take a new viking's place
+			if (here != null && VillageTravel.Bound(zdo, here) && VillageTravel.Takes(here) && here.NearestCoreHouse(transform.position, out VillagePaths.House house))
 			{
 				here.Adopt(zdo, house);
 				return(here);
@@ -9300,6 +9342,7 @@ namespace VikingVillages
 			if (!active)
 			{
 				text.Append("Village life: off" + ((village == null) ? ", no village" : "") + "\n");
+				DescribeRoad(text);
 				return(text.ToString());
 			}
 			ZDO zdo = nview.GetZDO();
@@ -11062,7 +11105,54 @@ namespace VikingVillages
 					LinkedBiome = VillagePortalSpeech.BiomeName(biome);
 					linkedTalks = VillagePortalSpeech.Talks(biome);
 				}
-				Lines = VikingSpeech.Talk(IsNight() || IsDusk(), EnvMan.IsWet(), Time.time - leader.lastFightAt < FightTalkTime, leader.Wounded(), OtherName.Length > 0, ItemName.Length > 0, FallenName.Length > 0, leader.body.HasBeard(), VillageName.Length > 0, linkedTalks);
+				string[] newcomerTalk = NewcomerTalk(leader, partner, VillageName.Length > 0, out NewcomerName, out NewcomerFrom);
+				Lines = (newcomerTalk ?? VikingSpeech.Talk(IsNight() || IsDusk(), EnvMan.IsWet(), Time.time - leader.lastFightAt < FightTalkTime, leader.Wounded(), OtherName.Length > 0, ItemName.Length > 0, FallenName.Length > 0, leader.body.HasBeard(), VillageName.Length > 0, linkedTalks));
+			}
+
+			/// <summary>
+			/// Picks a talk about a viking new to the village, now and then, for a game day after it joined (see
+			/// VillageNewcomers) - welcoming it when it's the one talked to, or about one of the newcomers with a name
+			/// otherwise, mentioning the village its group came from when there's one. A newcomer doesn't start one
+			/// </summary>
+			/// <param name="leader">The viking that started the talk</param>
+			/// <param name="partner">The viking it talks to</param>
+			/// <param name="named">Whether the village has a name</param>
+			/// <param name="newcomer">Set to the name of the newcomer talked about, or ""</param>
+			/// <param name="from">Set to the village its group came from, or ""</param>
+			/// <returns>The talk's lines, or null for a talk about anything else</returns>
+			private static string[] NewcomerTalk(VillageLife leader, VillageLife partner, bool named, out string newcomer, out string from)
+			{
+				newcomer = "";
+				from = "";
+				if (leader.village == null || VillageNewcomers.IsNew(leader.nview.GetZDO()))
+				{
+					return(null);
+				}
+				ZDO partnerZdo = partner.nview.GetZDO();
+				if (VillageNewcomers.IsNew(partnerZdo) && Random.value < VillageNewcomers.WelcomeChance)
+				{
+					from = VillageNewcomers.From(partnerZdo);
+					return(PickTalk(VillageNewcomers.Candidates(VillageNewcomers.WelcomeTalks, VillageNewcomers.WelcomeFromTalks, from.Length > 0, named)));
+				}
+				List<Character> others = leader.village.Vikings().FindAll((Character other) => other != null && other != leader.humanoid && other != partner.humanoid && other.m_nview != null && other.m_nview.IsValid() && VillageNewcomers.IsNew(other.m_nview.GetZDO()) && VikingNames.Get(other).Length > 0);
+				if (others.Count == 0 || Random.value >= VillageNewcomers.AboutChance)
+				{
+					return(null);
+				}
+				Character talkedAbout = others[Random.Range(0, others.Count)];
+				newcomer = VikingNames.Get(talkedAbout);
+				from = VillageNewcomers.From(talkedAbout.m_nview.GetZDO());
+				return(PickTalk(VillageNewcomers.Candidates(VillageNewcomers.AboutTalks, VillageNewcomers.AboutFromTalks, from.Length > 0, named)));
+			}
+
+			/// <summary>
+			/// Picks one of a list of talks at random
+			/// </summary>
+			/// <param name="talks">The talks</param>
+			/// <returns>One of them, or null when there are none</returns>
+			private static string[] PickTalk(List<string[]> talks)
+			{
+				return((talks.Count > 0) ? talks[Random.Range(0, talks.Count)] : null);
 			}
 
 			/// <summary>
@@ -11078,6 +11168,13 @@ namespace VikingVillages
 			public readonly string LinkedBiome;
 
 			/// <summary>
+			/// The name of a viking new to the village they talk about, and of the village its group came from, or "" (see
+			/// VillageNewcomers)
+			/// </summary>
+			public readonly string NewcomerName;
+			public readonly string NewcomerFrom;
+
+			/// <summary>
 			/// Has the viking whose turn it is say the talk's next line, while it has lines left - calling the one it speaks
 			/// to by name when it has one
 			/// </summary>
@@ -11086,7 +11183,7 @@ namespace VikingVillages
 				if (Said < Lines.Length && Speaker != null)
 				{
 					string listener = VikingNames.Get(Other(Speaker).humanoid);
-					VikingSpeech.Chatter(Speaker.humanoid, VikingSpeech.Address(Lines[Said], listener, OtherName, ItemName, FallenName, VillageName, LinkedName, LinkedBiome), VikingSpeech.TalkTime);
+					VikingSpeech.Chatter(Speaker.humanoid, VikingSpeech.Address(Lines[Said], listener, OtherName, ItemName, FallenName, VillageName, LinkedName, LinkedBiome, NewcomerName, NewcomerFrom), VikingSpeech.TalkTime);
 					Said++;
 				}
 			}

@@ -58,6 +58,8 @@ namespace VikingVillages
 			VillagePortals.Update();
 			VillageWatch.Update();
 			VillageRespawn.Update();
+			VillageTravel.Update();
+			VillageDisband.Update();
 			VillageLivestock.Update();
 			VillageLife.UpdateNaming();
 			VikingInventory.Update();

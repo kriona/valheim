@@ -82,6 +82,71 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Finds where the bonfire a viking leaving a village is kept at stood
+		/// </summary>
+		/// <param name="viking">The viking's ZDO</param>
+		/// <returns>Where it stood, or zero when none was noted</returns>
+		public static Vector3 FirePosition(ZDO viking)
+		{
+			return(viking.GetVec3(FireKey, Vector3.zero));
+		}
+
+		/// <summary>
+		/// Takes the vikings kept at a bonfire off it, for them to go on to another village instead
+		/// </summary>
+		/// <param name="fire">The bonfire's ZDO, owned by this client</param>
+		/// <returns>The vikings, each as its values</returns>
+		public static List<byte[]> TakeKept(ZDO fire)
+		{
+			List<byte[]> kept = Read(fire, DepartedKey);
+			if (kept.Count > 0)
+			{
+				Write(fire, DepartedKey, new List<byte[]>());
+			}
+			return(kept);
+		}
+
+		/// <summary>
+		/// Adds vikings that left a village to those still to come back to the village started again at its bonfire, to
+		/// come to its beds before any new viking
+		/// </summary>
+		/// <param name="village">The village, whose anchor this client owns</param>
+		/// <param name="vikings">The vikings, each as its values</param>
+		public static void AddReturning(Village village, List<byte[]> vikings)
+		{
+			List<byte[]> returning = Read(village.Zdo, ReturningKey);
+			returning.AddRange(vikings);
+			Write(village.Zdo, ReturningKey, returning);
+		}
+
+		/// <summary>
+		/// Writes every value in a viking's ZDO but the ones it's kept without, to bring it back as it was elsewhere
+		/// </summary>
+		/// <param name="viking">The viking's ZDO</param>
+		/// <returns>Its values</returns>
+		public static byte[] SnapshotOf(ZDO viking)
+		{
+			return(Snapshot(viking));
+		}
+
+		/// <summary>
+		/// Sets the values a viking was kept with on a new viking's ZDO
+		/// </summary>
+		/// <param name="snapshot">The values (see SnapshotOf)</param>
+		/// <param name="viking">The new viking's ZDO</param>
+		/// <returns>False when they couldn't be read</returns>
+		public static bool ApplySnapshot(byte[] snapshot, ZDO viking)
+		{
+			VikingValues values = Decode(snapshot);
+			if (values == null)
+			{
+				return(false);
+			}
+			Apply(values, viking);
+			return(true);
+		}
+
+		/// <summary>
 		/// Keeps a leaving viking at its bonfire as it goes, with its inventory as it is right now - nothing is kept when
 		/// the bonfire is gone
 		/// </summary>
@@ -368,6 +433,15 @@ namespace VikingVillages
 				VillageBeds.BedKey.Key,
 				VillageBeds.BedKey.Value,
 				VillageLife.ArrivingKey,
+				VillageTravel.ConfusedKey,
+				VillageTravel.DestinationKey,
+				VillageTravel.DestinationNameKey,
+				VillageTravel.DestinationAuthorKey,
+				VillageTravel.RouteKey,
+				VillageTravel.LegKey,
+				VillageTravel.GroupKey,
+				VillageTravel.BiomeKey,
+				VillageTravel.SailingKey,
 				ZDOVars.s_patrol,
 				ZDOVars.s_patrolPoint,
 				ZDOVars.s_spawnPoint
