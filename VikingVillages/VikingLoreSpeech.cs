@@ -5,8 +5,8 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// What living and dvergr vikings say to a player they know about the runestones of the biome they stand in - each
-	/// line about what one of the game's own runestones there says, from the boar stone of the Meadows to Hervor's
-	/// stones in the Deep North
+	/// line about what one of the game's own runestones there says, from the boar stone of the Meadows to the stones
+	/// of the Deep North
 	/// </summary>
 	internal static class VikingLoreSpeech
 	{
@@ -108,7 +108,7 @@ namespace VikingVillages
 					"Kata's stone says the trolls here are as tall as towers and harder than stone. A glimmering reward, though, {0}.",
 					"'Beware of false trees,' says one of the stones. I don't trust a single tree up here now.",
 					"Signe raised a stone for Eigil, who fell. Not everything here is as frozen as it seems, {0}.",
-					"Hervor left stones all over these lands, hunting whoever rules them. I hope she found them, {0}.",
+					"Someone left stones all over these lands, hunting whoever rules them. I hope they found them, {0}.",
 					"Astrid raised a stone up here for her son. I hope she sees him again, {0}."
 				}
 			}
