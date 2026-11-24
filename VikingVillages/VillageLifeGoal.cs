@@ -78,11 +78,12 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Forgets when each village's goal is next looked at, as the world is left
+		/// Forgets when each village's goal is next looked at, and the steps worked out toward each, as the world is left
 		/// </summary>
 		public static void ForgetGoals()
 		{
 			nextGoalLook.Clear();
+			goalSteps.Clear();
 		}
 
 		/// <summary>
@@ -327,9 +328,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out what a village has to work with - the items in its chests and carried by its vikings, its stations
-		/// at their levels, as stations and as one of each StationNeed they meet, its biome, its beehives and its coins
-		/// counting what its treasure sells for
+		/// Works out what a village has to work with - the items in its chests, carried by its vikings and lying in the
+		/// village, the ore in its smelters as the bars it will be, its stations at their levels, as stations and as one
+		/// of each StationNeed they meet, its biome, its beehives and its coins counting what its treasure sells for
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <returns>What it has</returns>
@@ -369,13 +370,20 @@ namespace VikingVillages
 				}
 				string name = Utils.GetPrefabName(instance.Value.gameObject);
 				CraftingStation station = instance.Value.GetComponent<CraftingStation>();
+				Smelter smelter = instance.Value.GetComponent<Smelter>();
+				ItemDrop drop = instance.Value.GetComponent<ItemDrop>();
 				if (station != null)
 				{
 					holdings.AddStation(name, station.GetLevel());
 				}
-				else if (instance.Value.GetComponent<Smelter>() != null)
+				else if (smelter != null)
 				{
 					holdings.AddStation(name, 1);
+					AddSmelting(holdings, smelter, instance.Key);
+				}
+				else if (drop != null && drop.m_itemData.m_dropPrefab != null && village.Contains(drop.transform.position))
+				{
+					holdings.Put(drop.m_itemData.m_dropPrefab.name, drop.m_itemData.m_stack);
 				}
 			}
 			foreach (KeyValuePair<string, int> station in holdings.Stations)
@@ -397,6 +405,43 @@ namespace VikingVillages
 				}
 			}
 			return(holdings);
+		}
+
+		/// <summary>
+		/// Counts what a smelter is working on as the bars it will be - the ore it holds and the bars it has made but not
+		/// dropped yet
+		/// </summary>
+		/// <param name="holdings">What the village has, added to</param>
+		/// <param name="smelter">The smelter</param>
+		/// <param name="zdo">Its ZDO</param>
+		private static void AddSmelting(VillageHoldings holdings, Smelter smelter, ZDO zdo)
+		{
+			int queued = zdo.GetInt(ZDOVars.s_queued);
+			for (int i = 0; i < queued; i++)
+			{
+				AddSmelted(holdings, smelter, zdo.GetString("item" + i), 1);
+			}
+			AddSmelted(holdings, smelter, zdo.GetString(ZDOVars.s_spawnOre), zdo.GetInt(ZDOVars.s_spawnAmount));
+		}
+
+		/// <summary>
+		/// Counts ore in a smelter as what it's smelted into
+		/// </summary>
+		/// <param name="holdings">What the village has, added to</param>
+		/// <param name="smelter">The smelter</param>
+		/// <param name="ore">The ore's prefab name, or ""</param>
+		/// <param name="count">How much of it</param>
+		private static void AddSmelted(VillageHoldings holdings, Smelter smelter, string ore, int count)
+		{
+			if (string.IsNullOrEmpty(ore) || count <= 0)
+			{
+				return;
+			}
+			Smelter.ItemConversion conversion = smelter.GetItemConversion(ore);
+			if (conversion != null && conversion.m_to != null)
+			{
+				holdings.Put(conversion.m_to.gameObject.name, count);
+			}
 		}
 	}
 }

@@ -25,7 +25,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The most beehives a village builds itself, counting those it has already
 		/// </summary>
-		public const int HivesMax = 4;
+		public const int HivesMax = 6;
 
 		/// <summary>
 		/// How far apart the village's hives keep, how many spots are tried for one, how far above the ground the room

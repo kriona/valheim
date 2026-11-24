@@ -106,6 +106,7 @@ namespace VikingVillages
 		private static readonly int ArmingKey = "kriona.VikingVillages.vikingArming".GetStableHashCode();
 		private static readonly int LumberKey = "kriona.VikingVillages.vikingLumbering".GetStableHashCode();
 		private static readonly int UpgradingKey = "kriona.VikingVillages.vikingUpgrading".GetStableHashCode();
+		private static readonly int SmeltingKey = "kriona.VikingVillages.vikingSmelting".GetStableHashCode();
 
 		/// <summary>
 		/// For each job only a few vikings do at once, how many of the village's vikings it takes for one more to do it
@@ -117,13 +118,14 @@ namespace VikingVillages
 			{ ForagingKey, 4 },
 			{ HuntingKey, 5 },
 			{ PettingKey, 6 },
-			// One viking builds a beehive at a time, one makes paths, one arms itself, one cuts brush trees and one
-			// upgrades its gear, however big the village
+			// One viking builds a beehive at a time, one makes paths, one arms itself, one cuts brush trees, one
+			// upgrades its gear and one smelts, however big the village
 			{ HiveKey, int.MaxValue },
 			{ PathingKey, int.MaxValue },
 			{ ArmingKey, int.MaxValue },
 			{ LumberKey, int.MaxValue },
-			{ UpgradingKey, int.MaxValue }
+			{ UpgradingKey, int.MaxValue },
+			{ SmeltingKey, int.MaxValue }
 		};
 
 		/// <summary>
@@ -4948,9 +4950,10 @@ namespace VikingVillages
 		/// build back when it's been destroyed, which takes nothing, then a sitting log left by the village's old fire to
 		/// take down for its wood, then a missing piece to rebuild, then the fire to
 		/// stack when it isn't full and no other viking is on it, then arrows to craft at the workbench when it has a bow
-		/// and is missing a batch, then a torch, a missing weapon or an axe for the chests to craft, then a weapon, armor
-		/// or a shield better than its own to craft (see FindGearCraftWork), then a piece of its gear to upgrade, each
-		/// when the village has everything it takes (see FindUpgradeWork), then paths and beehives -
+		/// and is missing a batch, then a torch or a missing weapon to craft, then a weapon, armor or a shield better than
+		/// its own to craft (see FindGearCraftWork), then a piece of its gear to upgrade, each when the village has
+		/// everything it takes (see FindUpgradeWork), then the next step toward the village's goal - smelting or crafting
+		/// what it takes (see FindGoalWork) - then tools for the chests (see FindToolStockWork), then paths and beehives -
 		/// leaving out work that needs wood for a while after it found none to gather, unless there's wood in the
 		/// village's chests
 		/// </summary>
@@ -5093,11 +5096,6 @@ namespace VikingVillages
 			{
 				return(sidearm);
 			}
-			Job stockAxe = FindAxeStockWork();
-			if (stockAxe != null)
-			{
-				return(stockAxe);
-			}
 			// Better gear is crafted before what it would replace is upgraded
 			Job better = FindGearCraftWork();
 			if (better != null)
@@ -5108,6 +5106,18 @@ namespace VikingVillages
 			if (upgrade != null)
 			{
 				return(upgrade);
+			}
+			// Then the next step toward the village's goal, and only after that the tools for its chests, so they never
+			// take what the goal's gear needs
+			Job goal = FindGoalWork();
+			if (goal != null)
+			{
+				return(goal);
+			}
+			Job tools = FindToolStockWork();
+			if (tools != null)
+			{
+				return(tools);
 			}
 			// Paths and beehives wait out a thunderstorm, while light rain doesn't put them off
 			if (VikingWeather.Storming())
@@ -5257,32 +5267,6 @@ namespace VikingVillages
 		private static bool IsAxe(ItemDrop.ItemData item)
 		{
 			return(item != null && item.IsWeapon() && !VikingItems.IsProp(item) && item.GetDamage().m_chop > 0f);
-		}
-
-		/// <summary>
-		/// Finds the village a stone axe for its chests to craft, when none of its chests holds an axe and none of its
-		/// vikings is carrying one to put away, so whoever cuts trees can take one - or else the job that gets what the
-		/// village is short of for it (see GatherFor). One viking arms itself or the village at a time
-		/// </summary>
-		/// <returns>The job, or null when the chests hold an axe, or the village can't make one</returns>
-		private Job FindAxeStockWork()
-		{
-			if (viking == null || OtherDoing(ArmingKey))
-			{
-				return(null);
-			}
-			if (UsableChests().Exists((Container chest) => chest.GetInventory().GetAllItems().Exists((ItemDrop.ItemData item) => !VikingItems.IsCarried(item) && IsAxe(item))))
-			{
-				return(null);
-			}
-			foreach (VillageLife other in All)
-			{
-				if (other != null && other.village == village && other.humanoid != null && other.humanoid.GetInventory().GetAllItems().Exists((ItemDrop.ItemData item) => IsCarriedFor(item, CarryLoot) && IsAxe(item)))
-				{
-					return(null);
-				}
-			}
-			return(CraftWeaponWork(StoneAxePrefab, "Crafting an axe for the chests", true));
 		}
 
 		/// <summary>
@@ -6914,15 +6898,17 @@ namespace VikingVillages
 					holdsItem = true;
 				}
 			}
-			int villageStacks = ((kind == StoreKind.Other && !holdsItem && chests != null) ? StacksIn(item, chests) : 0);
-			return(ChestRoomFor(kind, slots, store.m_inventory.Count, woodSlots, holdsFood, holdsItem, villageStacks, stackRoom, maxStack));
+			bool counted = (kind == StoreKind.Other && chests != null && (!holdsItem || maxStack == 1));
+			int villageStacks = (counted ? StacksIn(item, chests) : 0);
+			return(ChestRoomFor(kind, slots, store.m_inventory.Count, woodSlots, holdsFood, holdsItem, villageStacks, KeptStacks(item), stackRoom, maxStack));
 		}
 
 		/// <summary>
 		/// Works out how many of an item the vikings may put in a chest from what the chest holds - the room on its
 		/// stacks of the item, and its empty slots less one kept for wood until it holds wood and one for food until it
 		/// holds food, for wood only while no more than ChestWoodShare of its slots hold wood, and for anything else
-		/// one new stack only when the chest has none of it and the village has fewer than VillageStacksMax
+		/// one new stack only while the village has fewer stacks of it than it keeps - and for an item that stacks, only
+		/// when the chest has none of it, while one that doesn't stack, like a tool, can go beside another
 		/// </summary>
 		/// <param name="kind">What kind of thing the item is</param>
 		/// <param name="slots">How many slots the chest has</param>
@@ -6932,10 +6918,11 @@ namespace VikingVillages
 		/// <param name="holdsItem">Whether it holds any of the item</param>
 		/// <param name="villageStacks">How many stacks of the item the village's chests hold, counted for anything
 		/// but wood and food</param>
+		/// <param name="stacksKept">How many stacks of the item the village keeps (see KeptStacks)</param>
 		/// <param name="stackRoom">How many more of the item its stacks of it take</param>
 		/// <param name="maxStack">How many of the item make a full stack</param>
 		/// <returns>How many fit, never less than none</returns>
-		internal static int ChestRoomFor(StoreKind kind, int slots, int used, int woodSlots, bool holdsFood, bool holdsItem, int villageStacks, int stackRoom, int maxStack)
+		internal static int ChestRoomFor(StoreKind kind, int slots, int used, int woodSlots, bool holdsFood, bool holdsItem, int villageStacks, int stacksKept, int stackRoom, int maxStack)
 		{
 			int reserved = ((kind != StoreKind.Wood && woodSlots == 0) ? 1 : 0) + ((kind != StoreKind.Food && !holdsFood) ? 1 : 0);
 			int newSlots = slots - used - reserved;
@@ -6945,7 +6932,7 @@ namespace VikingVillages
 			}
 			else if (kind == StoreKind.Other)
 			{
-				bool enough = (holdsItem || villageStacks >= VillageStacksMax);
+				bool enough = ((holdsItem && maxStack > 1) || villageStacks >= stacksKept);
 				newSlots = (enough ? 0 : Mathf.Min(newSlots, 1));
 			}
 			return(stackRoom + Mathf.Max(0, newSlots) * maxStack);
@@ -18711,7 +18698,8 @@ namespace VikingVillages
 		/// Arming itself or the village by day, one viking of the village at a time - crafting the weapon it's missing of
 		/// the two every viking carries, a crude bow or a melee weapon (see FindSidearmWork), at the station its recipe
 		/// needs, then keeping it with the other to pick between as each fight calls for (see VikingCore.ChooseWeapon);
-		/// crafting an axe for the village's chests (see FindAxeStockWork), which it then puts away; or crafting a weapon,
+		/// crafting a tool for the village's chests (see FindToolStockWork) or what its goal takes (see FindGoalWork), which
+		/// it then puts away; or crafting a weapon,
 		/// armor or a shield better than its own from what the village has (see FindGearCraftWork), which it then takes
 		/// up the way it takes up gear it finds
 		/// </summary>

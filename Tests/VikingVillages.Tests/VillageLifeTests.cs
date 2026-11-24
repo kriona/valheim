@@ -31,7 +31,7 @@ namespace VikingVillages.Tests
 		[InlineData(true, 0, 0, 0)]
 		public void StoresLootAsOneFirstStack(bool holdsItem, int villageStacks, int stackRoom, int expected)
 		{
-			Assert.Equal(expected, VillageLife.ChestRoomFor(VillageLife.StoreKind.Other, 10, (holdsItem ? 1 : 0), 0, false, holdsItem, villageStacks, stackRoom, 50));
+			Assert.Equal(expected, VillageLife.ChestRoomFor(VillageLife.StoreKind.Other, 10, (holdsItem ? 1 : 0), 0, false, holdsItem, villageStacks, 2, stackRoom, 50));
 		}
 
 		/// <summary>
@@ -41,11 +41,11 @@ namespace VikingVillages.Tests
 		public void KeepsSlotsFreeForWoodAndFood()
 		{
 			// Ten slots with eight used and no wood or food leave the last two for them
-			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Other, 10, 8, 0, false, false, 0, 0, 50));
+			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Other, 10, 8, 0, false, false, 0, 2, 0, 50));
 			// Holding wood, only the food slot is kept
-			Assert.Equal(50, VillageLife.ChestRoomFor(VillageLife.StoreKind.Other, 10, 8, 1, false, false, 0, 0, 50));
+			Assert.Equal(50, VillageLife.ChestRoomFor(VillageLife.StoreKind.Other, 10, 8, 1, false, false, 0, 2, 0, 50));
 			// Holding both, the last slot takes loot
-			Assert.Equal(50, VillageLife.ChestRoomFor(VillageLife.StoreKind.Other, 10, 9, 1, true, false, 0, 0, 50));
+			Assert.Equal(50, VillageLife.ChestRoomFor(VillageLife.StoreKind.Other, 10, 9, 1, true, false, 0, 2, 0, 50));
 		}
 
 		/// <summary>
@@ -54,11 +54,11 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void KeepsTheOtherSlotForWoodAndFood()
 		{
-			Assert.Equal(180, VillageLife.ChestRoomFor(VillageLife.StoreKind.Food, 10, 0, 0, false, false, 0, 0, 20));
-			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Food, 10, 9, 0, false, false, 0, 0, 20));
-			Assert.Equal(20, VillageLife.ChestRoomFor(VillageLife.StoreKind.Food, 10, 9, 1, false, false, 0, 0, 20));
-			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 10, 9, 3, false, false, 0, 0, 50));
-			Assert.Equal(50, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 10, 9, 3, true, false, 0, 0, 50));
+			Assert.Equal(180, VillageLife.ChestRoomFor(VillageLife.StoreKind.Food, 10, 0, 0, false, false, 0, 2, 0, 20));
+			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Food, 10, 9, 0, false, false, 0, 2, 0, 20));
+			Assert.Equal(20, VillageLife.ChestRoomFor(VillageLife.StoreKind.Food, 10, 9, 1, false, false, 0, 2, 0, 20));
+			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 10, 9, 3, false, false, 0, 2, 0, 50));
+			Assert.Equal(50, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 10, 9, 3, true, false, 0, 2, 0, 50));
 		}
 
 		/// <summary>
@@ -69,10 +69,10 @@ namespace VikingVillages.Tests
 		public void CapsWoodAtItsShare()
 		{
 			// Nine slots free past the food slot, but only five may hold wood
-			Assert.Equal(250, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 10, 0, 0, false, false, 0, 0, 50));
-			Assert.Equal(100, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 10, 3, 3, false, true, 0, 0, 50));
-			Assert.Equal(10, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 10, 5, 5, false, true, 0, 10, 50));
-			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 7, 4, 4, true, true, 0, 0, 50));
+			Assert.Equal(250, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 10, 0, 0, false, false, 0, 2, 0, 50));
+			Assert.Equal(100, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 10, 3, 3, false, true, 0, 2, 0, 50));
+			Assert.Equal(10, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 10, 5, 5, false, true, 0, 2, 10, 50));
+			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 7, 4, 4, true, true, 0, 2, 0, 50));
 		}
 
 		/// <summary>
@@ -81,10 +81,25 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void FullChestHasNoRoom()
 		{
-			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Other, 10, 10, 0, false, false, 0, 0, 50));
-			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Food, 10, 10, 0, false, false, 0, 0, 20));
-			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 10, 10, 8, false, true, 0, 0, 50));
-			Assert.Equal(7, VillageLife.ChestRoomFor(VillageLife.StoreKind.Food, 10, 10, 0, false, true, 0, 7, 20));
+			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Other, 10, 10, 0, false, false, 0, 2, 0, 50));
+			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Food, 10, 10, 0, false, false, 0, 2, 0, 20));
+			Assert.Equal(0, VillageLife.ChestRoomFor(VillageLife.StoreKind.Wood, 10, 10, 8, false, true, 0, 2, 0, 50));
+			Assert.Equal(7, VillageLife.ChestRoomFor(VillageLife.StoreKind.Food, 10, 10, 0, false, true, 0, 2, 7, 20));
+		}
+
+		/// <summary>
+		/// Checks that tools, which don't stack, go into a chest beside one already there, until the village keeps as
+		/// many as it wants
+		/// </summary>
+		/// <param name="villageStacks">How many of the tool the village's chests hold</param>
+		/// <param name="expected">How many fit</param>
+		[Theory]
+		[InlineData(1, 1)]
+		[InlineData(3, 1)]
+		[InlineData(4, 0)]
+		public void KeepsToolsBesideEachOther(int villageStacks, int expected)
+		{
+			Assert.Equal(expected, VillageLife.ChestRoomFor(VillageLife.StoreKind.Other, 10, 1, 1, true, true, villageStacks, VillageLife.PickaxesWanted, 0, 1));
 		}
 
 		/// <summary>
@@ -654,6 +669,55 @@ namespace VikingVillages.Tests
 			Assert.False(VillageLife.InWorkReach(4f, 2f));
 			Assert.True(VillageLife.InWorkReach(2.5f, 2f));
 			Assert.True(VillageLife.InWorkReach(4f, 1f));
+		}
+
+		/// <summary>
+		/// Checks that a smelter is given as much ore as it has room for, and the coal to smelt that and what it already
+		/// holds, as much as it has room for
+		/// </summary>
+		/// <param name="wanted">How much ore is wanted smelted</param>
+		/// <param name="queued">How much it holds already</param>
+		/// <param name="fuel">The fuel it holds</param>
+		/// <param name="expectedOre">How much ore goes in</param>
+		/// <param name="expectedFuel">How much fuel goes in</param>
+		[Theory]
+		[InlineData(5, 0, 0f, 5, 10)]
+		[InlineData(20, 0, 0f, 10, 20)]
+		[InlineData(20, 4, 0f, 6, 20)]
+		[InlineData(3, 0, 4f, 3, 2)]
+		[InlineData(3, 0, 1.5f, 3, 5)]
+		[InlineData(0, 3, 0f, 0, 6)]
+		[InlineData(0, 3, 6f, 0, 0)]
+		[InlineData(0, 10, 15f, 0, 5)]
+		public void LoadsASmelterWithTheFuelForItsOre(int wanted, int queued, float fuel, int expectedOre, int expectedFuel)
+		{
+			VillageLife.SmeltLoad(wanted, queued, 10, fuel, 20, 2, out int ore, out int fuelAdd);
+			Assert.Equal(expectedOre, ore);
+			Assert.Equal(expectedFuel, fuelAdd);
+		}
+
+		/// <summary>
+		/// Checks that a kiln, which burns nothing, is given only what it smelts
+		/// </summary>
+		[Fact]
+		public void LoadsAKilnWithNoFuel()
+		{
+			VillageLife.SmeltLoad(30, 5, 25, 0f, 0, 0, out int ore, out int fuelAdd);
+			Assert.Equal(20, ore);
+			Assert.Equal(0, fuelAdd);
+		}
+
+		/// <summary>
+		/// Checks that every village keeps axes, and only one that can go mining keeps pickaxes
+		/// </summary>
+		[Fact]
+		public void KeepsPickaxesOnlyWhereThereIsOre()
+		{
+			Assert.Equal(VillageLife.AxesWanted, VillageLife.ToolsWanted(ToolKind.Axe, ResourceBook.Meadows));
+			Assert.Equal(0, VillageLife.ToolsWanted(ToolKind.Pickaxe, ResourceBook.Meadows));
+			Assert.Equal(VillageLife.PickaxesWanted, VillageLife.ToolsWanted(ToolKind.Pickaxe, ResourceBook.BlackForest));
+			Assert.Equal(VillageLife.PickaxesWanted, VillageLife.ToolsWanted(ToolKind.Pickaxe, ResourceBook.AshLands));
+			Assert.Equal(0, VillageLife.ToolsWanted(ToolKind.None, ResourceBook.Plains));
 		}
 	}
 }

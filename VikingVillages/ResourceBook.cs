@@ -165,9 +165,9 @@ namespace VikingVillages
 		public static readonly string[] Treasure = { "Amber", "AmberPearl", "Ruby", "SilverNecklace" };
 
 		/// <summary>
-		/// The fewest beehives a village has before it no longer goes looking for bees (see VillageHives.HivesMax)
+		/// The fewest beehives a village has before it no longer goes looking for bees - as many as it builds
 		/// </summary>
-		public const int HivesWanted = 6;
+		public const int HivesWanted = VillageHives.HivesMax;
 
 		/// <summary>
 		/// The items the village's own jobs gather in and around it - wood, stone and flint from the ground, resin from

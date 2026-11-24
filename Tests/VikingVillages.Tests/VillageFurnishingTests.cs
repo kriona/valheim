@@ -370,5 +370,22 @@ namespace VikingVillages.Tests
 				Assert.NotEqual(foods[0], foods[1]);
 			}
 		}
+
+		/// <summary>
+		/// Checks that every biome a village can be in has a starter pickaxe, never a worse one than the biome before it
+		/// </summary>
+		[Fact]
+		public void EveryBiomeHasAStarterPickaxe()
+		{
+			string[] order = { "PickaxeAntler", "PickaxeBronze", "PickaxeIron", "PickaxeBlackMetal" };
+			Assert.Equal(Kriona.Vikings.VikingGear.Biomes.Length, VillageFurnishing.StarterPickaxes.Length);
+			int last = 0;
+			foreach (string pickaxe in VillageFurnishing.StarterPickaxes)
+			{
+				int rank = System.Array.IndexOf(order, pickaxe);
+				Assert.True(rank >= last, pickaxe + " is worse than the biome before it");
+				last = rank;
+			}
+		}
 	}
 }
