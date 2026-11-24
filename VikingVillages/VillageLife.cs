@@ -6615,8 +6615,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Checks whether a chest is one of a village's, which its vikings use - a public one in the village or its
-		/// houses, not on a cart or ship, not a tombstone, and not a chest a player built inside a ward, which keeps the
-		/// vikings out of it but not out of the village's own
+		/// houses, not on a cart or ship, not a tombstone, not one of the game's treasure chests, and not a chest a
+		/// player built inside a ward, which keeps the vikings out of it but not out of the village's own
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="chest">The chest</param>
@@ -6627,7 +6627,7 @@ namespace VikingVillages
 			{
 				return(false);
 			}
-			if (chest.m_rootObjectOverride != null || chest.m_wagon != null || chest.m_autoDestroyEmpty || chest.GetComponent<TombStone>() != null || chest.GetComponentInParent<Ship>() != null)
+			if (chest.m_rootObjectOverride != null || chest.m_wagon != null || chest.m_autoDestroyEmpty || IsTreasureChest(chest) || chest.GetComponent<TombStone>() != null || chest.GetComponentInParent<Ship>() != null)
 			{
 				return(false);
 			}
@@ -6638,6 +6638,18 @@ namespace VikingVillages
 			}
 			bool playerBuilt = (chest.m_nview.GetZDO().GetLong(ZDOVars.s_creator, 0L) != 0L);
 			return(!(playerBuilt && Warded(position)));
+		}
+
+		/// <summary>
+		/// Checks whether a chest is one of the game's treasure chests - buried in the ground, or standing in a ruin or
+		/// a crypt - which fill themselves with loot the first time they load, unlike a chest built as a piece, which
+		/// starts empty. One can lie inside a village, but it's the world's and not the village's
+		/// </summary>
+		/// <param name="chest">The chest</param>
+		/// <returns>True when it is</returns>
+		internal static bool IsTreasureChest(Container chest)
+		{
+			return(chest.m_defaultItems != null && chest.m_defaultItems.m_drops.Count > 0);
 		}
 
 		/// <summary>

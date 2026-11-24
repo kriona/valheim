@@ -302,7 +302,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Puts a full stack of each of Stock, StarterFood of each of its biome's StarterFoods and StarterPickaxeCount of
 		/// its biome's StarterPickaxes when it has one, each stack in one of a village's own chests, picked at random among
-		/// those with room - the chests it was furnished or built with, not ones a player built
+		/// those with room - the chests it was furnished or built with, not ones a player built or the game's treasure
+		/// chests
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns</param>
 		private static void StockChests(Village village)
@@ -317,7 +318,7 @@ namespace VikingVillages
 					continue;
 				}
 				Piece piece = view.GetComponent<Piece>();
-				bool ownChest = (piece != null && piece.GetCreator() == 0L && chest.m_privacy == Container.PrivacySetting.Public);
+				bool ownChest = (piece != null && piece.GetCreator() == 0L && chest.m_privacy == Container.PrivacySetting.Public && !VillageLife.IsTreasureChest(chest));
 				if (ownChest && view.GetComponent<TombStone>() == null && view.GetComponentInParent<Vagon>() == null && view.GetComponentInParent<Ship>() == null)
 				{
 					chests.Add(chest);
