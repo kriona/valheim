@@ -31,6 +31,56 @@ namespace VikingVillages
 		private const float BiomeFarther = 2f;
 
 		/// <summary>
+		/// The traders who buy treasure - each one's camp, as part of the location's lowercase name, what the vikings call
+		/// them, and the biome the camp stands in, which is also the easiest biome a village can be to sell to them: Hildir
+		/// in the Meadows, Haldor in the Black Forest and the Bog Witch in the Swamp. Any trader buys treasure in the game,
+		/// each for what it's worth
+		/// </summary>
+		internal static readonly string[] TraderCamps = { "hildir_camp", "vendor_blackforest", "bogwitch_camp" };
+		internal static readonly string[] TraderNames = { "Hildir", "Haldor", "the Bog Witch" };
+		internal static readonly int[] TraderBiomes = { ResourceBook.Meadows, ResourceBook.BlackForest, ResourceBook.Swamp };
+
+		/// <summary>
+		/// Lists the camps of the traders a village can sell its treasure to - those whose biome is no harder than its own
+		/// </summary>
+		/// <param name="villageBiome">The village's biome, by VikingGear's order</param>
+		/// <returns>The camps, as part of their locations' lowercase names</returns>
+		internal static List<string> TradersFor(int villageBiome)
+		{
+			List<string> camps = new List<string>();
+			for (int i = 0; i < TraderCamps.Length; i++)
+			{
+				if (TraderBiomes[i] <= villageBiome)
+				{
+					camps.Add(TraderCamps[i]);
+				}
+			}
+			return(camps);
+		}
+
+		/// <summary>
+		/// Gets what the vikings call the trader whose camp stands in a biome
+		/// </summary>
+		/// <param name="biome">The camp's biome, by VikingGear's order</param>
+		/// <param name="villageBiome">The village's biome, by VikingGear's order, for the trader to name when the camp's
+		/// biome isn't known - the one of the hardest biome it can sell to</param>
+		/// <returns>The trader's name</returns>
+		internal static string TraderName(int biome, int villageBiome)
+		{
+			int found = System.Array.IndexOf(TraderBiomes, biome);
+			if (found >= 0)
+			{
+				return(TraderNames[found]);
+			}
+			int best = 0;
+			for (int i = 0; i < TraderBiomes.Length; i++)
+			{
+				best = ((TraderBiomes[i] <= villageBiome) ? i : best);
+			}
+			return(TraderNames[best]);
+		}
+
+		/// <summary>
 		/// Finds the places a quest could go
 		/// </summary>
 		/// <param name="kind">The quest</param>
@@ -40,6 +90,20 @@ namespace VikingVillages
 		/// <returns>The spots, nearest first, or none when there are none</returns>
 		public static List<Vector3> FindAll(QuestKind kind, string item, Vector3 from, int villageBiome)
 		{
+			if (kind == QuestKind.SellTreasure)
+			{
+				// The camps of every trader the village can sell to, for the road search to pick the one it gets to soonest
+				List<Vector3> camps = new List<Vector3>();
+				foreach (string camp in TradersFor(villageBiome))
+				{
+					camps.AddRange(NearestLocations(camp, from));
+				}
+				if (camps.Count > 0)
+				{
+					camps.Sort((Vector3 a, Vector3 b) => Utils.DistanceXZ(from, a).CompareTo(Utils.DistanceXZ(from, b)));
+					return(camps);
+				}
+			}
 			string location = LocationOf(kind);
 			if (location != null)
 			{
@@ -49,12 +113,24 @@ namespace VikingVillages
 					return(locations);
 				}
 			}
+			if (kind == QuestKind.Hunt || kind == QuestKind.Forage)
+			{
+				// Each biome whose prey or plants give it, like every one with birds for feathers
+				List<Vector3> spots = new List<Vector3>();
+				foreach (int each in QuestLoot.BiomesFor(kind, item ?? "", villageBiome))
+				{
+					spots.AddRange(NearestBiome(VikingGear.Get(each).Biome, from, ((each == villageBiome) ? OwnBiomeMin : 0f)));
+				}
+				spots.Sort((Vector3 a, Vector3 b) => Utils.DistanceXZ(from, a).CompareTo(Utils.DistanceXZ(from, b)));
+				return(spots);
+			}
 			int biome = BiomeOf(kind, item, villageBiome);
 			return(NearestBiome(VikingGear.Get(biome).Biome, from, ((biome == villageBiome) ? OwnBiomeMin : 0f)));
 		}
 
 		/// <summary>
-		/// Gets the kind of location a quest goes to, as part of the location's lowercase name
+		/// Gets the kind of location a quest goes to, as part of the location's lowercase name - selling treasure, which
+		/// goes to whichever trader it can sell to, aside (see TradersFor)
 		/// </summary>
 		/// <param name="kind">The quest</param>
 		/// <returns>The name, or null for a quest that goes to ground of a biome</returns>
@@ -71,7 +147,6 @@ namespace VikingVillages
 					return("trollcave");
 				case QuestKind.HuntGoblins:
 					return("goblincamp");
-				case QuestKind.SellTreasure:
 				case QuestKind.BuyCirclet:
 					return("vendor_blackforest");
 				case QuestKind.KillEikthyr:
@@ -82,8 +157,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets the biome a quest goes to, by VikingGear's order - the ore's, the tree's, or the village's own for hunting
-		/// and foraging
+		/// Gets the biome a quest goes to, by VikingGear's order - the ore's, the tree's, or for hunting and foraging, where
+		/// the prey or plants give what it's for (see QuestLoot.TargetBiome)
 		/// </summary>
 		/// <param name="kind">The quest</param>
 		/// <param name="item">What it's for, or ""</param>
@@ -98,9 +173,11 @@ namespace VikingVillages
 				case QuestKind.RaidBurialChambers:
 				case QuestKind.HuntGhosts:
 				case QuestKind.HuntTrolls:
-				case QuestKind.SellTreasure:
 				case QuestKind.BuyCirclet:
 					return(ResourceBook.BlackForest);
+				case QuestKind.SellTreasure:
+					// The hardest biome with a trader the village can sell to, when the world has none of their camps
+					return(TraderBiomes[System.Math.Max(0, TradersFor(villageBiome).Count - 1)]);
 				case QuestKind.MineSilver:
 					return(ResourceBook.Mountain);
 				case QuestKind.RaidCrypts:
@@ -112,6 +189,9 @@ namespace VikingVillages
 					return(ResourceBook.Meadows);
 				case QuestKind.ChopTrees:
 					return(TreeBiome(item, villageBiome));
+				case QuestKind.Hunt:
+				case QuestKind.Forage:
+					return(QuestLoot.BiomeFor(kind, item ?? "", villageBiome));
 				default:
 					return(villageBiome);
 			}
@@ -154,8 +234,9 @@ namespace VikingVillages
 			}
 			foreach (ZoneSystem.LocationInstance instance in ZoneSystem.instance.m_locationInstances.Values)
 			{
+				// The location's own name first, as the Bog Witch's camp has Hildir's camp's prefab name in the game's list
 				ZoneSystem.ZoneLocation location = instance.m_location;
-				string name = ((location != null) ? (!string.IsNullOrEmpty(location.m_prefabName) ? location.m_prefabName : location.m_name) : null);
+				string name = ((location != null) ? (!string.IsNullOrEmpty(location.m_name) ? location.m_name : location.m_prefabName) : null);
 				if (name != null && Matches(name.ToLowerInvariant(), kind))
 				{
 					found.Add(instance.m_position);

@@ -323,12 +323,12 @@ namespace VikingVillages
 			QuestOutcome story = leader.RecentStory();
 			if (story != null && Random.value < QuestSpeech.BackTalkChance)
 			{
-				return(QuestSpeech.BackTalk(story.Kind, story.Companions));
+				return(QuestSpeech.NameTrader(QuestSpeech.BackTalk(story.Kind, story.Companions), VillageQuests.TraderOf(leader.village)));
 			}
 			QuestRecord record = leader.QuestOut();
 			if (record != null && Random.value < QuestSpeech.AwayTalkChance)
 			{
-				return(QuestSpeech.AwayTalk(record.Kind, record.Names, VillageQuests.DuePhrase(record)));
+				return(QuestSpeech.NameTrader(QuestSpeech.AwayTalk(record.Kind, record.Names, VillageQuests.DuePhrase(record)), VillageQuests.TraderOf(leader.village)));
 			}
 			return(null);
 		}
@@ -363,12 +363,12 @@ namespace VikingVillages
 			QuestOutcome story = RecentStory();
 			if (story != null && Random.value < QuestSpeech.BackAnswerChance)
 			{
-				return(QuestSpeech.BackAnswer(story.Kind, story.Companions, player.GetPlayerName()));
+				return(QuestSpeech.NameTrader(QuestSpeech.BackAnswer(story.Kind, story.Companions, player.GetPlayerName()), VillageQuests.TraderOf(village)));
 			}
 			QuestRecord record = QuestOut();
 			if (record != null && Random.value < QuestSpeech.AwayAnswerChance)
 			{
-				return(QuestSpeech.AwayAnswer(record.Kind, record.Names, VillageQuests.DuePhrase(record), player.GetPlayerName()));
+				return(QuestSpeech.NameTrader(QuestSpeech.AwayAnswer(record.Kind, record.Names, VillageQuests.DuePhrase(record), player.GetPlayerName()), VillageQuests.TraderOf(village)));
 			}
 			return(null);
 		}

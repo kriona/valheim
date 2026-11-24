@@ -185,9 +185,24 @@ namespace VikingVillages.Tests
 		{
 			VillageHoldings holdings = MakeHoldings();
 			holdings.Put("Wood", 20);
+			holdings.Put("TrophyDeer", 2);
 			PlanStep step = ResourcePlanner.Next(MakeBook(), holdings, "Bronze", 1);
 			Assert.Equal(StepKind.Quest, step.Kind);
 			Assert.Equal(QuestKind.KillEikthyr, step.Quest);
+		}
+
+		[Theory]
+		[InlineData(0)]
+		[InlineData(1)]
+		public void SummoningEikthyrTakesDeerTrophiesHuntedFirst(int trophies)
+		{
+			VillageHoldings holdings = MakeHoldings();
+			holdings.Put("Wood", 20);
+			holdings.Put("TrophyDeer", trophies);
+			PlanStep step = ResourcePlanner.Next(MakeBook(), holdings, "Bronze", 1);
+			Assert.Equal(StepKind.Quest, step.Kind);
+			Assert.Equal(QuestKind.Hunt, step.Quest);
+			Assert.Equal("TrophyDeer", step.Item);
 		}
 
 		[Fact]

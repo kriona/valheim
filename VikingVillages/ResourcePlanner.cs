@@ -415,8 +415,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out the first step of going on a quest for an item - Quest once the village is of a hard enough biome,
-		/// has the stations, coins, light and a tool good enough, or the step to get the light or the tool when it's
-		/// short of one
+		/// has the stations, coins, light, what the quest uses up there and a tool good enough, or the step to get the
+		/// light, what it uses up or the tool when it's short of one
 		/// </summary>
 		/// <param name="source">The quest's way to get the item</param>
 		/// <param name="item">The item's prefab name</param>
@@ -455,6 +455,14 @@ namespace VikingVillages
 				if (light.Kind != StepKind.Ready)
 				{
 					return(light);
+				}
+			}
+			if (rule.Offering.Length > 0 && rule.OfferingCount > 0)
+			{
+				PlanStep offering = Resolve(rule.Offering, rule.OfferingCount, depth + 1);
+				if (offering.Kind != StepKind.Ready)
+				{
+					return(offering);
 				}
 			}
 			if (source.Tool != ToolKind.None && !HasTool(source.Tool, source.ToolTier))

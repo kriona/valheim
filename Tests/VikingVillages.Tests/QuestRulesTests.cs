@@ -67,6 +67,91 @@ namespace VikingVillages.Tests
 			Assert.Equal(0, QuestRules.GroupSize(hunt, ResourceBook.Plains, 0, 10, 4));
 		}
 
+		/// <summary>
+		/// Makes a rule like hunting's - 1-3 hunters, 3-5 from the Plains on, the extras going whenever they can be spared
+		/// </summary>
+		/// <returns>The rule</returns>
+		private static QuestRule Hunting()
+		{
+			return(new QuestRule { Kind = QuestKind.Hunt, Vikings = 1, PlainsVikings = 3, MaxVikings = 3, PlainsMaxVikings = 5, ExtrasJoin = true });
+		}
+
+		[Theory]
+		[InlineData(ResourceBook.Meadows, 10, 10, 3)]
+		[InlineData(ResourceBook.Meadows, 10, 4, 2)]
+		[InlineData(ResourceBook.Meadows, 1, 10, 1)]
+		[InlineData(ResourceBook.Meadows, 10, 2, 0)]
+		[InlineData(ResourceBook.Mountain, 10, 10, 3)]
+		[InlineData(ResourceBook.Plains, 10, 10, 5)]
+		[InlineData(ResourceBook.Plains, 4, 10, 4)]
+		[InlineData(ResourceBook.Plains, 10, 6, 4)]
+		[InlineData(ResourceBook.Plains, 10, 4, 0)]
+		public void ExtraHuntersGoWhenTheyCanBeSpared(int biome, int available, int village, int expected)
+		{
+			Assert.Equal(expected, QuestRules.GroupSize(Hunting(), biome, 0, available, village));
+		}
+
+		[Theory]
+		[InlineData(0.24f, 918f)]
+		[InlineData(0.5f, 450f)]
+		[InlineData(0.75f, 0f)]
+		[InlineData(0.9f, 0f)]
+		public void NightFallsAtSixInTheEvening(float dayFraction, float expected)
+		{
+			Assert.Equal(expected, QuestRules.SecondsToNight(dayFraction, 1800f), 2);
+		}
+
+		[Theory]
+		[InlineData(900f, 60f, 60f, 8)]
+		[InlineData(5000f, 60f, 60f, 10)]
+		[InlineData(400f, 60f, 60f, 3)]
+		[InlineData(300f, 60f, 60f, 2)]
+		[InlineData(100f, 60f, 60f, 0)]
+		public void HuntersTakeWhatPreyDaylightLeavesTimeFor(float toNight, float there, float back, int expected)
+		{
+			Assert.Equal(expected, QuestRules.HuntKillsBeforeNight(toNight, there, back));
+		}
+
+		[Theory]
+		[InlineData(1200f, 60f, 60f, 12)]
+		[InlineData(600f, 60f, 60f, 6)]
+		[InlineData(400f, 60f, 60f, 3)]
+		[InlineData(50f, 60f, 60f, 0)]
+		public void ForagersPickWhatDaylightLeavesTimeFor(float toNight, float there, float back, int expected)
+		{
+			Assert.Equal(expected, QuestRules.ForagePicksBeforeNight(toNight, there, back));
+		}
+
+		[Theory]
+		[InlineData(900f, 12)]
+		[InlineData(300f, 4)]
+		[InlineData(0f, 0)]
+		public void ForagersPickAPlantForEveryWhileForaging(float activeSeconds, int expected)
+		{
+			Assert.Equal(expected, QuestRules.ForagePicks(activeSeconds));
+		}
+
+		[Fact]
+		public void EverydayQuestsAreHomeByNight()
+		{
+			Assert.True(QuestRules.HomeByNight(QuestKind.Hunt));
+			Assert.True(QuestRules.HomeByNight(QuestKind.Forage));
+			Assert.True(QuestRules.HomeByNight(QuestKind.ChopTrees));
+			Assert.False(QuestRules.HomeByNight(QuestKind.MineCopper));
+			Assert.Equal(270f, QuestRules.LeastWork(QuestKind.Hunt), 3);
+			Assert.Equal(300f, QuestRules.LeastWork(QuestKind.Forage), 3);
+			Assert.Equal(180f, QuestRules.LeastWork(QuestKind.ChopTrees), 3);
+			Assert.Equal(0f, QuestRules.LeastWork(QuestKind.RaidCrypts), 3);
+			Assert.Equal(780f, QuestRules.WorkBeforeNight(900f, 60f, 60f), 3);
+			Assert.Equal(0f, QuestRules.WorkBeforeNight(100f, 60f, 60f), 3);
+		}
+
+		[Fact]
+		public void AWholeDayLeftCountsNoMoreThanTheMost()
+		{
+			Assert.Equal(QuestRules.HuntKillsMost, QuestRules.HuntKillsBeforeNight(float.MaxValue, 0f, 0f));
+		}
+
 		[Fact]
 		public void OnlyRemarkableQuestsAreTalkedAbout()
 		{

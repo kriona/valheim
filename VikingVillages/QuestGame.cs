@@ -78,8 +78,9 @@ namespace VikingVillages
 		/// <param name="source">The way the quest gets its item</param>
 		/// <param name="there">How long the trip there takes, in seconds</param>
 		/// <param name="back">How long the trip back takes, in seconds</param>
+		/// <param name="roadBiome">The biome the road goes to, by VikingGear's order, or -1 when it isn't known</param>
 		/// <returns>False when one of its vikings isn't loaded here</returns>
-		public static bool Prepare(Village village, QuestRecord record, ResourceSource source, float there, float back)
+		public static bool Prepare(Village village, QuestRecord record, ResourceSource source, float there, float back, int roadBiome)
 		{
 			List<Humanoid> members = Members(village, record);
 			ResourceBook book = ResourceBookGame.Get();
@@ -99,12 +100,39 @@ namespace VikingVillages
 				spaces.Add(SpaceOf(members[i], ToolItem(record.Tools[i])));
 			}
 			Dictionary<string, int> found = new Dictionary<string, int>();
+			float toNight = ((EnvMan.instance != null) ? QuestRules.SecondsToNight(EnvMan.instance.GetDayFraction(), EnvMan.instance.m_dayLengthSec) : float.MaxValue);
+			bool byNight = (QuestRules.HomeByNight(record.Kind) && toNight < float.MaxValue);
+			float work = (byNight ? QuestRules.WorkBeforeNight(toNight, there, back) : float.MaxValue);
 			float active = QuestRules.ActiveSeconds(record.Kind);
 			if (source.Tool != ToolKind.None && record.Item.Length > 0)
 			{
-				active += Gather(village, record, source, members, spaces, found);
+				// Cutting trees stops in time to be home before night
+				active += Gather(village, record, source, members, spaces, found, (byNight ? Mathf.Max(QuestRules.TreesLeastSeconds, work - active) : float.MaxValue));
 			}
-			QuestLoot.Roll(village, record, members, found);
+			int most = 0;
+			if (record.Kind == QuestKind.Hunt)
+			{
+				most = Mathf.Max(QuestRules.HuntKillsLeast, (byNight ? QuestRules.HuntKillsBeforeNight(toNight, there, back) : QuestRules.HuntKillsMost));
+			}
+			else if (record.Kind == QuestKind.Forage)
+			{
+				most = Mathf.Max(QuestRules.ForagePicksLeast, (byNight ? QuestRules.ForagePicksBeforeNight(toNight, there, back) : QuestRules.ForagePicksMost));
+			}
+			int taken = QuestLoot.Roll(village, record, members, spaces, most, found, roadBiome);
+			if (rule.Offering.Length > 0 && rule.OfferingCount > 0 && record.Plans.Count > 0)
+			{
+				// The first of them takes along what the quest uses up there, from the village's chests
+				record.Plans[0].Spend.Add(new KeyValuePair<string, int>(rule.Offering, rule.OfferingCount));
+			}
+			if (record.Kind == QuestKind.Hunt)
+			{
+				// A hunt takes as long as its busiest hunter's prey take
+				active = taken * QuestRules.HuntKillSeconds;
+			}
+			else if (record.Kind == QuestKind.Forage)
+			{
+				active = most * QuestRules.ForagePickSeconds;
+			}
 			List<KeyValuePair<string, int>> ordered = Ordered(found, record.Item);
 			List<Dictionary<string, int>> shares = QuestSim.Share(ordered, spaces, WeightOf, StackOf);
 			for (int i = 0; i < members.Count; i++)
@@ -112,13 +140,19 @@ namespace VikingVillages
 				record.Plans[i].Loot = Ordered(shares[i], record.Item);
 			}
 			record.ActiveSeconds = active;
-			record.Due = record.SetOutAt + NetTime.Ticks(QuestRules.Duration(there, back, active, Random.Range(-1f, 1f)));
+			float seconds = QuestRules.Duration(there, back, active, Random.Range(-1f, 1f));
+			if (byNight && seconds > toNight)
+			{
+				seconds = Mathf.Max(there + back + active, toNight);
+			}
+			record.Due = record.SetOutAt + NetTime.Ticks(seconds);
 			return(true);
 		}
 
 		/// <summary>
-		/// Works out the vikings mining or cutting for a quest's item - as much as they can carry home between them, each
-		/// tool swinging until that's done or it wears out - and notes each one's tool, its wear and its hits
+		/// Works out the vikings mining or cutting for a quest's item - as much as they can carry home between them, or as
+		/// much as they get done in the time they have, each tool swinging until that's done or it wears out - and notes
+		/// each one's tool, its wear and its hits
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="record">The quest, its plans filled in</param>
@@ -126,8 +160,9 @@ namespace VikingVillages
 		/// <param name="members">Its vikings</param>
 		/// <param name="spaces">Each viking's room</param>
 		/// <param name="found">What they bring back, added to</param>
+		/// <param name="most">The most time they have for it, in seconds</param>
 		/// <returns>How long the work takes, in seconds</returns>
-		private static float Gather(Village village, QuestRecord record, ResourceSource source, List<Humanoid> members, List<CarrySpace> spaces, Dictionary<string, int> found)
+		private static float Gather(Village village, QuestRecord record, ResourceSource source, List<Humanoid> members, List<CarrySpace> spaces, Dictionary<string, int> found, float most)
 		{
 			List<QuestTool> tools = new List<QuestTool>();
 			List<int> owners = new List<int>();
@@ -145,7 +180,14 @@ namespace VikingVillages
 				record.Plans[i].Tool = tool.m_dropPrefab.name;
 			}
 			int units = QuestSim.CarryUnits(spaces, WeightOf(record.Item), StackOf(record.Item));
-			GatherResult result = QuestSim.Gather(units, HealthPerUnit(source.ToolTarget, record.Item), tools, QuestSim.SwingSeconds, Game.m_durabilityRate);
+			float unitHealth = HealthPerUnit(source.ToolTarget, record.Item);
+			GatherResult result = QuestSim.Gather(units, unitHealth, tools, QuestSim.SwingSeconds, Game.m_durabilityRate);
+			if (result.Seconds > most && result.Units > 1)
+			{
+				// Too long for the time they have, so they break off only as much as it gives time for
+				units = Mathf.Max(1, Mathf.FloorToInt(result.Units * most / result.Seconds));
+				result = QuestSim.Gather(units, unitHealth, tools, QuestSim.SwingSeconds, Game.m_durabilityRate);
+			}
 			for (int t = 0; t < owners.Count; t++)
 			{
 				MemberPlan plan = record.Plans[owners[t]];
@@ -478,6 +520,10 @@ namespace VikingVillages
 			{
 				Trade(record.Kind, carried, outcome);
 			}
+			else
+			{
+				LeaveOfferings(plan, carried, outcome);
+			}
 			if (plan.Hits > 0)
 			{
 				ItemDrop.ItemData tool = ItemData(plan.Tool);
@@ -486,9 +532,42 @@ namespace VikingVillages
 			}
 			if (plan.Kills > 0 && core != null)
 			{
-				outcome.Skills.Add(new KeyValuePair<int, float>((int)WeaponSkill(humanoid), plan.Kills * QuestLoot.HitsPerKill));
+				outcome.Skills.Add(new KeyValuePair<int, float>((int)WeaponSkill(humanoid, record.Kind == QuestKind.Hunt), plan.Kills * QuestLoot.HitsPerKill));
+			}
+			if (record.Kind == QuestKind.Forage)
+			{
+				// Each plant picked raises Farming by one, the way picking does for a player (see Pickable.Interact)
+				outcome.Skills.Add(new KeyValuePair<int, float>((int)Skills.SkillType.Farming, QuestRules.ForagePicks(record.ActiveSeconds)));
 			}
 			return(outcome);
+		}
+
+		/// <summary>
+		/// Uses up what a viking took along to leave where the quest went (see QuestRule.Offering), as much of it as the
+		/// quest takes and it carries
+		/// </summary>
+		/// <param name="plan">The viking's plan, with what it takes along to leave</param>
+		/// <param name="carried">What it took along</param>
+		/// <param name="outcome">How the quest goes for it, what it used added to</param>
+		private static void LeaveOfferings(MemberPlan plan, List<ItemDrop.ItemData> carried, QuestOutcome outcome)
+		{
+			foreach (KeyValuePair<string, int> offering in plan.Spend)
+			{
+				int left = offering.Value;
+				foreach (ItemDrop.ItemData item in carried)
+				{
+					if (left <= 0)
+					{
+						break;
+					}
+					if (item.m_dropPrefab != null && item.m_dropPrefab.name == offering.Key)
+					{
+						int used = Mathf.Min(left, item.m_stack);
+						outcome.Used.Add(new KeyValuePair<string, int>(offering.Key, used));
+						left -= used;
+					}
+				}
+			}
 		}
 
 		/// <summary>
@@ -531,12 +610,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets the skill of the weapon a viking fights with - its melee weapon's, or its bow's when it has no other
+		/// Gets the skill of the weapon a viking fights with - its melee weapon's, or its bow's when it has no other - or
+		/// hunting, its bow's whenever it has one
 		/// </summary>
 		/// <param name="humanoid">The viking</param>
+		/// <param name="hunting">Whether it's hunting</param>
 		/// <returns>The skill, or Unarmed when it has no weapon</returns>
-		private static Skills.SkillType WeaponSkill(Humanoid humanoid)
+		private static Skills.SkillType WeaponSkill(Humanoid humanoid, bool hunting)
 		{
+			Skills.SkillType melee = Skills.SkillType.None;
 			Skills.SkillType ranged = Skills.SkillType.None;
 			foreach (ItemDrop.ItemData item in humanoid.GetInventory().GetAllItems())
 			{
@@ -546,11 +628,20 @@ namespace VikingVillages
 				}
 				if (!VikingCore.IsRanged(item))
 				{
-					return(item.m_shared.m_skillType);
+					melee = ((melee != Skills.SkillType.None) ? melee : item.m_shared.m_skillType);
 				}
-				ranged = item.m_shared.m_skillType;
+				else if (ranged == Skills.SkillType.None)
+				{
+					ranged = item.m_shared.m_skillType;
+				}
 			}
-			return((ranged != Skills.SkillType.None) ? ranged : Skills.SkillType.Unarmed);
+			Skills.SkillType first = (hunting ? ranged : melee);
+			Skills.SkillType second = (hunting ? melee : ranged);
+			if (first != Skills.SkillType.None)
+			{
+				return(first);
+			}
+			return((second != Skills.SkillType.None) ? second : Skills.SkillType.Unarmed);
 		}
 
 		/// <summary>

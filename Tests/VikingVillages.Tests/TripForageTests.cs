@@ -35,14 +35,14 @@ namespace VikingVillages.Tests
 		public void NothingGrowsWhereNothingGrows()
 		{
 			Dictionary<int, float> seconds = new Dictionary<int, float> { { 3, 5000f } };
-			Assert.Empty(TripForage.Pick(seconds, () => 0.5f));
+			Assert.Empty(TripForage.Pick(seconds, ResourceBook.DeepNorth, () => 0.5f));
 		}
 
 		[Fact]
 		public void PicksWhatGrowsWhereItWalked()
 		{
 			Dictionary<int, float> seconds = new Dictionary<int, float> { { 4, 600f } };
-			List<string> found = TripForage.Pick(seconds, () => 0.99f);
+			List<string> found = TripForage.Pick(seconds, ResourceBook.DeepNorth, () => 0.99f);
 			Assert.Equal(3, found.Count);
 			Assert.All(found, (string item) => Assert.Equal("Cloudberry", item));
 		}
@@ -51,7 +51,7 @@ namespace VikingVillages.Tests
 		public void ARollOfOneStillPicksSomething()
 		{
 			Dictionary<int, float> seconds = new Dictionary<int, float> { { 0, 400f } };
-			Assert.Equal(2, TripForage.Pick(seconds, () => 1f).Count);
+			Assert.Equal(2, TripForage.Pick(seconds, ResourceBook.DeepNorth, () => 1f).Count);
 		}
 
 		[Fact]
@@ -60,8 +60,54 @@ namespace VikingVillages.Tests
 			// The roll falls in the Meadows' share first, then the Black Forest's
 			Dictionary<int, float> seconds = new Dictionary<int, float> { { 0, 200f }, { 1, 400f } };
 			Queue<float> rolls = new Queue<float>(new[] { 0.1f, 0f, 0.9f, 0f, 0.9f, 0f });
-			List<string> found = TripForage.Pick(seconds, () => rolls.Dequeue());
+			List<string> found = TripForage.Pick(seconds, ResourceBook.DeepNorth, () => rolls.Dequeue());
 			Assert.Equal(new List<string> { "Raspberry", "Blueberries", "Blueberries" }, found);
+		}
+
+		[Fact]
+		public void NothingIsFoundInBiomesHarderThanTheVikingsOwn()
+		{
+			Dictionary<int, float> seconds = new Dictionary<int, float> { { ResourceBook.Plains, 900f } };
+			Assert.Empty(TripForage.Pick(seconds, ResourceBook.Meadows, () => 0.5f));
+			Assert.Equal(5, TripForage.Pick(seconds, ResourceBook.Plains, () => 0.5f).Count);
+		}
+
+		[Fact]
+		public void OnlyTheVikingsOwnBiomesCountTowardWhatsFound()
+		{
+			// The Plains' 900 seconds count for nothing, leaving the Meadows' 400 for 2 finds
+			Dictionary<int, float> seconds = new Dictionary<int, float> { { ResourceBook.Meadows, 400f }, { ResourceBook.Plains, 900f } };
+			List<string> found = TripForage.Pick(seconds, ResourceBook.BlackForest, () => 0.99f);
+			Assert.Equal(2, found.Count);
+			Assert.DoesNotContain("Cloudberry", found);
+		}
+
+		[Theory]
+		[InlineData(299f, 0)]
+		[InlineData(300f, 1)]
+		[InlineData(600f, 2)]
+		[InlineData(100000f, 2)]
+		public void HuntersTakeACouplePreyOnTheRoad(float seconds, int expected)
+		{
+			Assert.Equal(expected, TripForage.PreyFound(seconds));
+		}
+
+		/// <summary>
+		/// Gets the prey of a biome - boar in the Meadows, and lox everywhere else
+		/// </summary>
+		/// <param name="biome">The biome, by VikingGear's order</param>
+		/// <returns>The prey, by prefab name</returns>
+		private static string[] PreyIn(int biome)
+		{
+			return((biome == ResourceBook.Meadows) ? new[] { "Boar" } : new[] { "Lox" });
+		}
+
+		[Fact]
+		public void HuntersOnlyTakePreyOfTheirOwnBiomesOnTheRoad()
+		{
+			Dictionary<int, float> seconds = new Dictionary<int, float> { { ResourceBook.Meadows, 300f }, { ResourceBook.Plains, 3000f } };
+			Assert.Equal(new List<string> { "Boar" }, TripForage.PickPrey(seconds, ResourceBook.Meadows, PreyIn, () => 0.5f));
+			Assert.Equal(2, TripForage.PickPrey(seconds, ResourceBook.Plains, PreyIn, () => 0.5f).Count);
 		}
 
 		[Fact]

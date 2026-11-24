@@ -42,6 +42,129 @@ namespace VikingVillages
 		public const float DefaultTravel = 300f;
 
 		/// <summary>
+		/// How a hunt goes - the fewest and most prey each hunter takes, how long each takes, in seconds, and how far
+		/// through the day night falls, which the hunters are always home before (see EnvMan.CalculateNight)
+		/// </summary>
+		public const int HuntKillsLeast = 3;
+		public const int HuntKillsMost = 10;
+		public const float HuntKillSeconds = 90f;
+		public const float NightFalls = 0.75f;
+
+		/// <summary>
+		/// Works out how long it is until night falls
+		/// </summary>
+		/// <param name="dayFraction">How far through the day it is, from 0 at midnight</param>
+		/// <param name="dayLength">How long a game day is, in seconds</param>
+		/// <returns>How long, in seconds, or 0 once it's night</returns>
+		public static float SecondsToNight(float dayFraction, float dayLength)
+		{
+			return(System.Math.Max(0f, (NightFalls - dayFraction) * dayLength));
+		}
+
+		/// <summary>
+		/// How foraging goes - the fewest and most plants each forager picks and how long each takes, in seconds - and the
+		/// least time cutting trees is worth going for, past finding them, in seconds
+		/// </summary>
+		public const int ForagePicksLeast = 4;
+		public const int ForagePicksMost = 12;
+		public const float ForagePickSeconds = 75f;
+		public const float TreesLeastSeconds = 60f;
+
+		/// <summary>
+		/// Works out how many plants each forager picked on a foraging quest from how long they were at it
+		/// </summary>
+		/// <param name="activeSeconds">How long they foraged, in seconds</param>
+		/// <returns>How many plants</returns>
+		public static int ForagePicks(float activeSeconds)
+		{
+			return(System.Math.Max(0, (int)System.Math.Round(activeSeconds / ForagePickSeconds)));
+		}
+
+		/// <summary>
+		/// Checks whether a quest is always home before night - hunting, foraging and cutting trees, the everyday quests
+		/// near home, which do as much as the daylight left allows
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <returns>True when it is</returns>
+		public static bool HomeByNight(QuestKind kind)
+		{
+			return(kind == QuestKind.Hunt || kind == QuestKind.Forage || kind == QuestKind.ChopTrees);
+		}
+
+		/// <summary>
+		/// Works out how long a quest can work and still be home before night - the time until night with the trip there
+		/// and back taken off
+		/// </summary>
+		/// <param name="toNight">How long it is until night falls, in seconds</param>
+		/// <param name="there">How long the trip there takes, in seconds</param>
+		/// <param name="back">How long the trip back takes, in seconds</param>
+		/// <returns>How long, in seconds, or 0 when there's no time at all</returns>
+		public static float WorkBeforeNight(float toNight, float there, float back)
+		{
+			return(System.Math.Max(0f, toNight - System.Math.Max(0f, there) - System.Math.Max(0f, back)));
+		}
+
+		/// <summary>
+		/// Works out the least work a quest that's home by night is worth setting out for - HuntKillsLeast prey each,
+		/// ForagePicksLeast plants each, or finding the trees and TreesLeastSeconds of cutting
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <returns>How long, in seconds, or 0 for a quest that isn't home by night</returns>
+		public static float LeastWork(QuestKind kind)
+		{
+			switch (kind)
+			{
+				case QuestKind.Hunt:
+					return(HuntKillsLeast * HuntKillSeconds);
+				case QuestKind.Forage:
+					return(ForagePicksLeast * ForagePickSeconds);
+				case QuestKind.ChopTrees:
+					return(ActiveSeconds(kind) + TreesLeastSeconds);
+				default:
+					return(0f);
+			}
+		}
+
+		/// <summary>
+		/// Works out how many of something each viking can do in the time it has, at so long each, no more than a most
+		/// </summary>
+		/// <param name="work">How long it has, in seconds</param>
+		/// <param name="each">How long each takes, in seconds</param>
+		/// <param name="most">The most it does</param>
+		/// <returns>How many</returns>
+		private static int CountIn(float work, float each, int most)
+		{
+			double count = System.Math.Floor(work / each);
+			return((int)System.Math.Max(0.0, System.Math.Min(most, count)));
+		}
+
+		/// <summary>
+		/// Works out how many prey each hunter can take and still be home before night, at HuntKillSeconds a prey, no
+		/// more than HuntKillsMost
+		/// </summary>
+		/// <param name="toNight">How long it is until night falls, in seconds</param>
+		/// <param name="there">How long the trip there takes, in seconds</param>
+		/// <param name="back">How long the trip back takes, in seconds</param>
+		/// <returns>How many, fewer than HuntKillsLeast when there isn't time for a hunt today</returns>
+		public static int HuntKillsBeforeNight(float toNight, float there, float back)
+		{
+			return(CountIn(WorkBeforeNight(toNight, there, back), HuntKillSeconds, HuntKillsMost));
+		}
+
+		/// <summary>
+		/// Works out how many plants each forager can pick and still be home before night, at ForagePickSeconds a plant,
+		/// no more than ForagePicksMost
+		/// </summary>
+		/// <param name="toNight">How long it is until night falls, in seconds</param>
+		/// <param name="there">How long the trip there takes, in seconds</param>
+		/// <param name="back">How long the trip back takes, in seconds</param>
+		/// <returns>How many, fewer than ForagePicksLeast when there isn't time to forage today</returns>
+		public static int ForagePicksBeforeNight(float toNight, float there, float back)
+		{
+			return(CountIn(WorkBeforeNight(toNight, there, back), ForagePickSeconds, ForagePicksMost));
+		}
+
+		/// <summary>
 		/// How long the work of each quest takes once the vikings are there, the way a player would take, in seconds -
 		/// mining and cutting trees are worked out from what the vikings can carry and their tools instead (see
 		/// QuestSim.Gather), this being what's left for finding the ore or trees
@@ -49,7 +172,7 @@ namespace VikingVillages
 		private static readonly Dictionary<QuestKind, float> ActiveTimes = new Dictionary<QuestKind, float>
 		{
 			{ QuestKind.Hunt, 900f },
-			{ QuestKind.Forage, 900f },
+			{ QuestKind.Forage, ForagePicksMost * ForagePickSeconds },
 			{ QuestKind.ChopTrees, 120f },
 			{ QuestKind.MineCopper, 180f },
 			{ QuestKind.MineTin, 180f },
@@ -113,7 +236,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out how many vikings go on a quest - the quest's own number for the village's biome, more for one that
-		/// takes a tool while the village has more of them, up to the quest's most - as long as MinHome stay home
+		/// takes a tool while the village has more of them, or for one whose extras join whenever they can be spared, up
+		/// to the quest's most - as long as MinHome stay home
 		/// </summary>
 		/// <param name="rule">The quest's rule</param>
 		/// <param name="biome">The village's biome, by VikingGear's order</param>
@@ -124,7 +248,8 @@ namespace VikingVillages
 		public static int GroupSize(QuestRule rule, int biome, int tools, int available, int village)
 		{
 			int wanted = rule.VikingsFor(biome);
-			int size = System.Math.Min(rule.MaxVikings, System.Math.Max(wanted, tools));
+			int most = rule.MostFor(biome);
+			int size = (rule.ExtrasJoin ? most : System.Math.Min(most, System.Math.Max(wanted, tools)));
 			size = System.Math.Min(size, System.Math.Min(available, village - MinHome));
 			return((size >= wanted) ? size : 0);
 		}

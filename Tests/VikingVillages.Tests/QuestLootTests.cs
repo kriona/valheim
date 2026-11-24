@@ -4,6 +4,38 @@ using Xunit;
 namespace VikingVillages.Tests
 {
 	/// <summary>
+	/// Tests that no boss's trophy is among what quests bring home
+	/// </summary>
+	public class QuestTrophyTests
+	{
+		[Fact]
+		public void EveryBossTrophyIsLeftBehind()
+		{
+			Assert.Contains("TrophyEikthyr", QuestLoot.BossTrophies);
+			Assert.Equal(7, QuestLoot.BossTrophies.Length);
+			Assert.Null(ResourceBookTrophySource());
+		}
+
+		/// <summary>
+		/// Finds a quest that brings back a boss's trophy in the quests' list of what they bring back
+		/// </summary>
+		/// <returns>The trophy, or null when no quest brings one back</returns>
+		private static string ResourceBookTrophySource()
+		{
+			ResourceBook book = new ResourceBook();
+			book.AddQuests();
+			foreach (string trophy in QuestLoot.BossTrophies)
+			{
+				if (book.SourcesOf(trophy).Count > 0)
+				{
+					return(trophy);
+				}
+			}
+			return(null);
+		}
+	}
+
+	/// <summary>
 	/// Tests what each quest brings back - what it kills, opens and picks, what trading with Haldor gets, and the skill
 	/// what's found goes by
 	/// </summary>
@@ -68,13 +100,166 @@ namespace VikingVillages.Tests
 			Assert.Empty(QuestLoot.Sources(QuestKind.MineCopper));
 		}
 
-		[Fact]
-		public void ForageGrowsInTheVillagesBiomeAndThoseBefore()
+		/// <summary>
+		/// Counts how many of a prey a hunter takes in its time, the way a hunt does
+		/// </summary>
+		/// <param name="prey">The prey's prefab name</param>
+		/// <param name="most">The most prey's time the hunter spends</param>
+		/// <returns>How many it takes</returns>
+		private static int TakenInTime(string prey, int most)
 		{
-			Assert.Equal(new List<string> { "Raspberry", "Mushroom", "Dandelion" }, QuestLoot.ForageFor(ResourceBook.Meadows));
-			Assert.Contains("Blueberries", QuestLoot.ForageFor(ResourceBook.Swamp));
-			Assert.Contains("Cloudberry", QuestLoot.ForageFor(ResourceBook.AshLands));
-			Assert.DoesNotContain("Cloudberry", QuestLoot.ForageFor(ResourceBook.Mountain));
+			float spent = 0f;
+			int taken = 0;
+			while (spent < most - 0.01f && QuestLoot.HasTimeFor(spent, QuestLoot.EffortOf(prey), most, taken))
+			{
+				spent += QuestLoot.EffortOf(prey);
+				taken++;
+			}
+			return(taken);
+		}
+
+		[Theory]
+		[InlineData("Boar", 8, 12)]
+		[InlineData("Deer", 3, 4)]
+		[InlineData("Crow", 8, 8)]
+		[InlineData("Wolf", 8, 8)]
+		[InlineData("Lox", 8, 3)]
+		[InlineData("Lox", 3, 1)]
+		[InlineData("Moose", 8, 4)]
+		[InlineData("Seal", 3, 1)]
+		public void SomePreyAreTakenMoreOrLessOften(string prey, int most, int expected)
+		{
+			Assert.Equal(expected, TakenInTime(prey, most));
+		}
+
+		/// <summary>
+		/// Checks whether an item is meat, for the tests' made-up drops
+		/// </summary>
+		/// <param name="item">The item's prefab name</param>
+		/// <returns>True when it ends in "Meat"</returns>
+		private static bool IsMeat(string item)
+		{
+			return(item.EndsWith("Meat"));
+		}
+
+		[Fact]
+		public void FoodIsWhatAKillDropsToEatOnAverage()
+		{
+			LootTable deer = new LootTable { Drops = new List<LootDrop> { new LootDrop { Item = "DeerMeat", Min = 2, Max = 2 }, new LootDrop { Item = "DeerHide", Min = 1, Max = 3 } } };
+			LootTable neck = new LootTable { Drops = new List<LootDrop> { new LootDrop { Item = "NeckMeat", Min = 1, Max = 1, Chance = 0.7f } } };
+			LootTable moose = new LootTable { Drops = new List<LootDrop> { new LootDrop { Item = "MooseMeat", Min = 4, Max = 6 } } };
+			Assert.Equal(2f, QuestLoot.FoodOf(deer, IsMeat), 3);
+			Assert.Equal(0.7f, QuestLoot.FoodOf(neck, IsMeat), 3);
+			Assert.Equal(5f, QuestLoot.FoodOf(moose, IsMeat), 3);
+			Assert.Equal(0f, QuestLoot.FoodOf(new LootTable(), IsMeat), 3);
+		}
+
+		[Theory]
+		[InlineData(0.0, 0)]
+		[InlineData(0.53, 0)]
+		[InlineData(0.55, 1)]
+		[InlineData(0.99, 2)]
+		[InlineData(1.0, 2)]
+		public void FoodHuntsTakeTheMeatierPreyMoreOften(double roll, int expected)
+		{
+			// Deer 2, boar 1, necks 0.7 - deer take 2 in 3.7 of the rolls
+			Assert.Equal(expected, QuestLoot.PickWeighted(new List<float> { 2f, 1f, 0.7f }, 3, roll));
+		}
+
+		[Theory]
+		[InlineData(0.0, 0)]
+		[InlineData(0.5, 1)]
+		[InlineData(0.99, 1)]
+		public void PreyAreTakenEvenlyWithoutWeights(double roll, int expected)
+		{
+			Assert.Equal(expected, QuestLoot.PickWeighted(null, 2, roll));
+			Assert.Equal(expected, QuestLoot.PickWeighted(new List<float> { 0f, 0f }, 2, roll));
+		}
+
+		/// <summary>
+		/// Checks what a few biomes' birds give - feathers in the Meadows, the Black Forest, the Plains and the Ashlands
+		/// </summary>
+		/// <param name="biome">The biome, by VikingGear's order</param>
+		/// <param name="item">The item, or "" for food</param>
+		/// <returns>True when the biome's birds give it</returns>
+		private static bool BirdsGive(int biome, string item)
+		{
+			bool birds = (biome == ResourceBook.Meadows || biome == ResourceBook.BlackForest || biome == ResourceBook.Plains || biome == ResourceBook.AshLands);
+			return(item == "Feathers" && birds);
+		}
+
+		[Fact]
+		public void FeathersCanBeHuntedWhereverThereAreBirds()
+		{
+			Assert.Equal(new List<int> { ResourceBook.Meadows, ResourceBook.BlackForest, ResourceBook.Plains }, QuestLoot.TargetBiomes("Feathers", ResourceBook.Mistlands, BirdsGive));
+			Assert.Equal(new List<int> { ResourceBook.Meadows }, QuestLoot.TargetBiomes("Feathers", ResourceBook.Meadows, BirdsGive));
+		}
+
+		[Fact]
+		public void HuntingForFoodHasOneBiome()
+		{
+			Assert.Equal(new List<int> { ResourceBook.Plains }, QuestLoot.TargetBiomes("", ResourceBook.AshLands, PreyGives));
+			Assert.Equal(new List<int> { ResourceBook.Swamp }, QuestLoot.TargetBiomes("Nothing", ResourceBook.Swamp, PreyGives));
+		}
+
+		[Fact]
+		public void ForagingPicksOnlyWhatItsFor()
+		{
+			Assert.Equal(new List<string> { "Thistle" }, QuestLoot.PlantsFor(ResourceBook.BlackForest, "Thistle"));
+			Assert.Empty(QuestLoot.PlantsFor(ResourceBook.Meadows, "Thistle"));
+			Assert.Empty(QuestLoot.PlantsFor(ResourceBook.Swamp, ""));
+		}
+
+		[Fact]
+		public void ForagingForFoodLeavesWhatsNoFood()
+		{
+			Assert.Equal(new List<string> { "Raspberry", "Mushroom" }, QuestLoot.PlantsFor(ResourceBook.Meadows, ""));
+			Assert.Equal(new List<string> { "Blueberries", "MushroomYellow" }, QuestLoot.PlantsFor(ResourceBook.BlackForest, ""));
+		}
+
+		[Theory]
+		[InlineData("Raspberry", ResourceBook.Plains, ResourceBook.Meadows)]
+		[InlineData("Thistle", ResourceBook.Mountain, ResourceBook.BlackForest)]
+		[InlineData("Cloudberry", ResourceBook.AshLands, ResourceBook.Plains)]
+		[InlineData("", ResourceBook.Meadows, ResourceBook.Meadows)]
+		[InlineData("", ResourceBook.Mountain, ResourceBook.BlackForest)]
+		[InlineData("", ResourceBook.Plains, ResourceBook.Plains)]
+		[InlineData("", ResourceBook.DeepNorth, ResourceBook.Plains)]
+		public void ForagingGoesWhereWhatItsForGrows(string item, int village, int expected)
+		{
+			Assert.Equal(expected, QuestLoot.BiomeFor(QuestKind.Forage, item, village));
+		}
+
+		/// <summary>
+		/// Checks what a few biomes' prey give - boar's leather scraps in the Meadows and wolves' pelts in the Mountains,
+		/// and meat in the Meadows, the Mountains and the Plains
+		/// </summary>
+		/// <param name="biome">The biome, by VikingGear's order</param>
+		/// <param name="item">The item, or "" for food</param>
+		/// <returns>True when the biome's prey give it</returns>
+		private static bool PreyGives(int biome, string item)
+		{
+			if (item.Length == 0)
+			{
+				return(biome == ResourceBook.Meadows || biome == ResourceBook.Mountain || biome == ResourceBook.Plains);
+			}
+			return((item == "LeatherScraps" && biome == ResourceBook.Meadows) || (item == "WolfPelt" && biome == ResourceBook.Mountain));
+		}
+
+		[Fact]
+		public void HuntingForAnItemGoesToTheEasiestBiomeWithIt()
+		{
+			Assert.Equal(ResourceBook.Meadows, QuestLoot.TargetBiome("LeatherScraps", ResourceBook.Plains, PreyGives));
+			Assert.Equal(ResourceBook.Mountain, QuestLoot.TargetBiome("WolfPelt", ResourceBook.Plains, PreyGives));
+			Assert.Equal(ResourceBook.Swamp, QuestLoot.TargetBiome("WolfPelt", ResourceBook.Swamp, PreyGives));
+		}
+
+		[Fact]
+		public void HuntingForFoodGoesToTheHardestBiomeWithIt()
+		{
+			Assert.Equal(ResourceBook.Plains, QuestLoot.TargetBiome("", ResourceBook.AshLands, PreyGives));
+			Assert.Equal(ResourceBook.Mountain, QuestLoot.TargetBiome("", ResourceBook.Mountain, PreyGives));
+			Assert.Equal(ResourceBook.Meadows, QuestLoot.TargetBiome("", ResourceBook.Swamp, PreyGives));
 		}
 
 		[Fact]

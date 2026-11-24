@@ -90,19 +90,49 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Gets the keys how long the road to a quest takes from a village is noted at on the village's ZDO, once the
-		/// server has worked it out - there and back, in seconds, and when it was worked out, in ZNet time ticks
+		/// server has worked it out - there and back, in seconds, when it was worked out, in ZNet time ticks, and the biome
+		/// it goes to, by VikingGear's order
 		/// </summary>
 		/// <param name="kind">The quest</param>
 		/// <param name="item">What it's for, or ""</param>
 		/// <param name="there">The key of the time there</param>
 		/// <param name="back">The key of the time back</param>
 		/// <param name="at">The key of when it was worked out</param>
-		private static void RouteKeys(QuestKind kind, string item, out int there, out int back, out int at)
+		/// <param name="biome">The key of the biome it goes to</param>
+		private static void RouteKeys(QuestKind kind, string item, out int there, out int back, out int at, out int biome)
 		{
 			string name = "kriona.VikingVillages.villageQuestRoad." + kind + "." + item;
 			there = (name + ".there").GetStableHashCode();
 			back = (name + ".back").GetStableHashCode();
 			at = (name + ".at").GetStableHashCode();
+			biome = (name + ".biome").GetStableHashCode();
+		}
+
+		/// <summary>
+		/// Gets what the vikings call the trader a village sells its treasure to - the one whose camp its road goes to
+		/// </summary>
+		/// <param name="village">The village, or null</param>
+		/// <returns>The trader's name, like "Hildir"</returns>
+		internal static string TraderOf(Village village)
+		{
+			if (village == null)
+			{
+				return(QuestTargets.TraderName(-1, ResourceBook.Meadows));
+			}
+			return(QuestTargets.TraderName(RouteBiome(village, QuestKind.SellTreasure, ""), VillageCooking.VillageBiome(village)));
+		}
+
+		/// <summary>
+		/// Gets the biome the road to a quest goes to from a village, as the server last worked it out
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="kind">The quest</param>
+		/// <param name="item">What it's for, or ""</param>
+		/// <returns>The biome, by VikingGear's order, or -1 when it isn't known</returns>
+		private static int RouteBiome(Village village, QuestKind kind, string item)
+		{
+			RouteKeys(kind, item, out int _, out int _, out int _, out int biomeKey);
+			return(village.Zdo.GetInt(biomeKey, -1));
 		}
 
 		/// <summary>
@@ -116,7 +146,7 @@ namespace VikingVillages
 		/// <returns>The time there, in seconds, or less than 0 while the server hasn't answered</returns>
 		private static float RouteSeconds(Village village, QuestKind kind, string item, out float back)
 		{
-			RouteKeys(kind, item, out int thereKey, out int backKey, out int atKey);
+			RouteKeys(kind, item, out int thereKey, out int backKey, out int atKey, out int biomeKey);
 			float there = village.Zdo.GetFloat(thereKey, -1f);
 			back = village.Zdo.GetFloat(backKey, -1f);
 			long at = village.Zdo.GetLong(atKey, 0L);
@@ -129,7 +159,7 @@ namespace VikingVillages
 			}
 			routesAsked.Add(asked);
 			ZDOID id = village.Zdo.m_uid;
-			TravelPlanner.AskQuestRoute(village.Farm, VillageCooking.VillageBiome(village), kind, item, (float answerThere, float answerBack) =>
+			TravelPlanner.AskQuestRoute(village.Farm, VillageCooking.VillageBiome(village), kind, item, (float answerThere, float answerBack, int answerBiome) =>
 			{
 				routesAsked.Remove(asked);
 				ZDO zdo = ((ZDOMan.instance != null) ? ZDOMan.instance.GetZDO(id) : null);
@@ -138,6 +168,7 @@ namespace VikingVillages
 					zdo.Set(thereKey, answerThere);
 					zdo.Set(backKey, answerBack);
 					zdo.Set(atKey, NetTime.Now());
+					zdo.Set(biomeKey, answerBiome);
 				}
 			});
 			return(there);
@@ -240,7 +271,7 @@ namespace VikingVillages
 			switch (record.Phase)
 			{
 				case QuestPhase.Waiting:
-					if (CanSetOutNow() && village.FindEnemy(EnemyReach) == null)
+					if (CanSetOutNow(village, record) && village.FindEnemy(EnemyReach) == null)
 					{
 						SetOut(village, record);
 					}
@@ -269,12 +300,28 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a quest can set out now - by day, after the vikings wake and before StartCutoff
+		/// Checks whether a quest can set out now - by day, after the vikings wake and before StartCutoff, and for one
+		/// that's home by night, like a hunt, with daylight enough for the least work it's worth going for (see
+		/// QuestRules.LeastWork)
 		/// </summary>
+		/// <param name="village">The village, run by this client</param>
+		/// <param name="record">The quest</param>
 		/// <returns>True when it can</returns>
-		private static bool CanSetOutNow()
+		private static bool CanSetOutNow(Village village, QuestRecord record)
 		{
-			return(!EnvMan.IsNight() && QuestRules.CanSetOut(EnvMan.instance.GetDayFraction()));
+			float dayFraction = EnvMan.instance.GetDayFraction();
+			if (EnvMan.IsNight() || !QuestRules.CanSetOut(dayFraction))
+			{
+				return(false);
+			}
+			if (!QuestRules.HomeByNight(record.Kind))
+			{
+				return(true);
+			}
+			float there = RouteSeconds(village, record.Kind, record.Item, out float back);
+			there = ((there >= 0f) ? there : QuestRules.DefaultTravel);
+			back = ((back >= 0f) ? back : there);
+			return(QuestRules.WorkBeforeNight(QuestRules.SecondsToNight(dayFraction, EnvMan.instance.m_dayLengthSec), there, back) >= QuestRules.LeastWork(record.Kind));
 		}
 
 		/// <summary>
@@ -352,8 +399,8 @@ namespace VikingVillages
 			{
 				village.Zdo.Set(LastCircletKey, now);
 			}
-			Plugin.Log.LogInfo("Quest: the village at " + village.Farm.ToString("F0") + " picked " + record.Kind + (!string.IsNullOrEmpty(record.Item) ? " for " + record.Item : "") + " with " + string.Join(", ", record.Names) + (CanSetOutNow() ? "" : ", waiting for the morning"));
-			if (CanSetOutNow())
+			Plugin.Log.LogInfo("Quest: the village at " + village.Farm.ToString("F0") + " picked " + record.Kind + (!string.IsNullOrEmpty(record.Item) ? " for " + record.Item : "") + " with " + string.Join(", ", record.Names) + (CanSetOutNow(village, record) ? "" : ", waiting for the morning"));
+			if (CanSetOutNow(village, record))
 			{
 				SetOut(village, record);
 			}
@@ -424,7 +471,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds a quest to buy a Dverger circlet, for a village of the Mountains or harder that bought none in the last
+		/// Finds a quest to buy a Dverger circlet, for a village of the Swamp or harder that bought none in the last
 		/// CircletDays days, with a viking still using torches, and the coins and treasure to pay for it
 		/// </summary>
 		/// <param name="village">The village</param>
@@ -434,7 +481,7 @@ namespace VikingVillages
 		private static Choice CircletChoice(Village village, ResourceBook book, VillageHoldings holdings)
 		{
 			long last = village.Zdo.GetLong(LastCircletKey, 0L);
-			if (holdings.Biome < ResourceBook.Mountain || (last > 0L && NetTime.Now() < last + NetTime.Ticks(EnvMan.instance.m_dayLengthSec * CircletDays)))
+			if (holdings.Biome < ResourceBook.Swamp || (last > 0L && NetTime.Now() < last + NetTime.Ticks(EnvMan.instance.m_dayLengthSec * CircletDays)))
 			{
 				return(null);
 			}
@@ -629,7 +676,7 @@ namespace VikingVillages
 			travel = ((travel >= 0f) ? travel : QuestRules.DefaultTravel);
 			back = ((back >= 0f) ? back : travel);
 			ResourceSource source = QuestGame.SourceFor(ResourceBookGame.Get(), record.Kind, record.Item);
-			if (!QuestGame.Prepare(village, record, source, travel, back))
+			if (!QuestGame.Prepare(village, record, source, travel, back, RouteBiome(village, record.Kind, record.Item)))
 			{
 				Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " was given up on, as its vikings aren't all here");
 				TestLog.Count("Quests", record.Kind + " given up on");
@@ -875,13 +922,14 @@ namespace VikingVillages
 				{
 					foreach (string item in RouteItems(book, kind))
 					{
-						RouteKeys(kind, item, out int thereKey, out int backKey, out int atKey);
+						RouteKeys(kind, item, out int thereKey, out int backKey, out int atKey, out int biomeKey);
 						float there = village.Zdo.GetFloat(thereKey, -1f);
 						if (there >= 0f)
 						{
 							float back = village.Zdo.GetFloat(backKey, there);
 							float age = (NetTime.Now() - village.Zdo.GetLong(atKey, 0L)) / (float)NetTime.Ticks(1f);
-							roads.Add(kind + ((item.Length > 0) ? " " + item : "") + " " + there.ToString("F0") + "s" + ((Mathf.Abs(back - there) >= 1f) ? "/" + back.ToString("F0") + "s back" : "") + " (" + age.ToString("F0") + "s old)");
+							int biome = village.Zdo.GetInt(biomeKey, -1);
+							roads.Add(kind + ((item.Length > 0) ? " " + item : "") + " " + there.ToString("F0") + "s" + ((Mathf.Abs(back - there) >= 1f) ? "/" + back.ToString("F0") + "s back" : "") + ((biome >= 0) ? ", to biome " + biome : "") + " (" + age.ToString("F0") + "s old)");
 						}
 					}
 				}

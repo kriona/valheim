@@ -14,13 +14,14 @@ namespace VikingVillages
 		/// <summary>
 		/// The tokens lines are filled in at - roughly when a quest is due back, like "tomorrow" (see TravelTime.Phrase),
 		/// the names of the vikings out on it, the names of the others who went with the one speaking, the player's name,
-		/// and the name of one of the village's dead
+		/// the name of one of the village's dead, and the trader they sold treasure to (see NameTrader)
 		/// </summary>
 		public const string WhenToken = "{when}";
 		public const string AwayToken = "{away}";
 		public const string WithToken = "{with}";
 		public const string PlayerToken = "{player}";
 		public const string FallenToken = "{fallen}";
+		public const string TraderToken = "{trader}";
 
 		/// <summary>
 		/// How likely a talk between two vikings is about a quest out, by one at home, and about a quest just back, by one
@@ -61,7 +62,7 @@ namespace VikingVillages
 			{ QuestKind.RaidBurialChambers, new[] { new[] { "{away} went into a burial chamber.", "Skeletons and ghosts. Better them than me." }, new[] { "Think {away} will bring back amber?", "If the dead left any." } } },
 			{ QuestKind.HuntTrolls, new[] { new[] { "{away} went after a troll.", "A troll? On purpose?", "Its hide makes good armor, they said." }, new[] { "Do you hear that crashing in the forest, {name}?", "That'll be {away} and the troll. I hope." } } },
 			{ QuestKind.HuntGoblins, new[] { new[] { "{away} went to raid the fulings.", "Brave. Or mad.", "Out on the Plains it's the same thing." }, new[] { "Black metal, they said. Worth the fulings' spears, I hope.", "We'll know soon enough." } } },
-			{ QuestKind.SellTreasure, new[] { new[] { "{away} took our amber to Haldor.", "I hope they come back with coins and not some trinket of his." }, new[] { "Haldor drives a hard bargain.", "{away} can haggle with the best of them." } } },
+			{ QuestKind.SellTreasure, new[] { new[] { "{away} took our amber to {trader}.", "I hope they come back with coins and not some trinket or other." }, new[] { "{trader} drives a hard bargain.", "{away} can haggle with the best of them." } } },
 			{ QuestKind.BuyCirclet, new[] { new[] { "{away} went to Haldor for a Dverger circlet.", "No more torches in the dark, then." }, new[] { "A circlet costs a fortune, {name}.", "A fortune well spent, if it keeps the dark away." } } },
 			{ QuestKind.KillEikthyr, new[] { new[] { "{away} went to face Eikthyr.", "The stag? For his antlers?", "For a pickaxe, they said." }, new[] { "Thunder over the meadow, {name}. Hear it?", "That'll be {away} and the stag." } } },
 			{ QuestKind.FindBees, new[] { new[] { "{away} went looking for wild bees.", "I hope they bring back more honey than stings." }, new[] { "Wild hives are hard to find, {name}.", "Follow the buzzing, they said." } } },
@@ -82,7 +83,7 @@ namespace VikingVillages
 			{ QuestKind.RaidBurialChambers, new[] { "{away} went raiding a burial chamber, {player}." } },
 			{ QuestKind.HuntTrolls, new[] { "{away} went troll hunting. Troll hunting, {player}!" } },
 			{ QuestKind.HuntGoblins, new[] { "{away} went to raid a fuling village, {player}." } },
-			{ QuestKind.SellTreasure, new[] { "{away} took our treasure to Haldor, {player}." } },
+			{ QuestKind.SellTreasure, new[] { "{away} took our treasure to {trader}, {player}." } },
 			{ QuestKind.BuyCirclet, new[] { "{away} went to buy a circlet from Haldor, {player}." } },
 			{ QuestKind.KillEikthyr, new[] { "{away} went to face Eikthyr, {player}. For his antlers." } },
 			{ QuestKind.FindBees, new[] { "{away} went looking for wild bees, {player}." } },
@@ -103,7 +104,7 @@ namespace VikingVillages
 			{ QuestKind.RaidBurialChambers, new[] { new[] { "Skeletons everywhere, {name}. {with} smashed most of them.", "Any treasure?", "Amber, bones and dust." }, new[] { "It was so dark in there, {name}.", "Good thing you took a torch." } } },
 			{ QuestKind.HuntTrolls, new[] { new[] { "We brought down a troll! {with} took the first swing.", "And lived to tell it. Impressive." }, new[] { "Have you ever smelled a troll up close, {name}?", "I'll take your word for it." } } },
 			{ QuestKind.HuntGoblins, new[] { new[] { "The fulings didn't see us coming. {with} saw to that.", "Black metal?", "Enough to make the forge sing." }, new[] { "The Plains are no place for the careless, {name}.", "And yet here you are." } } },
-			{ QuestKind.SellTreasure, new[] { new[] { "Haldor tried to cheat us, {name}. {with} wasn't having it.", "So you got the coins?", "Every last one." }, new[] { "Haldor's cart is full of strange things, {name}.", "Did you buy any of them?", "Only with my eyes." } } },
+			{ QuestKind.SellTreasure, new[] { new[] { "{trader} tried to cheat us, {name}. {with} wasn't having it.", "So you got the coins?", "Every last one." }, new[] { "{trader} had all sorts of strange things for sale, {name}.", "Did you buy any of them?", "Only with my eyes." } } },
 			{ QuestKind.BuyCirclet, new[] { new[] { "Look, {name} - a Dverger circlet!", "No more torches, then." }, new[] { "Haldor wanted every coin we had, {name}.", "Was it worth it?", "Ask me in the dark." } } },
 			{ QuestKind.KillEikthyr, new[] { new[] { "Eikthyr is down, {name}! {with} and I saw to it.", "The stag himself?", "Antlers and all." }, new[] { "My hair's still standing up from the stag's lightning.", "It suits you, {name}." } } },
 			{ QuestKind.FindBees, new[] { new[] { "We found wild bees, {name}.", "And the stings to prove it, I see." }, new[] { "Honey, {name}! Straight from a wild hive.", "Save some for the rest of us." } } },
@@ -124,7 +125,7 @@ namespace VikingVillages
 			{ QuestKind.RaidBurialChambers, new[] { "We raided a burial chamber, {player}! {with} nearly got lost in the dark." } },
 			{ QuestKind.HuntTrolls, new[] { "We killed a troll, {player}! Ask {with} if you don't believe me." } },
 			{ QuestKind.HuntGoblins, new[] { "We raided the fulings, {player}. {with} fought like a bear." } },
-			{ QuestKind.SellTreasure, new[] { "Haldor paid well for our treasure, {player}. {with} drove the bargain." } },
+			{ QuestKind.SellTreasure, new[] { "{trader} paid well for our treasure, {player}. {with} drove the bargain." } },
 			{ QuestKind.BuyCirclet, new[] { "Haldor's circlet, {player}! No more torches for us." } },
 			{ QuestKind.KillEikthyr, new[] { "We faced Eikthyr, {player}! {with} and I brought back his antlers." } },
 			{ QuestKind.FindBees, new[] { "I found wild bees, {player}. They found me too." } },
@@ -370,6 +371,33 @@ namespace VikingVillages
 			};
 			string filled = System.Text.RegularExpressions.Regex.Replace(line, "\\{(?:when|away|with|player)\\}", (System.Text.RegularExpressions.Match token) => values[token.Value]);
 			return((filled.Length > 0) ? char.ToUpperInvariant(filled[0]) + filled.Substring(1) : filled);
+		}
+
+		/// <summary>
+		/// Names the trader in a line filled in, capitalizing it at the start of the line
+		/// </summary>
+		/// <param name="line">The line, or null</param>
+		/// <param name="trader">What the vikings call the trader, like "Hildir" or "the Bog Witch"</param>
+		/// <returns>The line with the trader named, or null</returns>
+		public static string NameTrader(string line, string trader)
+		{
+			if (line == null || !line.Contains(TraderToken))
+			{
+				return(line);
+			}
+			string named = line.Replace(TraderToken, trader);
+			return(line.StartsWith(TraderToken, System.StringComparison.Ordinal) ? char.ToUpperInvariant(named[0]) + named.Substring(1) : named);
+		}
+
+		/// <summary>
+		/// Names the trader in each line of a talk (see NameTrader)
+		/// </summary>
+		/// <param name="talk">The talk's lines, or null</param>
+		/// <param name="trader">What the vikings call the trader</param>
+		/// <returns>The lines with the trader named, or null</returns>
+		public static string[] NameTrader(string[] talk, string trader)
+		{
+			return((talk != null) ? System.Array.ConvertAll(talk, (string line) => NameTrader(line, trader)) : null);
 		}
 
 		/// <summary>

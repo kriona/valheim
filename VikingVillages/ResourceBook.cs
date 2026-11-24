@@ -110,6 +110,20 @@ namespace VikingVillages
 		public int HivesBelow;
 
 		/// <summary>
+		/// The most vikings that go from the Plains on, or 0 for the same as MaxVikings, and whether the extra vikings
+		/// past those the quest needs go whenever the village can spare them, rather than only with more tools
+		/// </summary>
+		public int PlainsMaxVikings;
+		public bool ExtrasJoin;
+
+		/// <summary>
+		/// What the quest uses up where it goes, by prefab name, or "" for nothing, and how many - like the deer trophies
+		/// Eikthyr's altar takes to summon him, which the vikings take along from the village's chests and leave there
+		/// </summary>
+		public string Offering = "";
+		public int OfferingCount;
+
+		/// <summary>
 		/// Gets how many vikings of a village go on the quest - more from the Plains on, where the monsters are worse
 		/// </summary>
 		/// <param name="biome">The village's biome, by VikingGear's order</param>
@@ -117,6 +131,17 @@ namespace VikingVillages
 		public int VikingsFor(int biome)
 		{
 			return((biome >= ResourceBook.Plains) ? System.Math.Max(Vikings, PlainsVikings) : Vikings);
+		}
+
+		/// <summary>
+		/// Gets the most vikings of a village that go on the quest - more from the Plains on, when the quest says so
+		/// </summary>
+		/// <param name="biome">The village's biome, by VikingGear's order</param>
+		/// <returns>How many</returns>
+		public int MostFor(int biome)
+		{
+			int most = ((biome >= ResourceBook.Plains && PlainsMaxVikings > 0) ? PlainsMaxVikings : MaxVikings);
+			return(System.Math.Max(most, VikingsFor(biome)));
 		}
 	}
 
@@ -249,7 +274,10 @@ namespace VikingVillages
 		public void AddQuests()
 		{
 			string[] mining = { Smelter, Kiln };
-			Rule(QuestKind.Hunt, Meadows, 1, 3, 3, false, new string[0]);
+			// 1-3 hunters, 3-5 from the Plains on, the extras going whenever the village can spare them
+			QuestRule hunt = Rule(QuestKind.Hunt, Meadows, 1, 3, 3, false, new string[0]);
+			hunt.PlainsMaxVikings = 5;
+			hunt.ExtrasJoin = true;
 			Rule(QuestKind.Forage, Meadows, 1, 2, 2, false, new string[0]);
 			Rule(QuestKind.ChopTrees, Meadows, 1, 2, 3, false, new string[0]);
 			Rule(QuestKind.MineCopper, BlackForest, 2, 2, 4, false, mining);
@@ -260,8 +288,11 @@ namespace VikingVillages
 			Rule(QuestKind.HuntTrolls, BlackForest, 3, 3, 3, true, new string[0]);
 			Rule(QuestKind.HuntGoblins, Plains, 3, 3, 5, false, new[] { BlastFurnace, Kiln });
 			Rule(QuestKind.SellTreasure, Meadows, 2, 2, 2, false, new string[0]);
-			Rule(QuestKind.BuyCirclet, Mountain, 2, 2, 2, false, new string[0]);
-			Rule(QuestKind.KillEikthyr, Meadows, 2, 2, 2, false, new string[0]);
+			Rule(QuestKind.BuyCirclet, Swamp, 2, 2, 2, false, new string[0]);
+			// Eikthyr's altar takes 2 deer trophies to summon him, as the game's offeraltar_deer has it
+			QuestRule eikthyr = Rule(QuestKind.KillEikthyr, Meadows, 2, 2, 2, false, new string[0]);
+			eikthyr.Offering = "TrophyDeer";
+			eikthyr.OfferingCount = 2;
 			Rule(QuestKind.FindBees, Meadows, 1, 1, 1, false, new string[0]).HivesBelow = HivesWanted;
 			Rule(QuestKind.HuntGhosts, BlackForest, 2, 2, 3, true, new string[0]);
 			Brings("RawMeat", QuestKind.Hunt, Meadows);
@@ -296,9 +327,8 @@ namespace VikingVillages
 			Brings(Coins, QuestKind.RaidBurialChambers, BlackForest);
 			Brings("TrollHide", QuestKind.HuntTrolls, BlackForest);
 			Brings("BlackMetalScrap", QuestKind.HuntGoblins, Plains);
-			Brings(Circlet, QuestKind.BuyCirclet, Mountain);
+			Brings(Circlet, QuestKind.BuyCirclet, Swamp);
 			Brings("HardAntler", QuestKind.KillEikthyr, Meadows);
-			Brings("TrophyEikthyr", QuestKind.KillEikthyr, Meadows);
 			Brings("QueenBee", QuestKind.FindBees, Meadows);
 			Brings("Honey", QuestKind.FindBees, Meadows);
 			Brings("Ectoplasm", QuestKind.HuntGhosts, BlackForest);

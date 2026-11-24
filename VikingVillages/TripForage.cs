@@ -6,15 +6,17 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// What vikings out of every player's reach pick along their road - a few of what grows in the biomes they walk
-	/// through, more the longer they walk through them, less what they eat on the way - put in their inventory as they
-	/// arrive, on the server, which keeps them on the road (see VillageTravel)
+	/// through, more the longer they walk through them, less what they eat on the way, and for hunters, a prey or two -
+	/// put in their inventory as they arrive, on the server, which keeps them on the road (see VillageTravel)
 	/// </summary>
 	/// <remarks>
 	/// A viking finds one thing for every SecondsPerFind seconds on foot through a biome where something grows, up to
 	/// MostFound, picked by how long it spent in each biome, and eats one of what it found that it can eat for every
-	/// EatEvery seconds of the trip, before any food of its own - so a long trip often brings back only one or two. Vikings
-	/// out to mine or raid only pick on the way home, once they have what they went for. The numbers are small on
-	/// purpose: a trip brings back a handful, never stacks
+	/// EatEvery seconds of the trip, before any food of its own - so a long trip often brings back only one or two. A
+	/// viking out hunting also takes a prey for every SecondsPerPrey seconds on foot through a biome with prey, up to
+	/// MostPrey. Only the biomes no harder than the viking's own count - a Meadows viking crossing the Plains finds
+	/// nothing there. Vikings out to mine or raid only pick on the way home, once they have what they went for. The
+	/// numbers are small on purpose: a trip brings back a handful, never stacks
 	/// </remarks>
 	internal static class TripForage
 	{
@@ -25,6 +27,13 @@ namespace VikingVillages
 		internal const float SecondsPerFind = 180f;
 		internal const int MostFound = 5;
 		internal const float EatEvery = 900f;
+
+		/// <summary>
+		/// How many seconds on foot through a biome with prey a hunter takes to take one on its road, and the most it takes
+		/// on one trip
+		/// </summary>
+		internal const float SecondsPerPrey = 300f;
+		internal const int MostPrey = 2;
 
 		/// <summary>
 		/// What grows in each biome that a viking picks on its way, by VikingGear's order
@@ -73,52 +82,82 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks what a viking finds, each thing from a biome picked by how long it spent there
+		/// Works out how many prey a hunter takes on its way
+		/// </summary>
+		/// <param name="seconds">How many seconds it spent on foot in biomes with prey</param>
+		/// <returns>How many</returns>
+		internal static int PreyFound(float seconds)
+		{
+			return(Mathf.Clamp(Mathf.FloorToInt(Mathf.Max(0f, seconds) / SecondsPerPrey), 0, MostPrey));
+		}
+
+		/// <summary>
+		/// Picks what a viking finds growing, each thing from a biome no harder than its own, picked by how long it spent
+		/// there
 		/// </summary>
 		/// <param name="seconds">How many seconds it spent on foot in each biome, by VikingGear's order</param>
+		/// <param name="ownBiome">The viking's own biome, by VikingGear's order</param>
 		/// <param name="roll">Gives a random number from 0 to 1</param>
 		/// <returns>What it found, a prefab name for each thing</returns>
-		internal static List<string> Pick(Dictionary<int, float> seconds, System.Func<float> roll)
+		internal static List<string> Pick(Dictionary<int, float> seconds, int ownBiome, System.Func<float> roll)
 		{
-			float growing = 0f;
+			return(PickFrom(seconds, ownBiome, GrowsIn, Found, roll));
+		}
+
+		/// <summary>
+		/// Picks the prey a hunter takes on its way, each from a biome no harder than its own, picked by how long it spent
+		/// there
+		/// </summary>
+		/// <param name="seconds">How many seconds it spent on foot in each biome, by VikingGear's order</param>
+		/// <param name="ownBiome">The viking's own biome, by VikingGear's order</param>
+		/// <param name="preyIn">Gets the prey of a biome, by prefab name</param>
+		/// <param name="roll">Gives a random number from 0 to 1</param>
+		/// <returns>The prey it took, a prefab name for each</returns>
+		internal static List<string> PickPrey(Dictionary<int, float> seconds, int ownBiome, System.Func<int, string[]> preyIn, System.Func<float> roll)
+		{
+			return(PickFrom(seconds, ownBiome, preyIn, PreyFound, roll));
+		}
+
+		/// <summary>
+		/// Picks what a viking finds on its way, each from a biome no harder than its own that has any, picked by how long
+		/// it spent there, and then at random among what that biome has
+		/// </summary>
+		/// <param name="seconds">How many seconds it spent on foot in each biome, by VikingGear's order</param>
+		/// <param name="ownBiome">The viking's own biome, by VikingGear's order</param>
+		/// <param name="has">Gets what a biome has, by prefab name</param>
+		/// <param name="count">Works out how many it finds from the seconds it spent in biomes that have any</param>
+		/// <param name="roll">Gives a random number from 0 to 1</param>
+		/// <returns>What it found, a prefab name for each</returns>
+		private static List<string> PickFrom(Dictionary<int, float> seconds, int ownBiome, System.Func<int, string[]> has, System.Func<float, int> count, System.Func<float> roll)
+		{
+			List<KeyValuePair<string[], float>> biomes = new List<KeyValuePair<string[], float>>();
+			float total = 0f;
 			foreach (KeyValuePair<int, float> entry in seconds)
 			{
-				if (GrowsIn(entry.Key).Length > 0)
+				string[] there = ((entry.Key <= ownBiome) ? has(entry.Key) : new string[0]);
+				if (there.Length > 0 && entry.Value > 0f)
 				{
-					growing += entry.Value;
+					biomes.Add(new KeyValuePair<string[], float>(there, entry.Value));
+					total += entry.Value;
 				}
 			}
 			List<string> found = new List<string>();
-			int count = Found(growing);
-			for (int i = 0; i < count; i++)
+			int wanted = count(total);
+			for (int i = 0; i < wanted; i++)
 			{
-				float at = roll() * growing;
-				foreach (KeyValuePair<int, float> entry in seconds)
+				float at = roll() * total;
+				// A roll of exactly 1 falls past the end, so the last biome takes it
+				KeyValuePair<string[], float> picked = biomes[biomes.Count - 1];
+				foreach (KeyValuePair<string[], float> biome in biomes)
 				{
-					string[] grows = GrowsIn(entry.Key);
-					if (grows.Length == 0)
+					if (at < biome.Value)
 					{
-						continue;
-					}
-					if (at < entry.Value)
-					{
-						found.Add(grows[Mathf.Clamp(Mathf.FloorToInt(roll() * grows.Length), 0, grows.Length - 1)]);
+						picked = biome;
 						break;
 					}
-					at -= entry.Value;
+					at -= biome.Value;
 				}
-			}
-			// A roll of exactly 1 falls past the end, so the last biome takes it
-			while (found.Count < count)
-			{
-				foreach (KeyValuePair<int, float> entry in seconds)
-				{
-					if (GrowsIn(entry.Key).Length > 0)
-					{
-						found.Add(GrowsIn(entry.Key)[0]);
-						break;
-					}
-				}
+				found.Add(picked.Key[Mathf.Clamp(Mathf.FloorToInt(roll() * picked.Key.Length), 0, picked.Key.Length - 1)]);
 			}
 			return(found);
 		}
@@ -196,10 +235,29 @@ namespace VikingVillages
 				seconds[biome] = (seconds.TryGetValue(biome, out float before) ? before : 0f) + legSeconds;
 			});
 			float tripSeconds = entry.Spent + entry.Remaining;
+			bool hunting = (entry.OnQuest && (QuestKind)entry.QuestKind == QuestKind.Hunt);
+			System.Random rng = new System.Random();
 			int total = 0;
 			for (int i = 0; i < entry.Vikings.Count; i++)
 			{
-				List<KeyValuePair<string, int>> left = Left(Pick(seconds, () => Random.value), Edible, tripSeconds);
+				int own = OwnBiome(entry.Vikings[i], entry.Biome);
+				List<KeyValuePair<string, int>> left = Left(Pick(seconds, own, () => Random.value), Edible, tripSeconds);
+				if (hunting)
+				{
+					Dictionary<string, int> drops = new Dictionary<string, int>();
+					foreach (string prey in PickPrey(seconds, own, (int biome) => QuestLoot.PreyFor(biome, null).ToArray(), () => Random.value))
+					{
+						// A prey that takes longer to hunt is taken that much less often along the way
+						if (rng.NextDouble() < 1.0 / System.Math.Max(1f, QuestLoot.EffortOf(prey)))
+						{
+							QuestLoot.RollKill(prey, rng, drops);
+						}
+					}
+					foreach (KeyValuePair<string, int> drop in drops)
+					{
+						left.Add(new KeyValuePair<string, int>(drop.Key, QuestGame.Scale(drop.Key, drop.Value)));
+					}
+				}
 				if (left.Count == 0)
 				{
 					continue;
@@ -221,12 +279,30 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Gets a viking's own biome from the values it's kept with on the road
+		/// </summary>
+		/// <param name="snapshot">The viking's values (see VillageDeparted.SnapshotOf)</param>
+		/// <param name="fallback">The biome when the values don't say, by VikingGear's order</param>
+		/// <returns>The biome, by VikingGear's order</returns>
+		private static int OwnBiome(byte[] snapshot, int fallback)
+		{
+			VillageDeparted.VikingValues values = VillageDeparted.Decode(snapshot);
+			int at = ((values != null) ? values.Bytes.FindIndex((KeyValuePair<int, byte[]> value) => value.Key == VikingCore.DataKey) : -1);
+			VikingData data = ((at >= 0) ? VikingData.FromBytes(values.Bytes[at].Value) : null);
+			return((data != null && data.Biome >= 0) ? data.Biome : fallback);
+		}
+
+		/// <summary>
 		/// Checks whether an item can be eaten
 		/// </summary>
 		/// <param name="item">Its prefab name</param>
-		/// <returns>True when it can</returns>
-		private static bool Edible(string item)
+		/// <returns>True when it can, false when it can't or the items can't be read</returns>
+		internal static bool Edible(string item)
 		{
+			if (ObjectDB.instance == null)
+			{
+				return(false);
+			}
 			GameObject prefab = ObjectDB.instance.GetItemPrefab(item);
 			ItemDrop drop = ((prefab != null) ? prefab.GetComponent<ItemDrop>() : null);
 			return(drop != null && drop.m_itemData.m_shared.m_food > 0f);

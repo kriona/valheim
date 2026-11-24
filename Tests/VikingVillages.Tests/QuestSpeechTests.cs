@@ -98,7 +98,7 @@ namespace VikingVillages.Tests
 			{
 				foreach (Match token in Regex.Matches(line, "\\{[a-z]+\\}"))
 				{
-					Assert.Contains(token.Value, new[] { "{when}", "{away}", "{with}", "{player}", "{fallen}", "{name}" });
+					Assert.Contains(token.Value, new[] { "{when}", "{away}", "{with}", "{player}", "{fallen}", "{name}", "{trader}" });
 				}
 			}
 		}

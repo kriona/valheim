@@ -74,7 +74,7 @@ namespace VikingVillages
 			{ QuestKind.HuntGhosts, "hunting ghosts" },
 			{ QuestKind.HuntTrolls, "hunting trolls" },
 			{ QuestKind.HuntGoblins, "raiding a goblin camp" },
-			{ QuestKind.SellTreasure, "trading with Haldor" },
+			{ QuestKind.SellTreasure, "selling treasure" },
 			{ QuestKind.BuyCirclet, "trading with Haldor" },
 			{ QuestKind.KillEikthyr, "facing Eikthyr" },
 			{ QuestKind.FindBees, "looking for bees" },

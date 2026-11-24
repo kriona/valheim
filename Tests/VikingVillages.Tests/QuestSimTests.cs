@@ -280,5 +280,38 @@ namespace VikingVillages.Tests
 			Assert.Equal(ResourceBook.BlackForest, QuestTargets.BiomeOf(QuestKind.ChopTrees, "RoundLog", ResourceBook.Swamp));
 			Assert.Equal(ResourceBook.Swamp, QuestTargets.BiomeOf(QuestKind.ChopTrees, "Wood", ResourceBook.Swamp));
 		}
+
+		[Fact]
+		public void TreasureIsSoldToTheTradersOfTheVillagesBiomeAndThoseBefore()
+		{
+			Assert.Equal(new List<string> { "hildir_camp" }, QuestTargets.TradersFor(ResourceBook.Meadows));
+			Assert.Equal(new List<string> { "hildir_camp", "vendor_blackforest" }, QuestTargets.TradersFor(ResourceBook.BlackForest));
+			Assert.Equal(new List<string> { "hildir_camp", "vendor_blackforest", "bogwitch_camp" }, QuestTargets.TradersFor(ResourceBook.Swamp));
+			Assert.Equal(3, QuestTargets.TradersFor(ResourceBook.DeepNorth).Count);
+			Assert.Null(QuestTargets.LocationOf(QuestKind.SellTreasure));
+			Assert.Equal(ResourceBook.Meadows, QuestTargets.BiomeOf(QuestKind.SellTreasure, "", ResourceBook.Meadows));
+			Assert.Equal(ResourceBook.Swamp, QuestTargets.BiomeOf(QuestKind.SellTreasure, "", ResourceBook.Plains));
+		}
+
+		[Theory]
+		[InlineData(ResourceBook.Meadows, ResourceBook.Plains, "Hildir")]
+		[InlineData(ResourceBook.BlackForest, ResourceBook.Plains, "Haldor")]
+		[InlineData(ResourceBook.Swamp, ResourceBook.Plains, "the Bog Witch")]
+		[InlineData(-1, ResourceBook.Meadows, "Hildir")]
+		[InlineData(-1, ResourceBook.BlackForest, "Haldor")]
+		[InlineData(-1, ResourceBook.Mountain, "the Bog Witch")]
+		public void TradersAreNamedByTheirCampsBiome(int biome, int village, string expected)
+		{
+			Assert.Equal(expected, QuestTargets.TraderName(biome, village));
+		}
+
+		[Fact]
+		public void TheTraderIsNamedInTheLines()
+		{
+			Assert.Equal("The Bog Witch drives a hard bargain.", QuestSpeech.NameTrader("{trader} drives a hard bargain.", "the Bog Witch"));
+			Assert.Equal("Ragna took our amber to Hildir.", QuestSpeech.NameTrader("Ragna took our amber to {trader}.", "Hildir"));
+			Assert.Equal("No trader here.", QuestSpeech.NameTrader("No trader here.", "Hildir"));
+			Assert.Null(QuestSpeech.NameTrader((string)null, "Hildir"));
+		}
 	}
 }
