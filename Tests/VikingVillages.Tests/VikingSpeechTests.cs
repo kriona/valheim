@@ -433,7 +433,7 @@ namespace VikingVillages.Tests
 
 		/// <summary>
 		/// Checks that every trouble a viking calls out about a player has lines, a way to tell it and a name of its
-		/// own, and that its lines format with the player's name or "traveler"
+		/// own, and that its lines format with the player's name or what a viking calls a stranger
 		/// </summary>
 		[Fact]
 		public void EveryConcernHasLinesThatFormat()
@@ -446,10 +446,56 @@ namespace VikingVillages.Tests
 				Assert.NotEmpty(concern.Lines);
 				foreach (string line in concern.Lines)
 				{
-					string said = string.Format(line, "traveler");
-					Assert.False(said.Contains("{") || said.Contains("}"), concern.Name + " leaves a token in \"" + said + "\"");
-					Assert.Contains("traveler", said);
+					string known = VikingConcernSpeech.Said(line, "Bjorn", true);
+					Assert.False(known.Contains("{") || known.Contains("}"), concern.Name + " leaves a token in \"" + known + "\"");
+					Assert.Contains("Bjorn", known);
+					string stranger = VikingConcernSpeech.Said(line, "Bjorn", false);
+					Assert.False(stranger.Contains("{") || stranger.Contains("}") || stranger.Contains("Bjorn"), concern.Name + " reads \"" + stranger + "\"");
+					Assert.Contains(VikingSpeech.Stranger, stranger, System.StringComparison.OrdinalIgnoreCase);
 				}
+			}
+		}
+
+		/// <summary>
+		/// Checks that a stranger is spoken to as "traveler" and spoken about as "a traveler", with a capital letter at
+		/// the start of a sentence, leaving the line's other tokens for string.Format
+		/// </summary>
+		[Fact]
+		public void StrangerIsFilledInBySentence()
+		{
+			Assert.Equal("Traveler, you're on fire! Get to the water!", VikingSpeech.WithStranger("{0}, you're on fire! Get to the water!", 0));
+			Assert.Equal("Fire! Traveler, you're burning!", VikingSpeech.WithStranger("Fire! {0}, you're burning!", 0));
+			Assert.Equal("Traveler! You're covered in blood.", VikingSpeech.WithStranger("{0}! You're covered in blood.", 0));
+			Assert.Equal("You look green, traveler. Poisoned?", VikingSpeech.WithStranger("You look green, {0}. Poisoned?", 0));
+			Assert.Equal("A traveler shares {0}'s blessing! Skål!", VikingSpeech.WithStranger("{1} shares {0}'s blessing! Skål!", 1));
+			Assert.Equal("Thank you, traveler - {0} smiles on us all.", VikingSpeech.WithStranger("Thank you, {1} - {0} smiles on us all.", 1));
+			Assert.Equal("{0}'s gift! I can feel it, traveler!", VikingSpeech.WithStranger("{0}'s gift! I can feel it, {1}!", 1));
+			Assert.Equal("By {0}! I could wrestle a troll.", VikingSpeech.WithStranger("By {0}! I could wrestle a troll.", 1));
+			Assert.Equal("Traveler! Is that you, traveler?", VikingSpeech.WithStranger("{0}! Is that you, {0}?", 0));
+		}
+
+		/// <summary>
+		/// Checks that every line thanking a stranger for a power, a living or dvergr viking's, and every concern called
+		/// out to one, starts each sentence with a capital letter
+		/// </summary>
+		[Fact]
+		public void StrangerLinesStartSentencesWithCapitals()
+		{
+			Regex lowerStart = new Regex("(^|[.!?]\\s+)\\p{Ll}");
+			FieldInfo dvergr = typeof(DvergrSpeech).GetField("PowerLines", BindingFlags.NonPublic | BindingFlags.Static);
+			List<string> said = new List<string>();
+			foreach (string line in Table<string[]>("PowerLines").Concat((string[])dvergr.GetValue(null)))
+			{
+				said.Add(string.Format(VikingSpeech.WithStranger(line, 1), "Moder", "Bjorn"));
+			}
+			foreach (VikingConcernSpeech.Concern concern in VikingConcernSpeech.Concerns)
+			{
+				said.AddRange(concern.Lines.Select((string line) => VikingConcernSpeech.Said(line, "Bjorn", false)));
+			}
+			foreach (string line in said)
+			{
+				Assert.False(lowerStart.IsMatch(line), "\"" + line + "\" starts a sentence with a small letter");
+				Assert.DoesNotContain("Bjorn", line);
 			}
 		}
 	}

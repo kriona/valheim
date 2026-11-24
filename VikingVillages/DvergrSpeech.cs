@@ -14,11 +14,6 @@ namespace VikingVillages
 	internal static class DvergrSpeech
 	{
 		/// <summary>
-		/// What a dvergr viking calls a player it doesn't know yet as it thanks them for a power
-		/// </summary>
-		public const string Stranger = "traveler";
-
-		/// <summary>
 		/// What a dvergr viking says to a player it has never met, by day and at night
 		/// </summary>
 		private static readonly string[] DayFirstGreetings =
@@ -144,7 +139,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// What a dvergr viking says when a player shares their forsaken power with it, with the power's name and the
-		/// player's name, or Stranger when it doesn't know them
+		/// player's name, or what it calls a player it doesn't know (see VikingSpeech.WithStranger)
 		/// </summary>
 		private static readonly string[] PowerLines =
 		{
@@ -227,7 +222,7 @@ namespace VikingVillages
 		/// each
 		/// </summary>
 		/// <param name="power">The power's name</param>
-		/// <param name="players">The player's name, or how each viking calls them, for each viking</param>
+		/// <param name="players">The player's name, or "" for a viking that doesn't know them, for each viking</param>
 		/// <returns>The lines, one for each viking</returns>
 		public static List<string> PowerShared(string power, List<string> players)
 		{
@@ -244,7 +239,8 @@ namespace VikingVillages
 					break;
 				}
 				int picked = Random.Range(0, left.Count);
-				lines.Add(string.Format(PowerLines[left[picked]], power, player));
+				string line = PowerLines[left[picked]];
+				lines.Add(string.Format(((player.Length > 0) ? line : VikingSpeech.WithStranger(line, 1)), power, player));
 				left.RemoveAt(picked);
 			}
 			return(lines);

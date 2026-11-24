@@ -330,7 +330,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// What a viking says when a player shares their forsaken power with it, where {0} is the power's name and {1}
-		/// the player's
+		/// the player's, or what it calls a player it doesn't know (see WithStranger)
 		/// </summary>
 		private static readonly string[] PowerLines =
 		{
@@ -1102,7 +1102,7 @@ namespace VikingVillages
 		/// Picks what some vikings say when a player shares their forsaken power with them, a different line for each
 		/// </summary>
 		/// <param name="power">The power's name</param>
-		/// <param name="players">The player's name, or how each viking calls them, for each viking</param>
+		/// <param name="players">The player's name, or "" for a viking that doesn't know them, for each viking</param>
 		/// <returns>The lines, one for each viking</returns>
 		public static List<string> PowerShared(string power, List<string> players)
 		{
@@ -1119,7 +1119,8 @@ namespace VikingVillages
 					break;
 				}
 				int picked = Random.Range(0, left.Count);
-				lines.Add(string.Format(PowerLines[left[picked]], power, player));
+				string line = PowerLines[left[picked]];
+				lines.Add(string.Format(((player.Length > 0) ? line : WithStranger(line, 1)), power, player));
 				left.RemoveAt(picked);
 			}
 			return(lines);
@@ -1532,6 +1533,44 @@ namespace VikingVillages
 		internal static string WithVillage(string line, string village)
 		{
 			return(line.Replace(VillageToken, village.Replace("{", "{{").Replace("}", "}}")));
+		}
+
+		/// <summary>
+		/// What a viking calls a player it doesn't know, in place of their name (see WithStranger)
+		/// </summary>
+		internal const string Stranger = "traveler";
+
+		/// <summary>
+		/// Fills in what a viking calls a player it doesn't know where their name goes, in a line that's read by
+		/// string.Format afterwards - "traveler" where the viking speaks to them, and "a traveler" where it speaks about
+		/// them, which is where a word follows the name, as in "{1} shares {0}'s blessing!" - with a capital letter where
+		/// it starts a sentence
+		/// </summary>
+		/// <param name="line">The line, with "{index}" where the player's name goes</param>
+		/// <param name="index">The string.Format index of the player's name</param>
+		/// <returns>The line, for string.Format</returns>
+		internal static string WithStranger(string line, int index)
+		{
+			return(Regex.Replace(line, "\\{" + index + "\\}", (Match token) =>
+			{
+				int after = token.Index + token.Length;
+				bool about = (after + 1 < line.Length && line[after] == ' ' && char.IsLetter(line[after + 1]));
+				string word = (about ? "a " + Stranger : Stranger);
+				return(StartsSentence(line, token.Index) ? char.ToUpperInvariant(word[0]) + word.Substring(1) : word);
+			}));
+		}
+
+		/// <summary>
+		/// Checks whether a sentence starts at a place in a line - at the line's start, or after the ".", "!" or "?"
+		/// that ends the one before
+		/// </summary>
+		/// <param name="line">The line</param>
+		/// <param name="at">The place</param>
+		/// <returns>True when one does</returns>
+		private static bool StartsSentence(string line, int at)
+		{
+			string before = line.Substring(0, at).TrimEnd();
+			return(before.Length == 0 || before.EndsWith(".") || before.EndsWith("!") || before.EndsWith("?"));
 		}
 
 		/// <summary>

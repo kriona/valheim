@@ -19,11 +19,6 @@ namespace VikingVillages
 		private const float PowerReach = 10f;
 
 		/// <summary>
-		/// What a viking that doesn't know the player calls them when it thanks them
-		/// </summary>
-		private const string Stranger = "traveler";
-
-		/// <summary>
 		/// Notes whether the power is about to be used - it's ready and the player has one
 		/// </summary>
 		/// <param name="__instance">The player</param>
@@ -89,20 +84,19 @@ namespace VikingVillages
 			string power = Localization.instance.Localize(player.m_guardianSE.m_name);
 			List<Character> living = speakers.FindAll((Character viking) => !VikingCore.IsDvergrViking(viking));
 			List<Character> hired = speakers.FindAll((Character viking) => VikingCore.IsDvergrViking(viking));
-			SayThanks(living, VikingSpeech.PowerShared(power, Names(player, living, Stranger)));
-			SayThanks(hired, DvergrSpeech.PowerShared(power, Names(player, hired, DvergrSpeech.Stranger)));
+			SayThanks(living, VikingSpeech.PowerShared(power, Names(player, living)));
+			SayThanks(hired, DvergrSpeech.PowerShared(power, Names(player, hired)));
 		}
 
 		/// <summary>
-		/// Lists what each viking calls a player - their name once it knows them, or what it calls a stranger
+		/// Lists the name each viking knows a player by - their name once it knows them, or "" while it doesn't
 		/// </summary>
 		/// <param name="player">The player</param>
 		/// <param name="vikings">The vikings</param>
-		/// <param name="stranger">What they call a player they don't know</param>
 		/// <returns>The names, one for each viking</returns>
-		private static List<string> Names(Player player, List<Character> vikings, string stranger)
+		private static List<string> Names(Player player, List<Character> vikings)
 		{
-			return(vikings.ConvertAll((Character viking) => (VikingSpeech.Knows(viking, player.GetPlayerID()) ? player.GetPlayerName() : stranger)));
+			return(vikings.ConvertAll((Character viking) => (VikingSpeech.Knows(viking, player.GetPlayerID()) ? player.GetPlayerName() : "")));
 		}
 
 		/// <summary>

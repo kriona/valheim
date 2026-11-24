@@ -132,11 +132,6 @@ namespace VikingVillages
 		};
 
 		/// <summary>
-		/// What a viking calls a player it doesn't know
-		/// </summary>
-		private const string Stranger = "traveler";
-
-		/// <summary>
 		/// How often the local player is checked, in seconds, how near and in sight a viking has to be to call out, in
 		/// meters, and the least time between call-outs about the same thing, in seconds, so a fire that flares up again
 		/// straight away isn't called out twice
@@ -192,11 +187,23 @@ namespace VikingVillages
 				}
 				calledOut.Add(concern.Name);
 				nextAllowed[concern.Name] = Time.time + Cooldown;
-				string name = (VikingSpeech.Knows(speaker, player.GetPlayerID()) ? player.GetPlayerName() : Stranger);
 				string line = concern.Lines[UnityEngine.Random.Range(0, concern.Lines.Length)];
-				VikingSpeech.Say(speaker, string.Format(line, name), VikingSpeech.QuickTime, VikingSpeech.TalkCull);
+				VikingSpeech.Say(speaker, Said(line, player.GetPlayerName(), VikingSpeech.Knows(speaker, player.GetPlayerID())), VikingSpeech.QuickTime, VikingSpeech.TalkCull);
 				return;
 			}
+		}
+
+		/// <summary>
+		/// Fills in a concern's line with the player's name, or with what a viking calls a player it doesn't know (see
+		/// VikingSpeech.WithStranger)
+		/// </summary>
+		/// <param name="line">The line, with {0} where the player's name goes</param>
+		/// <param name="name">The player's name</param>
+		/// <param name="known">Whether the viking knows the player</param>
+		/// <returns>The line to say</returns>
+		internal static string Said(string line, string name, bool known)
+		{
+			return(string.Format((known ? line : VikingSpeech.WithStranger(line, 0)), name));
 		}
 
 		/// <summary>
