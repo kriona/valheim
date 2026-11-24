@@ -8,7 +8,7 @@ namespace CreatureMarker
 {
 	/// <summary>
 	/// Colored arrows above marked creatures, pinned to the screen edge and pointing at them when they are off-screen,
-	/// with an optional name label behind each arrow, and a red ! beside the arrow of a creature that leaves players alone
+	/// with an optional name label behind each arrow, and a red ! after the name of a creature that leaves players alone
 	/// until provoked and has been
 	/// </summary>
 	/// <remarks>
@@ -30,11 +30,6 @@ namespace CreatureMarker
 		private const float GameHudGap = 4f;
 
 		/// <summary>
-		/// The space left between markers stacked over each other on screen, in screen pixels
-		/// </summary>
-		private const float StackGap = 2f;
-
-		/// <summary>
 		/// How many meters higher than the player a target has to be for its arrow to be pinned to the top half of the
 		/// screen, so uneven ground doesn't count as higher
 		/// </summary>
@@ -43,8 +38,8 @@ namespace CreatureMarker
 		internal static readonly Color OutlineColor = ArrowSprite.OutlineColor;
 
 		/// <summary>
-		/// The red ! beside the arrow of a creature that's been provoked - its text, size, the box it's centered in and
-		/// how far it stands from the arrow, in canvas units, and its color
+		/// The red ! after the name of a creature that's been provoked - its text, size, the box it's centered in and how
+		/// far it stands from the name, in canvas units, and its color
 		/// </summary>
 		private const string AlarmText = "!";
 		private const float AlarmFontSize = 26f;
@@ -64,7 +59,8 @@ namespace CreatureMarker
 			public TextMeshProUGUI label;
 
 			/// <summary>
-			/// The red ! beside the arrow, shown while the creature has been provoked
+			/// The red ! after the name, or beside the arrow while the label shows nothing, shown while the creature has
+			/// been provoked
 			/// </summary>
 			public TextMeshProUGUI alarm;
 			public Object source;
@@ -146,22 +142,6 @@ namespace CreatureMarker
 		/// </summary>
 		private readonly List<Graphic> graphics = new List<Graphic>();
 		private readonly Vector3[] corners = new Vector3[4];
-
-		/// <summary>
-		/// An on-screen marker to stack, with how far its target is from the player, squared, and its scale
-		/// </summary>
-		private struct Stacked
-		{
-			public Marker marker;
-			public float distanceSquared;
-			public float size;
-		}
-
-		/// <summary>
-		/// Reused for the on-screen markers placed this frame, and the screen space each takes once stacked
-		/// </summary>
-		private readonly List<Stacked> stacking = new List<Stacked>();
-		private readonly List<Rect> stacked = new List<Rect>();
 
 		/// <summary>
 		/// Shows an arrow for each marked creature, fish and bird when Show On Screen is on and hides the spare ones,
@@ -283,22 +263,12 @@ namespace CreatureMarker
 						marker.label.color = target.color;
 						PlaceLabel(marker, pointing, textBehind);
 					}
-					// Markers seen through a portal stay where they are, inside its opening
-					if (onScreen && !target.throughPortal)
+					if (marker.alarm.gameObject.activeSelf)
 					{
-						stacking.Add(new Stacked { marker = marker, distanceSquared = distanceSquared, size = scale.x });
-					}
-				}
-				Stack();
-				for (int i = 0; i < used; i++)
-				{
-					if (markers[i].alarm.gameObject.activeSelf)
-					{
-						PlaceAlarm(markers[i]);
+						PlaceAlarm(marker);
 					}
 				}
 			}
-			stacking.Clear();
 			for (int i = used; i < markers.Count; i++)
 			{
 				markers[i].source = null;
@@ -459,71 +429,15 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Stacks the on-screen markers placed this frame that would overlap - the nearest target's keeps its place, and
-		/// each farther one is moved up, arrow and label together, until it's clear of those below it
+		/// Measures the screen space a marker's label takes
 		/// </summary>
-		/// <remarks>
-		/// The space each takes is measured without the bob, which every arrow shares, so markers that only touch at the
-		/// top of the bob don't stack and unstack as they bob
-		/// </remarks>
-		private void Stack()
-		{
-			if (stacking.Count < 2)
-			{
-				return;
-			}
-			stacking.Sort((Stacked a, Stacked b) => a.distanceSquared.CompareTo(b.distanceSquared));
-			stacked.Clear();
-			foreach (Stacked entry in stacking)
-			{
-				Rect space = Space(entry.marker);
-				space.y -= Bob(entry.size);
-				float shift = 0f;
-				bool moved = true;
-				for (int tries = 0; moved && tries <= stacked.Count; tries++)
-				{
-					moved = false;
-					foreach (Rect below in stacked)
-					{
-						Rect shifted = space;
-						shifted.y += shift;
-						if (shifted.Overlaps(below))
-						{
-							shift = below.yMax + StackGap - space.yMin;
-							moved = true;
-						}
-					}
-				}
-				if (shift > 0f)
-				{
-					Vector3 up = new Vector3(0f, shift, 0f);
-					entry.marker.arrow.rectTransform.position += up;
-					entry.marker.label.rectTransform.position += up;
-					space.y += shift;
-				}
-				stacked.Add(space);
-			}
-		}
-
-		/// <summary>
-		/// Measures the screen space a marker takes - its arrow, and its label when it's shown
-		/// </summary>
-		/// <param name="marker">The marker, placed on screen</param>
+		/// <param name="marker">The marker, its label placed</param>
 		/// <returns>The space, in screen pixels</returns>
-		private static Rect Space(Marker marker)
+		private static Rect LabelSpace(Marker marker)
 		{
-			RectTransform arrow = marker.arrow.rectTransform;
-			float scale = arrow.lossyScale.x;
-			Vector3 tip = arrow.position;
-			Rect space = new Rect(tip.x - ArrowSize.x * 0.5f * scale, tip.y, ArrowSize.x * scale, ArrowSize.y * scale);
-			if (marker.label.gameObject.activeSelf)
-			{
-				Vector2 size = marker.labelSize * scale;
-				Vector3 center = marker.label.rectTransform.position;
-				Rect label = new Rect(center.x - size.x * 0.5f, center.y - size.y * 0.5f, size.x, size.y);
-				space = Rect.MinMaxRect(Mathf.Min(space.xMin, label.xMin), Mathf.Min(space.yMin, label.yMin), Mathf.Max(space.xMax, label.xMax), Mathf.Max(space.yMax, label.yMax));
-			}
-			return(space);
+			Vector2 size = marker.labelSize * marker.label.rectTransform.lossyScale.x;
+			Vector3 center = marker.label.rectTransform.position;
+			return(new Rect(center.x - size.x * 0.5f, center.y - size.y * 0.5f, size.x, size.y));
 		}
 
 		/// <summary>
@@ -913,23 +827,43 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Puts a marker's ! beside its arrow, wherever the arrow ended up (see AlarmSpot)
+		/// Puts a marker's ! just after its label, wherever the label ended up, or beside its arrow when the label shows
+		/// nothing (see AlarmSpot)
 		/// </summary>
-		/// <param name="marker">The marker, its arrow placed and stacked</param>
+		/// <param name="marker">The marker, its arrow and label placed</param>
 		private void PlaceAlarm(Marker marker)
 		{
 			RectTransform arrow = marker.arrow.rectTransform;
-			arrow.GetWorldCorners(corners);
-			Vector2 min = corners[0];
-			Vector2 max = corners[0];
-			for (int i = 1; i < corners.Length; i++)
-			{
-				min = Vector2.Min(min, corners[i]);
-				max = Vector2.Max(max, corners[i]);
-			}
 			float scale = arrow.lossyScale.x;
-			Vector2 spot = AlarmSpot(Rect.MinMaxRect(min.x, min.y, max.x, max.y), AlarmSize * scale * 0.5f, AlarmGap * scale, Screen.width);
+			Rect beside;
+			if (HasLabel(marker))
+			{
+				beside = LabelSpace(marker);
+			}
+			else
+			{
+				arrow.GetWorldCorners(corners);
+				Vector2 min = corners[0];
+				Vector2 max = corners[0];
+				for (int i = 1; i < corners.Length; i++)
+				{
+					min = Vector2.Min(min, corners[i]);
+					max = Vector2.Max(max, corners[i]);
+				}
+				beside = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+			}
+			Vector2 spot = AlarmSpot(beside, AlarmSize * scale * 0.5f, AlarmGap * scale, Screen.width);
 			marker.alarm.rectTransform.position = new Vector3(spot.x, spot.y, 0f);
+		}
+
+		/// <summary>
+		/// Checks whether a marker's label is shown with something in it
+		/// </summary>
+		/// <param name="marker">The marker</param>
+		/// <returns>True when it is</returns>
+		private static bool HasLabel(Marker marker)
+		{
+			return(marker.label.gameObject.activeSelf && !string.IsNullOrEmpty(marker.label.text) && marker.labelSize.x > 0f);
 		}
 
 		/// <summary>

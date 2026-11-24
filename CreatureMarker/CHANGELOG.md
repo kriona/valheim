@@ -6,8 +6,7 @@
 - Mark map pings in the game's ping color, and shouts like the "I have arrived!" a player sends when they join in the game's yellow, for as long as the game shows them, whatever Max Distance is. The arrow sits above the game's own text, which moves behind the arrow when it's pinned to the screen edge, and the label leaves out the name since that text shows who sent it
 - With PortalPreview installed, a portal showing a preview hides the markers of creatures and things behind it
 - A dedicated server sharing the game's config folder no longer has the config file rewritten and reloaded over and over - reading the file after it's saved doesn't write it back, and a line for a creature this game hasn't seen keeps its name
-- Markers that would overlap on screen stack instead, the nearest creature's keeping its place and the others moved up above it. Arrows pinned to the screen edge still overlap
-- A creature that leaves you alone until provoked, like the Dvergr, gets a red ! beside its arrow once it's been provoked
+- A creature that leaves you alone until provoked, like the Dvergr, gets a red ! after its name once it's been provoked, or beside its arrow while its label shows nothing
 - A creature whose name runs to more than one line, like a Viking Villages Viking's with its job under it in debug mode, has its level and distance after the first line
 - A creature whose speech bubble already names it, like a talking Viking Villages Viking or a trader, has its label leave the name out, so it isn't shown twice
 

@@ -3,7 +3,7 @@
 Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans, other players, items on the ground, portals, tombstones and map pings. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them, and only creatures higher up than you get one in the top half of the screen.
 
 - Separate colors for passive creatures, hostile creatures, creatures that are targeting you, bosses, fish, traders, leviathans and your tamed pets
-- A red ! beside the arrow of a creature that leaves you alone until provoked, like the Dvergr, once it's been provoked - including other mods' friendly creatures that the game provokes the same way, like Viking Villages' living Vikings
+- A red ! after the name of a creature that leaves you alone until provoked, or beside its arrow when it has no label, like the Dvergr, once it's been provoked - including other mods' friendly creatures that the game provokes the same way, like Viking Villages' living Vikings
 - Marks traders like Haldor, Hildir and the Bog Witch, and their pets like Halstein, including through portals with [PortalPreview](#portalpreview)
 - Marks leviathans and lava leviathans, so they're easy to find when you want their chitin or flametal ore
 - Marks other players who are sharing their position on the map, unless they're sneaking
@@ -12,7 +12,6 @@ Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans, o
 - Marks tombstones, labeled with whose they are, so you can find your way back to your things after dying
 - Marks map pings in the game's ping color, and shouts like a player's "I have arrived!" when they join in yellow, while the game shows them, however far away they are. When one is off-screen, the game's text moves behind its arrow at the screen edge
 - Optional name, level and distance label on each marker, leaving out the name and level while the game shows its own above the creature, and the name while the creature's speech bubble names it, like a trader's or a talking Viking Villages Viking's
-- Markers of creatures side by side on screen stack rather than overlap, the nearest one's kept in place
 - A matching colored dot on the minimap and the large map for each marked creature
 - Choose which creatures are marked - passive ones, hostile ones, or creature by creature, with separate switches for fish, birds and leviathans and a lowest level for creatures and fish
 - Includes creatures added by other mods
