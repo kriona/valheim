@@ -1245,7 +1245,7 @@ namespace VikingVillages
 		/// <returns>False when there's no ground for it</returns>
 		private static bool FindFireSpot(Grid grid, Vector3 middle, out Vector3 spot, out bool flatten)
 		{
-			return(FindLevelSpot(grid, middle, BonfireRadius, BonfireSearch, out spot, out flatten));
+			return(FindLevelSpot(grid, middle, BonfireRadius, 0f, BonfireSearch, out spot, out flatten));
 		}
 
 		/// <summary>
@@ -1255,18 +1255,19 @@ namespace VikingVillages
 		/// <param name="grid">The village's ground, with its paths marked</param>
 		/// <param name="middle">The point</param>
 		/// <param name="radius">How much room it needs around it, no more than FlattenReach, in meters</param>
+		/// <param name="least">How far from the point it stands at the least, in meters</param>
 		/// <param name="search">How far from the point to look, in meters</param>
 		/// <param name="spot">The spot - at the height the ground is flattened to, when it is</param>
 		/// <param name="flatten">Whether the ground there is flattened first</param>
 		/// <returns>False when there's no ground for it</returns>
-		internal static bool FindLevelSpot(Grid grid, Vector3 middle, float radius, float search, out Vector3 spot, out bool flatten)
+		internal static bool FindLevelSpot(Grid grid, Vector3 middle, float radius, float least, float search, out Vector3 spot, out bool flatten)
 		{
 			flatten = false;
-			if (grid.FindOpenSpot(middle, radius, search, FireFlatness, out spot, out float level))
+			if (grid.FindOpenSpot(middle, radius, least, search, FireFlatness, out spot, out float level))
 			{
 				return(true);
 			}
-			if (levelOp == null || !grid.FindOpenSpot(middle, radius, search, FlattenLimit, out spot, out level))
+			if (levelOp == null || !grid.FindOpenSpot(middle, radius, least, search, FlattenLimit, out spot, out level))
 			{
 				return(false);
 			}
@@ -2765,12 +2766,13 @@ namespace VikingVillages
 			/// </summary>
 			/// <param name="near">The point</param>
 			/// <param name="radius">How much room it needs around it, in meters</param>
+			/// <param name="least">How far from the point it stands at the least, in meters</param>
 			/// <param name="search">How far from the point to look, in meters</param>
 			/// <param name="flatness">The most the ground there can rise and fall, in meters</param>
 			/// <param name="spot">The spot found, on the ground</param>
 			/// <param name="level">Halfway between the ground's highest and lowest points around the spot</param>
 			/// <returns>False when there's no such spot that close</returns>
-			public bool FindOpenSpot(Vector3 near, float radius, float search, float flatness, out Vector3 spot, out float level)
+			public bool FindOpenSpot(Vector3 near, float radius, float least, float search, float flatness, out Vector3 spot, out float level)
 			{
 				spot = near;
 				level = near.y;
@@ -2794,7 +2796,7 @@ namespace VikingVillages
 				candidates.Sort((a, b) => Distance(a, center).CompareTo(Distance(b, center)));
 				foreach (int candidate in candidates)
 				{
-					if (!IsOpen(candidate, reach, flatness, out level))
+					if (Distance(candidate, center) * CellSize < least || !IsOpen(candidate, reach, flatness, out level))
 					{
 						continue;
 					}

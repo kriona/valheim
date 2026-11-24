@@ -5,18 +5,19 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// The portals that join each village of the Ashlands and the Deep North to a village of the Plains or an easier
-	/// biome - an Ashlands stone portal near the middle of the one and a wood portal near the middle of the other, each
-	/// with a path to its village's nearest path and a sign on its frame naming the village on its other side. Both are
-	/// named after the Ashlands or Deep North village, with a number after the name when another portal has it already,
-	/// and the game joins the two by their name
+	/// biome - an Ashlands stone portal out past the houses nearest the middle of the one and a wood portal the same way
+	/// in the other, each with a path to its village's nearest path and a sign on its frame naming the village on its
+	/// other side. Both are named after the Ashlands or Deep North village, with a number after the name when another
+	/// portal has it already, and the game joins the two by their name
 	/// </summary>
 	/// <remarks>
 	/// A portal goes up as its village's paths are laid. Only the server has the world's plan of its locations and every
 	/// portal, so the client laying an Ashlands or Deep North village's paths asks it where the portal leads and waits
 	/// for its answer. The server finds the village on the other side (see VillagePortalSites), generates its farm,
 	/// names it and puts its portal up at the farm's middle, where it waits for the farm's paths to be laid - so the
-	/// portal can be used before anyone has been there - and whoever lays them takes it down and puts it up again near
-	/// the village's middle with its path and sign. A village the server finds nowhere for gets no portal
+	/// portal can be used before anyone has been there - and whoever lays them takes it down and puts it up again on
+	/// open ground of its own (see FindSite) with its path and sign. A village the server finds nowhere for gets no
+	/// portal
 	/// </remarks>
 	internal static class VillagePortals
 	{
@@ -60,11 +61,13 @@ namespace VikingVillages
 		public const float FarmMatch = 16f;
 
 		/// <summary>
-		/// How much open ground a portal needs around its middle, how far from the farm's middle it's looked for, how far
-		/// its frame reaches out from its middle, where its path starts, and how far around the middle of the village's
-		/// new fire it can't stand on, in meters
+		/// How much open ground a portal needs around its middle, how far from the farm's middle it stands at the least -
+		/// out past the houses nearest the farm - and how far it's looked for, how far its frame reaches out from its
+		/// middle, where its path starts, and how far around the middle of the village's new fire it can't stand on, in
+		/// meters
 		/// </summary>
 		private const float PortalRoom = 3f;
+		private const float PortalLeast = 16f;
 		private const float PortalSearch = 40f;
 		private const float PortalHalf = 2f;
 		private const float FireKeep = 5f;
@@ -479,8 +482,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds where a village's portal goes up - the open ground nearest the farm's middle with room all around it,
-		/// kept clear of the village's new fire, facing the nearest of the village's paths, or its nearest house when it
+		/// Finds where a village's portal goes up - the open ground nearest the farm's middle, at least PortalLeast from
+		/// it, with room all around it, kept clear of the village's new fire, facing the nearest of the village's paths, or its nearest house when it
 		/// has none - and its path there, from in front of it, steering around what the village's paths steer around
 		/// </summary>
 		/// <param name="grid">The village's ground, with its paths marked</param>
@@ -496,7 +499,7 @@ namespace VikingVillages
 			{
 				grid.Mark(new List<VillagePaths.Blocker> { new VillagePaths.Blocker { Center = fire.Value, Radius = FireKeep, Kind = VillagePaths.Kind.Avoid } });
 			}
-			if (!VillagePaths.FindLevelSpot(grid, farm, PortalRoom, PortalSearch, out Vector3 spot, out bool flatten))
+			if (!VillagePaths.FindLevelSpot(grid, farm, PortalRoom, PortalLeast, PortalSearch, out Vector3 spot, out bool flatten))
 			{
 				return(null);
 			}
