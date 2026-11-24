@@ -204,6 +204,23 @@ namespace VikingVillages
 	}
 
 	/// <summary>
+	/// Keeps a living viking's name over its health bar clear of the bar while it has its job under it (see
+	/// VikingHudName)
+	/// </summary>
+	[HarmonyPatch(typeof(EnemyHud), nameof(EnemyHud.UpdateHuds))]
+	public static class VikingHudNamePatch
+	{
+		/// <summary>
+		/// Lifts the names once the game has set them
+		/// </summary>
+		/// <param name="__instance">The game's health bars</param>
+		private static void Postfix(EnemyHud __instance)
+		{
+			VikingHudName.AfterUpdate(__instance);
+		}
+	}
+
+	/// <summary>
 	/// Notes the local player in the world as they spawn, so no viking takes their name
 	/// </summary>
 	[HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]

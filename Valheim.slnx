@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/Tests/">
+    <Project Path="Tests/CreatureMarker.Tests/CreatureMarker.Tests.csproj" />
     <Project Path="Tests/Vikings.Tests/Vikings.Tests.csproj" />
     <Project Path="Tests/VikingVillages.Tests/VikingVillages.Tests.csproj" />
     <Project Path="Tests/ZombieApocalypse.Tests/ZombieApocalypse.Tests.csproj" />

@@ -8,7 +8,8 @@ namespace CreatureMarker
 {
 	/// <summary>
 	/// Colored arrows above marked creatures, pinned to the screen edge and pointing at them when they are off-screen,
-	/// with an optional name label behind each arrow
+	/// with an optional name label behind each arrow, and a red ! beside the arrow of a creature that leaves players alone
+	/// until provoked and has been
 	/// </summary>
 	/// <remarks>
 	/// The markers live in a canvas of their own under the enemy HUD root, so they hide along with the health bars,
@@ -42,6 +43,16 @@ namespace CreatureMarker
 		internal static readonly Color OutlineColor = ArrowSprite.OutlineColor;
 
 		/// <summary>
+		/// The red ! beside the arrow of a creature that's been provoked - its text, size, the box it's centered in and
+		/// how far it stands from the arrow, in canvas units, and its color
+		/// </summary>
+		private const string AlarmText = "!";
+		private const float AlarmFontSize = 26f;
+		private static readonly Vector2 AlarmSize = new Vector2(12f, 30f);
+		private const float AlarmGap = 2f;
+		private static readonly Color AlarmColor = new Color(1f, 0.15f, 0.15f, 1f);
+
+		/// <summary>
 		/// One creature's, fish's or bird's arrow and name label
 		/// </summary>
 		/// <remarks>
@@ -51,6 +62,11 @@ namespace CreatureMarker
 		{
 			public Image arrow;
 			public TextMeshProUGUI label;
+
+			/// <summary>
+			/// The red ! beside the arrow, shown while the creature has been provoked
+			/// </summary>
+			public TextMeshProUGUI alarm;
 			public Object source;
 
 			/// <summary>
@@ -192,6 +208,7 @@ namespace CreatureMarker
 						{
 							SetActive(marker.arrow.gameObject, false);
 							SetActive(marker.label.gameObject, false);
+							SetActive(marker.alarm.gameObject, false);
 							continue;
 						}
 						parent = mask.transform;
@@ -200,18 +217,22 @@ namespace CreatureMarker
 					{
 						SetActive(marker.arrow.gameObject, false);
 						SetActive(marker.label.gameObject, false);
+						SetActive(marker.alarm.gameObject, false);
 						continue;
 					}
 					if (marker.arrow.transform.parent != parent)
 					{
 						marker.arrow.transform.SetParent(parent, false);
 						marker.label.transform.SetParent(parent, false);
+						marker.alarm.transform.SetParent(parent, false);
 					}
 					float distanceSquared = Vector3.SqrMagnitude(target.position - playerPosition);
 					Vector3 scale = ((distanceSquared > farDistanceSquared) ? farScale : Vector3.one);
-					// The label is scaled along with the arrow, so placing it can go by the arrow's scale alone
+					// The label and the ! are scaled along with the arrow, so placing them can go by the arrow's scale alone
 					marker.arrow.rectTransform.localScale = scale;
 					marker.label.rectTransform.localScale = scale;
+					marker.alarm.rectTransform.localScale = scale;
+					SetActive(marker.alarm.gameObject, target.provoked);
 					marker.arrow.color = target.color;
 					// While the game's HUD shows the name and level above an on-screen creature, the arrow sits above it and
 					// the label leaves them out - an arrow pinned to the screen edge is away from the HUD, so it keeps them
@@ -267,6 +288,13 @@ namespace CreatureMarker
 					}
 				}
 				Stack();
+				for (int i = 0; i < used; i++)
+				{
+					if (markers[i].alarm.gameObject.activeSelf)
+					{
+						PlaceAlarm(markers[i]);
+					}
+				}
 			}
 			stacking.Clear();
 			for (int i = used; i < markers.Count; i++)
@@ -276,6 +304,7 @@ namespace CreatureMarker
 				markers[i].shownDistance = -2;
 				SetActive(markers[i].arrow.gameObject, false);
 				SetActive(markers[i].label.gameObject, false);
+				SetActive(markers[i].alarm.gameObject, false);
 			}
 			HideUnusedMasks();
 		}
@@ -334,6 +363,7 @@ namespace CreatureMarker
 					{
 						marker.arrow.transform.SetParent(layer, false);
 						marker.label.transform.SetParent(layer, false);
+						marker.alarm.transform.SetParent(layer, false);
 					}
 				}
 				Object.Destroy(mask.gameObject);
@@ -613,7 +643,9 @@ namespace CreatureMarker
 
 		/// <summary>
 		/// Sets the label to the name, then the level, then the distance in brackets when there is text before it -
-		/// like "Greydwarf ⭐⭐ (5m)", "Perch[3]" or "5m" - rebuilding the text only when one of them has changed
+		/// like "Greydwarf ⭐⭐ (5m)", "Perch[3]" or "5m" - rebuilding the text only when one of them has changed. A name
+		/// of more than one line, like a creature's from another mod with more under its name, gets the level and the
+		/// distance after its first line
 		/// </summary>
 		/// <param name="marker">The marker whose label to set</param>
 		/// <param name="name">The name to show, or null to leave it out</param>
@@ -632,7 +664,7 @@ namespace CreatureMarker
 			marker.shownFish = fish;
 			marker.shownColor = color;
 			marker.shownDistance = distance;
-			string text = (name ?? "");
+			string text = FirstLine(name ?? "", out string rest);
 			if (level > 1)
 			{
 				if (fish)
@@ -657,9 +689,27 @@ namespace CreatureMarker
 			{
 				text = ((text.Length > 0) ? text + " (" + distance + "m)" : distance + "m");
 			}
-			marker.label.text = text;
+			marker.label.text = text + rest;
 			marker.labelSize = marker.label.GetPreferredValues();
 			marker.label.rectTransform.sizeDelta = marker.labelSize;
+		}
+
+		/// <summary>
+		/// Splits a name at the end of its first line
+		/// </summary>
+		/// <param name="name">The name</param>
+		/// <param name="rest">Set to the rest of it from the line break on, or "" for a name of one line</param>
+		/// <returns>Its first line</returns>
+		internal static string FirstLine(string name, out string rest)
+		{
+			int lineEnd = name.IndexOf('\n');
+			if (lineEnd < 0)
+			{
+				rest = "";
+				return(name);
+			}
+			rest = name.Substring(lineEnd);
+			return(name.Substring(0, lineEnd));
 		}
 
 		/// <summary>
@@ -720,6 +770,7 @@ namespace CreatureMarker
 				Marker created = new Marker();
 				created.arrow = CreateArrow();
 				created.label = CreateLabel(enemyHud);
+				created.alarm = CreateAlarm(enemyHud);
 				markers.Add(created);
 			}
 			Marker marker = markers[index];
@@ -787,6 +838,75 @@ namespace CreatureMarker
 			label.raycastTarget = false;
 			label.rectTransform.pivot = new Vector2(0.5f, 0.5f);
 			return(label);
+		}
+
+		/// <summary>
+		/// Creates the red ! shown beside a provoked creature's arrow in the markers' canvas, hidden, in the health bars'
+		/// font
+		/// </summary>
+		/// <param name="enemyHud">The enemy HUD whose name text supplies the font</param>
+		/// <returns>The !</returns>
+		private TextMeshProUGUI CreateAlarm(EnemyHud enemyHud)
+		{
+			GameObject go = new GameObject("CreatureMarkerAlarm", typeof(RectTransform));
+			go.transform.SetParent(layer, false);
+			go.SetActive(false);
+			TextMeshProUGUI alarm = go.AddComponent<TextMeshProUGUI>();
+			TMP_Text template = GetNameTemplate(enemyHud);
+			if (template != null)
+			{
+				alarm.font = template.font;
+				alarm.fontSharedMaterial = template.fontSharedMaterial;
+			}
+			alarm.text = AlarmText;
+			alarm.fontSize = AlarmFontSize;
+			alarm.fontStyle = FontStyles.Bold;
+			alarm.color = AlarmColor;
+			alarm.alignment = TextAlignmentOptions.Center;
+			alarm.textWrappingMode = TextWrappingModes.NoWrap;
+			alarm.raycastTarget = false;
+			alarm.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+			alarm.rectTransform.sizeDelta = AlarmSize;
+			return(alarm);
+		}
+
+		/// <summary>
+		/// Puts a marker's ! beside its arrow, wherever the arrow ended up (see AlarmSpot)
+		/// </summary>
+		/// <param name="marker">The marker, its arrow placed and stacked</param>
+		private void PlaceAlarm(Marker marker)
+		{
+			RectTransform arrow = marker.arrow.rectTransform;
+			arrow.GetWorldCorners(corners);
+			Vector2 min = corners[0];
+			Vector2 max = corners[0];
+			for (int i = 1; i < corners.Length; i++)
+			{
+				min = Vector2.Min(min, corners[i]);
+				max = Vector2.Max(max, corners[i]);
+			}
+			float scale = arrow.lossyScale.x;
+			Vector2 spot = AlarmSpot(Rect.MinMaxRect(min.x, min.y, max.x, max.y), AlarmSize * scale * 0.5f, AlarmGap * scale, Screen.width);
+			marker.alarm.rectTransform.position = new Vector3(spot.x, spot.y, 0f);
+		}
+
+		/// <summary>
+		/// Works out where the ! goes beside an arrow - just after it on the right, level with its middle, or on its left
+		/// when there's no room on the screen to its right, as there isn't for an arrow pinned to the right edge
+		/// </summary>
+		/// <param name="arrow">The arrow's box on screen, however it's turned, in screen pixels</param>
+		/// <param name="half">Half the !'s size, in screen pixels</param>
+		/// <param name="gap">How far the ! stands from the arrow, in screen pixels</param>
+		/// <param name="screenWidth">The screen's width, in pixels</param>
+		/// <returns>The !'s middle, in screen pixels</returns>
+		internal static Vector2 AlarmSpot(Rect arrow, Vector2 half, float gap, float screenWidth)
+		{
+			float x = arrow.xMax + gap + half.x;
+			if (x + half.x > screenWidth)
+			{
+				x = arrow.xMin - gap - half.x;
+			}
+			return(new Vector2(x, arrow.center.y));
 		}
 
 		/// <summary>

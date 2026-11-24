@@ -7,6 +7,8 @@
 - With PortalPreview installed, a portal showing a preview hides the markers of creatures and things behind it
 - A dedicated server sharing the game's config folder no longer has the config file rewritten and reloaded over and over - reading the file after it's saved doesn't write it back, and a line for a creature this game hasn't seen keeps its name
 - Markers that would overlap on screen stack instead, the nearest creature's keeping its place and the others moved up above it. Arrows pinned to the screen edge still overlap
+- A creature that leaves you alone until provoked, like the Dvergr, gets a red ! beside its arrow once it's been provoked
+- A creature whose name runs to more than one line, like a Viking Villages Viking's with its job under it in debug mode, has its level and distance after the first line
 
 ## 1.11.0
 - Support portals, with the All Portals switch, off by default, and the Portal Color setting, default #B08EFF (lavendar). Still not changing the mod name

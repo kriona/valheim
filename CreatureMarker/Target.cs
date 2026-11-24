@@ -63,5 +63,11 @@ namespace CreatureMarker
 		/// The marker color
 		/// </summary>
 		public Color color;
+
+		/// <summary>
+		/// Whether the target is a creature that leaves players alone until they provoke it, like the Dvergr, and has
+		/// been provoked - shown with a red ! beside its arrow
+		/// </summary>
+		public bool provoked;
 	}
 }

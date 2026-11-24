@@ -791,6 +791,7 @@ namespace CreatureMarker
 				target.nameToken = character.GetHoverName();
 				target.level = level;
 				target.color = GetCreatureColor(character, hostile, player);
+				target.provoked = IsProvoked(character);
 				marked.Add(target);
 			}
 			Color merchantColor = (traderColor ?? passiveColor);
@@ -1256,6 +1257,23 @@ namespace CreatureMarker
 				return(false);
 			}
 			return(BaseAI.IsEnemy(character, player));
+		}
+
+		/// <summary>
+		/// Whether a creature that leaves players alone until they provoke it has been provoked - the game's own
+		/// aggravation, which turns the Dvergr against players once one is hurt, and which other mods' friendly creatures,
+		/// like Viking Villages' living Vikings, can share
+		/// </summary>
+		/// <remarks>
+		/// The game keeps whether a creature is aggravated in its ZDO, so this holds on every player's game, not only on
+		/// the one that runs the creature
+		/// </remarks>
+		/// <param name="character">The creature</param>
+		/// <returns>True when it has been provoked</returns>
+		private static bool IsProvoked(Character character)
+		{
+			BaseAI ai = character.GetBaseAI();
+			return(ai != null && ai.IsAggravatable() && ai.IsAggravated());
 		}
 
 		/// <summary>

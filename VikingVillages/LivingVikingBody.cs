@@ -12,7 +12,7 @@ namespace VikingVillages
 	internal class LivingVikingBody : VikingBody
 	{
 		/// <summary>
-		/// The color the viking's job shows in after its name in debug mode, so it stands apart from the name - in the
+		/// The color the viking's job shows in under its name in debug mode, so it stands apart from the name - in the
 		/// hover text, over the health bar and on other mods' markers, which all show the name as rich text
 		/// </summary>
 		private const string JobColor = "#C0C0C0";
@@ -482,8 +482,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Gets the viking's name as the local player knows it - the name a player gave it once it knows them, or else
 		/// plain Viking with "(?)" after it while it doesn't, until it greets them or they talk to it - with what it's
-		/// doing after it in debug mode, wherever its name shows: its hover text, the health bar over it, and other mods'
-		/// markers that read its name
+		/// doing on a line under it in debug mode, wherever its name shows: its hover text, the health bar over it (see
+		/// VikingHudName), and other mods' markers that read its name
 		/// </summary>
 		/// <returns>Its name</returns>
 		public override string GetHoverName()
@@ -494,12 +494,12 @@ namespace VikingVillages
 				return(name);
 			}
 			string job = viking.DebugJob();
-			return(string.IsNullOrEmpty(job) ? name : name + " <color=" + JobColor + ">(" + job + ")</color>");
+			return(string.IsNullOrEmpty(job) ? name : name + "\n<color=" + JobColor + ">" + job + "</color>");
 		}
 
 		/// <summary>
 		/// Gets the viking's name as the local player knows it - the name a player gave it once it knows them, or else
-		/// plain Viking with "(?)" after it while it doesn't - without what it's doing, which shows after it in debug mode
+		/// plain Viking with "(?)" after it while it doesn't - without what it's doing, which shows under it in debug mode
 		/// (see GetHoverName)
 		/// </summary>
 		/// <returns>Its name</returns>

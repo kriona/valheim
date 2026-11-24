@@ -3,6 +3,7 @@
 Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans, other players, items on the ground, portals, tombstones and map pings. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them, and only creatures higher up than you get one in the top half of the screen.
 
 - Separate colors for passive creatures, hostile creatures, creatures that are targeting you, bosses, fish, traders, leviathans and your tamed pets
+- A red ! beside the arrow of a creature that leaves you alone until provoked, like the Dvergr, once it's been provoked - including other mods' friendly creatures that the game provokes the same way, like Viking Villages' living Vikings
 - Marks traders like Haldor, Hildir and the Bog Witch, and their pets like Halstein, including through portals with [PortalPreview](#portalpreview)
 - Marks leviathans and lava leviathans, so they're easy to find when you want their chitin or flametal ore
 - Marks other players who are sharing their position on the map, unless they're sneaking
