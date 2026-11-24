@@ -6845,8 +6845,22 @@ namespace VikingVillages
 		private Container FindChestFor(ItemDrop.ItemData item)
 		{
 			List<Container> chests = UsableChests();
-			List<Container> fits = chests.FindAll((Container chest) => HasRoom(chest, item, chests));
-			Container chosen = Nearest(fits.FindAll((Container chest) => StackRoom(chest, item) >= item.m_stack));
+			return(NearestStacking(chests.FindAll((Container chest) => HasRoom(chest, item, chests)), item, item.m_stack));
+		}
+
+		/// <summary>
+		/// Picks the chest to put an amount of an item in, among chests with room for it - the nearest whose unfinished
+		/// stacks of the item take all of it, so no slot is used, or else the nearest with an unfinished stack of it to
+		/// fill before the rest goes in a slot beside it, or else the nearest that already holds some, keeping the item
+		/// together, or else the nearest at all - so an item is topped up to full stacks before it's spread over new ones
+		/// </summary>
+		/// <param name="fits">The chests with room for it</param>
+		/// <param name="item">The item</param>
+		/// <param name="amount">How much of it goes in</param>
+		/// <returns>The chest, or null when there's none</returns>
+		private Container NearestStacking(List<Container> fits, ItemDrop.ItemData item, int amount)
+		{
+			Container chosen = Nearest(fits.FindAll((Container chest) => StackRoom(chest, item) >= amount));
 			if (chosen == null)
 			{
 				chosen = Nearest(fits.FindAll((Container chest) => StackRoom(chest, item) > 0));
@@ -6887,7 +6901,7 @@ namespace VikingVillages
 		/// <returns>True when it stacks onto it</returns>
 		private static bool SameStack(ItemDrop.ItemData stored, ItemDrop.ItemData item)
 		{
-			return(stored.m_shared.m_name == item.m_shared.m_name && stored.m_quality == item.m_quality && stored.m_worldLevel == item.m_worldLevel);
+			return(StackMerge.SameStack(stored, item));
 		}
 
 		/// <summary>
@@ -7132,7 +7146,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the nearest of the village's chests the viking may use with room for more wood
+		/// Finds the chest to stock with wood among the village's chests the viking may use with room for more - one with
+		/// an unfinished stack of wood to top up first, so the wood fills a stack before it's spread over new ones (see
+		/// NearestStacking)
 		/// </summary>
 		/// <returns>The chest, or null when none has room</returns>
 		private Container FindStockChest()
@@ -7142,7 +7158,7 @@ namespace VikingVillages
 			{
 				return(null);
 			}
-			return(Nearest(UsableChests().FindAll((Container chest) => ChestRoom(chest, plain, null) > 0)));
+			return(NearestStacking(UsableChests().FindAll((Container chest) => ChestRoom(chest, plain, null) > 0), plain, CarryMax));
 		}
 
 		/// <summary>
@@ -7185,12 +7201,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the nearest of the village's chests the viking may use that has wood in it
+		/// Finds the nearest of the village's chests the viking may use that has wood in it - one with an unfinished stack
+		/// of wood first, so the wood left stays in full stacks
 		/// </summary>
 		/// <returns>The chest, or null when none has</returns>
 		private Container FindWoodChest()
 		{
-			return(Nearest(UsableChests().FindAll((Container chest) => ChestWood(chest) > 0)));
+			List<Container> stocked = UsableChests().FindAll((Container chest) => ChestWood(chest) > 0);
+			Container unfinished = Nearest(stocked.FindAll((Container chest) => chest.GetInventory().GetAllItems().Exists((ItemDrop.ItemData stored) => IsWoodItem(stored) && stored.m_stack < stored.m_shared.m_maxStackSize)));
+			return((unfinished != null) ? unfinished : Nearest(stocked));
 		}
 
 		/// <summary>
@@ -7244,7 +7263,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Takes a chest over from whoever owns it so the viking can change what's in it, with what's in it brought up
-		/// to date, unless it's no longer free to use
+		/// to date and its unfinished stacks merged (see StackMerge), unless it's no longer free to use
 		/// </summary>
 		/// <param name="chest">The chest</param>
 		/// <returns>False when it can't be used</returns>
@@ -7267,12 +7286,15 @@ namespace VikingVillages
 				chest.m_inUse = false;
 				chest.Load();
 				chest.m_inUse = inUse;
+				// It tidies the chest as it opens it, merging unfinished stacks of an item so each item takes as few slots
+				// as it fits in
+				StackMerge.Merge(chest.GetInventory());
 			}
 			return(true);
 		}
 
 		/// <summary>
-		/// Takes wood from a chest the viking has reached, as much as it needs and can carry
+		/// Takes wood from a chest the viking has reached, as much as it needs and can carry, from its smallest stack first
 		/// </summary>
 		/// <param name="chest">The chest</param>
 		/// <param name="wanted">How much it needs</param>
@@ -7285,7 +7307,10 @@ namespace VikingVillages
 			}
 			Inventory store = chest.GetInventory();
 			int taken = 0;
-			foreach (ItemDrop.ItemData item in store.m_inventory.FindAll((ItemDrop.ItemData stored) => IsWoodItem(stored)))
+			// The smallest stack is used up first, so the wood left stays in full stacks
+			List<ItemDrop.ItemData> stacks = store.m_inventory.FindAll((ItemDrop.ItemData stored) => IsWoodItem(stored));
+			stacks.Sort((ItemDrop.ItemData a, ItemDrop.ItemData b) => a.m_stack.CompareTo(b.m_stack));
+			foreach (ItemDrop.ItemData item in stacks)
 			{
 				if (taken >= wanted)
 				{
