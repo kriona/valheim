@@ -159,6 +159,29 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Lists the names of a village's dead who died since a time, filtered for their authors' words - the ones a
+		/// viking out on a quest missed
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="since">The earliest death, in ZNet time ticks</param>
+		/// <returns>The names, the latest to die last</returns>
+		public static List<string> DiedSince(Village village, long since)
+		{
+			List<string> names = new List<string>();
+			byte[] bytes = ((village != null && village.Zdo != null) ? village.Zdo.GetByteArray(FallenKey) : null);
+			List<Fallen> decoded = ((bytes != null) ? Decode(bytes, since) : null);
+			if (decoded == null)
+			{
+				return(names);
+			}
+			foreach (Fallen one in decoded)
+			{
+				names.Add(VikingNames.Filter(one.Name, one.Author).RemoveRichTextTags().Trim());
+			}
+			return(FilterNames(names, new List<string>()));
+		}
+
+		/// <summary>
 		/// Picks out the names of a village's dead worth talking about - each name once, leaving out empty names and any
 		/// a living viking of the village has, ignoring case throughout
 		/// </summary>

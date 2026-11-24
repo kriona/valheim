@@ -154,7 +154,7 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void DepartureSaysWhenTheyreBack()
 		{
-			Assert.Equal("Back tomorrow.", QuestSpeech.Fill("Back {when}.", "tomorrow"));
+			Assert.Equal("Back tomorrow.", QuestSpeech.Fill("Back {when}.", "tomorrow", "", "", ""));
 			foreach (string line in QuestSpeech.DepartureLines)
 			{
 				Assert.Contains(QuestSpeech.WhenToken, line);

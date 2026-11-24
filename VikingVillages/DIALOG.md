@@ -27,6 +27,10 @@ What they say to you, and what they shout about danger, shows over their heads f
 | They're all at the fire of a village you disbanded, every 8-25 seconds half the time | 20 m, 6 s | "What now?" / "Where should we go?" / "Is there another village near here?" / "We can't stay here." / "We'll need to find a new fire." / "Someone must have room for us." |
 | One of them says where they're going as they leave a village you disbanded, {village} being the village they go to | 20 m, 6 s | "Let's go to {village}." / "{village} isn't far. Let's go!" / "We'll make for {village}. Come on!" - or with no name, "Let's find another village." / "There's another village out there. Let's go!" |
 | The first of the Vikings setting out on a quest, as they get ready to leave, {when} being roughly when they're due back - like "in a couple of hours", "later today", "tomorrow" or "in a couple of days" | 20 m, 6 s | "We're off! Expect us back {when}." / "Keep the fire going - we'll be back {when}." / "Don't wait up. We should be home {when}." / "Right, we're away. Back {when}, if the gods allow." / "Off we go. Look for us {when}." |
+| You talk to a Viking at home while a quest is out - 40% of the time, not for hunting, foraging or cutting trees - {away} being the names of the Vikings on it, like "Ragna and Ulf", and {when} roughly when they're due back | 20 m, 6 s | Any quest: "{away} went out on a quest, {player}. Back {when}, they said." / "We're short-handed until {away} gets back, {player}." - and one of the quest's own: mining copper "{away} went mining copper, {player}. We'll have bronze before long."; tin "{away} went down to the shore after tin, {player}."; silver "{away} went up the mountain for silver, {player}."; sunken crypts "{away} went into the sunken crypts for iron. Pray for them, {player}."; a burial chamber "{away} went raiding a burial chamber, {player}."; trolls "{away} went troll hunting. Troll hunting, {player}!"; fulings "{away} went to raid a fuling village, {player}."; selling treasure "{away} took our treasure to Haldor, {player}."; a circlet "{away} went to buy a circlet from Haldor, {player}."; Eikthyr "{away} went to face Eikthyr, {player}. For his antlers."; wild bees "{away} went looking for wild bees, {player}." |
+| You talk to a Viking who came back from a quest in the last game day - 60% of the time, not for hunting, foraging or cutting trees - {with} being the names of the others who went, the lines with it left out when they went alone | 20 m, 6 s | Any quest: "We're back, {player}! {with} and I didn't come home empty-handed." / "Home again, {player}. It was a long trip." - and one of the quest's own: copper "Copper, {player}! {with} and I carried home all we could lift."; tin "Tin for the bronze, {player}. {with} found a good seam."; silver "We brought silver down from the mountain, {player}. {with} dug most of it."; sunken crypts "We went into the sunken crypts, {player}. {with} and I came out with iron."; a burial chamber "We raided a burial chamber, {player}! {with} nearly got lost in the dark."; trolls "We killed a troll, {player}! Ask {with} if you don't believe me."; fulings "We raided the fulings, {player}. {with} fought like a bear."; selling treasure "Haldor paid well for our treasure, {player}. {with} drove the bargain."; a circlet "Haldor's circlet, {player}! No more torches for us."; Eikthyr "We faced Eikthyr, {player}! {with} and I brought back his antlers."; wild bees "I found wild bees, {player}. They found me too." |
+| The first of the Vikings home from a quest, finding every other Viking of their village dead, 6 seconds after coming in | 20 m, 6 s | "What happened while we were gone?!" / "Where is everyone?!" / "No... not all of them." / "We were only gone a little while..." / "Hello? Is anyone here?" |
+| Then mourning each of the village's dead who died while they were gone, up to 4, 6 seconds apart, {fallen} being the dead Viking's name | 20 m, 6 s | "{fallen}... I should have been here." / "I'm sorry I wasn't here, {fallen}." / "Rest now, {fallen}. We'll remember you." / "Not you too, {fallen}..." / "Save me a seat in Valhalla, {fallen}." |
 | Lost, just after a console command spawned them out in the wild - 1-2 seconds after, and half the time another 7 seconds later | 20 m, 6 s | "Where am I?" / "How did I get here?" / "What's going on?" / "Am I in Valhalla?" / "This isn't my bed..." / "The last thing I remember is the mead hall..." / "Odin's beard... what is this place?" / "Which way is home?" |
 | Lost, they greet you for the first time | 20 m, 6 s | "You there! Do you know where this is?" / "A living face! Tell me, where am I?" / "Hail, stranger... is this Valhalla?" / "Who are you? Where is everyone?" - with "I'm {name}." / "I'm called {name}." / "They call me {name}." after it when they have a name |
 | Lost, you talk to them or they greet you, knowing you | 20 m, 6 s | "{player}? I... I don't know where I am." / "Give me a moment, {player}. My head's spinning." / "Is this Midgard, {player}? Tell me this is Midgard." / "I don't remember coming here, {player}. Any of it." |
@@ -181,6 +185,54 @@ When two Vikings talk, they take turns saying the lines of one talk, starting wi
 | A Viking new to the village whose group left a village you disbanded, to another Viking - in place of those above | "{newcomer} came all the way from {from}." / "I heard {from} is gone now." / "Then we'll make room here." |
 | A Viking new to the village whose group left a village you disbanded, to another Viking | "The folk from {from} have settled in well, {name}." / "{newcomer} most of all." |
 | A Viking new to the village whose group left a village you disbanded, to another Viking | "Did {newcomer} say why {from} broke up?" / "No, and I didn't ask. Let them be." |
+| A quest out, started by a Viking at home - 30% of the other talks, not for hunting, foraging or cutting trees, {away} being the names of the Vikings on it and {when} roughly when they're due back | "Any word from {away}?" / "Not yet. They'll be back {when}." |
+| A quest out, by a Viking at home | "It's quiet without {away}, {name}." / "Too quiet. I'll be glad when they're back." |
+| Mining copper, by a Viking at home | "Think {away} found the copper yet?" / "If anyone can find it, it's them." |
+| Mining copper, by a Viking at home | "Quiet without {away} banging on rocks." / "Enjoy it. There'll be ore to smelt soon enough." |
+| Mining tin, by a Viking at home | "{away} went down to the shore after tin." / "Tin's easy to find. It's the trolls by the water that worry me." |
+| Mining tin, by a Viking at home | "Bronze needs tin, {name}." / "And {away} went to fetch it." |
+| Mining silver, by a Viking at home | "{away} went up the mountain for silver." / "Wolves and drakes up there. I hope they took a cloak." |
+| Mining silver, by a Viking at home | "Silver's buried deep, {name}." / "Then let's hope {away} dug deep." |
+| Raiding sunken crypts, by a Viking at home | "{away} went into the sunken crypts." / "The swamp swallows the careless." / "Then let's hope they were careful." |
+| Raiding sunken crypts, by a Viking at home | "I hate thinking of {away} down in those crypts." / "Iron doesn't fetch itself, {name}." |
+| Raiding a burial chamber, by a Viking at home | "{away} went into a burial chamber." / "Skeletons and ghosts. Better them than me." |
+| Raiding a burial chamber, by a Viking at home | "Think {away} will bring back amber?" / "If the dead left any." |
+| Hunting trolls, by a Viking at home | "{away} went after a troll." / "A troll? On purpose?" / "Its hide makes good armor, they said." |
+| Hunting trolls, by a Viking at home | "Do you hear that crashing in the forest, {name}?" / "That'll be {away} and the troll. I hope." |
+| Raiding fulings, by a Viking at home | "{away} went to raid the fulings." / "Brave. Or mad." / "Out on the Plains it's the same thing." |
+| Raiding fulings, by a Viking at home | "Black metal, they said. Worth the fulings' spears, I hope." / "We'll know soon enough." |
+| Selling treasure, by a Viking at home | "{away} took our amber to Haldor." / "I hope they come back with coins and not some trinket of his." |
+| Selling treasure, by a Viking at home | "Haldor drives a hard bargain." / "{away} can haggle with the best of them." |
+| Buying a circlet, by a Viking at home | "{away} went to Haldor for a Dverger circlet." / "No more torches in the dark, then." |
+| Buying a circlet, by a Viking at home | "A circlet costs a fortune, {name}." / "A fortune well spent, if it keeps the dark away." |
+| Facing Eikthyr, by a Viking at home | "{away} went to face Eikthyr." / "The stag? For his antlers?" / "For a pickaxe, they said." |
+| Facing Eikthyr, by a Viking at home | "Thunder over the meadow, {name}. Hear it?" / "That'll be {away} and the stag." |
+| Finding wild bees, by a Viking at home | "{away} went looking for wild bees." / "I hope they bring back more honey than stings." |
+| Finding wild bees, by a Viking at home | "Wild hives are hard to find, {name}." / "Follow the buzzing, they said." |
+| A quest they came back from in the last game day, started by a Viking who went - 50% of the other talks, not for hunting, foraging or cutting trees, {with} being the names of the others who went, the talks with it left out when they went alone | "We made it back, {name}." / "In one piece?" / "Mostly." |
+| A quest they came back from | "{with} and I are home." / "And not empty-handed, I see." |
+| Mining copper, by a Viking who went | "{with} and I dug enough copper for a dozen axes." / "Then the smelter's busy tonight." |
+| Mining copper, by a Viking who went | "My arms ache from all that digging, {name}." / "Copper doesn't come out of the rock on its own." |
+| Mining tin, by a Viking who went | "Tin from the shore, {name}. {with} carried more than I did." / "Then the bronze can start." |
+| Mining tin, by a Viking who went | "The tin was right by the water." / "And the trolls?" / "We didn't stay to ask." |
+| Mining silver, by a Viking who went | "The mountain was cold, {name}. Ask {with} - we nearly froze." / "But you brought silver?" / "We brought silver." |
+| Mining silver, by a Viking who went | "I never want to see another drake." / "Then I hope you dug enough silver." |
+| Raiding sunken crypts, by a Viking who went | "The crypts stank, {name}. {with} and I won't forget it." / "Did you get the iron?" / "Every scrap we could carry." |
+| Raiding sunken crypts, by a Viking who went | "The draugr down there don't stay down." / "Then why go back?" / "Iron, {name}. Always iron." |
+| Raiding a burial chamber, by a Viking who went | "Skeletons everywhere, {name}. {with} smashed most of them." / "Any treasure?" / "Amber, bones and dust." |
+| Raiding a burial chamber, by a Viking who went | "It was so dark in there, {name}." / "Good thing you took a torch." |
+| Hunting trolls, by a Viking who went | "We brought down a troll! {with} took the first swing." / "And lived to tell it. Impressive." |
+| Hunting trolls, by a Viking who went | "Have you ever smelled a troll up close, {name}?" / "I'll take your word for it." |
+| Raiding fulings, by a Viking who went | "The fulings didn't see us coming. {with} saw to that." / "Black metal?" / "Enough to make the forge sing." |
+| Raiding fulings, by a Viking who went | "The Plains are no place for the careless, {name}." / "And yet here you are." |
+| Selling treasure, by a Viking who went | "Haldor tried to cheat us, {name}. {with} wasn't having it." / "So you got the coins?" / "Every last one." |
+| Selling treasure, by a Viking who went | "Haldor's cart is full of strange things, {name}." / "Did you buy any of them?" / "Only with my eyes." |
+| Buying a circlet, by a Viking who went | "Look, {name} - a Dverger circlet!" / "No more torches, then." |
+| Buying a circlet, by a Viking who went | "Haldor wanted every coin we had, {name}." / "Was it worth it?" / "Ask me in the dark." |
+| Facing Eikthyr, by a Viking who went | "Eikthyr is down, {name}! {with} and I saw to it." / "The stag himself?" / "Antlers and all." |
+| Facing Eikthyr, by a Viking who went | "My hair's still standing up from the stag's lightning." / "It suits you, {name}." |
+| Finding wild bees, by a Viking who went | "We found wild bees, {name}." / "And the stings to prove it, I see." |
+| Finding wild bees, by a Viking who went | "Honey, {name}! Straight from a wild hive." / "Save some for the rest of us." |
 
 ## News
 

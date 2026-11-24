@@ -130,11 +130,159 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Forgets when each village last found food, as the world is left
+		/// Forgets when each village last found food and when its vikings home from a quest last found it empty, as the
+		/// world is left
 		/// </summary>
 		internal static void ForgetFood()
 		{
 			foodFoundAt.Clear();
+			foundEmptyAt.Clear();
+		}
+
+		/// <summary>
+		/// How long after coming home from a quest a viking looks around for the rest of its village, how long apart it
+		/// says each line on finding them all dead, and the most of the dead it mourns by name, in seconds
+		/// </summary>
+		private const float HomecomingDelay = 6f;
+		private const float HomecomingLineGap = 6f;
+		private const int MournedMax = 4;
+
+		/// <summary>
+		/// How long the vikings of a quest count as coming home together, so one doesn't take another just back for the
+		/// rest of the village, in seconds
+		/// </summary>
+		private const float CameHomeTogether = 300f;
+
+		/// <summary>
+		/// When the viking looks around for the rest of its village on coming home from a quest, in Time.time seconds, or
+		/// less than 0 when it doesn't, and when the quest set out, in ZNet time ticks
+		/// </summary>
+		private float homecomingAt = -1f;
+		private long questSetOutAt;
+
+		/// <summary>
+		/// What the viking still has to say on coming home to a village whose vikings all died, and when it says the next
+		/// line, in Time.time seconds
+		/// </summary>
+		private readonly Queue<string> homecomingLines = new Queue<string>();
+		private float nextHomecomingLine;
+
+		/// <summary>
+		/// When a viking of each village on this client last came home from a quest to find it empty, by its ZDO, in
+		/// Time.time seconds - so only the first of them cries out
+		/// </summary>
+		private static readonly Dictionary<ZDOID, float> foundEmptyAt = new Dictionary<ZDOID, float>();
+
+		/// <summary>
+		/// Gets how the viking's last quest went, while it's still talking about it - for BackDays after it came home,
+		/// and only a quest worth talking about
+		/// </summary>
+		/// <returns>The quest's outcome, or null</returns>
+		private QuestOutcome RecentStory()
+		{
+			ZDO zdo = nview.GetZDO();
+			long back = zdo.GetLong(VillageQuests.BackAtKey, 0L);
+			if (back == 0L || EnvMan.instance == null || NetTime.Now() - back > NetTime.Ticks(EnvMan.instance.m_dayLengthSec * QuestSpeech.BackDays))
+			{
+				return(null);
+			}
+			QuestOutcome story = QuestOutcome.Decode(zdo.GetByteArray(VillageQuests.StoryKey));
+			return((story != null && QuestRules.WorthTalkingAbout(story.Kind)) ? story : null);
+		}
+
+		/// <summary>
+		/// Gets the village's quest that's out now, when it's worth talking about and the viking isn't on it
+		/// </summary>
+		/// <returns>The quest, or null</returns>
+		private QuestRecord QuestOut()
+		{
+			QuestRecord record = VillageQuests.Read(village);
+			if (record == null || record.Phase != QuestPhase.Away || !QuestRules.WorthTalkingAbout(record.Kind))
+			{
+				return(null);
+			}
+			return(record.Members.Contains(VikingIdentity.Get(nview.GetZDO())) ? null : record);
+		}
+
+		/// <summary>
+		/// Picks a talk about a quest, now and then - the one the viking who started it just came back from, naming the
+		/// others who went, or the one out now, naming those on it
+		/// </summary>
+		/// <param name="leader">The viking that started the talk</param>
+		/// <returns>The talk's lines, or null for a talk about anything else</returns>
+		private static string[] QuestTalk(VillageLife leader)
+		{
+			if (leader.village == null)
+			{
+				return(null);
+			}
+			QuestOutcome story = leader.RecentStory();
+			if (story != null && Random.value < QuestSpeech.BackTalkChance)
+			{
+				return(QuestSpeech.BackTalk(story.Kind, story.Companions));
+			}
+			QuestRecord record = leader.QuestOut();
+			if (record != null && Random.value < QuestSpeech.AwayTalkChance)
+			{
+				return(QuestSpeech.AwayTalk(record.Kind, record.Names, VillageQuests.DuePhrase(record)));
+			}
+			return(null);
+		}
+
+		/// <summary>
+		/// Picks what the viking says to a player about a quest, now and then - the one it just came back from, or the one
+		/// out now
+		/// </summary>
+		/// <param name="player">The player</param>
+		/// <returns>The line, or null for an answer about anything else</returns>
+		private string QuestAnswer(Player player)
+		{
+			QuestOutcome story = RecentStory();
+			if (story != null && Random.value < QuestSpeech.BackAnswerChance)
+			{
+				return(QuestSpeech.BackAnswer(story.Kind, story.Companions, player.GetPlayerName()));
+			}
+			QuestRecord record = QuestOut();
+			if (record != null && Random.value < QuestSpeech.AwayAnswerChance)
+			{
+				return(QuestSpeech.AwayAnswer(record.Kind, record.Names, VillageQuests.DuePhrase(record), player.GetPlayerName()));
+			}
+			return(null);
+		}
+
+		/// <summary>
+		/// Looks around a viking just home from a quest for the rest of its village, a few seconds after it comes in -
+		/// and finding every other viking of it dead, the first of those home on this client cries out and mourns by name
+		/// those who died while it was gone, a line at a time - call it from the viking's Idle
+		/// </summary>
+		private void UpdateHomecoming()
+		{
+			if (homecomingLines.Count > 0 && Time.time >= nextHomecomingLine)
+			{
+				nextHomecomingLine = Time.time + HomecomingLineGap;
+				VikingSpeech.Say(humanoid, homecomingLines.Dequeue(), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+			}
+			if (homecomingAt < 0f || Time.time < homecomingAt)
+			{
+				return;
+			}
+			homecomingAt = -1f;
+			long together = NetTime.Now() - NetTime.Ticks(CameHomeTogether);
+			bool others = village.Vikings().Exists((Character other) => other != null && other != humanoid && !other.IsDead() && other.m_nview != null && other.m_nview.IsValid() && other.m_nview.GetZDO().GetLong(VillageQuests.BackAtKey, 0L) < together);
+			ZDOID id = village.Zdo.m_uid;
+			if (others || (foundEmptyAt.TryGetValue(id, out float found) && Time.time - found < CameHomeTogether))
+			{
+				return;
+			}
+			foundEmptyAt[id] = Time.time;
+			homecomingLines.Enqueue(QuestSpeech.Alone());
+			List<string> fallen = VillageFallen.DiedSince(village, questSetOutAt);
+			for (int i = 0; i < fallen.Count && i < MournedMax; i++)
+			{
+				homecomingLines.Enqueue(QuestSpeech.Mourn(fallen[i]));
+			}
+			nextHomecomingLine = Time.time;
+			TestLog.Count("Quests", "came home to an empty village");
 		}
 
 		/// <summary>
@@ -245,6 +393,8 @@ namespace VikingVillages
 				zdo.Set(VillageQuests.StoryKey, outcome.Encode());
 				zdo.Set(VillageQuests.BackAtKey, NetTime.Now());
 				zdo.Set(VillageQuests.QuestOutcomeKey, new byte[0]);
+				homecomingAt = Time.time + HomecomingDelay;
+				questSetOutAt = outcome.SetOutAt;
 			}
 			bool loot = false;
 			foreach (ItemDrop.ItemData item in inventory.GetAllItems())
