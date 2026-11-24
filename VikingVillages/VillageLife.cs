@@ -731,13 +731,14 @@ namespace VikingVillages
 
 		/// <summary>
 		/// How an archer shoots a bird for its feathers - how near it gets, in meters, how long it waits between arrows,
-		/// in seconds, how many it looses before giving up on the bird, and how far off facing it it can be and still
-		/// loose, in degrees
+		/// in seconds, how many it looses before giving up on the bird, how far off facing it it can be and still loose,
+		/// in degrees, and how long it waits for the bird to land again once it takes off, in seconds
 		/// </summary>
 		private const float BirdRange = 20f;
 		private const float BirdShotInterval = 2.5f;
 		private const int BirdShotsMax = 6;
 		private const float BirdAimAngle = 8f;
+		private const float BirdLandWait = 20f;
 
 		/// <summary>
 		/// Whether the viking is aiming at a bird or at prey it's shooting from afar, which keeps its bow drawn and in
@@ -4327,8 +4328,9 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Finds the nearest bird within HuntReach of the village for an archer to shoot for its feathers - a seagull,
-		/// crow or the like, flying or landed - that no other viking is after and with no enemy near it but prey that
-		/// isn't dangerous (see IsHarmlessPrey), only in the village while the viking may not leave it (see MayLeave)
+		/// crow or the like, landed on the ground, since the vikings never shoot at one in the air - that no other viking
+		/// is after and with no enemy near it but prey that isn't dangerous (see IsHarmlessPrey), only in the village while
+		/// the viking may not leave it (see MayLeave)
 		/// </summary>
 		/// <param name="wanted">The prefab name of what the bird has to drop, like feathers, or null for any bird</param>
 		/// <returns>The bird, or null when there's none</returns>
@@ -4348,7 +4350,7 @@ namespace VikingVillages
 					continue;
 				}
 				RandomFlyingBird bird = view.GetComponent<RandomFlyingBird>();
-				if (bird == null || view.GetComponent<Destructible>() == null || TooHardToHunt(view.transform.position))
+				if (bird == null || !Landed(bird) || view.GetComponent<Destructible>() == null || TooHardToHunt(view.transform.position))
 				{
 					continue;
 				}
@@ -4367,6 +4369,17 @@ namespace VikingVillages
 				}
 			}
 			return(null);
+		}
+
+		/// <summary>
+		/// Checks whether a bird has landed on the ground, as the game notes it for every client (see
+		/// RandomFlyingBird.CustomFixedUpdate)
+		/// </summary>
+		/// <param name="bird">The bird</param>
+		/// <returns>True while it's landed</returns>
+		private static bool Landed(RandomFlyingBird bird)
+		{
+			return(bird.m_nview != null && bird.m_nview.IsValid() && bird.m_nview.GetZDO().GetBool(ZDOVars.s_landed));
 		}
 
 		/// <summary>
@@ -13368,14 +13381,13 @@ namespace VikingVillages
 			private float nextPenCheck;
 
 			/// <summary>
-			/// The bird an archer is shooting for its feathers, where it last saw it, how fast it was flying and when, and
-			/// how many arrows it has loosed at it and when it can loose the next
+			/// The bird an archer is shooting for its feathers, where it last saw it, when it took off, or below 0 while
+			/// it's landed, and how many arrows it has loosed at it and when it can loose the next
 			/// </summary>
 			private RandomFlyingBird bird;
 			private ZDOID birdId;
 			private Vector3 birdLast;
-			private Vector3 birdVelocity;
-			private float birdSeen;
+			private float birdFlyingSince;
 			private int shots;
 			private float nextShot;
 
@@ -13896,8 +13908,7 @@ namespace VikingVillages
 				bird = target;
 				birdId = target.m_nview.GetZDO().m_uid;
 				birdLast = target.transform.position;
-				birdVelocity = Vector3.zero;
-				birdSeen = Time.time;
+				birdFlyingSince = -1f;
 				shots = 0;
 				nextShot = 0f;
 				life.ClaimWork(birdId);
@@ -13905,9 +13916,10 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Closes in on the bird to within BirdRange, then stands with its bow drawn, aims ahead of it and looses an
-			/// arrow every BirdShotInterval seconds - giving up after BirdShotsMax, or when it flies too far out - and
-			/// once it's down, gathers its feathers where it fell
+			/// Closes in on the bird to within BirdRange, then stands with its bow drawn and looses an arrow at it every
+			/// BirdShotInterval seconds while it's landed - never while it's in the air, when it waits for it to land again,
+			/// following it, for up to BirdLandWait seconds - giving up after BirdShotsMax, when it flies too far out or
+			/// doesn't land again in time, and once it's down, gathers its feathers where it fell
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
 			/// <returns>False, so the hunt goes on</returns>
@@ -13929,14 +13941,22 @@ namespace VikingVillages
 					return(false);
 				}
 				Vector3 position = bird.transform.position;
-				float since = Time.time - birdSeen;
-				if (since > 0.05f)
-				{
-					birdVelocity = (position - birdLast) / since;
-					birdLast = position;
-					birdSeen = Time.time;
-				}
+				birdLast = position;
 				if (shots >= BirdShotsMax || life.village.DistanceOutside(position) > HuntReach + HuntChase || life.TooHardToHunt(position))
+				{
+					LetGoBird();
+					return(false);
+				}
+				bool landed = Landed(bird);
+				if (landed)
+				{
+					birdFlyingSince = -1f;
+				}
+				else if (birdFlyingSince < 0f)
+				{
+					birdFlyingSince = Time.time;
+				}
+				else if (Time.time - birdFlyingSince > BirdLandWait)
 				{
 					LetGoBird();
 					return(false);
@@ -13954,12 +13974,12 @@ namespace VikingVillages
 					}
 					return(false);
 				}
-				life.mover = "shooting at a bird";
+				life.mover = (landed ? "shooting at a bird" : "waiting for a bird to land");
 				life.aimingBow = true;
 				life.ai.StopMoving();
-				Vector3 aim = life.BirdAim(position, birdVelocity);
+				Vector3 aim = (landed ? life.BirdAim(position, Vector3.zero) : position);
 				life.ai.LookAt(aim);
-				if (Time.time >= nextShot && life.ReadyToShoot(aim) && life.humanoid.StartAttack(null, false))
+				if (landed && Time.time >= nextShot && life.ReadyToShoot(aim) && life.humanoid.StartAttack(null, false))
 				{
 					shots++;
 					nextShot = Time.time + BirdShotInterval;
