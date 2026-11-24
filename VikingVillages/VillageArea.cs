@@ -8,7 +8,8 @@ namespace VikingVillages
 	/// with AreaKey while looking at the village's fire - and makes the village's other fires gathering fires, or
 	/// ordinary fires again, and starts a village at a bonfire a player built (see VillageFounding), with the same key,
 	/// or disbands such a village with shift and the key at its fire - and opens the box to name the village with
-	/// VillageNames.NameKey at its fire, and shows the key for its stock (see VillageStock) in the fire's hover text
+	/// VillageNames.NameKey at its fire, and shows the key for its stock (see VillageStock) in the fire's hover text,
+	/// and in debug mode the key for the debug sidebar (see VillageDebugPanel)
 	/// </summary>
 	/// <remarks>
 	/// The ring is the workbench's own, without its floating hammer, drawn around each of the village's zones - around
@@ -195,8 +196,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// The line a fire adds to its hover text for the key - showing or hiding the village's area on the village's
-		/// own fire, making another fire in it a gathering fire or an ordinary one, or starting a village at a bonfire a
-		/// player built
+		/// own fire, along with the village's name and its other keys, making another fire in it a gathering fire or an
+		/// ordinary one, or starting a village at a bonfire a player built
 		/// </summary>
 		/// <param name="fire">The fire</param>
 		/// <returns>The line, or null when the key does nothing there</returns>
@@ -212,6 +213,10 @@ namespace VikingVillages
 					lines += "\n" + Prompt(VillageNames.NameKey.ToString(), ((name.Length > 0) ? "Rename village" : "Name village"));
 				}
 				lines += "\n" + Prompt(VillageStock.StockKey.ToString(), "Village stock");
+				if (Player.m_debugMode)
+				{
+					lines += "\n" + Prompt(VillageDebugPanel.PanelKey.ToString(), (VillageDebugPanel.IsOn() ? "Hide debug sidebar" : "Show debug info in sidebar"));
+				}
 				return(village.IsFounded() ? lines + "\n" + Prompt("Shift+" + AreaKey, "Disband village") : lines);
 			}
 			if (GatherVillage(fire, out Village _))

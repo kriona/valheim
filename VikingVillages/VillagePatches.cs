@@ -39,7 +39,8 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Shows a summary of a village's state when the player looks at its fire with debug mode on
+	/// Shows a summary of a village's state when the player looks at its fire with debug mode on - unless the debug
+	/// sidebar shows it already (see VillageDebugPanel)
 	/// </summary>
 	[HarmonyPatch(typeof(Fireplace), nameof(Fireplace.GetHoverText))]
 	public static class VillageDebugHoverPatch
@@ -56,7 +57,7 @@ namespace VikingVillages
 				return;
 			}
 			Village village = VillageDebug.Of(__instance);
-			if (village == null)
+			if (village == null || VillageDebugPanel.Shows(village))
 			{
 				return;
 			}

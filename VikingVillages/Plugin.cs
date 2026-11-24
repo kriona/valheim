@@ -62,8 +62,8 @@ namespace VikingVillages
 		/// the player is in (see VillageSimulation), moves a dedicated server's own area to the village it runs (see
 		/// ServerVillageRun), keeps the news the vikings tell and watches for more (see VikingNewsStore and
 		/// VikingNewsWatch) and the news the villages hear of each other (see NeighborNews), has the dvergr's outposts hire their vikings (see DvergrVikingSpawns), shows the
-		/// name of the village the player is in at the top of the screen (see VillageNameHud), and runs the test
-		/// log's checks (see TestLog)
+		/// name of the village the player is in at the top of the screen (see VillageNameHud) and its debug summary
+		/// in the sidebar when it's turned on (see VillageDebugPanel), and runs the test log's checks (see TestLog)
 		/// </summary>
 		private void Update()
 		{
@@ -99,6 +99,7 @@ namespace VikingVillages
 			NeighborNews.Update();
 			DvergrVikingSpawns.Update();
 			VillageNameHud.Update();
+			VillageDebugPanel.Update();
 			TestLog.Update();
 		}
 
