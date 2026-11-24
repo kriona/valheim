@@ -49,14 +49,21 @@ namespace VikingVillages
 		private const string PlayerKeyPrefix = "kriona_za_player_";
 
 		/// <summary>
-		/// The legends a viking won't be named after - gods and the figures of the game's world, by name, as well as
-		/// the bosses and traders found among the game's creatures
+		/// The legends a viking won't be named after - the gods, giants, beasts and others of the myths, the figures of
+		/// the game's world and its legendary weapons, by name, as well as the bosses and traders found among the game's
+		/// creatures
 		/// </summary>
 		private static readonly string[] Legends =
 		{
 			"Odin", "Oden", "Thor", "Loki", "Freya", "Freyja", "Frigg", "Baldr", "Baldur", "Balder", "Heimdall", "Tyr",
 			"Hel", "Ymir", "Hugin", "Munin", "Valkyrie", "Haldor", "Hildir", "Halstein", "Bog Witch", "Eikthyr",
-			"The Elder", "Elder", "Bonemass", "Moder", "Yagluth", "The Queen", "Queen", "Fader"
+			"The Elder", "Elder", "Bonemass", "Moder", "Yagluth", "The Queen", "Queen", "Fader",
+			"Vidar", "Sif", "Nanna", "Gerd", "Eira", "Frey", "Freyr", "Njord", "Bragi", "Idun", "Idunn", "Hod", "Hodr",
+			"Forseti", "Ull", "Ullr", "Vali", "Vili", "Ve", "Hoenir", "Mimir", "Kvasir", "Skadi", "Sigyn", "Gefjon", "Saga",
+			"Fulla", "Snotra", "Hlin", "Jord", "Sol", "Mani", "Nott",
+			"Fenrir", "Jormungandr", "Sleipnir", "Surt", "Surtr", "Surtur", "Aegir", "Ran", "Angrboda", "Nidhogg",
+			"Nidhögg", "Ratatoskr", "Urd", "Verdandi", "Skuld",
+			"Dyrnwyn", "Himminafl"
 		};
 
 		/// <summary>
@@ -80,7 +87,7 @@ namespace VikingVillages
 			"Åke", "Alrik", "Arne", "Asger", "Birger", "Bo", "Bram", "Brand", "Knud", "Dag", "Egil", "Einar", "Erik",
 			"Erling", "Eyvind", "Frode", "Gorm", "Gunnar", "Håkon", "Halfdan", "Halvar", "Harald", "Hjalmar",
 			"Ivar", "Jarl", "Kari", "Kjell", "Leif", "Magnus", "Nils", "Olaf", "Orm", "Ove", "Ragnar", "Rolf", "Sigurd",
-			"Sindre", "Snorri", "Sten", "Stig", "Sven", "Torsten", "Trygve", "Ulf", "Ulfric", "Valdemar", "Vidar", "Viggo",
+			"Sindre", "Snorri", "Sten", "Stig", "Sven", "Torsten", "Trygve", "Ulf", "Ulfric", "Valdemar", "Viggo",
 			"Grettir", "Njal", "Gisli", "Thorfinn", "Ketil", "Hallvard", "Ragnvald", "Torvald", "Asmund", "Ottar", "Ulfar",
 			"Steinar", "Geir", "Grim", "Hauk", "Orvar", "Svein", "Bard", "Toke", "Skarde",
 			"Agnar", "Alf", "Ari", "Arnbjorn", "Arnfinn", "Arngrim", "Arnkel", "Arnljot", "Arnor", "Arnulf", "Asbjorn",
@@ -101,9 +108,9 @@ namespace VikingVillages
 		};
 		internal static readonly string[] FemaleNames =
 		{
-			"Alva", "Asta", "Astrid", "Bodil", "Borghild", "Brünnhilde", "Dagmar", "Dagny", "Eira", "Embla", "Estrid",
-			"Frida", "Gerd", "Gro", "Gudrun", "Gunhild", "Helga", "Hilda", "Inga", "Ingrid", "Jorunn", "Kara", "Liv", "Maeva",
-			"Maja", "Nanna", "Oda", "Ragna", "Ragnhild", "Revna", "Runa", "Sif", "Sigrid", "Signe", "Siv", "Solveig",
+			"Alva", "Asta", "Astrid", "Bodil", "Borghild", "Brünnhilde", "Dagmar", "Dagny", "Embla", "Estrid",
+			"Frida", "Gro", "Gudrun", "Gunhild", "Helga", "Hilda", "Inga", "Ingrid", "Jorunn", "Kara", "Liv", "Maeva",
+			"Maja", "Oda", "Ragna", "Ragnhild", "Revna", "Runa", "Sigrid", "Signe", "Siv", "Solveig",
 			"Thyra", "Tove", "Turid", "Ulfhild", "Unn", "Valdis", "Vigdis", "Aud", "Freydis", "Gudrid", "Hallgerd", "Aslaug",
 			"Hervor", "Lagertha", "Thordis", "Gyda", "Ingunn", "Bergljot", "Sigrun", "Svanhild", "Alfhild", "Ylva",
 			"Yrsa", "Torunn",

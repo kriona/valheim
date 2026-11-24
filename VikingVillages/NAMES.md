@@ -20,19 +20,19 @@ Skarde, Skarphedin, Skeggi, Skjold, Skuli, Snaebjorn, Snorri, Solvi, Sorli, Soti
 Sten, Stig, Sturla, Styr, Svart, Svein, Sven, Sverre, Teit, Thjodolf, Thorarin, Thorbjorn, Thorfinn, Thorgeir,
 Thorgils, Thorgrim, Thorkel, Thorleif, Thormod, Thorodd, Thorolf, Thorvard, Thrain, Thrand, Tjorvi, Toke,
 Torsten, Torvald, Tostig, Trygve, Ubbe, Ulf, Ulfar, Ulfkel, Ulfljot, Ulfric, Vagn, Valbrand, Valdemar, Valgard,
-Vandrad, Vebjorn, Vermund, Vestein, Vidar, Vigfus, Viggo, Vigleik
+Vandrad, Vebjorn, Vermund, Vestein, Vigfus, Viggo, Vigleik
 
 ## Female Names
 
 Agda, Aldis, Alfdis, Alfhild, Alva, Arnbjorg, Arndis, Arnfrid, Arnora, Åsa, Asdis, Aslaug, Asleif, Asny, Asta,
 Astrid, Asvor, Aud, Audbjorg, Bera, Bergdis, Bergljot, Bergthora, Birna, Bjorg, Bodil, Borghild, Borgny,
-Brünnhilde, Brynja, Dagmar, Dagny, Dagrun, Dalla, Eira, Eldbjorg, Eldrid, Embla, Erna, Estrid, Eydis, Eyja,
-Freydis, Freygerd, Frida, Fridgerd, Geirlaug, Geirrid, Gerd, Grima, Gro, Gudfinna, Gudlaug, Gudny, Gudrid,
+Brünnhilde, Brynja, Dagmar, Dagny, Dagrun, Dalla, Eldbjorg, Eldrid, Embla, Erna, Estrid, Eydis, Eyja,
+Freydis, Freygerd, Frida, Fridgerd, Geirlaug, Geirrid, Grima, Gro, Gudfinna, Gudlaug, Gudny, Gudrid,
 Gudrun, Gunhild, Gunnbjorg, Gunnvor, Gyda, Gyrid, Halla, Hallbera, Halldis, Hallfrid, Hallgerd, Hallveig,
 Helga, Herborg, Herdis, Hervor, Hilda, Hildigunn, Hjordis, Hlif, Hrafnhild, Hrefna, Inga, Ingibjorg, Ingigerd,
 Ingileif, Ingrid, Ingunn, Jodis, Jofrid, Jorunn, Kara, Kata, Katla, Kolbrun, Kolfinna, Lagertha, Liv, Maeva,
-Maja, Nanna, Oda, Oddbjorg, Oddny, Ormhild, Osk, Ragna, Ragnfrid, Ragnheid, Ragnhild, Rannveig, Revna, Runa,
-Saeunn, Sif, Signe, Sigrid, Sigrun, Siv, Snaefrid, Solbjorg, Solrun, Solveig, Solvor, Steinunn, Steinvor,
+Maja, Oda, Oddbjorg, Oddny, Ormhild, Osk, Ragna, Ragnfrid, Ragnheid, Ragnhild, Rannveig, Revna, Runa,
+Saeunn, Signe, Sigrid, Sigrun, Siv, Snaefrid, Solbjorg, Solrun, Solveig, Solvor, Steinunn, Steinvor,
 Svala, Svanhild, Svava, Thjodhild, Thorbjorg, Thordis, Thorgerd, Thorhild, Thorkatla, Thorlaug, Thyra, Torunn,
 Tove, Turid, Ulfhild, Ulfrun, Unn, Valborg, Valdis, Valgerd, Vigdis, Vilborg, Ylva, Yngvild, Yrsa
 
