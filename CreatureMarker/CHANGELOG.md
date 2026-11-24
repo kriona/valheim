@@ -9,6 +9,7 @@
 - Markers that would overlap on screen stack instead, the nearest creature's keeping its place and the others moved up above it. Arrows pinned to the screen edge still overlap
 - A creature that leaves you alone until provoked, like the Dvergr, gets a red ! beside its arrow once it's been provoked
 - A creature whose name runs to more than one line, like a Viking Villages Viking's with its job under it in debug mode, has its level and distance after the first line
+- A creature whose speech bubble already names it, like a talking Viking Villages Viking or a trader, has its label leave the name out, so it isn't shown twice
 
 ## 1.11.0
 - Support portals, with the All Portals switch, off by default, and the Portal Color setting, default #B08EFF (lavendar). Still not changing the mod name

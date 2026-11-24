@@ -275,7 +275,9 @@ namespace CreatureMarker
 							}
 						}
 						int distance = (showDistance ? Mathf.RoundToInt(Mathf.Sqrt(distanceSquared)) : -1);
-						string name = ((showName && !underGameHud) ? marker.name : null);
+						// A speech bubble that already names the creature, like a Viking Villages Viking's, leaves the name out too
+						bool named = (dialog.HasValue && BubbleNames(target.source, marker.name));
+						string name = ((showName && !underGameHud && !named) ? marker.name : null);
 						int level = ((showLevel && !underGameHud) ? target.level : 0);
 						SetLabelText(marker, name, level, target.fish, target.color, distance);
 						marker.label.color = target.color;
@@ -595,6 +597,46 @@ namespace CreatureMarker
 				return(null);
 			}
 			return(bounds);
+		}
+
+		/// <summary>
+		/// Checks whether a creature's speech bubble already names it - in its topic, as a trader's does, or on the
+		/// first line of its text, as a Viking Villages Viking's does while its health bar doesn't show
+		/// </summary>
+		/// <param name="source">The creature</param>
+		/// <param name="name">The name its label would show</param>
+		/// <returns>True when the bubble names it</returns>
+		private static bool BubbleNames(Object source, string name)
+		{
+			Chat chat = Chat.instance;
+			Component component = source as Component;
+			if (chat == null || component == null || string.IsNullOrEmpty(name))
+			{
+				return(false);
+			}
+			Chat.NpcText npcText = chat.FindNpcText(component.gameObject);
+			if (npcText == null)
+			{
+				return(false);
+			}
+			bool topic = (npcText.m_topicField != null && npcText.m_topicField.gameObject.activeInHierarchy && NamesSpeaker(npcText.m_topicField.text, name));
+			return(topic || (npcText.m_textField != null && NamesSpeaker(npcText.m_textField.text, name)));
+		}
+
+		/// <summary>
+		/// Checks whether a bubble's text starts with a speaker's name on a line of its own, its rich text tags left out
+		/// </summary>
+		/// <param name="text">The text, or null</param>
+		/// <param name="name">The name</param>
+		/// <returns>True when its first line is the name</returns>
+		internal static bool NamesSpeaker(string text, string name)
+		{
+			if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(name))
+			{
+				return(false);
+			}
+			string plain = System.Text.RegularExpressions.Regex.Replace(text, "<[^>]*>", "");
+			return(FirstLine(plain, out string _).Trim() == FirstLine(name, out string _).Trim());
 		}
 
 		/// <summary>
