@@ -34,7 +34,9 @@ namespace VikingVillages
 		{
 			{ DvergrPrefix + VikingNews.Boss, new[] { "{creature} is dead? The Dvergr will want to hear about that, {player}.", "You killed {creature}! I'll tell the Dvergr. They'll pretend not to be impressed.", "{creature}, slain by your hand? The Dvergr might even smile, {player}.", "Word reached the outpost - {creature} is down. Well done, {player}." } },
 			{ DvergrPrefix + VikingNews.Miniboss, new[] { "{creature} beaten! Hildir is going to owe you, {player}.", "I heard you took care of {creature}, {player}. Nasty business.", "{creature}? Glad it was you and not me, {player}.", "So {creature} is done for. The Dvergr would have charged extra for that job." } },
-			{ DvergrPrefix + VikingNews.Trader, new[] { "You found {creature}? The Dvergr trade with stranger folk than that.", "{creature}, eh? Better prices than the Dvergr, I'd wager.", "Met {creature}, did you? Keep your coin purse close, {player}.", "{creature}! Ask if they're hiring - the Dvergr don't pay in honey." } },
+			{ DvergrPrefix + VikingNews.Trader + "/Haldor", new[] { "You found Haldor? He's kin to my masters, you know. Same nose for a bargain.", "Haldor! The Dvergr here speak well of him. Mostly of his prices, {player}.", "So you've met Haldor. If he says a price is fair, count your coins twice, {player}.", "Haldor is a Dvergr too, {player}. He'd rather sell trinkets to Vikings than mine." } },
+			{ DvergrPrefix + VikingNews.Trader + "/Hildir", new[] { "You met Hildir? A Dvergr with an eye for fine clothes. My masters think she's mad.", "Hildir! Haldor's sister, and she drives an even harder bargain than he does, {player}.", "So Hildir has a shop now? The Dvergr here say she should be mining, {player}.", "Hildir lost her chests again, did she, {player}? The Dvergr here would never be so careless." } },
+			{ DvergrPrefix + VikingNews.Trader + "/BogWitch", new[] { "You found {creature}? The Dvergr trade with stranger folk than that.", "{creature}, eh? Better prices than the Dvergr, I'd wager.", "Met {creature}, did you? Keep your coin purse close, {player}.", "{creature}! Ask if they're hiring - the Dvergr don't pay in honey." } },
 			{ DvergrPrefix + VikingNews.Dungeon, new[] { "Down into the dark, {player}? Give me the mist any day.", "I heard you went underground. The Dvergr dig deeper, but they don't go looking for trouble.", "Back from below, {player}? You've dirt on your boots.", "Caves and crypts, {player}? You'd make a fine Dvergr, if you were shorter." } },
 			{ DvergrPrefix + VikingNews.Biome, new[] { "New lands, {player}? The Dvergr were there first, you know. They always are.", "I heard you've been exploring. Bring back a map the Dvergr haven't drawn.", "Off finding new places, {player}? Better you than me - I'm paid to stay put.", "Word is you've walked where few Vikings have, {player}. Watch your back out there." } },
 			{ DvergrPrefix + VikingNews.Tame, new[] { "You tamed a {creature}? The Dvergr would sooner tame a rock.", "A tame {creature}! Bring it by - the Dvergr might like it.", "{player}, taming a {creature}? Now I've heard everything.", "A {creature} that follows you around? The Dvergr will want one." } },
@@ -57,7 +59,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Gets the pool of lines a dvergr viking says about an event - the living vikings' for the Mistlands' news (see
-		/// SharedWithDvergr), and its own for the kind of event otherwise, a death by what killed the player
+		/// SharedWithDvergr), and its own for the kind of event otherwise - a trader by who they are, since Haldor and
+		/// Hildir are dvergr themselves, and a death by what killed the player
 		/// </summary>
 		/// <param name="news">The event</param>
 		/// <returns>The pool's key</returns>
@@ -67,6 +70,10 @@ namespace VikingVillages
 			if (SharedWithDvergr.Contains(shared))
 			{
 				return(shared);
+			}
+			if (news.Kind == VikingNews.Trader)
+			{
+				return(DvergrPrefix + news.Kind + "/" + news.Subject);
 			}
 			if (news.Kind != VikingNews.Death)
 			{

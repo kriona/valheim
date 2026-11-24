@@ -24,7 +24,7 @@ namespace VikingVillages.Tests
 			"death/player",
 			"dvergr/boss",
 			"dvergr/miniboss",
-			"dvergr/trader",
+			"dvergr/trader/BogWitch",
 			"dvergr/tame",
 			"dvergr/tree",
 			"dvergr/serpent",
