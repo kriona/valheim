@@ -23,7 +23,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Names an unclaimed bed after the viking that sleeps in it - "Ella's Bed", or "Viking Bed" for one with no
-		/// name - marks one that isn't sheltered, and adds the unclaim key to the player's own
+		/// name or one that hasn't met the local player yet, as its own hover name doesn't show its name until then -
+		/// marks one that isn't sheltered, and adds the unclaim key to the player's own
 		/// </summary>
 		/// <param name="__instance">The bed looked at</param>
 		/// <param name="__result">Its hover text</param>
@@ -41,7 +42,9 @@ namespace VikingVillages
 				ZDO holder = VillageBeds.Holder(zdo, Village.Find(__instance.transform.position));
 				if (holder != null)
 				{
-					string name = VikingNames.Get(holder);
+					Player player = Player.m_localPlayer;
+					bool stranger = (player != null && !VikingSpeech.Knows(holder, player.GetPlayerID()));
+					string name = (stranger ? "" : VikingNames.Get(holder));
 					lines[0] = ((name.Length > 0) ? name + "'s " : "Viking ") + Localization.instance.Localize("$piece_bed");
 				}
 			}

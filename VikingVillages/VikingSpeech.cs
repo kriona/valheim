@@ -1295,7 +1295,19 @@ namespace VikingVillages
 		/// <returns>True when it does</returns>
 		public static bool Knows(Character viking, long playerId)
 		{
-			return(viking.m_nview != null && viking.m_nview.IsValid() && Known(viking.m_nview.GetZDO()).Contains(playerId));
+			return(viking.m_nview != null && viking.m_nview.IsValid() && Knows(viking.m_nview.GetZDO(), playerId));
+		}
+
+		/// <summary>
+		/// Checks whether a viking knows a player from its ZDO, so it works for a viking that isn't loaded - it has
+		/// greeted them before
+		/// </summary>
+		/// <param name="viking">The viking's ZDO</param>
+		/// <param name="playerId">The player's ID</param>
+		/// <returns>True when it does</returns>
+		public static bool Knows(ZDO viking, long playerId)
+		{
+			return(Known(viking).Contains(playerId));
 		}
 
 		/// <summary>
