@@ -122,6 +122,20 @@ namespace VikingVillages
 		/// takes drowning damage, and how long it has been out of the water
 		/// </summary>
 		private Vector3 swimTo;
+
+		/// <summary>
+		/// How a player walking on the boat pushes a viking sitting on its boards - how near they have to come, how far from
+		/// its seat it can be pushed, in meters, and how fast it's pushed and slides back, in meters a second
+		/// </summary>
+		private const float PushReach = 1f;
+		private const float PushMost = 1.2f;
+		private const float PushSpeed = 3f;
+		private const float SlideBackSpeed = 0.6f;
+
+		/// <summary>
+		/// For a viking sitting on the boards, the spot of its own it's held at, which a player can push about, or null
+		/// </summary>
+		private Transform pushedSpot;
 		private float swimFor;
 		private float swum;
 		private float nextDrown;
@@ -476,12 +490,40 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Sits a viking just spawned on board a boat at once, in its seat's pose, for the kri_vv_spawnboat command - its
+		/// ZDO already noting the boat (see VikingBoat.BoatKey)
+		/// </summary>
+		/// <param name="boat">The boat</param>
+		/// <param name="seat">The index of its seat, the helm being 0</param>
+		public void SeatAt(VikingBoat boat, int seat)
+		{
+			myBoat = boat;
+			mySeat = seat;
+			SitOnBoard();
+			crossing = Crossing.Aboard;
+			crossingSince = Time.time;
+		}
+
+		/// <summary>
 		/// Sits the viking at its seat on its boat, in the seat's pose
 		/// </summary>
 		private void SitOnBoard()
 		{
-			Attach(myBoat.Seat(mySeat), myBoat.gameObject);
-			VikingPoses.SetShipPose(humanoid, myBoat.SeatPose(mySeat), true);
+			Transform seat = myBoat.Seat(mySeat);
+			string pose = myBoat.SeatPose(mySeat);
+			ClearPushedSpot();
+			if (pose == VikingPoses.FloorPose)
+			{
+				// Sitting on the boards, it sits at a spot of its own a player can push about (see UpdatePush)
+				GameObject spot = new GameObject("vikingPushed");
+				spot.transform.SetParent(myBoat.transform, false);
+				spot.transform.position = seat.position;
+				spot.transform.rotation = seat.rotation;
+				pushedSpot = spot.transform;
+				seat = pushedSpot;
+			}
+			Attach(seat, myBoat.gameObject);
+			VikingPoses.SetShipPose(humanoid, pose, true);
 		}
 
 		/// <summary>
@@ -490,7 +532,106 @@ namespace VikingVillages
 		private void GetOffBoard()
 		{
 			Detach();
+			ClearPushedSpot();
 			VikingPoses.SetShipPose(humanoid, "", false);
+		}
+
+		/// <summary>
+		/// Takes away the spot a viking sitting on the boards was pushed about at
+		/// </summary>
+		private void ClearPushedSpot()
+		{
+			if (pushedSpot != null)
+			{
+				Object.Destroy(pushedSpot.gameObject);
+			}
+			pushedSpot = null;
+		}
+
+		/// <summary>
+		/// Lets a player walking on the boat push a viking sitting on its boards out of the way - sliding it along the deck,
+		/// still sitting, away from them, up to PushMost from its seat and never onto anything of the boat's or off the
+		/// deck it sits on (see VikingBoat.Roomy) - and slides it slowly back to its seat once no player is that near
+		/// </summary>
+		/// <param name="dt">Seconds since the AI's last update</param>
+		private void UpdatePush(float dt)
+		{
+			if (pushedSpot == null || myBoat == null)
+			{
+				return;
+			}
+			Transform boat = myBoat.transform;
+			Vector3 home = boat.InverseTransformPoint(myBoat.Seat(mySeat).position);
+			Vector3 now = pushedSpot.localPosition;
+			Player pusher = null;
+			Vector3 pusherAt = Vector3.zero;
+			float nearest = PushReach;
+			foreach (Player player in Player.GetAllPlayers())
+			{
+				if (player == null || player.IsDead() || !myBoat.Ship.IsPlayerInBoat(player))
+				{
+					continue;
+				}
+				Vector3 at = boat.InverseTransformPoint(player.transform.position);
+				float distance = Flat2(at, now);
+				if (distance < nearest)
+				{
+					nearest = distance;
+					pusher = player;
+					pusherAt = at;
+				}
+			}
+			Vector3 target = home;
+			float speed = SlideBackSpeed;
+			if (pusher != null)
+			{
+				Vector3 away = now - pusherAt;
+				away.y = 0f;
+				if (away.sqrMagnitude < 0.0001f)
+				{
+					away = now - home;
+					away.y = 0f;
+				}
+				away = ((away.sqrMagnitude > 0.0001f) ? away.normalized : Vector3.right);
+				target = pusherAt + away * PushReach;
+				Vector3 fromHome = target - home;
+				fromHome.y = 0f;
+				target = home + Vector3.ClampMagnitude(fromHome, PushMost);
+				speed = PushSpeed;
+			}
+			Vector3 flatNow = new Vector3(now.x, 0f, now.z);
+			Vector3 next = Vector3.MoveTowards(flatNow, new Vector3(target.x, 0f, target.z), speed * dt);
+			if ((next - flatNow).sqrMagnitude < 0.000001f)
+			{
+				return;
+			}
+			if (myBoat.Roomy(next, home.y, out float height))
+			{
+				next.y = height;
+			}
+			else if (pusher != null)
+			{
+				// Something's in the way, or the deck's edge, so it stays where it was pushed to
+				return;
+			}
+			else
+			{
+				next.y = home.y;
+			}
+			pushedSpot.localPosition = next;
+		}
+
+		/// <summary>
+		/// Measures the distance between two points across a boat's deck, leaving out height
+		/// </summary>
+		/// <param name="a">One point, in the boat's space</param>
+		/// <param name="b">The other</param>
+		/// <returns>The distance, in meters</returns>
+		private static float Flat2(Vector3 a, Vector3 b)
+		{
+			float dx = a.x - b.x;
+			float dz = a.z - b.z;
+			return(Mathf.Sqrt(dx * dx + dz * dz));
 		}
 
 		/// <summary>
@@ -525,7 +666,7 @@ namespace VikingVillages
 			switch (crossing)
 			{
 				case Crossing.Aboard:
-					return(RideAlong(zdo));
+					return(RideAlong(dt, zdo));
 				case Crossing.Landing:
 				case Crossing.Wrecked:
 					return(SwimAshore(dt, zdo));
@@ -591,9 +732,10 @@ namespace VikingVillages
 		/// Rides along on the boat, keeping its place on the road with the boat's - and gets off at the far shore, or swims
 		/// for it when the boat is gone from under it
 		/// </summary>
+		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="zdo">Its ZDO</param>
 		/// <returns>True, as it takes the update over</returns>
-		private bool RideAlong(ZDO zdo)
+		private bool RideAlong(float dt, ZDO zdo)
 		{
 			if (myBoat == null || attachPoint == null)
 			{
@@ -606,6 +748,14 @@ namespace VikingVillages
 				return(true);
 			}
 			mover = ((mySeat == 0) ? "at the helm" : "on board");
+			// Anything that moved it, like its AI before it was seated or its gear going on, stands it back up
+			ai.StopMoving();
+			string pose = myBoat.SeatPose(mySeat);
+			if (!VikingPoses.InShipPose(humanoid, pose))
+			{
+				VikingPoses.SetShipPose(humanoid, pose, true);
+			}
+			UpdatePush(dt);
 			int leg = Mathf.Clamp(myBoat.SeaStart + myBoat.Leg - 1, 0, travelRoad.Count);
 			if (leg != roadLeg)
 			{

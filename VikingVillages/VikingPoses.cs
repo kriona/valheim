@@ -527,6 +527,27 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Checks whether the viking is in the pose of a seat on a ship (see SetShipPose)
+		/// </summary>
+		/// <param name="viking">The living viking</param>
+		/// <param name="pose">The seat's animation, or FloorPose</param>
+		/// <returns>True when it is</returns>
+		public static bool InShipPose(Character viking, string pose)
+		{
+			ZDO zdo = ((viking != null && viking.m_nview != null && viking.m_nview.IsValid()) ? viking.m_nview.GetZDO() : null);
+			if (zdo == null)
+			{
+				return(false);
+			}
+			if (pose == FloorPose)
+			{
+				return(zdo.GetString(EmoteKey) == SitEmote);
+			}
+			int hash = ((pose == SitShipBool) ? SitShipHash : ((pose == MastBool) ? MastHash : ChairHash));
+			return(zdo.GetInt(AnimationSalt + hash) != 0);
+		}
+
+		/// <summary>
 		/// Gets the viking out of every pose it holds on to something in - a bed, a chair, a ship's stool or its mast
 		/// </summary>
 		private void ClearAttachPoses()

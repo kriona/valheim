@@ -267,6 +267,11 @@ namespace VikingVillages
 				if (!seat.OnDeck)
 				{
 					Chair chair = System.Array.Find(chairs, (Chair found) => found.gameObject.name == seat.Chair && found.m_attachPoint != null);
+					if (chair != null && seat.Beside)
+					{
+						AddBesideSeat(chair, seat.X);
+						continue;
+					}
 					if (chair != null)
 					{
 						AddSeat(chair.m_attachPoint, chair.m_attachAnimation);
@@ -326,6 +331,23 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Adds a seat in line with one of the ship's chairs, moved across the ship, sat in the same way and facing the
+		/// same way
+		/// </summary>
+		/// <param name="chair">The chair</param>
+		/// <param name="x">How far across the ship from its middle the seat is, in meters, to the right</param>
+		private void AddBesideSeat(Chair chair, float x)
+		{
+			Vector3 local = transform.InverseTransformPoint(chair.m_attachPoint.position);
+			local.x = x;
+			GameObject seat = new GameObject("vikingSeat");
+			seat.transform.SetParent(transform, false);
+			seat.transform.position = transform.TransformPoint(local);
+			seat.transform.rotation = chair.m_attachPoint.rotation;
+			AddSeat(seat.transform, chair.m_attachAnimation);
+		}
+
+		/// <summary>
 		/// Adds a spot on the deck to sit on the boards at, facing the bow
 		/// </summary>
 		/// <param name="deck">The deck's surface there</param>
@@ -336,6 +358,46 @@ namespace VikingVillages
 			seat.transform.position = deck;
 			seat.transform.rotation = Quaternion.LookRotation(transform.forward);
 			AddSeat(seat.transform, VikingPoses.FloorPose);
+		}
+
+		/// <summary>
+		/// How much higher or lower than a seat's own deck a spot on the boat can be for a viking sitting there to be pushed
+		/// onto it - more is a rail, a step or the hull's edge - in meters, and how wide and how high above the deck the room
+		/// a viking sitting there takes up is, in meters
+		/// </summary>
+		private const float PushStep = 0.3f;
+		private const float SitRoom = 0.3f;
+		private const float SitRoomHeight = 0.6f;
+
+		/// <summary>
+		/// Checks whether a viking sitting on the boat's deck can be pushed onto a spot - on the same deck as its seat,
+		/// with nothing of the boat's there, like the mast, its chest, its cargo or a stool
+		/// </summary>
+		/// <param name="local">The spot, in the boat's space</param>
+		/// <param name="deckHeight">The height of the seat's deck, in the boat's space</param>
+		/// <param name="height">Set to the deck's height at the spot, in the boat's space</param>
+		/// <returns>True when it can</returns>
+		public bool Roomy(Vector3 local, float deckHeight, out float height)
+		{
+			height = deckHeight;
+			Vector3 above = transform.TransformPoint(new Vector3(local.x, deckHeight + BoatSeats.ProbeAbove, local.z));
+			if (!DeckBelow(above, out Vector3 deck))
+			{
+				return(false);
+			}
+			height = transform.InverseTransformPoint(deck).y;
+			if (Mathf.Abs(height - deckHeight) > PushStep)
+			{
+				return(false);
+			}
+			foreach (Collider collider in Physics.OverlapSphere(deck + transform.up * SitRoomHeight, SitRoom))
+			{
+				if (collider != null && !collider.isTrigger && collider.transform.IsChildOf(transform))
+				{
+					return(false);
+				}
+			}
+			return(true);
 		}
 
 		/// <summary>

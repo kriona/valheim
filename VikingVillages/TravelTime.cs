@@ -26,7 +26,7 @@ namespace VikingVillages
 		/// <summary>
 		/// How many vikings each boat carries, the one at the helm included - each seat laid out in BoatSeats
 		/// </summary>
-		private static readonly int[] BoatCrews = { 5, 8, 19, 32 };
+		private static readonly int[] BoatCrews = { 6, 10, 25, 44 };
 
 		/// <summary>
 		/// How long stepping through a portal takes, in seconds - the walk into it and out the other side
@@ -98,14 +98,21 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the first biome whose best boat is the one named
+		/// Finds the first biome whose best boat is the one given - by its prefab, like "VikingShip", or its name as the
+		/// vikings say it, like "longship"
 		/// </summary>
-		/// <param name="boat">The boat's name, like "karve", in any case</param>
-		/// <returns>The biome, by VikingGear's order, or -1 for no boat of that name</returns>
+		/// <param name="boat">The boat's prefab or name, in any case</param>
+		/// <returns>The biome, by VikingGear's order, or -1 for no such boat</returns>
 		public static int BiomeOfBoat(string boat)
 		{
-			int index = System.Array.FindIndex(Boats, (string name) => string.Equals(name, boat, System.StringComparison.OrdinalIgnoreCase));
-			return((index >= 0) ? BoatFrom[index] : -1);
+			for (int i = 0; i < Boats.Length; i++)
+			{
+				if (string.Equals(BoatPrefabs[i], boat, System.StringComparison.OrdinalIgnoreCase) || string.Equals(Boats[i], boat, System.StringComparison.OrdinalIgnoreCase))
+				{
+					return(BoatFrom[i]);
+				}
+			}
+			return(-1);
 		}
 
 		/// <summary>
@@ -115,6 +122,15 @@ namespace VikingVillages
 		public static string[] BoatNames()
 		{
 			return((string[])Boats.Clone());
+		}
+
+		/// <summary>
+		/// Gets the prefabs of the boats vikings cross the sea in
+		/// </summary>
+		/// <returns>The prefabs' names, from the raft up</returns>
+		public static string[] BoatPrefabNames()
+		{
+			return((string[])BoatPrefabs.Clone());
 		}
 
 		/// <summary>

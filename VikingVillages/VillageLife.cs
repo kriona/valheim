@@ -10528,7 +10528,9 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Holds the viking where it lies or sits, still - with its gravity off, which the game's own motion update turns
-		/// back on every physics update, the way it does for a player sitting down
+		/// back on every physics update, the way it does for a player sitting down - moving with what it sits on when that
+		/// moves, like a ship, so it keeps up with it between physics updates rather than jumping after it (see
+		/// Player.UpdateAttach)
 		/// </summary>
 		private void HoldAttached()
 		{
@@ -10537,7 +10539,8 @@ namespace VikingVillages
 			humanoid.m_body.position = attachPoint.position;
 			humanoid.m_body.rotation = attachPoint.rotation;
 			humanoid.m_body.useGravity = false;
-			humanoid.m_body.linearVelocity = Vector3.zero;
+			Rigidbody carrier = attachPoint.GetComponentInParent<Rigidbody>();
+			humanoid.m_body.linearVelocity = ((carrier != null) ? carrier.GetPointVelocity(attachPoint.position) : Vector3.zero);
 			humanoid.m_body.angularVelocity = Vector3.zero;
 			humanoid.m_maxAirAltitude = attachPoint.position.y;
 			// Its seat's colliders are ignored, so it touches no ground - it's kept counted as on the ground, and still,

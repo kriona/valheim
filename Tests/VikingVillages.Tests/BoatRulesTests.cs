@@ -97,13 +97,29 @@ namespace VikingVillages.Tests
 		}
 
 		[Theory]
-		[InlineData(0, 5)]
-		[InlineData(1, 8)]
-		[InlineData(3, 19)]
-		[InlineData(6, 32)]
+		[InlineData(0, 6)]
+		[InlineData(1, 10)]
+		[InlineData(3, 25)]
+		[InlineData(6, 44)]
 		public void BiggerBoatsCarryMore(int biome, int expected)
 		{
 			Assert.Equal(expected, TravelTime.BoatCrew(biome));
+		}
+
+		[Fact]
+		public void TheDrakkarsStepsAreSatOnEvenlySpaced()
+		{
+			foreach (string bench in new[] { "sit_bench", "sit_bench (4)" })
+			{
+				List<float> across = new List<BoatSeats.Plan>(BoatSeats.For("VikingShip_Ashlands")).FindAll((BoatSeats.Plan seat) => seat.Beside && seat.Chair == bench).ConvertAll((BoatSeats.Plan seat) => seat.X);
+				across.Sort();
+				Assert.Equal(4, across.Count);
+				Assert.Equal(-across[0], across[across.Count - 1], 3);
+				for (int i = 2; i < across.Count; i++)
+				{
+					Assert.Equal(across[1] - across[0], across[i] - across[i - 1], 3);
+				}
+			}
 		}
 
 		[Theory]
@@ -147,6 +163,9 @@ namespace VikingVillages.Tests
 			Assert.Equal(3, TravelTime.BiomeOfBoat("LONGSHIP"));
 			Assert.Equal(6, TravelTime.BiomeOfBoat("drakkar"));
 			Assert.Equal(-1, TravelTime.BiomeOfBoat("canoe"));
+			Assert.Equal(3, TravelTime.BiomeOfBoat("VikingShip"));
+			Assert.Equal(6, TravelTime.BiomeOfBoat("vikingship_ashlands"));
+			Assert.Equal(new[] { "Raft", "Karve", "VikingShip", "VikingShip_Ashlands" }, TravelTime.BoatPrefabNames());
 			Assert.Equal(new[] { "raft", "karve", "longship", "drakkar" }, TravelTime.BoatNames());
 		}
 	}

@@ -8,17 +8,19 @@ namespace VikingVillages
 	/// boats - as many as the boat carries (see TravelTime.BoatCrew)
 	/// </summary>
 	/// <remarks>
-	/// A seat of the ship's own is its helm or a chair by the name of its object - a stool, the mast's holdfast, or a
-	/// bench on the drakkar's steps - sat in the way the ship has it sat in (see Chair.m_attachAnimation). A spot on the
-	/// deck is where it stands from the ship's middle, in meters across, up and along it, forward being toward the bow,
-	/// sat on with the floor sit facing the bow - its height found on the deck under it as the boat loads, with the
-	/// height here kept for when nothing is found. The spots were picked from each ship's layout to keep clear of its
-	/// mast, chest, cargo, ladders and stools
+	/// A seat of the ship's own is its helm or a chair by the name of its object - a stool, the mast's holdfast or the
+	/// figurehead's - sat in the way the ship has it sat in (see Chair.m_attachAnimation), or a seat in line with a
+	/// chair, moved across the ship - the drakkar's steps are sat on that way, evenly spaced along the line of its
+	/// benches. A spot on the deck is where it stands from the ship's middle, in meters across, up and along it, forward
+	/// being toward the bow, sat on with the floor sit facing the bow - its height found on whatever is under it as the
+	/// boat loads, the deck or the longship's cargo, with the height here kept for when nothing is found. The spots were
+	/// picked from each ship's layout to keep clear of its mast, chest, ladders and stools
 	/// </remarks>
 	internal static class BoatSeats
 	{
 		/// <summary>
-		/// A seat - a chair of the ship's by its object's name, or Helm for the helm, or else a spot on the deck
+		/// A seat - a chair of the ship's by its object's name, or Helm for the helm, or else a spot on the deck - and for a
+		/// seat beside a chair, in line with it, sat in the same way, that it's moved across the ship to X
 		/// </summary>
 		internal struct Plan
 		{
@@ -26,6 +28,7 @@ namespace VikingVillages
 			public float X;
 			public float Y;
 			public float Z;
+			public bool Beside;
 
 			/// <summary>
 			/// Checks whether the seat is a spot on the deck rather than one of the ship's own
@@ -59,6 +62,8 @@ namespace VikingVillages
 				{
 					Seat(Helm),
 					Seat("mast"),
+					// On the left side, between the one at the back and the one up front on the left
+					Deck(-0.75f, 0.48f, 0.2f),
 					// In the back on the left, clear of the ladder, and two up front
 					Deck(-0.9f, 0.48f, -1.7f),
 					Deck(-0.55f, 0.48f, 2.1f),
@@ -72,9 +77,13 @@ namespace VikingVillages
 					Seat("mast"),
 					Seat("sit_box_fr"),
 					Seat("sit_box_fl"),
+					// Behind the mast, a little to the left, clear of the one holding on to it on its right
+					Deck(-0.1f, -0.05f, -0.85f),
+					// To the left of the mast, between the one behind it and the one beside the chest, clear of the ladder
+					Deck(-0.65f, -0.05f, 0.1f),
 					// Between the mast and the forward stools, either side of the chest
-					Deck(-0.95f, -0.05f, 1.1f),
-					Deck(0.95f, -0.05f, 1.1f),
+					Deck(-0.8f, -0.05f, 1.1f),
+					Deck(0.8f, -0.05f, 1.1f),
 					// Between the helm and the mast
 					Deck(-0.65f, -0.05f, -1.9f),
 					Deck(0.65f, -0.05f, -1.9f)
@@ -89,8 +98,18 @@ namespace VikingVillages
 					Seat("sit_box (1)"),
 					Seat("sit_box (2)"),
 					Seat("sit_box (3)"),
+					// Holding on at the figurehead
+					Seat("front"),
 					// In front of the forward stools
 					Deck(0f, 0.54f, 6.6f),
+					// To the left of the mast, on the cargo stowed there
+					Deck(-1f, 0.54f, -0.5f),
+					Deck(-1.7f, 0.54f, 0.5f),
+					// Behind the cargo on the left, to the right of the mast past the one holding on to it, and just in
+					// front of the mast
+					Deck(-1.32f, 0.63f, -1.93f),
+					Deck(1.66f, 0.63f, 0.48f),
+					Deck(-0.17f, 0.66f, 1.83f),
 					// Between the mast and the forward stools, either side of the chest
 					Deck(1.25f, 0.54f, 1.9f),
 					Deck(1.3f, 0.54f, 3.0f),
@@ -132,21 +151,37 @@ namespace VikingVillages
 					Deck(1.3f, 1.8f, -2.8f),
 					Deck(-1.2f, 1.8f, -1.3f),
 					Deck(-1.2f, 1.8f, 1f),
+					// Forward and to the right of the one holding on to the mast, past the cargo there
+					Deck(1.5f, 1.8f, 0.1f),
+					// Between the rearmost stools and the ones in front of them, and the foremost and the ones behind them,
+					// on both sides, a little in from the stools' line
+					Deck(-2.75f, 1.8f, -4.3f),
+					Deck(2.75f, 1.8f, -4.3f),
+					Deck(2.75f, 1.8f, 3.6f),
+					Deck(-2.75f, 1.8f, 3.65f),
 					Deck(-1.3f, 1.8f, 2.9f),
 					Deck(1.3f, 1.8f, 2.9f),
 					Deck(-1.3f, 1.8f, 4.1f),
 					Deck(1.3f, 1.8f, 4.1f),
 					Deck(-1.3f, 1.8f, 5.3f),
 					Deck(1.3f, 1.8f, 5.3f),
-					// Beside the helm
+					// On the deck at the foot of the steps up to the helm, and up to the forecastle, either side of the chest
+					Deck(-0.6f, 1.8f, -7f),
+					Deck(0.6f, 1.8f, -7f),
+					Deck(-1.35f, 1.8f, 7.1f),
+					Deck(1.35f, 1.8f, 7.1f),
+					// Beside the helm, and at the very back of the aftcastle
 					Deck(-0.2f, 3.8f, -11f),
-					// On the steps up to the helm, and up to the forecastle, facing the deck
-					Seat("sit_bench (1)"),
-					Seat("sit_bench (2)"),
-					Seat("sit_bench (3)"),
-					Seat("sit_bench (4)"),
-					Seat("sit_bench (5)"),
-					Seat("sit_bench (6)")
+					Deck(0f, 3.8f, -12.2f),
+					// On the steps up to the helm, and up to the forecastle, evenly spaced along the line of their benches
+					Beside("sit_bench", -1.8f),
+					Beside("sit_bench", -0.6f),
+					Beside("sit_bench", 0.6f),
+					Beside("sit_bench", 1.8f),
+					Beside("sit_bench (4)", -1.8f),
+					Beside("sit_bench (4)", -0.6f),
+					Beside("sit_bench (4)", 0.6f),
+					Beside("sit_bench (4)", 1.8f)
 				}
 			}
 		};
@@ -159,6 +194,17 @@ namespace VikingVillages
 		private static Plan Seat(string chair)
 		{
 			return(new Plan { Chair = chair });
+		}
+
+		/// <summary>
+		/// Makes a seat in line with one of the ship's chairs, moved across the ship, sat in the same way
+		/// </summary>
+		/// <param name="chair">The name of the chair's object</param>
+		/// <param name="x">How far across the ship from its middle it is, in meters, to the right</param>
+		/// <returns>The seat</returns>
+		private static Plan Beside(string chair, float x)
+		{
+			return(new Plan { Chair = chair, X = x, Beside = true });
 		}
 
 		/// <summary>
