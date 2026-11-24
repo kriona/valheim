@@ -51,7 +51,7 @@ namespace VikingVillages
 		/// <returns>True when it is</returns>
 		private static bool IsPickaxe(ItemDrop.ItemData item)
 		{
-			return(item != null && !VikingItems.IsProp(item) && item.m_shared.m_skillType == Skills.SkillType.Pickaxes && item.m_shared.m_damages.m_pickaxe > 0f);
+			return(VikingCore.IsPickaxe(item) && !VikingItems.IsProp(item));
 		}
 
 		/// <summary>

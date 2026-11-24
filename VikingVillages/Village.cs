@@ -100,6 +100,20 @@ namespace VikingVillages
 		private const int SpotTries = 30;
 
 		/// <summary>
+		/// How far from a point the open spot nearest it is looked for, how far apart the rings of points tried around
+		/// it are, and how far apart the points on each ring are, in meters
+		/// </summary>
+		private const float NearSpotReach = 20f;
+		private const float NearSpotStep = 0.5f;
+		private const float NearSpotSpacing = 1f;
+
+		/// <summary>
+		/// How far from a house's walls the open spot nearest a point keeps, in meters - closer than a viking's
+		/// HouseClearance, since it's for a player to stand on
+		/// </summary>
+		private const float NearSpotHouseClearance = 0.5f;
+
+		/// <summary>
 		/// How far past a house's walls a living viking spawns or comes back at most, in meters
 		/// </summary>
 		public const float SpawnReach = 6f;
@@ -388,6 +402,15 @@ namespace VikingVillages
 				pkg.Write(house.HalfSize);
 			}
 			return(pkg.GetArray());
+		}
+
+		/// <summary>
+		/// Has the next look for the loaded villages find them again at once, rather than after RefreshInterval - for a
+		/// farm just generated
+		/// </summary>
+		public static void RefreshSoon()
+		{
+			nextRefresh = 0f;
 		}
 
 		/// <summary>
@@ -1298,6 +1321,52 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Finds the open spot nearest a point for a player to stand on (see OpenSpotAt), keeping NearSpotHouseClearance
+		/// from the houses - the point itself when it's open, as the navmesh's nearest to it, or else the open one
+		/// closest to it on rings NearSpotStep apart around it, out to NearSpotReach. Each point tried snaps to the
+		/// navmesh up to SpotSnap away, so rings are tried until none could come closer than the best found
+		/// </summary>
+		/// <param name="point">The point</param>
+		/// <param name="spot">The spot, on the navmesh</param>
+		/// <param name="fits">Checks a spot the caller needs more of, like room for a player's body there, or null</param>
+		/// <returns>False when none was found, as when the navmesh there isn't built yet</returns>
+		public bool OpenSpotNear(Vector3 point, out Vector3 spot, System.Predicate<Vector3> fits = null)
+		{
+			bool hasAnchor = Anchor(out Vector3 anchor);
+			if (OpenSpotAt(point, hasAnchor, anchor, out spot, null, NearSpotHouseClearance) && (fits == null || fits(spot)))
+			{
+				return(true);
+			}
+			bool found = false;
+			float nearest = float.MaxValue;
+			for (float reach = NearSpotStep; reach <= NearSpotReach && reach - SpotSnap < nearest; reach += NearSpotStep)
+			{
+				int sides = Mathf.Max(4, Mathf.CeilToInt(2f * Mathf.PI * reach / NearSpotSpacing));
+				for (int i = 0; i < sides; i++)
+				{
+					float angle = i * 2f * Mathf.PI / sides;
+					Vector3 outward = new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle));
+					if (!OpenSpotAt(point + outward * reach, hasAnchor, anchor, out Vector3 open, null, NearSpotHouseClearance) || (fits != null && !fits(open)))
+					{
+						continue;
+					}
+					float distance = Utils.DistanceXZ(open, point);
+					if (distance < nearest)
+					{
+						spot = open;
+						nearest = distance;
+						found = true;
+					}
+				}
+			}
+			if (!found)
+			{
+				spot = Vector3.zero;
+			}
+			return(found);
+		}
+
+		/// <summary>
 		/// Picks a random point beside one of a list of houses, in the band from clearance to SpawnReach past its walls
 		/// </summary>
 		/// <param name="houses">The houses, at least one</param>
@@ -1324,11 +1393,12 @@ namespace VikingVillages
 		/// <param name="anchor">The spot on the village's open ground every viking walks to</param>
 		/// <param name="spot">The point on the navmesh</param>
 		/// <param name="misses">Why the point wasn't open, added to, or null</param>
+		/// <param name="houseClearance">How far from the houses' walls it keeps, in meters</param>
 		/// <returns>True when it's open</returns>
-		private bool OpenSpotAt(Vector3 point, bool hasAnchor, Vector3 anchor, out Vector3 spot, OpenMisses misses = null)
+		private bool OpenSpotAt(Vector3 point, bool hasAnchor, Vector3 anchor, out Vector3 spot, OpenMisses misses = null, float houseClearance = HouseClearance)
 		{
 			spot = Vector3.zero;
-			if (InHouse(point, HouseClearance))
+			if (InHouse(point, houseClearance))
 			{
 				if (misses != null)
 				{
@@ -1353,7 +1423,7 @@ namespace VikingVillages
 				}
 				return(false);
 			}
-			if (Pathfinding.instance == null || !NavmeshPoints.FindValidPoint(out Vector3 valid, point, SpotSnap, Pathfinding.AgentType.Humanoid) || InHouse(valid, HouseClearance) || NavmeshRoofs.OnRoof(valid))
+			if (Pathfinding.instance == null || !NavmeshPoints.FindValidPoint(out Vector3 valid, point, SpotSnap, Pathfinding.AgentType.Humanoid) || InHouse(valid, houseClearance) || NavmeshRoofs.OnRoof(valid))
 			{
 				if (misses != null)
 				{
@@ -1361,7 +1431,7 @@ namespace VikingVillages
 				}
 				return(false);
 			}
-			if (EffectArea.IsPointInsideArea(valid, EffectArea.Type.Burning, FireClearance) != null)
+			if (NearFlames(valid))
 			{
 				if (misses != null)
 				{
@@ -1380,6 +1450,16 @@ namespace VikingVillages
 			}
 			spot = valid;
 			return(true);
+		}
+
+		/// <summary>
+		/// Checks whether a point is within FireClearance of the flames of a bonfire or any other fire
+		/// </summary>
+		/// <param name="point">The point</param>
+		/// <returns>True when it is</returns>
+		public static bool NearFlames(Vector3 point)
+		{
+			return(EffectArea.IsPointInsideArea(point, EffectArea.Type.Burning, FireClearance) != null);
 		}
 
 		/// <summary>

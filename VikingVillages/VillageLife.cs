@@ -453,6 +453,7 @@ namespace VikingVillages
 			ItemDrop.ItemData copy = SpareCopy(item);
 			int amount = copy.m_stack;
 			humanoid.GetInventory().RemoveItem(item, amount);
+			Plugin.Log.LogInfo(LogName() + " put down " + ((amount > 1) ? amount + " " : "") + Localization.instance.Localize(copy.m_shared.m_name) + " - too heavily loaded for a fight");
 			ItemDrop.DropItem(copy, amount, transform.position + transform.forward * 0.6f + Vector3.up * 0.5f, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
 		}
 
@@ -7464,7 +7465,8 @@ namespace VikingVillages
 		/// or where it drops what the chests hold enough of, marked so no viking stores it again
 		/// </summary>
 		/// <param name="discard">True to mark it as not to be stored</param>
-		private void PutDownLoot(bool discard)
+		/// <param name="reason">Why it's put down, for the log</param>
+		private void PutDownLoot(bool discard, string reason)
 		{
 			ItemDrop.ItemData loot = CarriedLoot();
 			if (loot == null)
@@ -7474,6 +7476,7 @@ namespace VikingVillages
 			humanoid.GetInventory().RemoveItem(loot);
 			loot.m_customData.Remove(VikingItems.CarryKey);
 			TestLog.Count(discard ? "Dropped outside, as the chests hold enough" : "Put down, with no chest for it", TestLog.ItemName(loot), loot.m_stack);
+			Plugin.Log.LogInfo(LogName() + " put down " + ((loot.m_stack > 1) ? loot.m_stack + " " : "") + Localization.instance.Localize(loot.m_shared.m_name) + " " + (village.Contains(transform.position) ? "in" : "outside") + " the village - " + reason);
 			ItemDrop dropped = ItemDrop.DropItem(loot, loot.m_stack, transform.position + transform.forward * 0.6f + Vector3.up * 0.5f, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
 			if (discard && dropped != null && dropped.m_nview != null && dropped.m_nview.IsValid())
 			{
@@ -14692,7 +14695,7 @@ namespace VikingVillages
 						life.ai.StopMoving();
 						if (KindOf(carried) != StoreKind.Other)
 						{
-							life.PutDownLoot(false);
+							life.PutDownLoot(false, "no chest has room for it");
 							return(life.CarriedLoot() == null);
 						}
 						if (!life.MayLeave())
@@ -14702,7 +14705,7 @@ namespace VikingVillages
 						}
 						if (!life.FindDumpSpot(out dumpSpot))
 						{
-							life.PutDownLoot(true);
+							life.PutDownLoot(true, "the chests hold enough of it, and there's nowhere outside the village to drop it");
 							return(true);
 						}
 						dumping = true;
@@ -14771,7 +14774,7 @@ namespace VikingVillages
 				life.moveFailed = false;
 				life.ai.StopMoving();
 				VikingPoses.Interact(life.humanoid);
-				life.PutDownLoot(true);
+				life.PutDownLoot(true, "the chests hold enough of it");
 				dumping = false;
 				chest = null;
 				return(life.CarriedLoot() == null);

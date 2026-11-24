@@ -55,7 +55,8 @@ namespace VikingVillages
 		/// Reads the config file again once it has been saved, shares or puts back the server's settings after a
 		/// change, lays the paths of villages as they load, keeps track of the villages this client looks after -
 		/// their night watch, their records, the vikings they're missing, the gear they're working toward (see
-		/// VillageLife.UpdateGoals) and their quests (see VillageQuests) - tames the farms' pen animals that came
+		/// VillageLife.UpdateGoals) and their quests (see VillageQuests) - moves a player who spawned a village out of
+		/// anything built on them as it goes up (see VillageSpawnCommand), tames the farms' pen animals that came
 		/// out wild, shows the villages' areas the player turns on, notes the villages' reach for running all of a village
 		/// the player is in (see VillageSimulation), moves a dedicated server's own area to the village it runs (see
 		/// ServerVillageRun), keeps the news the vikings tell and watches for more (see VikingNewsStore and
@@ -71,6 +72,7 @@ namespace VikingVillages
 			VillagePortals.Update();
 			VillageWatch.Update();
 			VillageRespawn.Update();
+			VillageSpawnCommand.Update();
 			VillageTravel.Update();
 			VillageDisband.Update();
 			VillageLivestock.Update();

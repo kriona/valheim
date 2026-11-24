@@ -3529,13 +3529,23 @@ namespace Kriona.Vikings
 		/// <summary>
 		/// Checks whether the viking can fight with an item - a weapon of its own, not loot it carries or a tool it holds
 		/// for show, other than a torch that isn't broken, has ammo when it takes ammo, doesn't need eitr, which the viking has none of, and
-		/// deals damage
+		/// deals damage. A living viking keeps a pickaxe for mining and never fights with one
 		/// </summary>
 		/// <param name="item">The item</param>
 		/// <returns>True when it can</returns>
 		private bool CanUse(ItemDrop.ItemData item)
 		{
 			return(CanUse(item, true));
+		}
+
+		/// <summary>
+		/// Checks whether an item is a pickaxe - one that mines with the Pickaxes skill
+		/// </summary>
+		/// <param name="item">The item, or null</param>
+		/// <returns>True when it is</returns>
+		public static bool IsPickaxe(ItemDrop.ItemData item)
+		{
+			return(item != null && item.m_shared.m_skillType == Skills.SkillType.Pickaxes && item.m_shared.m_damages.m_pickaxe > 0f);
 		}
 
 		/// <summary>
@@ -3547,6 +3557,10 @@ namespace Kriona.Vikings
 		private bool CanUse(ItemDrop.ItemData item, bool needAmmo)
 		{
 			if (!item.IsWeapon() || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch || VikingItems.IsCarried(item) || VikingItems.IsProp(item))
+			{
+				return(false);
+			}
+			if (IsPickaxe(item) && IsLivingViking(humanoid))
 			{
 				return(false);
 			}
