@@ -6,9 +6,9 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Shares a player's forsaken power with the living vikings near them, the way the game shares it with the players
-	/// near them - every one that isn't hostile to the player gets the power's effect too - and has one or two of those
-	/// awake thank the player for it
+	/// Shares a player's forsaken power with the living vikings, dvergr vikings and dvergr near them, the way the game
+	/// shares it with the players near them - every one that isn't hostile to the player gets the power's effect too -
+	/// and has one or two of the living vikings awake thank the player for it
 	/// </summary>
 	[HarmonyPatch(typeof(Player), nameof(Player.ActivateGuardianPower))]
 	public static class VikingSharedPowerPatch
@@ -34,8 +34,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gives the power's effect to the living vikings within PowerReach once it's used, on the client that owns each,
-		/// and has one or two of them thank the player (see Thank)
+		/// Gives the power's effect to the living vikings, dvergr vikings and dvergr within PowerReach that aren't angry
+		/// at the player once it's used, on the client that owns each, and has one or two of the living vikings thank
+		/// the player (see Thank)
 		/// </summary>
 		/// <param name="__instance">The player</param>
 		/// <param name="__state">Whether it was used</param>
@@ -49,10 +50,15 @@ namespace VikingVillages
 			List<Character> given = new List<Character>();
 			foreach (Character character in Character.GetAllCharacters())
 			{
-				if (character is LivingVikingBody && !character.IsDead() && !BaseAI.IsEnemy(character, __instance) && Vector3.Distance(character.transform.position, __instance.transform.position) <= PowerReach)
+				// The living and dvergr vikings are of the dvergr's faction, which is hostile to the player while it's angry
+				bool dvergr = (character.GetFaction() == Character.Faction.Dverger && !character.IsTamed());
+				if (dvergr && !character.IsDead() && !BaseAI.IsEnemy(character, __instance) && Vector3.Distance(character.transform.position, __instance.transform.position) <= PowerReach)
 				{
 					character.GetSEMan().AddStatusEffect(effect, true, 0, 0f, -1);
-					given.Add(character);
+					if (VikingCore.IsLivingViking(character))
+					{
+						given.Add(character);
+					}
 				}
 			}
 			Thank(__instance, given);

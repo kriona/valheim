@@ -58,20 +58,30 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Gives the living viking its life in its village
+		/// Gives the living viking its life in its village, or a dvergr viking its life with the dvergr
 		/// </summary>
 		partial void AddParts()
 		{
+			if (GetComponent<DvergrVikingBody>() != null)
+			{
+				gameObject.AddComponent<DvergrLife>();
+				return;
+			}
 			life = gameObject.AddComponent<VillageLife>();
 		}
 
 		/// <summary>
 		/// Rolls a new living viking's look, health, skill, power and gear for the biome it's in, or the hardest biome
 		/// within HardBiomeVikingReach of its village's farm when that's harder (see VillageFarmhouses.HardestBiomeNear),
-		/// and names it
+		/// and names it - or a dvergr viking's for the Mistlands (see GenerateDvergr)
 		/// </summary>
 		private partial void Generate()
 		{
+			if (IsDvergrViking(humanoid))
+			{
+				GenerateDvergr();
+				return;
+			}
 			int index = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(transform.position));
 			index = Mathf.Max(index, VillageFarmhouses.HardestBiomeNear(VillageFarm(), VillageFarmhouses.HardBiomeVikingReach));
 			VikingData rolled = VikingGear.RollData(index);
@@ -133,12 +143,13 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Sets the living viking's max health from its biome and what it has eaten (see VikingFood.MaxHealth)
+		/// Sets the living viking's max health from its biome and what it has eaten (see VikingFood.MaxHealth) - a
+		/// dvergr viking's is its biome's and its stars', the same as a zombie viking of the world's
 		/// </summary>
 		/// <param name="health">Its max health, set here</param>
 		partial void LivingMaxHealth(ref float health)
 		{
-			if (humanoid is LivingVikingBody living)
+			if (humanoid is LivingVikingBody living && IsLivingViking(humanoid))
 			{
 				health = living.Food.MaxHealth();
 			}

@@ -269,15 +269,31 @@ Word of what you do gets around, and the living Vikings pass it on - each piece 
 
 What they say to you, to each other and about danger - every line, and when they say it - is listed in [DIALOG.md](DIALOG.md), along with the news they pass on (see News above).
 
+## Dvergr Vikings
+
+Some Vikings have taken work with the Dvergr in the Mistlands. A Dvergr Viking is a living Viking in the Dvergr's pay, who keeps to their outposts and patrols and never joins a village.
+
+- Each of the Dvergr's outposts hires some, once: the first time you've been within it for 5 seconds with its Dvergr up, it hires anywhere from none to a quarter of the Dvergr still alive there, rounded to the nearest, each number as likely, up to 4 - none with 1 Dvergr, up to 1 with 2-5, up to 2 with 6-9, and so on. They appear beside its Dvergr, keeping to their post when the Dvergr beside them do. An outpost never hires again, whether they live or die, and one whose Dvergr were killed before the mod came along hires none
+- Half of the Dvergr patrols the world spawns have one along, who wanders with them
+- They're on the Dvergr's side - the Dvergr, Dvergr Vikings and living Vikings never hurt each other. Like the Dvergr, they can be hit with PvP off, and the console's kill commands kill them. Hurt one, or a Dvergr near one, and every Dvergr, Dvergr Viking and living Viking within 20 meters turns on you - and like the Dvergr, a Dvergr Viking stays angry
+- They fight like zombie Vikings: the health and damage of a Mistlands zombie Viking, one star as often as the game gives the creatures it spawns there, and a pause between swings - but their armor protects them in full
+- Like living Vikings, they have the Mistlands' gear, fully repaired, with a Dverger circlet they light at night, and a name of their own - they're plain Viking to you until they know you. Their skills rise as they use them
+- You can't name them or open their inventory
+- They know the forsaken powers up to Yagluth's, learn the ones they're given, and use them in fights and when badly hurt (see Forsaken Powers)
+- When they die they drop 100-140 coins and 0-2 entrails, multiplied by their stars, and each piece of their gear has a chance to drop (see Configuration)
+
 ## Forsaken Powers
 
 Living Vikings know the powers of their biome and every biome before it, learn the powers they're given, use them in fights and for their work, and teach them to each other at dusk (see Village Life).
+
+- A power a living or Dvergr Viking uses reaches you and the other players they aren't angry at, and the Dvergr, Dvergr Vikings and living Vikings within 10 meters who aren't angry at players
+- Your own power reaches the living Vikings, Dvergr Vikings and Dvergr within 10 meters who aren't angry at you
 
 ## With Zombie Apocalypse
 
 With [Zombie Apocalypse](https://thunderstore.io/c/valheim/p/Kriona/ZombieApocalypse/) installed too, the living Vikings live through its apocalypse:
 
-- A living Viking who dies rises as a zombie Viking with their looks, gear and skills, as any slain creature does under Zombie Apocalypse's rules, and drops coins like any zombie Viking when killed in turn - along with the wood and loot they carried for their village
+- A living or Dvergr Viking who dies rises as a zombie Viking with their looks, gear and skills, as any slain creature does under Zombie Apocalypse's rules, and drops coins like any zombie Viking when killed in turn - along with the wood and loot they carried for their village
 - They stand ready over the corpses about to rise, fight the zombie once it's up rather than a corpse that can't be hurt, and keep clear of the poison clouds zombies' corpses leave (see Village Life)
 - They talk of the dead walking (see [DIALOG.md](DIALOG.md)) - of burning the dead only when Zombie Apocalypse's `FireStaysDead` lets fire keep them down, and of silver whenever they do, since spirit damage always keeps the dead down
 - The empty abandoned houses near a farm are its Vikings', so zombie Vikings never hold them
@@ -296,6 +312,11 @@ Viking Gear:
 - `HelmetChance` - percent chance that a living Viking also wears their armor set's helmet - from the Mountains on, every one wears one (default `50`)
 - `CapeChance` - percent chance that a living Viking also wears their armor set's cape - from the Mountains on, every one wears one (default `50`)
 - `ShieldChance` - percent chance that a living Viking carries a shield, unless their weapon takes both hands (default `40`)
+
+Dvergr Vikings:
+
+- `GearDropChance` - percent chance that a Dvergr Viking drops each piece of their gear when they die (default `5`)
+- `GearDropMax` - most pieces of gear a Dvergr Viking drops (default `2`)
 
 To leave the villages abandoned, uninstall the mod.
 

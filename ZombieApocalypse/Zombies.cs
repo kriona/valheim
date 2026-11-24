@@ -118,8 +118,8 @@ namespace ZombieApocalypse
 		public static PendingRise CreateRise(Character character)
 		{
 			PendingRise rise = new PendingRise();
-			// A living viking rises as a zombie viking
-			rise.PrefabHash = (VikingCore.IsLivingViking(character) ? VikingCore.ZombiePrefabHash : character.m_nview.GetZDO().GetPrefab());
+			// A living or dvergr viking rises as a zombie viking
+			rise.PrefabHash = (VikingCore.IsLivingOrDvergr(character) ? VikingCore.ZombiePrefabHash : character.m_nview.GetZDO().GetPrefab());
 			rise.Level = character.GetLevel();
 			Humanoid humanoid = character as Humanoid;
 			rise.Seed = ((humanoid != null) ? humanoid.m_seed : 0);

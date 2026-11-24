@@ -14,11 +14,18 @@ namespace VikingVillages
 		public const string PluginVersion = "1.0.0";
 
 		private const string VikingGearSection = "Viking Gear";
+		private const string DvergrVikingsSection = "Dvergr Vikings";
 
 		/// <summary>
 		/// The plugin's log, with the time in front of each line while a test run is going (see TestLog)
 		/// </summary>
 		internal static StampedLog Log;
+
+		/// <summary>
+		/// The percent chance a dvergr viking drops each piece of its gear when it dies, and the most pieces it drops
+		/// </summary>
+		public static ConfigEntry<float> DvergrGearDropChance;
+		public static ConfigEntry<int> DvergrGearDropMax;
 
 		private Harmony harmony;
 		private ConfigWatcher watcher;
@@ -34,6 +41,8 @@ namespace VikingVillages
 			VikingSettings.HelmetChance = Config.Bind(VikingGearSection, "HelmetChance", 50, new ConfigDescription("Percent chance that a living viking also wears its armor set's helmet - from the Mountains on, every one wears one", new AcceptableValueRange<int>(0, 100)));
 			VikingSettings.CapeChance = Config.Bind(VikingGearSection, "CapeChance", 50, new ConfigDescription("Percent chance that a living viking also wears its armor set's cape - from the Mountains on, every one wears one", new AcceptableValueRange<int>(0, 100)));
 			VikingSettings.ShieldChance = Config.Bind(VikingGearSection, "ShieldChance", 40, new ConfigDescription("Percent chance that a living viking carries a shield, unless its weapon takes both hands", new AcceptableValueRange<int>(0, 100)));
+			DvergrGearDropChance = Config.Bind(DvergrVikingsSection, "GearDropChance", 5f, new ConfigDescription("Percent chance that a dvergr viking drops each piece of its gear when it dies", new AcceptableValueRange<float>(0f, 100f)));
+			DvergrGearDropMax = Config.Bind(DvergrVikingsSection, "GearDropMax", 2, new ConfigDescription("Most pieces of gear a dvergr viking drops", new AcceptableValueRange<int>(0, 10)));
 			watcher = new ConfigWatcher(Config, Logger, PluginName);
 			ConfigSync.Init(Config);
 			harmony = new Harmony(PluginGuid);
@@ -49,7 +58,8 @@ namespace VikingVillages
 		/// out wild, shows the villages' areas the player turns on, notes the villages' reach for running all of a village
 		/// the player is in (see VillageSimulation), moves a dedicated server's own area to the village it runs (see
 		/// ServerVillageRun), keeps the news the vikings tell and watches for more (see VikingNewsStore and
-		/// VikingNewsWatch), and runs the test log's checks (see TestLog)
+		/// VikingNewsWatch), has the dvergr's outposts hire their vikings (see DvergrVikingSpawns), and runs the test
+		/// log's checks (see TestLog)
 		/// </summary>
 		private void Update()
 		{
@@ -80,6 +90,7 @@ namespace VikingVillages
 			ServerVillageRun.Update();
 			VikingNewsStore.Update();
 			VikingNewsWatch.Update();
+			DvergrVikingSpawns.Update();
 			TestLog.Update();
 		}
 

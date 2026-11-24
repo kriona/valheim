@@ -165,7 +165,9 @@ namespace Kriona.Vikings
 	/// own copy of this class, finished by a part of its own that does what only its kind does. A zombie viking is in
 	/// the Undead faction. A living viking is in the dvergr's, so it fights zombies and monsters and leaves players alone
 	/// until one attacks it or another viking nearby, and with Zombie Apocalypse its corpse rises as a zombie viking with
-	/// its looks and gear, handed over in the corpse's ZDO, which drops its coins when it's killed in turn. A tombstone
+	/// its looks and gear, handed over in the corpse's ZDO, which drops its coins when it's killed in turn. Viking
+	/// Villages adds the dvergr viking too, a living viking the dvergr have hired, which keeps to their outposts and
+	/// patrols and fights the way a zombie viking does, and rises the same way a living viking does. A tombstone
 	/// viking carries everything the player had but food, silver and spirit weapons, and keeps it in its ZDO as it's
 	/// used up, so it never despawns or loses it. It drops it in a tombstone of the player's when it's killed. Equipment
 	/// the world let the player keep is copied to it marked as kept, so it fights with it but never drops it. A viking of
@@ -186,6 +188,13 @@ namespace Kriona.Vikings
 		/// </summary>
 		public const string LivingPrefabName = "Viking";
 		public static readonly int LivingPrefabHash = LivingPrefabName.GetStableHashCode();
+
+		/// <summary>
+		/// The dvergr viking's prefab - a living viking hired by the dvergr, which Viking Villages adds beside its village
+		/// vikings and Zombie Apocalypse raises as a zombie viking, whose name saved worlds store, so it can't change
+		/// </summary>
+		public const string DvergrPrefabName = "DvergrViking";
+		public static readonly int DvergrPrefabHash = DvergrPrefabName.GetStableHashCode();
 
 		/// <summary>
 		/// Asks the viking's owner for its debug summary, from a client in debug mode hovering a viking it doesn't own
@@ -486,6 +495,27 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
+		/// Checks whether a creature is a dvergr viking
+		/// </summary>
+		/// <param name="character">The creature</param>
+		/// <returns>True when it is</returns>
+		public static bool IsDvergrViking(Character character)
+		{
+			return(IsPrefab(character, DvergrPrefabHash));
+		}
+
+		/// <summary>
+		/// Checks whether a creature is a viking that's alive - a living viking or a dvergr viking - which raises its
+		/// skills, keeps its gear repaired and rises as a zombie viking with its looks and gear
+		/// </summary>
+		/// <param name="character">The creature</param>
+		/// <returns>True when it is</returns>
+		public static bool IsLivingOrDvergr(Character character)
+		{
+			return(IsLivingViking(character) || IsDvergrViking(character));
+		}
+
+		/// <summary>
 		/// Checks whether a creature is one of a prefab, by its ZDO, so either mod's vikings are known to both mods
 		/// </summary>
 		/// <param name="character">The creature, or null</param>
@@ -529,11 +559,21 @@ namespace Kriona.Vikings
 				VikingMod.Log.LogWarning("Couldn't build the vikings - the Player or Draugr prefab is missing");
 				return;
 			}
-			int hash = prefab.name.GetStableHashCode();
+			AddToScene(scene, prefab);
+		}
+
+		/// <summary>
+		/// Adds a built prefab to a world's prefabs, unless it's in already
+		/// </summary>
+		/// <param name="scene">The world's ZNetScene</param>
+		/// <param name="built">The prefab</param>
+		private static void AddToScene(ZNetScene scene, GameObject built)
+		{
+			int hash = built.name.GetStableHashCode();
 			if (!scene.m_namedPrefabs.ContainsKey(hash))
 			{
-				scene.m_prefabs.Add(prefab);
-				scene.m_namedPrefabs.Add(hash, prefab);
+				scene.m_prefabs.Add(built);
+				scene.m_namedPrefabs.Add(hash, built);
 			}
 		}
 
@@ -673,13 +713,13 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Hands a dying living viking's data and inventory to its corpse, for the zombie viking it rises as
+		/// Hands a dying living or dvergr viking's data and inventory to its corpse, for the zombie viking it rises as
 		/// </summary>
 		/// <param name="creature">The dying creature</param>
 		/// <param name="corpse">Its corpse's ZDO, owned by this client</param>
 		public static void HandToCorpse(Character creature, ZDO corpse)
 		{
-			if (creature == null || !IsLivingViking(creature))
+			if (creature == null || !IsLivingOrDvergr(creature))
 			{
 				return;
 			}
@@ -980,10 +1020,10 @@ namespace Kriona.Vikings
 		public const float SkillFloor = 1f;
 
 		/// <summary>
-		/// Raises a living viking's skill the way a player's rises, for the same things, like a hit with a weapon or a
-		/// block - by the skill's step, the world's skill gain rate, its status effects and being rested, toward the
-		/// next level the way a player's is, from its own level in everything - glowing around its head on every client
-		/// as it reaches a new level, the way a player does
+		/// Raises a living or dvergr viking's skill the way a player's rises, for the same things, like a hit with a
+		/// weapon or a block - by the skill's step, the world's skill gain rate, its status effects and being rested,
+		/// toward the next level the way a player's is, from its own level in everything - glowing around its head on
+		/// every client as it reaches a new level, the way a player does
 		/// </summary>
 		/// <remarks>
 		/// Its levels are kept in its data as it rises, rather than a player's whole levels and progress toward the next,
@@ -993,7 +1033,7 @@ namespace Kriona.Vikings
 		/// <param name="factor">How much the action raises it, as the game gives it</param>
 		public void RaiseSkill(Skills.SkillType skill, float factor)
 		{
-			if (skill == Skills.SkillType.None || !IsLivingViking(humanoid) || nview == null || !nview.IsValid() || !nview.IsOwner())
+			if (skill == Skills.SkillType.None || !IsLivingOrDvergr(humanoid) || nview == null || !nview.IsValid() || !nview.IsOwner())
 			{
 				return;
 			}
@@ -1121,7 +1161,8 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Adds up the armor of the pieces the viking wears, with what its effects add, the way a player's adds up - all
-		/// of it for a living viking, and the config's ZombieArmorEffectiveness percent of it for a zombie viking
+		/// of it for a living or dvergr viking, and the config's ZombieArmorEffectiveness percent of it for a zombie
+		/// viking
 		/// </summary>
 		/// <returns>Its armor</returns>
 		public float BodyArmor()
@@ -1132,7 +1173,7 @@ namespace Kriona.Vikings
 				armor += piece.GetArmor();
 			}
 			humanoid.GetSEMan().ApplyArmorMods(ref armor);
-			float effectiveness = (IsLivingViking(humanoid) ? 100f : VikingSettings.Get(VikingSettings.ZombieArmorEffectiveness, 100));
+			float effectiveness = (IsLivingOrDvergr(humanoid) ? 100f : VikingSettings.Get(VikingSettings.ZombieArmorEffectiveness, 100));
 			return(armor * effectiveness / 100f);
 		}
 
@@ -1966,9 +2007,9 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// As the viking dies on its owner, drops everything a tombstone viking carries but kept items in a tombstone of
-		/// the player's, everything a living viking has, or a viking of the world's coins and maybe some of its gear,
-		/// along with the wood and loot it carried from its life in a village, on the ground - or, for a living viking
-		/// that will rise, keeps everything for its zombie, which drops it in turn
+		/// the player's, everything a living viking has, or the coins and maybe some of the gear of a viking of the
+		/// world or a dvergr viking, along with the wood and loot it carried from its life in a village, on the ground -
+		/// or, for a living or dvergr viking that will rise, keeps everything for its zombie, which drops it in turn
 		/// </summary>
 		/// <param name="rises">Whether the viking's corpse will rise</param>
 		public void DropGrave(bool rises)
@@ -1982,7 +2023,7 @@ namespace Kriona.Vikings
 				return;
 			}
 			VikingItems.RemoveProps(humanoid.GetInventory());
-			if (rises && IsLivingViking(humanoid))
+			if (rises && IsLivingOrDvergr(humanoid))
 			{
 				// Its zombie takes up the shield it had equipped, and a shield sheathed on its back isn't
 				if (shield != null && humanoid.GetInventory().ContainsItem(shield))
@@ -2027,9 +2068,73 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Drops a zombie viking of the world's coins, remains and maybe some of its gear
+		/// Drops the coins, remains and maybe some of the gear of a zombie viking of the world or a dvergr viking, the
+		/// way its kind's settings have it (see DropWorldLoot)
 		/// </summary>
 		partial void DropLoot();
+
+		/// <summary>
+		/// The most of its biome's remains a viking of the world drops, before its stars
+		/// </summary>
+		private const int RemainsMax = 2;
+
+		/// <summary>
+		/// Drops a viking of the world's coins and remains, more for each star, and each piece of its gear by a chance,
+		/// up to a most, as it is
+		/// </summary>
+		/// <param name="gearDropChance">The percent chance each piece of its gear drops</param>
+		/// <param name="gearDropMax">The most pieces of gear it drops</param>
+		private void DropWorldLoot(float gearDropChance, int gearDropMax)
+		{
+			Vector3 position = humanoid.GetCenterPoint();
+			BiomeGear gear = VikingGear.Get(BiomeIndex());
+			int level = humanoid.GetLevel();
+			List<KeyValuePair<GameObject, int>> loot = new List<KeyValuePair<GameObject, int>>();
+			AddLoot(loot, "Coins", Random.Range(gear.CoinsMin, gear.CoinsMax + 1) * level);
+			AddLoot(loot, gear.Remains, Random.Range(0, RemainsMax + 1) * level);
+			if (loot.Count > 0)
+			{
+				CharacterDrop.DropItems(loot, position, 0.5f, nview.GetZDO().IsCheated());
+			}
+			List<ItemDrop.ItemData> pieces = new List<ItemDrop.ItemData>();
+			foreach (ItemDrop.ItemData item in humanoid.GetInventory().GetAllItems())
+			{
+				ItemDrop.ItemData.ItemType type = item.m_shared.m_itemType;
+				if (type != ItemDrop.ItemData.ItemType.Ammo && type != ItemDrop.ItemData.ItemType.AmmoNonEquipable)
+				{
+					pieces.Add(item);
+				}
+			}
+			int dropped = 0;
+			while (pieces.Count > 0 && dropped < gearDropMax)
+			{
+				int index = Random.Range(0, pieces.Count);
+				ItemDrop.ItemData piece = pieces[index];
+				pieces.RemoveAt(index);
+				if (Random.value * 100f >= gearDropChance)
+				{
+					continue;
+				}
+				piece.m_equipped = false;
+				ItemDrop.DropItem(piece, piece.m_stack, position + Random.insideUnitSphere * 0.5f, Quaternion.identity);
+				dropped++;
+			}
+		}
+
+		/// <summary>
+		/// Adds an item to a list of loot, unless there's none of it or the game has no such item
+		/// </summary>
+		/// <param name="loot">The loot, as each item's prefab and amount</param>
+		/// <param name="prefabName">The item's prefab name, or null for none</param>
+		/// <param name="amount">How many to drop</param>
+		private static void AddLoot(List<KeyValuePair<GameObject, int>> loot, string prefabName, int amount)
+		{
+			GameObject prefab = (string.IsNullOrEmpty(prefabName) ? null : ObjectDB.instance.GetItemPrefab(prefabName));
+			if (amount > 0 && prefab != null)
+			{
+				loot.Add(new KeyValuePair<GameObject, int>(prefab, amount));
+			}
+		}
 
 		/// <summary>
 		/// Checks whether a living viking leaves its gear as it is, while a player has its inventory open (see
@@ -2083,8 +2188,8 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Has a living viking walk while there's no danger and it's at home, and move at its full pace once there's
-		/// danger - when it's alerted, has a target, or was hurt in the last few seconds - or it's away from its
+		/// Has a living or dvergr viking walk while there's no danger and it's at home, and move at its full pace once
+		/// there's danger - when it's alerted, has a target, or was hurt in the last few seconds - or it's away from its
 		/// village's core, or it's climbing a slope or taking a run-up to a fence, so it makes it over
 		/// </summary>
 		/// <remarks>
@@ -2093,7 +2198,7 @@ namespace Kriona.Vikings
 		/// </remarks>
 		private void UpdateWalk()
 		{
-			if (ai == null || !IsLivingViking(humanoid))
+			if (ai == null || !IsLivingOrDvergr(humanoid))
 			{
 				return;
 			}
@@ -2103,12 +2208,12 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Raises a living viking's Run and Swim skills for every RunSkillInterval seconds it spends running or swimming,
-		/// the way a player's rise, and speeds its swimming by its Swim skill (see SwimSkillBonus)
+		/// Raises a living or dvergr viking's Run and Swim skills for every RunSkillInterval seconds it spends running or
+		/// swimming, the way a player's rise, and speeds its swimming by its Swim skill (see SwimSkillBonus)
 		/// </summary>
 		private void UpdateRunSkill()
 		{
-			if (!IsLivingViking(humanoid))
+			if (!IsLivingOrDvergr(humanoid))
 			{
 				return;
 			}
@@ -2332,7 +2437,7 @@ namespace Kriona.Vikings
 		private string OwnSummary(string owner)
 		{
 			System.Text.StringBuilder text = new System.Text.StringBuilder();
-			string kind = (IsLivingViking(humanoid) ? "Viking" : ((GetData() != null && data.Tombstone) ? "Tombstone zombie viking" : "Zombie viking"));
+			string kind = (IsLivingViking(humanoid) ? "Viking" : (IsDvergrViking(humanoid) ? "Dvergr viking" : ((GetData() != null && data.Tombstone) ? "Tombstone zombie viking" : "Zombie viking")));
 			text.Append(kind + ", " + Mathf.CeilToInt(humanoid.GetHealth()) + "/" + Mathf.CeilToInt(humanoid.GetMaxHealth()) + " health\n");
 			text.Append("Owner: " + owner + "\n");
 			AddDebugLines(text);
@@ -2777,8 +2882,8 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Has a living viking pull out a torch when it's dark while it isn't fighting, or while it fights with a
-		/// one-handed weapon and nothing in its other hand, and put it away otherwise - in its village from just before
+		/// Has a living or dvergr viking pull out a torch when it's dark while it isn't fighting, or while it fights with
+		/// a one-handed weapon and nothing in its other hand, and put it away otherwise - in its village from just before
 		/// sunset until dawn while it's away from the fire and not resting, and elsewhere at night - and always by day
 		/// </summary>
 		/// <remarks>
@@ -2791,7 +2896,7 @@ namespace Kriona.Vikings
 		/// </remarks>
 		public void UpdateTorch()
 		{
-			if (!IsLivingViking(humanoid) || ai == null || GearHeld())
+			if (!IsLivingOrDvergr(humanoid) || ai == null || GearHeld())
 			{
 				return;
 			}
@@ -2949,12 +3054,12 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Has a living viking wearing its dverger circlet put its helmet back on as soon as it's in danger, rather than
-		/// at its next UpdateTorch
+		/// Has a living or dvergr viking wearing its dverger circlet put its helmet back on as soon as it's in danger,
+		/// rather than at its next UpdateTorch
 		/// </summary>
 		private void UpdateCircletDanger()
 		{
-			if (!IsCirclet(humanoid.m_helmetItem) || !IsLivingViking(humanoid) || ai == null || GearHeld() || !InDanger())
+			if (!IsCirclet(humanoid.m_helmetItem) || !IsLivingOrDvergr(humanoid) || ai == null || GearHeld() || !InDanger())
 			{
 				return;
 			}
@@ -2962,12 +3067,12 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Burns down the torch a living viking holds the way a player's does, since the game only wears down a player's
-		/// equipment - putting it away and dropping it from its inventory once it's burnt out
+		/// Burns down the torch a living or dvergr viking holds the way a player's does, since the game only wears down
+		/// a player's equipment - putting it away and dropping it from its inventory once it's burnt out
 		/// </summary>
 		private void BurnTorch()
 		{
-			if (!IsLivingViking(humanoid))
+			if (!IsLivingOrDvergr(humanoid))
 			{
 				return;
 			}
@@ -3665,8 +3770,8 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Has a living viking use a forsaken power now - its animation, then the power for it, its faction and the
-		/// players it isn't hostile to around it (see UsePower)
+		/// Has a living or dvergr viking use a forsaken power now - its animation, then the power for it, the creatures
+		/// of its faction that aren't angry at players and the players it isn't hostile to around it (see UsePower)
 		/// </summary>
 		/// <param name="power">The power's status effect name hash</param>
 		public void StartPower(int power)
@@ -3676,8 +3781,8 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Plays the forsaken power animation, then gives the power to the viking and the creatures of its faction around
-		/// it - and, for a living viking, the players around it it isn't hostile to, the way a player's reaches the
-		/// players near them
+		/// it that aren't angry at players - for a living or dvergr viking, the dvergr and the other vikings like it - and,
+		/// for one of those, the players around it it isn't hostile to, the way a player's reaches the players near them
 		/// </summary>
 		/// <param name="power">The power's status effect name hash</param>
 		/// <param name="sharePlayers">True to give it to the players around it too</param>
@@ -3694,7 +3799,9 @@ namespace Kriona.Vikings
 			Character.GetCharactersInRange(transform.position, PowerRange, nearby);
 			foreach (Character character in nearby)
 			{
-				bool ally = (!character.IsPlayer() && !character.IsDead() && character.GetFaction() == humanoid.GetFaction());
+				BaseAI allyAI = character.GetBaseAI();
+				bool angry = (allyAI != null && allyAI.IsAggravated());
+				bool ally = (!character.IsPlayer() && !character.IsDead() && !angry && character.GetFaction() == humanoid.GetFaction());
 				bool friend = (sharePlayers && character.IsPlayer() && !character.IsDead() && !BaseAI.IsEnemy(humanoid, character));
 				if (character == humanoid || ally || friend)
 				{

@@ -52,11 +52,6 @@ namespace Kriona.Vikings
 		private static readonly HashSet<string> SilverPrefabs = new HashSet<string> { "SilverOre", "Silver" };
 
 		/// <summary>
-		/// The most of its biome's remains a viking of the world drops, before its stars
-		/// </summary>
-		private const int RemainsMax = 2;
-
-		/// <summary>
 		/// When the next viking may use a forsaken power, in ZNet time ticks
 		/// </summary>
 		private static long powerCooldownUntil;
@@ -320,54 +315,7 @@ namespace Kriona.Vikings
 		/// </summary>
 		partial void DropLoot()
 		{
-			Vector3 position = humanoid.GetCenterPoint();
-			BiomeGear gear = VikingGear.Get(BiomeIndex());
-			int level = humanoid.GetLevel();
-			List<KeyValuePair<GameObject, int>> loot = new List<KeyValuePair<GameObject, int>>();
-			AddLoot(loot, "Coins", Random.Range(gear.CoinsMin, gear.CoinsMax + 1) * level);
-			AddLoot(loot, gear.Remains, Random.Range(0, RemainsMax + 1) * level);
-			if (loot.Count > 0)
-			{
-				CharacterDrop.DropItems(loot, position, 0.5f, nview.GetZDO().IsCheated());
-			}
-			List<ItemDrop.ItemData> pieces = new List<ItemDrop.ItemData>();
-			foreach (ItemDrop.ItemData item in humanoid.GetInventory().GetAllItems())
-			{
-				ItemDrop.ItemData.ItemType type = item.m_shared.m_itemType;
-				if (type != ItemDrop.ItemData.ItemType.Ammo && type != ItemDrop.ItemData.ItemType.AmmoNonEquipable)
-				{
-					pieces.Add(item);
-				}
-			}
-			int dropped = 0;
-			while (pieces.Count > 0 && dropped < Plugin.GearDropMax.Value)
-			{
-				int index = Random.Range(0, pieces.Count);
-				ItemDrop.ItemData piece = pieces[index];
-				pieces.RemoveAt(index);
-				if (Random.value * 100f >= Plugin.GearDropChance.Value)
-				{
-					continue;
-				}
-				piece.m_equipped = false;
-				ItemDrop.DropItem(piece, piece.m_stack, position + Random.insideUnitSphere * 0.5f, Quaternion.identity);
-				dropped++;
-			}
-		}
-
-		/// <summary>
-		/// Adds an item to a list of loot, unless there's none of it or the game has no such item
-		/// </summary>
-		/// <param name="loot">The loot, as each item's prefab and amount</param>
-		/// <param name="prefabName">The item's prefab name, or null for none</param>
-		/// <param name="amount">How many to drop</param>
-		private static void AddLoot(List<KeyValuePair<GameObject, int>> loot, string prefabName, int amount)
-		{
-			GameObject prefab = (string.IsNullOrEmpty(prefabName) ? null : ObjectDB.instance.GetItemPrefab(prefabName));
-			if (amount > 0 && prefab != null)
-			{
-				loot.Add(new KeyValuePair<GameObject, int>(prefab, amount));
-			}
+			DropWorldLoot(Plugin.GearDropChance.Value, Plugin.GearDropMax.Value);
 		}
 	}
 }
