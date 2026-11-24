@@ -170,6 +170,22 @@ namespace VikingVillages
 	}
 
 	/// <summary>
+	/// Makes the treasure chests an abandoned farm, or a house its vikings take in, is generated with the village's own
+	/// </summary>
+	[HarmonyPatch(typeof(Container), nameof(Container.Awake))]
+	public static class VikingFarmChestPatch
+	{
+		/// <summary>
+		/// Marks a farm's treasure chest as the village's before it fills itself with loot
+		/// </summary>
+		/// <param name="__instance">The chest</param>
+		private static void Prefix(Container __instance)
+		{
+			FarmSpawns.OnChestAwake(__instance);
+		}
+	}
+
+	/// <summary>
 	/// Notes an abandoned farm's farmhouses as its rooms are generated
 	/// </summary>
 	/// <remarks>

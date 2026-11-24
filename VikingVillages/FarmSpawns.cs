@@ -7,8 +7,8 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// The abandoned farms living vikings come to - noted as they're generated, for living vikings to come to once each
-	/// has its bonfire (see VillageRespawn.Populated) - the empty abandoned houses near them the vikings take in, and the
-	/// livestock their pens spawn
+	/// has its bonfire (see VillageRespawn.Populated) - the empty abandoned houses near them the vikings take in, the
+	/// livestock their pens spawn, and the chests they're generated with, which are the vikings' own
 	/// </summary>
 	internal static class FarmSpawns
 	{
@@ -471,6 +471,33 @@ namespace VikingVillages
 			{
 				WearNTear.m_randomInitialDamage = false;
 			}
+		}
+
+		/// <summary>
+		/// Makes one of the game's treasure chests that a farm, or a house its living vikings take in, is generated with
+		/// one of the village's own chests - starting empty, as a chest built as a piece does, and no longer counted as a
+		/// treasure chest (see VillageLife.IsTreasureChest) - so its vikings keep their things in it. A buried one, which
+		/// the vikings can't reach and the wishbone finds, stays the world's
+		/// </summary>
+		/// <remarks>
+		/// It's called as the chest wakes, before it fills itself with its loot, which it does only while that hasn't
+		/// been noted as done
+		/// </remarks>
+		/// <param name="chest">The chest, waking</param>
+		public static void OnChestAwake(Container chest)
+		{
+			if ((!generatingFarm && !generatingOutpost) || clientDepth > 0 || chest.m_rootObjectOverride != null || !VillageLife.HasDefaultLoot(chest) || chest.GetComponent<Beacon>() != null)
+			{
+				return;
+			}
+			ZNetView view = chest.GetComponent<ZNetView>();
+			ZDO zdo = ((view != null) ? view.GetZDO() : null);
+			if (zdo == null)
+			{
+				return;
+			}
+			zdo.Set(ZDOVars.s_addedDefaultItems, true);
+			zdo.Set(VillageLife.OwnChestKey, true);
 		}
 
 		/// <summary>

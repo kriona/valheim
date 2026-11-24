@@ -6641,13 +6641,36 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// On a chest of the game's treasure chests that a farm, or a house its vikings take in, was generated with, that
+		/// it's the village's own (see FarmSpawns.OnChestAwake)
+		/// </summary>
+		public static readonly int OwnChestKey = "kriona.VikingVillages.ownChest".GetStableHashCode();
+
+		/// <summary>
 		/// Checks whether a chest is one of the game's treasure chests - buried in the ground, or standing in a ruin or
 		/// a crypt - which fill themselves with loot the first time they load, unlike a chest built as a piece, which
-		/// starts empty. One can lie inside a village, but it's the world's and not the village's
+		/// starts empty. One can lie inside a village, but it's the world's and not the village's - unless the village
+		/// was generated with it (see OwnChestKey)
 		/// </summary>
 		/// <param name="chest">The chest</param>
 		/// <returns>True when it is</returns>
 		internal static bool IsTreasureChest(Container chest)
+		{
+			if (!HasDefaultLoot(chest))
+			{
+				return(false);
+			}
+			ZNetView view = ((chest.m_nview != null) ? chest.m_nview : chest.GetComponent<ZNetView>());
+			ZDO zdo = ((view != null && view.IsValid()) ? view.GetZDO() : null);
+			return(zdo == null || !zdo.GetBool(OwnChestKey));
+		}
+
+		/// <summary>
+		/// Checks whether a chest's prefab fills it with loot the first time it loads, as the game's treasure chests do
+		/// </summary>
+		/// <param name="chest">The chest</param>
+		/// <returns>True when it does</returns>
+		internal static bool HasDefaultLoot(Container chest)
 		{
 			return(chest.m_defaultItems != null && chest.m_defaultItems.m_drops.Count > 0);
 		}
