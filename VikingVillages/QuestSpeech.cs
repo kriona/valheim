@@ -155,6 +155,18 @@ namespace VikingVillages
 		};
 
 		/// <summary>
+		/// What a viking says coming home from a quest, mourning by name one who went with it and died out there
+		/// </summary>
+		internal static readonly string[] CompanionMournLines =
+		{
+			"We couldn't save {fallen}.",
+			"{fallen} fought to the end. I saw it.",
+			"We came home without {fallen}...",
+			"Feast well in Valhalla, {fallen}.",
+			"It should have been me, not {fallen}."
+		};
+
+		/// <summary>
 		/// Picks what one of the vikings setting out on a quest says as they go
 		/// </summary>
 		/// <param name="when">Roughly when they're due back, like "tomorrow", or "now"</param>
@@ -274,6 +286,28 @@ namespace VikingVillages
 		internal static string Mourn(string fallen, int roll)
 		{
 			return(MournLines[roll % MournLines.Length].Replace(FallenToken, fallen));
+		}
+
+		/// <summary>
+		/// Picks what a viking says coming home from a quest, mourning one who went with it and died out there
+		/// </summary>
+		/// <param name="fallen">The dead viking's name</param>
+		/// <returns>The line</returns>
+		public static string MournCompanion(string fallen)
+		{
+			return(MournCompanion(fallen, Roll()));
+		}
+
+		/// <summary>
+		/// Picks what a viking says coming home from a quest, mourning one who went with it and died out there, by a roll
+		/// </summary>
+		/// <param name="fallen">The dead viking's name</param>
+		/// <param name="roll">A roll from 0 up, picking the line</param>
+		/// <returns>The line, starting with a capital</returns>
+		internal static string MournCompanion(string fallen, int roll)
+		{
+			string line = CompanionMournLines[roll % CompanionMournLines.Length].Replace(FallenToken, fallen);
+			return((line.Length > 0) ? char.ToUpperInvariant(line[0]) + line.Substring(1) : line);
 		}
 
 		/// <summary>

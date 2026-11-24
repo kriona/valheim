@@ -69,6 +69,33 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Gets the biome a quest is dangerous by - where it works: the biome a hunt or foraging works in, the trees'
+		/// biome for cutting trees, and the camp's biome of the trader treasure is sold to, or for the rest, which go to a
+		/// place of their own biome, the hardest of the quest's and its item's easiest biomes
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <param name="item">What it's for, or ""</param>
+		/// <param name="villageBiome">The village's biome, by VikingGear's order</param>
+		/// <param name="roadBiome">The biome its road goes to, by VikingGear's order, or -1 when it isn't known</param>
+		/// <param name="ruleBiome">The hardest of the quest's and its item's easiest biomes</param>
+		/// <returns>The biome, by VikingGear's order</returns>
+		internal static int QuestBiomeOf(QuestKind kind, string item, int villageBiome, int roadBiome, int ruleBiome)
+		{
+			switch (kind)
+			{
+				case QuestKind.Hunt:
+				case QuestKind.Forage:
+					return(QuestLoot.WorksIn(kind, item, villageBiome, roadBiome));
+				case QuestKind.ChopTrees:
+					return(QuestTargets.BiomeOf(kind, item, villageBiome));
+				case QuestKind.SellTreasure:
+					return((roadBiome >= 0) ? roadBiome : QuestTargets.BiomeOf(kind, item, villageBiome));
+				default:
+					return(ruleBiome);
+			}
+		}
+
+		/// <summary>
 		/// Works out a quest as it sets out - for one that takes a tool, how much of its item the vikings can carry home
 		/// between them and how long their tools take to get it, wearing each tool; and what else it brings back (see
 		/// QuestLoot) - then shares what it finds out among the vikings by their room, and works out when it's due back
@@ -90,7 +117,7 @@ namespace VikingVillages
 				return(false);
 			}
 			int biome = VillageCooking.VillageBiome(village);
-			record.QuestBiome = Mathf.Max(rule.MinBiome, source.MinBiome);
+			record.QuestBiome = QuestBiomeOf(record.Kind, record.Item, biome, roadBiome, Mathf.Max(rule.MinBiome, source.MinBiome));
 			record.Wanted = rule.VikingsFor(biome);
 			record.Plans.Clear();
 			List<CarrySpace> spaces = new List<CarrySpace>();
@@ -467,8 +494,9 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out how a quest goes for one of its vikings as it leaves - what it brings home and its tool's wear from
-		/// the quest's plan, then the harm it takes for the quest's danger and its gear, the foods it eats and potions it
-		/// drinks of what it took along, how its skills rise, and what it spends
+		/// the quest's plan, then the harm it takes for the quest's danger and its gear, whether it dies of it (see
+		/// QuestSim.DeathChance), the foods it eats and potions it drinks of what it took along, how its skills rise, and
+		/// what it spends
 		/// </summary>
 		/// <param name="humanoid">The viking</param>
 		/// <param name="core">Its core</param>
@@ -516,6 +544,12 @@ namespace VikingVillages
 			float health = QuestSim.EndHealth(max, harm, fed, potionCount, heal, out int drunk);
 			UseUp(potions, drunk, outcome.Used);
 			outcome.HealthShare = ((max > 0f) ? health / max : 1f);
+			// The worse a quest harms it, the likelier it dies there, which leaves it out when the others come home
+			if (max > 0f && Random.value < QuestSim.DeathChance(harm / max))
+			{
+				outcome.HealthShare = 0f;
+				TestLog.Count("Quests", record.Kind + ": a viking will die on it");
+			}
 			if (record.Kind == QuestKind.SellTreasure || record.Kind == QuestKind.BuyCirclet)
 			{
 				Trade(record.Kind, carried, outcome);

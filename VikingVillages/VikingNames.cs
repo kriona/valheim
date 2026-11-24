@@ -496,6 +496,21 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Reads a viking's name as it was typed and who gave it, unfiltered, from the values it's kept as while it's out
+		/// of the world (see VillageDeparted.SnapshotOf)
+		/// </summary>
+		/// <param name="values">The viking's values</param>
+		/// <param name="name">The name, without its "$", or ""</param>
+		/// <param name="author">Who named it, by platform user ID or "host", or ""</param>
+		public static void ReadRaw(VillageDeparted.VikingValues values, out string name, out string author)
+		{
+			KeyValuePair<int, string> named = values.Strings.Find((KeyValuePair<int, string> entry) => entry.Key == NameKey);
+			KeyValuePair<int, string> by = values.Strings.Find((KeyValuePair<int, string> entry) => entry.Key == AuthorKey);
+			name = Plain((named.Key == NameKey) ? named.Value : "");
+			author = ((by.Key == AuthorKey) ? (by.Value ?? "") : "");
+		}
+
+		/// <summary>
 		/// Copies a viking's name and who gave it to another ZDO, like its corpse's, where Get reads it the same way
 		/// </summary>
 		/// <param name="viking">The viking's ZDO</param>

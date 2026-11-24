@@ -18,7 +18,7 @@ A village can only go on a quest when its biome isn't easier than the quest's or
 
 ## The Quests
 
-Vikings is how many go - the second number from the Plains on - and up to how many go when the village has more of the tool, or for a hunt, when the village can spare them. Work is how long they're at it once they're there, before the trip there and back, in real time - which is the world's time - and Game time is the same in the game's hours, at the default day of 30 real minutes, each real minute 48 game minutes. Danger is the share of a Viking's health it would lose in half an hour of the work, with the group the quest takes and gear of the quest's biome.
+Vikings is how many go - the second number from the Plains on - and up to how many go when the village has more of the tool, or for a hunt, when the village can spare them. Work is how long they're at it once they're there, before the trip there and back, in real time - which is the world's time - and Game time is the same in the game's hours, at the default day of 30 real minutes, each real minute 48 game minutes. Danger is the share of a Viking's health it would lose in half an hour of the work, with the group the quest takes and gear of the quest's biome - see [How Hurt They Come Home](#how-hurt-they-come-home) for what that comes to.
 
 | Quest | Biome from | Vikings | Needs | Goes to | Work | Game time | Danger | Brings back |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -33,7 +33,7 @@ Vikings is how many go - the second number from the Plains on - and up to how ma
 | Hunt ghosts | Black Forest | 2, up to 3 | A torch or circlet, and Zombie Apocalypse, whose silver-lining takes ectoplasm | The nearest burial chambers | 15 min | 12 h | 50% | See [Ghosts](#ghosts) |
 | Hunt trolls | Black Forest | 3 | A torch or circlet | The nearest troll caves | 15 min | 12 h | 80% | See [Trolls](#trolls) |
 | Hunt goblins | Plains | 3, up to 5 | A blast furnace and a kiln | The nearest fuling villages | 20 min | 16 h | 80% | See [Fulings](#fulings) |
-| Kill Eikthyr | Meadows | 2 | 2 deer trophies, which they leave on his altar to summon him - hunted for first when the village has fewer | Eikthyr's altar | 5 min | 4 h | 60% | See [Eikthyr](#eikthyr) |
+| Kill Eikthyr | Meadows | 2 | 2 deer trophies, which they leave on his altar to summon him - hunted for first when the village has fewer | Eikthyr's altar | 5 min | 4 h | 80% | See [Eikthyr](#eikthyr) |
 | Find bees | Meadows | 1 | Fewer than 6 beehives in the village | Ground of the Meadows | 10 min | 8 h | 15% | See [Bees](#bees) |
 | Sell treasure | Meadows | 2 | | Whichever trader they get to soonest of those the village can sell to - Hildir from the Meadows on, Haldor from the Black Forest on and the Bog Witch from the Swamp on | 2 min | 1 h 36 min | 5% | See [Traders](#traders) |
 | Buy a circlet | Swamp | 2 | Coins and treasure enough | Haldor | 2 min | 1 h 36 min | 5% | See [Traders](#traders) |
@@ -228,6 +228,117 @@ Selling treasure, the first of them takes along the village's amber, amber pearl
 - Selling treasure - coins for the treasure, at least 100 worth, since that's when they go
 - Buying a circlet - a Dverger circlet, worn home by the one who needed it, and the coins left over
 
+## How Hurt They Come Home
+
+Each table goes by the biome a Viking's gear comes from - the quest's own biome and the two after it - and for the fewest and the most of them that go, like "2:" and "3:", gives the harm a Viking takes, how much of their health is still missing when they get home ("hurt after"), and their chance of dying out there. A Viking's harm doubles for each biome the quest is harder than their gear and halves for each easier, and goes down with more of them along - rounded down to a whole percent, so far easier quests do none. On the way home their wounds close, so a Viking who ate enough comes home missing 30% of the harm they took, and one who went hungry 70% - more than twice the numbers below - and one who falls below a quarter of their health drinks a healing potion if they took one. Harm past what they have leaves them at 10% of their health. The hunts are for a full day's hunting - 8 prey's time - and go by the biome they hunt in, for the fewest and most hunters a village of that biome sends.
+
+A Viking can die on a quest, though it's rare: 7.5% for the square of the share of their health the quest harms them by, and never when that's under 1% - shown as "-" - so only a quest that takes more than a third of their health can kill them, like a sunken crypt raid at their own biome, at 2.7%. One who dies doesn't come home: the others mourn them by name as they get back, the village remembers them, the neighbors hear of it, and in time another Viking comes in their place - what they carried, and any tool they took, is lost with them. A Viking whose gear is so far behind the quest that they'd be expected to lose all their health never goes on it - like one of the Swamp's gear or easier on a fuling raid - and the quest waits for enough Vikings who can.
+
+### Kill Eikthyr
+
+The Meadows, always 2 of them
+
+| Viking's gear | 2: harm | 2: hurt after | 2: died |
+| --- | --- | --- | --- |
+| Meadows | 13% | 3.9% | - |
+| Black Forest | 6% | 1.8% | - |
+| Swamp | 3% | 0.9% | - |
+
+### Raid Burial Chambers
+
+The Black Forest
+
+| Viking's gear | 2: harm | 2: hurt after | 2: died | 3: harm | 3: hurt after | 3: died |
+| --- | --- | --- | --- | --- | --- | --- |
+| Black Forest | 25% | 7.5% | - | 20% | 6% | - |
+| Swamp | 12% | 3.6% | - | 10% | 3% | - |
+| Mountains | 6% | 1.8% | - | 5% | 1.5% | - |
+
+### Hunt Ghosts
+
+The Black Forest
+
+| Viking's gear | 2: harm | 2: hurt after | 2: died | 3: harm | 3: hurt after | 3: died |
+| --- | --- | --- | --- | --- | --- | --- |
+| Black Forest | 25% | 7.5% | - | 20% | 6% | - |
+| Swamp | 12% | 3.6% | - | 10% | 3% | - |
+| Mountains | 6% | 1.8% | - | 5% | 1.5% | - |
+
+### Hunt Trolls
+
+The Black Forest, always 3 of them
+
+| Viking's gear | 3: harm | 3: hurt after | 3: died |
+| --- | --- | --- | --- |
+| Black Forest | 40% | 12% | 1.2% |
+| Swamp | 20% | 6% | - |
+| Mountains | 10% | 3% | - |
+
+### Raid Sunken Crypts
+
+The Swamp
+
+| Viking's gear | 3: harm | 3: hurt after | 3: died | 5: harm | 5: hurt after | 5: died |
+| --- | --- | --- | --- | --- | --- | --- |
+| Swamp | 60% | 18% | 2.7% | 46% | 13.8% | 1.6% |
+| Mountains | 30% | 9% | - | 23% | 6.9% | - |
+| Plains | 15% | 4.5% | - | 11% | 3.3% | - |
+
+### Hunt Goblins
+
+The Plains
+
+| Viking's gear | 3: harm | 3: hurt after | 3: died | 5: harm | 5: hurt after | 5: died |
+| --- | --- | --- | --- | --- | --- | --- |
+| Plains | 53% | 15.9% | 2.1% | 41% | 12.3% | 1.3% |
+| Mistlands | 26% | 7.8% | - | 20% | 6% | - |
+| Ashlands | 13% | 3.9% | - | 10% | 3% | - |
+
+### Hunt in the Meadows
+
+| Viking's gear | 1: harm | 1: hurt after | 1: died | 3: harm | 3: hurt after | 3: died |
+| --- | --- | --- | --- | --- | --- | --- |
+| Meadows | 8% | 2.4% | - | 4% | 1.2% | - |
+| Black Forest | 4% | 1.2% | - | 2% | 0.6% | - |
+| Swamp | 2% | 0.6% | - | 1% | 0.3% | - |
+
+### Hunt in the Mountains
+
+| Viking's gear | 1: harm | 1: hurt after | 1: died | 3: harm | 3: hurt after | 3: died |
+| --- | --- | --- | --- | --- | --- | --- |
+| Mountains | 8% | 2.4% | - | 4% | 1.2% | - |
+| Plains | 4% | 1.2% | - | 2% | 0.6% | - |
+| Mistlands | 2% | 0.6% | - | 1% | 0.3% | - |
+
+### Hunt in the Plains
+
+| Viking's gear | 3: harm | 3: hurt after | 3: died | 5: harm | 5: hurt after | 5: died |
+| --- | --- | --- | --- | --- | --- | --- |
+| Plains | 8% | 2.4% | - | 6% | 1.8% | - |
+| Mistlands | 4% | 1.2% | - | 3% | 0.9% | - |
+| Ashlands | 2% | 0.6% | - | 1% | 0.3% | - |
+
+### Hunt in the Mistlands
+
+| Viking's gear | 3: harm | 3: hurt after | 3: died | 5: harm | 5: hurt after | 5: died |
+| --- | --- | --- | --- | --- | --- | --- |
+| Mistlands | 8% | 2.4% | - | 6% | 1.8% | - |
+| Ashlands | 4% | 1.2% | - | 3% | 0.9% | - |
+| Deep North | 2% | 0.6% | - | 1% | 0.3% | - |
+
+### Hunt in the Ashlands
+
+| Viking's gear | 3: harm | 3: hurt after | 3: died | 5: harm | 5: hurt after | 5: died |
+| --- | --- | --- | --- | --- | --- | --- |
+| Ashlands | 8% | 2.4% | - | 6% | 1.8% | - |
+| Deep North | 4% | 1.2% | - | 3% | 0.9% | - |
+
+### Hunt in the Deep North
+
+| Viking's gear | 3: harm | 3: hurt after | 3: died | 5: harm | 5: hurt after | 5: died |
+| --- | --- | --- | --- | --- | --- | --- |
+| Deep North | 8% | 2.4% | - | 6% | 1.8% | - |
+
 ## Where They Go and How Long They're Gone
 
 - A quest that goes to a kind of place - crypts, troll caves, fuling villages, traders, Eikthyr's altar - looks at the nearest 6 of them in a straight line. One that goes to ground of a biome looks for the nearest of it each of 8 ways out from the village, up to 6 km, as far as twice the nearest found
@@ -241,7 +352,7 @@ Selling treasure, the first of them takes along the village's amber, amber pearl
 ## On the Way
 
 - Each Viking takes along food for as long as they're gone and up to 2 healing potions - no more than half of any stack in the chests
-- They're hurt by the quest's danger for as long as they're at it - twice as much for each biome the quest is harder than their gear, half for each easier, and more with fewer of them than the quest takes - and come home as hurt as their food couldn't keep up with, drinking a potion when they're badly hurt. They never die on a quest - they come home at 10% health at least
+- They're hurt by the quest's danger for as long as they're at it - twice as much for each biome the quest is harder than their gear, half for each easier, however many, and more with fewer of them than the quest takes, rounded down to a whole percent of their health, so a quest far easier than their gear does them no harm - and come home as hurt as their food couldn't keep up with, drinking a potion when they're badly hurt. A quest's biome is where it works - a hunt's or foraging's the biome they go to, so a Plains village's lox hunt is a Plains quest and its boar hunt a Meadows one, cutting trees the trees' biome, and selling treasure the trader's camp's. Those who come home come home at 10% health at least, and now and then one dies out there and doesn't come home at all - see [How Hurt They Come Home](#how-hurt-they-come-home)
 - They pick a few things along the road - one for every 3 minutes they walk through a biome where something grows, up to 5 each, less one they ate for every 15 minutes on the road - and hunters take a prey for every 5 minutes they walk through a biome with prey, up to 2 each - a lox three eighths as often and a moose or seal half as often - bringing home what it drops. Only biomes no harder than each Viking's own count, so a Meadows Viking crossing the Plains finds nothing there. Those out to mine, raid or hunt ghosts only pick on the way home
 - What they bring home is scaled by the world's resource rate, and their skills rise for the work they did - their weapon skill for every enemy they killed
 

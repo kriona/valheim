@@ -102,15 +102,27 @@ namespace VikingVillages
 			{ QuestKind.HuntGoblins, 0.8f },
 			{ QuestKind.SellTreasure, 0.05f },
 			{ QuestKind.BuyCirclet, 0.05f },
-			{ QuestKind.KillEikthyr, 0.6f },
+			{ QuestKind.KillEikthyr, 0.8f },
 			{ QuestKind.FindBees, 0.15f },
 			{ QuestKind.HuntGhosts, 0.5f }
 		};
 
 		/// <summary>
-		/// The share of a viking's health it comes home at, at least - vikings never die out on a quest
+		/// The share of a viking's health it comes home at, at least, when it comes home
 		/// </summary>
 		public const float HealthFloor = 0.1f;
+
+		/// <summary>
+		/// How likely a viking is to die on a quest that harms it as much as all its health - the chance going by the
+		/// square of the share of its health the quest harms it by, so it's rare on all but the most dangerous quests (see
+		/// DeathChance)
+		/// </summary>
+		public const float DeathChanceFull = 0.075f;
+
+		/// <summary>
+		/// The least chance a viking dies on a quest at all - one less likely than this never dies there
+		/// </summary>
+		public const float DeathChanceLeast = 0.01f;
 
 		/// <summary>
 		/// The share of the harm a viking takes on a quest still with it as it comes home - less when it had food to
@@ -398,8 +410,9 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out the harm a viking takes on a quest - the quest's danger for as long as it's at it, twice as much for
-		/// each biome the quest is harder than the one its gear comes from and half for each easier, and less with more of
-		/// them than the quest takes, more with fewer
+		/// each biome the quest is harder than the one its gear comes from and half for each easier, however many, and
+		/// less with more of them than the quest takes, more with fewer - rounded down to a whole share of its health in
+		/// hundredths, so a quest far easier than its gear does it no harm
 		/// </summary>
 		/// <param name="kind">The quest</param>
 		/// <param name="questBiome">The quest's biome, by VikingGear's order</param>
@@ -411,10 +424,52 @@ namespace VikingVillages
 		/// <returns>The harm, in health</returns>
 		public static float Harm(QuestKind kind, int questBiome, int gearBiome, int group, int wanted, float activeSeconds, float maxHealth)
 		{
-			int gap = System.Math.Max(-3, System.Math.Min(3, questBiome - gearBiome));
-			float biome = (float)System.Math.Pow(2.0, gap);
-			float company = (float)System.Math.Sqrt(System.Math.Max(1, wanted) / (double)System.Math.Max(1, group));
-			return(maxHealth * Danger(kind) * biome * company * System.Math.Max(0f, activeSeconds) / 1800f);
+			return(maxHealth * HarmShare(Danger(kind), questBiome - gearBiome, group, wanted, activeSeconds));
+		}
+
+		/// <summary>
+		/// Checks whether a viking would be expected to lose all its health on a quest, going with as many as the quest
+		/// takes for as long as its work usually takes, which keeps it from going
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <param name="gap">How many biomes the quest is harder than the one the viking's gear comes from, less than 0
+		/// for easier</param>
+		/// <returns>True when it would</returns>
+		public static bool ExpectedToDie(QuestKind kind, int gap)
+		{
+			return(HarmShare(Danger(kind), gap, 1, 1, QuestRules.ActiveSeconds(kind)) >= 1f);
+		}
+
+		/// <summary>
+		/// Works out how likely a viking is to die on a quest - DeathChanceFull for the square of the share of its health
+		/// the quest harms it by, up to all of it, or none at all when that's less than DeathChanceLeast
+		/// </summary>
+		/// <param name="harmShare">The share of its health the quest harms it by (see HarmShare)</param>
+		/// <returns>The chance, 0 or from DeathChanceLeast to DeathChanceFull</returns>
+		public static float DeathChance(float harmShare)
+		{
+			float share = System.Math.Max(0f, System.Math.Min(1f, harmShare));
+			float chance = DeathChanceFull * share * share;
+			return((chance >= DeathChanceLeast) ? chance : 0f);
+		}
+
+		/// <summary>
+		/// Works out the share of its health a viking loses on a quest (see Harm)
+		/// </summary>
+		/// <param name="danger">The quest's danger (see Danger)</param>
+		/// <param name="gap">How many biomes the quest is harder than the one the viking's gear comes from, less than 0
+		/// for easier</param>
+		/// <param name="group">How many went</param>
+		/// <param name="wanted">How many the quest takes</param>
+		/// <param name="activeSeconds">How long they were at it, in seconds</param>
+		/// <returns>The share, rounded down to hundredths</returns>
+		internal static float HarmShare(float danger, int gap, int group, int wanted, float activeSeconds)
+		{
+			double biome = System.Math.Pow(2.0, gap);
+			double company = System.Math.Sqrt(System.Math.Max(1, wanted) / (double)System.Math.Max(1, group));
+			double share = danger * biome * company * System.Math.Max(0f, activeSeconds) / 1800.0;
+			// A sliver more for the rounding, so a share that's exactly whole isn't rounded down for a float's error
+			return((float)(System.Math.Floor(share * 100.0 + 1e-6) / 100.0));
 		}
 
 		/// <summary>

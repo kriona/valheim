@@ -440,16 +440,26 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Brings a group out on a quest into its village all at once, at the one spot found for the first of them - or
-		/// none of them yet, when there's no spot for them, so they come home together - ending the village's quest
+		/// none of them yet, when there's no spot for them, so they come home together - ending the village's quest. Those
+		/// who died on it never come, their deaths noted as the rest come home (see VillageQuests.FellOnQuest)
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns</param>
 		/// <param name="vikings">Its living vikings' ZDOs, added to</param>
 		/// <param name="entry">The group, emptied as they come</param>
 		private static void ArriveTogether(Village village, List<ZDO> vikings, TravelEntry entry)
 		{
-			if (entry.Vikings.Count == 0 || !VillageRespawn.ArrivalSpotFor(village, entry.Vikings[0], entry.From, out Vector3 spot, out bool outside))
+			List<byte[]> fallen = entry.Vikings.FindAll((byte[] snapshot) => VillageQuests.DiedOnQuest(snapshot));
+			List<byte[]> living = entry.Vikings.FindAll((byte[] snapshot) => !fallen.Contains(snapshot));
+			Vector3 spot = Vector3.zero;
+			bool outside = false;
+			if (living.Count > 0 && !VillageRespawn.ArrivalSpotFor(village, living[0], entry.From, out spot, out outside))
 			{
 				return;
+			}
+			foreach (byte[] snapshot in fallen)
+			{
+				VillageQuests.FellOnQuest(village, snapshot);
+				entry.Vikings.Remove(snapshot);
 			}
 			while (entry.Vikings.Count > 0)
 			{

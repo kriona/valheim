@@ -72,6 +72,7 @@ namespace VikingVillages.Tests
 			List<string> lines = new List<string>(QuestSpeech.DepartureLines);
 			lines.AddRange(QuestSpeech.AloneLines);
 			lines.AddRange(QuestSpeech.MournLines);
+			lines.AddRange(QuestSpeech.CompanionMournLines);
 			foreach (string[] answers in QuestSpeech.AwayAnswers.Values)
 			{
 				lines.AddRange(answers);
@@ -109,6 +110,17 @@ namespace VikingVillages.Tests
 			for (int roll = 0; roll < QuestSpeech.MournLines.Length; roll++)
 			{
 				Assert.Contains("Bjorn", QuestSpeech.Mourn("Bjorn", roll));
+			}
+		}
+
+		[Fact]
+		public void MourningACompanionNamesThemAndStartsWithACapital()
+		{
+			for (int roll = 0; roll < QuestSpeech.CompanionMournLines.Length; roll++)
+			{
+				string line = QuestSpeech.MournCompanion("bjorn", roll);
+				Assert.Contains("bjorn", line.ToLowerInvariant());
+				Assert.True(char.IsUpper(line[0]));
 			}
 		}
 	}

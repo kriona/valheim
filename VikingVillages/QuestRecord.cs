@@ -267,7 +267,24 @@ namespace VikingVillages
 		public string Tool = "";
 		public float ToolLeft = -1f;
 		public List<KeyValuePair<string, int>> Used = new List<KeyValuePair<string, int>>();
+
+		/// <summary>
+		/// The share of its health the viking comes home at, or 0 when it died on the quest and never comes home - one
+		/// that comes home has QuestSim.HealthFloor at least
+		/// </summary>
 		public float HealthShare = 1f;
+
+		/// <summary>
+		/// Whether the viking died on the quest (see HealthShare)
+		/// </summary>
+		public bool Died
+		{
+			get
+			{
+				return(HealthShare <= 0f);
+			}
+		}
+
 		public List<KeyValuePair<int, float>> Skills = new List<KeyValuePair<int, float>>();
 		public int Kills;
 		public long SetOutAt;

@@ -173,6 +173,52 @@ namespace VikingVillages.Tests
 			Assert.True(QuestSim.Harm(QuestKind.RaidCrypts, 2, 2, 1, 3, 1800f, 100f) > even);
 		}
 
+		[Theory]
+		[InlineData(0, 0.1f)]
+		[InlineData(-1, 0.05f)]
+		[InlineData(-3, 0.01f)]
+		[InlineData(-4, 0f)]
+		[InlineData(-7, 0f)]
+		[InlineData(4, 1.6f)]
+		public void HarmHasNoCapAndRoundsDownToWholeHundredths(int gap, float expected)
+		{
+			// Eikthyr's danger of 0.6 for his 5 minutes is a tenth of a viking's health at its own biome
+			Assert.Equal(expected, QuestSim.HarmShare(0.6f, gap, 2, 2, 300f), 4);
+		}
+
+		[Theory]
+		[InlineData(0f, 0f)]
+		[InlineData(0.1f, 0f)]
+		[InlineData(0.36f, 0f)]
+		[InlineData(0.4f, 0.012f)]
+		[InlineData(0.6f, 0.027f)]
+		[InlineData(1f, 0.075f)]
+		[InlineData(3f, 0.075f)]
+		public void DeathOnAQuestGoesByTheSquareOfItsHarmFromOnePercent(float harmShare, float expected)
+		{
+			Assert.Equal(expected, QuestSim.DeathChance(harmShare), 5);
+		}
+
+		[Fact]
+		public void NoQuestIsExpectedToKillAVikingOfItsOwnBiome()
+		{
+			foreach (QuestKind kind in System.Enum.GetValues(typeof(QuestKind)))
+			{
+				Assert.False(QuestSim.ExpectedToDie(kind, 0));
+			}
+		}
+
+		[Fact]
+		public void VikingsFarBehindAQuestStayHome()
+		{
+			// A crypt raid takes 60% of a Swamp viking's health, so a Black Forest one would lose all of it
+			Assert.False(QuestSim.ExpectedToDie(QuestKind.RaidCrypts, 0));
+			Assert.True(QuestSim.ExpectedToDie(QuestKind.RaidCrypts, 1));
+			// A fuling raid takes 53% of a Plains viking's health, and a Mountains one would lose all of it
+			Assert.True(QuestSim.ExpectedToDie(QuestKind.HuntGoblins, 1));
+			Assert.False(QuestSim.ExpectedToDie(QuestKind.KillEikthyr, 2));
+		}
+
 		[Fact]
 		public void VikingsEatAFullSetEachTimeTheirFoodWearsOff()
 		{

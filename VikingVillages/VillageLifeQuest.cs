@@ -170,6 +170,7 @@ namespace VikingVillages
 		{
 			foodFoundAt.Clear();
 			foundEmptyAt.Clear();
+			mournedCompanionsAt.Clear();
 		}
 
 		/// <summary>
@@ -188,10 +189,12 @@ namespace VikingVillages
 
 		/// <summary>
 		/// When the viking looks around for the rest of its village on coming home from a quest, in Time.time seconds, or
-		/// less than 0 when it doesn't, and when the quest set out, in ZNet time ticks
+		/// less than 0 when it doesn't, when the quest set out, in ZNet time ticks, and the names of the others who went
+		/// with it
 		/// </summary>
 		private float homecomingAt = -1f;
 		private long questSetOutAt;
+		private List<string> questCompanions = new List<string>();
 
 		/// <summary>
 		/// What the viking still has to say on coming home to a village whose vikings all died, and when it says the next
@@ -201,10 +204,11 @@ namespace VikingVillages
 		private float nextHomecomingLine;
 
 		/// <summary>
-		/// When a viking of each village on this client last came home from a quest to find it empty, by its ZDO, in
-		/// Time.time seconds - so only the first of them cries out
+		/// When a viking of each village on this client last came home from a quest to find it empty, and last mourned
+		/// one of those it went with who died on it, by its ZDO, in Time.time seconds - so only the first of them speaks
 		/// </summary>
 		private static readonly Dictionary<ZDOID, float> foundEmptyAt = new Dictionary<ZDOID, float>();
+		private static readonly Dictionary<ZDOID, float> mournedCompanionsAt = new Dictionary<ZDOID, float>();
 
 		/// <summary>
 		/// Gets how the viking's last quest went, while it's still talking about it - for BackDays after it came home,
@@ -376,7 +380,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Looks around a viking just home from a quest for the rest of its village, a few seconds after it comes in -
 		/// and finding every other viking of it dead, the first of those home on this client cries out and mourns by name
-		/// those who died while it was gone, a line at a time - call it from the viking's Idle
+		/// those who died while it was gone, a line at a time, or else mourns by name those who went with it and died on
+		/// the quest - call it from the viking's Idle
 		/// </summary>
 		private void UpdateHomecoming()
 		{
@@ -393,7 +398,12 @@ namespace VikingVillages
 			long together = NetTime.Now() - NetTime.Ticks(CameHomeTogether);
 			bool others = village.Vikings().Exists((Character other) => other != null && other != humanoid && !other.IsDead() && other.m_nview != null && other.m_nview.IsValid() && other.m_nview.GetZDO().GetLong(VillageQuests.BackAtKey, 0L) < together);
 			ZDOID id = village.Zdo.m_uid;
-			if (others || (foundEmptyAt.TryGetValue(id, out float found) && Time.time - found < CameHomeTogether))
+			if (others)
+			{
+				MournCompanions(id);
+				return;
+			}
+			if (foundEmptyAt.TryGetValue(id, out float found) && Time.time - found < CameHomeTogether)
 			{
 				return;
 			}
@@ -406,6 +416,31 @@ namespace VikingVillages
 			}
 			nextHomecomingLine = Time.time;
 			TestLog.Count("Quests", "came home to an empty village");
+		}
+
+		/// <summary>
+		/// Has the viking, just home from a quest, mourn by name those who went with it and died on it - the first of
+		/// those home on this client, a line at a time
+		/// </summary>
+		/// <param name="id">The village's ZDO</param>
+		private void MournCompanions(ZDOID id)
+		{
+			if (mournedCompanionsAt.TryGetValue(id, out float mourned) && Time.time - mourned < CameHomeTogether)
+			{
+				return;
+			}
+			HashSet<string> went = new HashSet<string>(questCompanions, System.StringComparer.OrdinalIgnoreCase);
+			List<string> fell = VillageFallen.DiedSince(village, questSetOutAt).FindAll((string name) => went.Contains(name));
+			if (fell.Count == 0)
+			{
+				return;
+			}
+			mournedCompanionsAt[id] = Time.time;
+			for (int i = 0; i < fell.Count && i < MournedMax; i++)
+			{
+				homecomingLines.Enqueue(QuestSpeech.MournCompanion(fell[i]));
+			}
+			nextHomecomingLine = Time.time;
 		}
 
 		/// <summary>
@@ -503,7 +538,8 @@ namespace VikingVillages
 		/// Plays out how a quest went for a viking that just came back from it (see QuestOutcome) - using up the food,
 		/// potions and whatever it spent of what it carried, wearing its tool, giving it what it found, its health as it
 		/// comes home and the skills it raised - and has it put away what it brought home, the tools it took too, before
-		/// anything else, even at night. What happened is kept on it to talk about (see VillageQuests.StoryKey)
+		/// anything else, even at night. What happened is kept on it to talk about (see VillageQuests.StoryKey). One that
+		/// died on the quest is noted as fallen and taken out of the world instead
 		/// </summary>
 		private void ReturnFromQuest()
 		{
@@ -516,6 +552,13 @@ namespace VikingVillages
 			zdo.Set(VillageQuests.QuestIdKey, "");
 			Inventory inventory = humanoid.GetInventory();
 			QuestOutcome outcome = QuestOutcome.Decode(zdo.GetByteArray(VillageQuests.QuestOutcomeKey));
+			if (outcome != null && outcome.Died && village != null)
+			{
+				// One that died out there never comes home, wherever it came back into the world
+				VillageQuests.FellOnQuest(village, VillageDeparted.SnapshotOf(zdo));
+				nview.Destroy();
+				return;
+			}
 			if (outcome != null)
 			{
 				PlayOut(outcome);
@@ -524,6 +567,7 @@ namespace VikingVillages
 				zdo.Set(VillageQuests.QuestOutcomeKey, new byte[0]);
 				homecomingAt = Time.time + HomecomingDelay;
 				questSetOutAt = outcome.SetOutAt;
+				questCompanions = new List<string>(outcome.Companions);
 			}
 			bool loot = false;
 			foreach (ItemDrop.ItemData item in inventory.GetAllItems())

@@ -531,9 +531,11 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks the vikings for a quest - those fit to go, for a circlet the one still using torches first, then the
-		/// ones with a tool good enough for it, then the healthiest - and the tool each takes, as many as the village can
-		/// spare (see QuestRules.GroupSize). A quest that takes a tool needs at least one
+		/// Picks the vikings for a quest - those fit to go, leaving home any whose gear is so far behind the quest's biome
+		/// that it would be expected to lose all its health there (see QuestSim.ExpectedToDie), for a circlet the one
+		/// still using torches first, then the ones with a tool good enough for it, then the healthiest - and the tool
+		/// each takes, as many as the village can spare (see QuestRules.GroupSize). A quest that takes a tool needs at
+		/// least one
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="kind">The quest</param>
@@ -550,14 +552,23 @@ namespace VikingVillages
 				return(null);
 			}
 			List<Character> vikings = village.Vikings().FindAll((Character viking) => viking != null && !viking.IsDead());
+			int biome = VillageCooking.VillageBiome(village);
+			int questBiome = QuestGame.QuestBiomeOf(kind, (item ?? ""), biome, RouteBiome(village, kind, (item ?? "")), Mathf.Max(rule.MinBiome, source.MinBiome));
 			List<Humanoid> fit = new List<Humanoid>();
 			foreach (Character character in vikings)
 			{
 				Humanoid humanoid = character as Humanoid;
-				if (humanoid != null && humanoid.GetHealthPercentage() >= 0.75f && VikingIdentity.Get(humanoid.m_nview.GetZDO()).Length > 0)
+				if (humanoid == null || humanoid.GetHealthPercentage() < 0.75f || VikingIdentity.Get(humanoid.m_nview.GetZDO()).Length == 0)
 				{
-					fit.Add(humanoid);
+					continue;
 				}
+				// One whose gear is so far behind the quest that it would be expected to lose all its health stays home
+				VikingCore core = humanoid.GetComponent<VikingCore>();
+				if (QuestSim.ExpectedToDie(kind, questBiome - ((core != null) ? core.BiomeIndex() : biome)))
+				{
+					continue;
+				}
+				fit.Add(humanoid);
 			}
 			List<string> chestTools = new List<string>();
 			if (source.Tool != ToolKind.None)
@@ -589,7 +600,6 @@ namespace VikingVillages
 			{
 				return(null);
 			}
-			int biome = VillageCooking.VillageBiome(village);
 			int size = QuestRules.GroupSize(rule, biome, ((source.Tool != ToolKind.None) ? carried + chestTools.Count : 0), fit.Count, vikings.Count);
 			if (size <= 0)
 			{
@@ -830,6 +840,52 @@ namespace VikingVillages
 			bool gone = values.Ints.Exists((KeyValuePair<int, int> entry) => entry.Key == QuestGoneKey && entry.Value != 0);
 			KeyValuePair<int, Vector3> from = values.Vec3s.Find((KeyValuePair<int, Vector3> entry) => entry.Key == QuestVillageKey);
 			return(gone && from.Key == QuestVillageKey && Utils.DistanceXZ(from.Value, village.Farm) <= FarmMatch);
+		}
+
+		/// <summary>
+		/// Checks whether a viking coming in from the road died on the quest it was out on (see QuestOutcome.Died), from
+		/// the values it was kept as
+		/// </summary>
+		/// <param name="snapshot">The viking's values (see VillageDeparted.SnapshotOf)</param>
+		/// <returns>True when it did</returns>
+		public static bool DiedOnQuest(byte[] snapshot)
+		{
+			VillageDeparted.VikingValues values = VillageDeparted.Decode(snapshot);
+			int at = ((values != null) ? values.Bytes.FindIndex((KeyValuePair<int, byte[]> entry) => entry.Key == QuestOutcomeKey) : -1);
+			QuestOutcome outcome = ((at >= 0) ? QuestOutcome.Decode(values.Bytes[at].Value) : null);
+			return(outcome != null && outcome.Died);
+		}
+
+		/// <summary>
+		/// Notes the death of a viking that died on a quest of a village, as the others come home without it - the way a
+		/// viking dying at home is noted, so another comes in its place in time, the village remembers it by name and the
+		/// neighbors hear of it
+		/// </summary>
+		/// <param name="village">The village, whose generator this client owns</param>
+		/// <param name="snapshot">The viking's values (see VillageDeparted.SnapshotOf)</param>
+		public static void FellOnQuest(Village village, byte[] snapshot)
+		{
+			if (ZRoutedRpc.instance == null)
+			{
+				return;
+			}
+			VillageDeparted.VikingValues values = VillageDeparted.Decode(snapshot);
+			string name = "";
+			string author = "";
+			if (values != null)
+			{
+				VikingNames.ReadRaw(values, out name, out author);
+			}
+			long now = NetTime.Now();
+			ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, VillageRespawn.DeathRpc, village.Farm, now, false);
+			if (name.Length > 0)
+			{
+				ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, VillageFallen.FallenRpc, village.Farm, name, author, now);
+			}
+			string shown = VikingNames.Filter(name, author).RemoveRichTextTags().Trim();
+			NeighborNews.Report(NeighborEvent.Death, village.Farm, VillageNames.Get(village), shown);
+			TestLog.Count("Quests", "vikings who died on one");
+			Plugin.Log.LogInfo("Quest: " + ((shown.Length > 0) ? shown : "a viking") + " of the village at " + village.Farm.ToString("F0") + " died on it and didn't come home");
 		}
 
 		/// <summary>
