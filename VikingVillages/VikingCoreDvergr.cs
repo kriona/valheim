@@ -31,7 +31,7 @@ namespace Kriona.Vikings
 		{
 			if (dvergrPrefab == null)
 			{
-				dvergrPrefab = BuildPrefab<DvergrVikingBody, DvergrVikingAI>(scene, DvergrPrefabName, Character.Faction.Dverger, (GameObject viking, MonsterAI ai) => FinishDvergr(scene, ai));
+				dvergrPrefab = BuildPrefab<DvergrVikingBody, DvergrVikingAI>(scene, DvergrPrefabName, Character.Faction.Dverger, (GameObject viking, MonsterAI ai) => FinishDvergr(scene, viking, ai));
 			}
 			if (dvergrPrefab == null)
 			{
@@ -43,12 +43,15 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Sets up what only a dvergr viking's prefab has - provoked like the dvergr, by a player hurting it or a dvergr
-		/// near it, quiet, and wandering around where it stands as far and as often as the dvergr do
+		/// near it, quiet, wandering around where it stands as far and as often as the dvergr do, and waving and moving
+		/// its mouth as it talks the way a living viking does (see VikingPoses)
 		/// </summary>
 		/// <param name="scene">The world's ZNetScene</param>
-		/// <param name="ai">The prefab's AI</param>
-		private static void FinishDvergr(ZNetScene scene, MonsterAI ai)
+		/// <param name="viking">The prefab</param>
+		/// <param name="ai">Its AI</param>
+		private static void FinishDvergr(ZNetScene scene, GameObject viking, MonsterAI ai)
 		{
+			VikingPoses.AddTo(viking);
 			ai.m_aggravatable = true;
 			ai.m_idleSound = new EffectList();
 			ai.m_alertedEffects = new EffectList();

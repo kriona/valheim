@@ -763,7 +763,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Has a viking that just reached a new level of a skill say how proud it is, every ProudInterval seconds at
 		/// most, as a line nothing else it says covers up while it shows - less likely the farther it is from the nearest
-		/// player (see ProudChance), so a village doesn't fill the air with bragging nobody's near enough to hear
+		/// player (see ProudChance), so a village doesn't fill the air with bragging nobody's near enough to hear. A
+		/// dvergr viking says one of its own lines (see DvergrSpeech)
 		/// </summary>
 		/// <param name="viking">The viking, owned by this client</param>
 		/// <param name="skill">The skill</param>
@@ -784,7 +785,8 @@ namespace VikingVillages
 			{
 				name = skill.ToString().ToLowerInvariant();
 			}
-			SayFirst(viking, string.Format(Pick(ProudLines), name, level), ProudTime, CallCull);
+			string[] lines = (VikingCore.IsDvergrViking(viking) ? DvergrSpeech.ProudLines : ProudLines);
+			SayFirst(viking, string.Format(Pick(lines), name, level), ProudTime, CallCull);
 		}
 
 		/// <summary>

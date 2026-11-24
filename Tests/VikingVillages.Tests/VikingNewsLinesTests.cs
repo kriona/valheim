@@ -21,7 +21,16 @@ namespace VikingVillages.Tests
 			"tree/sea",
 			"tree/boss",
 			"death/creature",
-			"death/player"
+			"death/player",
+			"dvergr/boss",
+			"dvergr/miniboss",
+			"dvergr/trader",
+			"dvergr/tame",
+			"dvergr/tree",
+			"dvergr/serpent",
+			"dvergr/death/creature",
+			"dvergr/death/boss",
+			"dvergr/death/player"
 		};
 
 		/// <summary>

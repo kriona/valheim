@@ -198,6 +198,7 @@ namespace VikingVillages
 			{ "Serpent", "serpent" },
 			{ "BonemawSerpent", "bonemaw" },
 			{ VikingCore.LivingPrefabName, "viking" },
+			{ VikingCore.DvergrPrefabName, "dvergr" },
 			{ VikingCore.ZombiePrefabName, "zombieviking" }
 		};
 
@@ -212,7 +213,7 @@ namespace VikingVillages
 				return(pools);
 			}
 			Dictionary<string, string[]> all = new Dictionary<string, string[]>();
-			foreach (Dictionary<string, string[]> table in new[] { DeedPools, DeathPools, FeatPools })
+			foreach (Dictionary<string, string[]> table in new[] { DeedPools, DeathPools, FeatPools, DvergrPools })
 			{
 				foreach (KeyValuePair<string, string[]> pool in table)
 				{
@@ -395,8 +396,26 @@ namespace VikingVillages
 		/// <returns>What the viking says, or null when every line has been said</returns>
 		public static string Choose(VikingNews.Event news, int vikingBiome, string player, string creature, Func<int, int> pick, out int line)
 		{
+			return(Choose(news, vikingBiome, player, creature, pick, out line, false));
+		}
+
+		/// <summary>
+		/// Picks what a living or dvergr viking says about an event - a line of its kind's pool no viking has said about
+		/// it yet (see PoolKey and DvergrPoolKey), with a sentence of its kind's after it when it's a boss or biome beyond
+		/// the viking's own - and fills in the player's and creature's names
+		/// </summary>
+		/// <param name="news">The event</param>
+		/// <param name="vikingBiome">The index of the viking's biome (see VikingGear.Biomes)</param>
+		/// <param name="player">The name of the player it's said to</param>
+		/// <param name="creature">The name of the creature it's about, or ""</param>
+		/// <param name="pick">Picks a number from 0 up to, but not including, the one given</param>
+		/// <param name="line">Set to the stable hash of the line picked, to note it said</param>
+		/// <param name="dvergr">True for a dvergr viking</param>
+		/// <returns>What the viking says, or null when every line has been said</returns>
+		public static string Choose(VikingNews.Event news, int vikingBiome, string player, string creature, Func<int, int> pick, out int line, bool dvergr)
+		{
 			line = 0;
-			if (!Pools().TryGetValue(PoolKey(news), out string[] pool))
+			if (!Pools().TryGetValue((dvergr ? DvergrPoolKey(news) : PoolKey(news)), out string[] pool))
 			{
 				return(null);
 			}
@@ -415,6 +434,10 @@ namespace VikingVillages
 			string said = unused[pick(unused.Count)];
 			line = said.GetStableHashCode();
 			string impressed = ImpressedKey(news, vikingBiome);
+			if (impressed != null && dvergr)
+			{
+				impressed = DvergrPrefix + impressed;
+			}
 			if (impressed != null && Pools().TryGetValue(impressed, out string[] after) && after.Length > 0)
 			{
 				said += " " + after[pick(after.Length)];

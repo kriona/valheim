@@ -388,7 +388,19 @@ namespace VikingVillages
 			zdo.Set(UsingKey, power + 1);
 			zdo.Set(UsingUntilKey, now + NetTime.Ticks(UseTime));
 			string name = Localization.instance.Localize(effect.m_name);
-			string line = ((pupil != null) ? VikingSpeech.PowerTaught(name, VikingNames.Get(pupil)) : VikingSpeech.PowerUsed(name));
+			string line;
+			if (pupil != null)
+			{
+				line = VikingSpeech.PowerTaught(name, VikingNames.Get(pupil));
+			}
+			else if (VikingCore.IsDvergrViking(viking))
+			{
+				line = DvergrSpeech.PowerUsed(name);
+			}
+			else
+			{
+				line = VikingSpeech.PowerUsed(name);
+			}
 			VikingSpeech.SayFirst(viking, line, VikingSpeech.TalkTime, VikingSpeech.CallCull);
 			own.StartPower(Hashes[power]);
 			return(true);

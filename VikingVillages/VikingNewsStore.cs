@@ -151,8 +151,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Has a living viking tell a player the latest news about them, on the viking's owner, noting that it talked to
-		/// them now either way - so it only ever brings up news from after it last talked to them
+		/// Has a living or dvergr viking tell a player the latest news about them, in its kind's words, on the viking's
+		/// owner, noting that it talked to them now either way - so it only ever brings up news from after it last talked
+		/// to them
 		/// </summary>
 		/// <param name="viking">The viking, owned by this client</param>
 		/// <param name="player">The player it's talking to, who it already knows</param>
@@ -175,7 +176,7 @@ namespace VikingVillages
 			{
 				return(null);
 			}
-			string line = VikingNewsLines.Choose(latest, vikingBiome, player.GetPlayerName(), CreatureName(latest.Detail), (int count) => Random.Range(0, count), out int hash);
+			string line = VikingNewsLines.Choose(latest, vikingBiome, player.GetPlayerName(), CreatureName(latest.Detail), (int count) => Random.Range(0, count), out int hash, VikingCore.IsDvergrViking(viking));
 			if (line == null)
 			{
 				return(null);

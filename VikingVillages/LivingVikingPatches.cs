@@ -8,7 +8,7 @@ namespace VikingVillages
 	/// <summary>
 	/// Shares a player's forsaken power with the living vikings, dvergr vikings and dvergr near them, the way the game
 	/// shares it with the players near them - every one that isn't hostile to the player gets the power's effect too -
-	/// and has one or two of the living vikings awake thank the player for it
+	/// and has one or two of the vikings awake thank the player for it
 	/// </summary>
 	[HarmonyPatch(typeof(Player), nameof(Player.ActivateGuardianPower))]
 	public static class VikingSharedPowerPatch
@@ -35,8 +35,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Gives the power's effect to the living vikings, dvergr vikings and dvergr within PowerReach that aren't angry
-		/// at the player once it's used, on the client that owns each, and has one or two of the living vikings thank
-		/// the player (see Thank)
+		/// at the player once it's used, on the client that owns each, and has one or two of the vikings thank the
+		/// player (see Thank)
 		/// </summary>
 		/// <param name="__instance">The player</param>
 		/// <param name="__state">Whether it was used</param>
@@ -55,7 +55,7 @@ namespace VikingVillages
 				if (dvergr && !character.IsDead() && !BaseAI.IsEnemy(character, __instance) && Vector3.Distance(character.transform.position, __instance.transform.position) <= PowerReach)
 				{
 					character.GetSEMan().AddStatusEffect(effect, true, 0, 0f, -1);
-					if (VikingCore.IsLivingViking(character))
+					if (VikingCore.IsLivingOrDvergr(character))
 					{
 						given.Add(character);
 					}
@@ -66,7 +66,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Has one of the vikings given a player's power thank them for it, or one or two when there are more, picked at
-		/// random among those awake - each with a line of its own, by the player's name once it knows them
+		/// random among those awake - each with a line of its own, from its kind's lines, by the player's name once it
+		/// knows them
 		/// </summary>
 		/// <param name="player">The player</param>
 		/// <param name="given">The vikings given the power</param>
@@ -86,9 +87,32 @@ namespace VikingVillages
 				awake.RemoveAt(picked);
 			}
 			string power = Localization.instance.Localize(player.m_guardianSE.m_name);
-			List<string> names = speakers.ConvertAll((Character viking) => (VikingSpeech.Knows(viking, player.GetPlayerID()) ? player.GetPlayerName() : Stranger));
-			List<string> lines = VikingSpeech.PowerShared(power, names);
-			for (int i = 0; i < lines.Count; i++)
+			List<Character> living = speakers.FindAll((Character viking) => !VikingCore.IsDvergrViking(viking));
+			List<Character> hired = speakers.FindAll((Character viking) => VikingCore.IsDvergrViking(viking));
+			SayThanks(living, VikingSpeech.PowerShared(power, Names(player, living, Stranger)));
+			SayThanks(hired, DvergrSpeech.PowerShared(power, Names(player, hired, DvergrSpeech.Stranger)));
+		}
+
+		/// <summary>
+		/// Lists what each viking calls a player - their name once it knows them, or what it calls a stranger
+		/// </summary>
+		/// <param name="player">The player</param>
+		/// <param name="vikings">The vikings</param>
+		/// <param name="stranger">What they call a player they don't know</param>
+		/// <returns>The names, one for each viking</returns>
+		private static List<string> Names(Player player, List<Character> vikings, string stranger)
+		{
+			return(vikings.ConvertAll((Character viking) => (VikingSpeech.Knows(viking, player.GetPlayerID()) ? player.GetPlayerName() : stranger)));
+		}
+
+		/// <summary>
+		/// Has each viking say its line of thanks
+		/// </summary>
+		/// <param name="speakers">The vikings</param>
+		/// <param name="lines">Their lines, one for each, in the same order</param>
+		private static void SayThanks(List<Character> speakers, List<string> lines)
+		{
+			for (int i = 0; i < lines.Count && i < speakers.Count; i++)
 			{
 				VikingSpeech.Say(speakers[i], lines[i], VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 			}

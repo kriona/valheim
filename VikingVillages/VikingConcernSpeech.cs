@@ -224,7 +224,7 @@ namespace VikingVillages
 			bool night = EnvMan.IsNight();
 			foreach (Character character in Character.GetAllCharacters())
 			{
-				if (!(character is LivingVikingBody) || character.IsDead() || BaseAI.IsEnemy(character, player))
+				if (!VikingCore.IsLivingViking(character) || character.IsDead() || BaseAI.IsEnemy(character, player))
 				{
 					continue;
 				}

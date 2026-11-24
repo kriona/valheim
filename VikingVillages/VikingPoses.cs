@@ -569,14 +569,14 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds a living viking's poses when this client owns it and it's alive, clearing what an earlier owner left
-		/// first
+		/// Finds a living or dvergr viking's poses when this client owns it and it's alive, clearing what an earlier owner
+		/// left first
 		/// </summary>
 		/// <param name="viking">The viking</param>
 		/// <returns>Its poses, or null</returns>
 		private static VikingPoses Owned(Character viking)
 		{
-			if (viking == null || !VikingCore.IsLivingViking(viking) || !viking.m_nview.IsOwner() || viking.IsDead())
+			if (viking == null || !VikingCore.IsLivingOrDvergr(viking) || !viking.m_nview.IsOwner() || viking.IsDead())
 			{
 				return(null);
 			}

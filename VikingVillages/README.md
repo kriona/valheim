@@ -278,7 +278,8 @@ Some Vikings have taken work with the Dvergr in the Mistlands. A Dvergr Viking i
 - They're on the Dvergr's side - the Dvergr, Dvergr Vikings and living Vikings never hurt each other. Like the Dvergr, they can be hit with PvP off, and the console's kill commands kill them. Hurt one, or a Dvergr near one, and every Dvergr, Dvergr Viking and living Viking within 20 meters turns on you - and like the Dvergr, a Dvergr Viking stays angry
 - They fight like zombie Vikings: the health and damage of a Mistlands zombie Viking, one star as often as the game gives the creatures it spawns there, and a pause between swings - but their armor protects them in full
 - Like living Vikings, they have the Mistlands' gear, fully repaired, with a Dverger circlet they light at night, and a name of their own - they're plain Viking to you until they know you. Their skills rise as they use them
-- You can't name them or open their inventory
+- They have words of their own, about working for the Dvergr and how they came to be hired - greeting you as you arrive and when you talk to them, calling out the enemies they go after, shouting for help when they're badly hurt, and passing on your news the way living Vikings do, sharing only the living Vikings' lines about the Mistlands (see [DIALOG.md](DIALOG.md))
+- You can talk to them, but can't name them or open their inventory
 - They know the forsaken powers up to Yagluth's, learn the ones they're given, and use them in fights and when badly hurt (see Forsaken Powers)
 - When they die they drop 100-140 coins and 0-2 entrails, multiplied by their stars, and each piece of their gear has a chance to drop (see Configuration)
 
