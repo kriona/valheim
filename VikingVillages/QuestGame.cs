@@ -167,6 +167,11 @@ namespace VikingVillages
 			for (int i = 0; i < members.Count; i++)
 			{
 				record.Plans[i].Loot = Ordered(shares[i], record.Item);
+				if ((record.Kind == QuestKind.SellTreasure || record.Kind == QuestKind.BuyCirclet) && record.Plans[i].Spend.Count > 0)
+				{
+					// What a trade brings home is worked out again as the viking leaves, from what it really took along
+					record.Plans[i].Loot = PlannedTrade(record.Kind, record.Plans[i].Spend);
+				}
 			}
 			FightResult fight = QuestFightGame.Fight(record.Kind, members);
 			if (fight != null)
@@ -668,9 +673,7 @@ namespace VikingVillages
 					purse.Add(item);
 				}
 			}
-			ResourceBook book = ResourceBookGame.Get();
-			QuestRule rule = ((book != null) ? book.RuleOf(QuestKind.BuyCirclet) : null);
-			outcome.Loot = QuestLoot.Trade(kind, coins, value, ((rule != null) ? rule.Coins : int.MaxValue), out bool spends);
+			outcome.Loot = QuestLoot.Trade(kind, coins, value, CircletPrice(), out bool spends);
 			if (!spends)
 			{
 				return;
@@ -679,6 +682,43 @@ namespace VikingVillages
 			{
 				outcome.Used.Add(new KeyValuePair<string, int>(item.m_dropPrefab.name, item.m_stack));
 			}
+		}
+
+		/// <summary>
+		/// Works out what a viking trading with Haldor is planned to bring home for what it's to take along from the
+		/// village's chests (see QuestLoot.Trade), the way Trade works it out as it leaves
+		/// </summary>
+		/// <param name="kind">The quest - selling treasure or buying a circlet</param>
+		/// <param name="spend">What it's to take along, each item's prefab name and how many</param>
+		/// <returns>What it brings home, each item and how many</returns>
+		private static List<KeyValuePair<string, int>> PlannedTrade(QuestKind kind, List<KeyValuePair<string, int>> spend)
+		{
+			int coins = 0;
+			int value = 0;
+			foreach (KeyValuePair<string, int> entry in spend)
+			{
+				if (entry.Key == ResourceBook.Coins)
+				{
+					coins += entry.Value;
+				}
+				else if (System.Array.IndexOf(ResourceBook.Treasure, entry.Key) >= 0)
+				{
+					ItemDrop.ItemData data = ItemData(entry.Key);
+					value += ((data != null) ? entry.Value * data.m_shared.m_value : 0);
+				}
+			}
+			return(QuestLoot.Trade(kind, coins, value, CircletPrice(), out bool _));
+		}
+
+		/// <summary>
+		/// Gets what a Dverger circlet costs at Haldor's
+		/// </summary>
+		/// <returns>The price in coins, or int.MaxValue when it isn't known</returns>
+		private static int CircletPrice()
+		{
+			ResourceBook book = ResourceBookGame.Get();
+			QuestRule rule = ((book != null) ? book.RuleOf(QuestKind.BuyCirclet) : null);
+			return((rule != null) ? rule.Coins : int.MaxValue);
 		}
 
 		/// <summary>
