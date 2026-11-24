@@ -9178,12 +9178,13 @@ namespace VikingVillages
 		/// <summary>
 		/// Checks whether it's time for the viking to go to bed - once it's night and its own delay has passed, picked
 		/// the first time it's asked each night (see SpreadDelay), so the village doesn't all head to bed at once. The
-		/// pick is forgotten as the viking picks its jobs by day (see ChooseJob)
+		/// pick is forgotten as the viking picks its jobs by day (see ChooseJob). Once the players have slept through the
+		/// night, it never is until the next night, so no viking goes to bed in the morning they woke to (see SleepSkip)
 		/// </summary>
 		/// <returns>True when it is</returns>
 		private bool Bedtime()
 		{
-			if (!IsNight())
+			if (!IsNight() || SleepSkip.SleptThroughNight())
 			{
 				return(false);
 			}
@@ -9622,7 +9623,11 @@ namespace VikingVillages
 				text.Append("Job: none\n");
 			}
 			// Tonight's bedtime is picked the first time it's asked for at night (see Bedtime)
-			if (IsNight() && bedAt >= 0f)
+			if (IsNight() && SleepSkip.SleptThroughNight())
+			{
+				text.Append("Bedtime: none, the night was slept through\n");
+			}
+			else if (IsNight() && bedAt >= 0f)
 			{
 				float left = bedAt - Time.time;
 				text.Append("Bedtime: " + ((left > 0f) ? "in " + left.ToString("F0") + "s" : "passed " + (-left).ToString("F0") + "s ago") + "\n");
@@ -15580,6 +15585,11 @@ namespace VikingVillages
 				if (!IsNight())
 				{
 					return(WakeUp());
+				}
+				// Once the players have slept through the night, one still on its way to bed stays up (see Bedtime)
+				if (!settled && SleepSkip.SleptThroughNight())
+				{
+					return(true);
 				}
 				// A viking picked as the watch after it settled down gets up to keep watch, with a word when it was asleep in
 				// bed - woken by the one handing it over, most likely
