@@ -66,8 +66,8 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Rolls a new dvergr viking's look, health, skill, power and gear for the Mistlands, where the dvergr hire them -
-		/// its gear all of the Mistlands and fully repaired like a living viking's, with a dverger circlet for light -
-		/// and names it
+		/// its gear all of the Mistlands and fully repaired like a living viking's, with a dverger circlet for light and
+		/// a wisp light against the mist - and names it
 		/// </summary>
 		private void GenerateDvergr()
 		{
@@ -76,6 +76,7 @@ namespace Kriona.Vikings
 			Arms arms = VikingGear.LivingArms(index, false, Random.value);
 			Inventory gear = VikingGear.RollLoadout(index, humanoid.GetLevel(), rolled, true, arms, true, true);
 			gear.AddItem((VikingGear.LivingCirclet(index, Random.value) ? VikingGear.CircletPrefab : TorchPrefab), 1, 1, 0, 0L, "", false);
+			VikingGear.AddWisp(gear);
 			ZDO zdo = SaveGenerated(rolled, gear);
 			VikingNames.GiveName(zdo, rolled, false);
 		}

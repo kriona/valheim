@@ -888,7 +888,7 @@ namespace VikingVillages
 				linked.Add(neighbor.Center);
 			}
 			grid.MarkPath(path);
-			bool hasFire = HasBonfire(farm);
+			bool hasFire = FindBonfire(farm, out Vector3 standingFire);
 			Vector3 fireSpot = farm;
 			bool flatten = false;
 			if (!hasFire && !FindFireSpot(grid, farm, out fireSpot, out flatten))
@@ -906,6 +906,12 @@ namespace VikingVillages
 					legs.Add(portalSite.Leg);
 					path.AddRange(portalSite.Leg);
 				}
+			}
+			// A village of the Mistlands lights its ground with wisps, found once the portal's path is in
+			VillageWisps.Plan wisps = null;
+			if (VillageWisps.GetsWisps(biome))
+			{
+				wisps = VillageWisps.Find(grid, (hasFire ? standingFire : fireSpot), farm, zdo.GetFloat(VillageFarmhouses.FenceKey, VillageFarmhouses.FenceRadiusMax), legs);
 			}
 			Reshape(grid, min, max);
 			// Before the paths, so their paint goes on over the cleared ground
@@ -928,6 +934,10 @@ namespace VikingVillages
 			if (!hasFire)
 			{
 				PlaceBonfire(fireSpot, flatten);
+			}
+			if (wisps != null)
+			{
+				VillageWisps.Build(wisps, farm);
 			}
 			zdo.Set(PathsLaidKey, true);
 			zdo.Set(BridgedKey, true);
@@ -1485,16 +1495,19 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a village's bonfire already burns within BonfireSearch of a point
+		/// Finds a village's bonfire already burning within BonfireSearch of a point
 		/// </summary>
 		/// <param name="point">The point</param>
+		/// <param name="at">Set to where the bonfire stands, or the point when there's none</param>
 		/// <returns>True when one does</returns>
-		private static bool HasBonfire(Vector3 point)
+		private static bool FindBonfire(Vector3 point, out Vector3 at)
 		{
+			at = point;
 			foreach (KeyValuePair<ZDO, ZNetView> instance in ZNetScene.instance.m_instances)
 			{
 				if (instance.Key.GetBool(BonfireKey) && Utils.DistanceXZ(instance.Key.GetPosition(), point) <= BonfireSearch)
 				{
+					at = instance.Key.GetPosition();
 					return(true);
 				}
 			}

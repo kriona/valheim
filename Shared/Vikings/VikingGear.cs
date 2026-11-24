@@ -351,6 +351,30 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
+		/// The wisp light a living viking of the Mistlands wears, which pushes back the mist around it
+		/// </summary>
+		public const string WispPrefab = "Demister";
+
+		/// <summary>
+		/// Checks whether a living viking of a biome starts with a wisp light - one of the Mistlands
+		/// </summary>
+		/// <param name="index">The index of its biome</param>
+		/// <returns>True when it does</returns>
+		internal static bool LivingWisp(int index)
+		{
+			return(index == IndexOf(Heightmap.Biome.Mistlands));
+		}
+
+		/// <summary>
+		/// Gives a viking a wisp light, worn
+		/// </summary>
+		/// <param name="inventory">Its inventory</param>
+		public static void AddWisp(Inventory inventory)
+		{
+			Wear(inventory, MakeItem(WispPrefab, 1, 1), false);
+		}
+
+		/// <summary>
 		/// Rolls a viking of the world's armor, weapon, ammo and shield from its biome and the one before, by the chances
 		/// in the config, upgraded once for each of its stars when ZombieStarsUpgradeGear is on, with each piece marked as
 		/// worn. From the Mountains on it always wears a cape - its set's, or its biome's when its set has none or it

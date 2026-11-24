@@ -337,5 +337,17 @@ namespace Kriona.Vikings.Tests
 			}
 			Assert.Equal(circlets, count);
 		}
+
+		/// <summary>
+		/// Checks that only a living viking of the Mistlands starts with a wisp light
+		/// </summary>
+		[Fact]
+		public void OnlyTheMistlandsStartWithAWisp()
+		{
+			for (int i = 0; i < VikingGear.Biomes.Length; i++)
+			{
+				Assert.Equal(VikingGear.Biomes[i].Biome == Heightmap.Biome.Mistlands, VikingGear.LivingWisp(i));
+			}
+		}
 	}
 }

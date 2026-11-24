@@ -7,7 +7,7 @@ namespace VikingVillages
 	/// <summary>
 	/// Pushes back the fog around a village's burning bonfire or campfire - the nearer the camera is to it, the thinner
 	/// the weather's fog, down to ClearShare of it within ClearReach and back to all of it by FadeReach - fading in and
-	/// out as a fire lights or goes out
+	/// out as a fire lights or goes out. A fire in the Mistlands leaves the mist as it is
 	/// </summary>
 	/// <remarks>
 	/// The game's fog is one density for everything in view, set from the weather every update (see EnvMan.SetEnv), so
@@ -95,7 +95,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Notes where the loaded villages' fires are that are burning, while villages are on
+		/// Notes where the loaded villages' fires are that are burning, while villages are on - but for those in the
+		/// Mistlands, whose mist a fire doesn't push back, which their wisp lights do (see VillageWisps)
 		/// </summary>
 		private static void FindFires()
 		{
@@ -107,11 +108,21 @@ namespace VikingVillages
 			foreach (Village village in Village.Loaded())
 			{
 				Fireplace fire = village.Fire();
-				if (fire != null && fire.m_nview != null && fire.m_nview.IsValid() && fire.IsBurning())
+				if (fire != null && fire.m_nview != null && fire.m_nview.IsValid() && fire.IsBurning() && !InMistlands(fire.transform.position))
 				{
 					fires.Add(fire.transform.position);
 				}
 			}
+		}
+
+		/// <summary>
+		/// Checks whether a spot is in the Mistlands
+		/// </summary>
+		/// <param name="point">The spot</param>
+		/// <returns>True when it is</returns>
+		private static bool InMistlands(Vector3 point)
+		{
+			return(WorldGenerator.instance != null && WorldGenerator.instance.GetBiome(point) == Heightmap.Biome.Mistlands);
 		}
 	}
 }

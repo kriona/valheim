@@ -91,6 +91,11 @@ namespace Kriona.Vikings
 			Inventory gear = VikingGear.RollLoadout(index, humanoid.GetLevel(), rolled, true, arms, true, true);
 			// It starts with a torch of its own for the night, or a dverger circlet, more often the harder its biome
 			gear.AddItem((VikingGear.LivingCirclet(index, Random.value) ? VikingGear.CircletPrefab : TorchPrefab), 1, 1, 0, 0L, "", false);
+			// A viking of the Mistlands wears a wisp light against the mist
+			if (VikingGear.LivingWisp(index))
+			{
+				VikingGear.AddWisp(gear);
+			}
 			ZDO zdo = SaveGenerated(rolled, gear);
 			// It's named for whether it's a man or a woman - model 1 is a woman's
 			VikingNames.GiveName(zdo, rolled, false);
