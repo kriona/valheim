@@ -89,6 +89,9 @@ namespace Kriona.Vikings
 			// archer has a bow
 			Arms arms = VikingGear.LivingArms(index, nview.GetZDO().GetBool(ArcherKey), Random.value);
 			Inventory gear = VikingGear.RollLoadout(index, humanoid.GetLevel(), rolled, true, arms, true, true);
+			// With Zombie Apocalypse, from the Mountains on, its weapons may be silver-lined and its bow come with silver
+			// arrows
+			VikingSilver.Arm(gear, index);
 			// It starts with a torch of its own for the night, or a dverger circlet, more often the harder its biome
 			gear.AddItem((VikingGear.LivingCirclet(index, Random.value) ? VikingGear.CircletPrefab : TorchPrefab), 1, 1, 0, 0L, "", false);
 			// A viking of the Mistlands wears a wisp light against the mist

@@ -26,6 +26,11 @@ namespace VikingVillages
 		public static readonly int GoalStepKey = "kriona.VikingVillages.villageGoalStep".GetStableHashCode();
 
 		/// <summary>
+		/// Put in front of a weapon's prefab name for the goal of lining it with silver, with Zombie Apocalypse
+		/// </summary>
+		private const string LiningGoalPrefix = "line:";
+
+		/// <summary>
 		/// Seconds between the looks at each village's goal this client runs
 		/// </summary>
 		private const float GoalInterval = 60f;
@@ -139,7 +144,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Checks whether some viking of the village would still take up a goal - a new piece over its own, or for an
-		/// upgrade, a piece it has at the quality just below
+		/// upgrade, a piece it has at the quality just below, or for a lining, a weapon of its own it could line
 		/// </summary>
 		/// <param name="vikings">The village's vikings</param>
 		/// <param name="prefab">The piece's prefab name</param>
@@ -147,7 +152,9 @@ namespace VikingVillages
 		/// <returns>True when one would</returns>
 		private static bool StillWanted(List<Character> vikings, string prefab, int quality)
 		{
-			ItemDrop.ItemData item = ItemOf(prefab);
+			bool lining = prefab.StartsWith(LiningGoalPrefix);
+			string weapon = (lining ? prefab.Substring(LiningGoalPrefix.Length) : prefab);
+			ItemDrop.ItemData item = ItemOf(weapon);
 			if (item == null)
 			{
 				return(false);
@@ -158,6 +165,14 @@ namespace VikingVillages
 				Humanoid humanoid = character as Humanoid;
 				if (core == null || humanoid == null)
 				{
+					continue;
+				}
+				if (lining)
+				{
+					if (LineableWeapons(core, humanoid).Exists((ItemDrop.ItemData own) => own.m_dropPrefab.name == weapon))
+					{
+						return(true);
+					}
 					continue;
 				}
 				if (quality <= 1 && core.WouldTakeUp(item))
@@ -234,7 +249,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Lists what a viking could work toward, in the order it's wanted - upgrades of the pieces it wears, lowest
 		/// quality first, then of each kind of gear in the order of CraftedGearKinds, the craftable pieces it would take
-		/// up over its own, least worth first
+		/// up over its own, least worth first, and last, with Zombie Apocalypse, lining the weapons it keeps with silver
 		/// </summary>
 		/// <param name="humanoid">The viking</param>
 		/// <returns>The candidates</returns>
@@ -281,6 +296,14 @@ namespace VikingVillages
 					}
 				}
 			}
+			foreach (ItemDrop.ItemData weapon in LineableWeapons(core, humanoid))
+			{
+				GoalCandidate lining = GoalNeeds(LiningGoalPrefix + weapon.m_dropPrefab.name, 1);
+				if (lining != null)
+				{
+					candidates.Add(lining);
+				}
+			}
 			return(candidates);
 		}
 
@@ -289,11 +312,16 @@ namespace VikingVillages
 		/// to that quality takes (see CraftAmount), and its station, at the level that quality needs, which the planner
 		/// counts as one more thing the village needs
 		/// </summary>
-		/// <param name="prefab">The piece's prefab name</param>
+		/// <param name="prefab">The piece's prefab name, or LiningGoalPrefix and a weapon's for lining it with silver (see
+		/// LiningNeeds)</param>
 		/// <param name="quality">The quality - 1 for a new piece</param>
 		/// <returns>The candidate, or null when the game has no recipe for it</returns>
 		private static GoalCandidate GoalNeeds(string prefab, int quality)
 		{
+			if (prefab.StartsWith(LiningGoalPrefix))
+			{
+				return(LiningNeeds(prefab));
+			}
 			Recipe recipe = ((ObjectDB.instance != null) ? ObjectDB.instance.m_recipes.Find((Recipe candidate) => Crafts(candidate) && candidate.m_item.gameObject.name == prefab) : null);
 			if (recipe == null)
 			{
@@ -313,6 +341,36 @@ namespace VikingVillages
 				}
 			}
 			return(goal);
+		}
+
+		/// <summary>
+		/// Works out what lining a weapon with silver takes, from Zombie Apocalypse's recipe for it - its silver and
+		/// ectoplasm, and its forge at the recipe's level, which the planner counts as one more thing the village needs
+		/// </summary>
+		/// <param name="goal">LiningGoalPrefix and the weapon's prefab name</param>
+		/// <returns>The candidate, or null when the weapon can't be lined, as without Zombie Apocalypse</returns>
+		private static GoalCandidate LiningNeeds(string goal)
+		{
+			ItemDrop.ItemData item = ItemOf(goal.Substring(LiningGoalPrefix.Length));
+			Recipe recipe = ((item != null) ? ZombieLink.LiningRecipe(item) : null);
+			if (recipe == null)
+			{
+				return(null);
+			}
+			GoalCandidate candidate = new GoalCandidate { Prefab = goal, Quality = 1 };
+			if (recipe.m_craftingStation != null)
+			{
+				candidate.Needs.Add(new KeyValuePair<string, int>(StationNeed(recipe.m_craftingStation.gameObject.name, recipe.m_minStationLevel), 1));
+			}
+			foreach (Piece.Requirement requirement in recipe.m_resources)
+			{
+				int amount = CraftAmount(requirement, 1);
+				if (amount > 0)
+				{
+					candidate.Needs.Add(new KeyValuePair<string, int>(requirement.m_resItem.gameObject.name, amount));
+				}
+			}
+			return(candidate);
 		}
 
 		/// <summary>

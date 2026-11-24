@@ -117,5 +117,48 @@ namespace Kriona.Vikings
 			Func<Vector3, bool> can = link.Get<Func<Vector3, bool>>("CanLeaveCloud");
 			return(can != null && can(position));
 		}
+
+		/// <summary>
+		/// Checks whether Zombie Apocalypse is running in the world being played
+		/// </summary>
+		/// <returns>True when it is</returns>
+		public static bool Active()
+		{
+			Func<bool> active = link.Get<Func<bool>>("Active");
+			return(active != null && active());
+		}
+
+		/// <summary>
+		/// Gets the recipe that lines a weapon with silver at a forge, which takes silver and ectoplasm
+		/// </summary>
+		/// <param name="item">The weapon</param>
+		/// <returns>The recipe, or null when the weapon can't be lined</returns>
+		public static Recipe LiningRecipe(ItemDrop.ItemData item)
+		{
+			Func<ItemDrop.ItemData, Recipe> recipe = link.Get<Func<ItemDrop.ItemData, Recipe>>("LiningRecipe");
+			return((recipe != null) ? recipe(item) : null);
+		}
+
+		/// <summary>
+		/// Lines a weapon with silver, when it can be (see LiningRecipe), without taking anything for it
+		/// </summary>
+		/// <param name="item">The weapon</param>
+		/// <returns>True when it was lined</returns>
+		public static bool Line(ItemDrop.ItemData item)
+		{
+			Func<ItemDrop.ItemData, bool> line = link.Get<Func<ItemDrop.ItemData, bool>>("Line");
+			return(line != null && line(item));
+		}
+
+		/// <summary>
+		/// Works out how a zombie of a creature takes damage
+		/// </summary>
+		/// <param name="modifiers">The creature's resistances</param>
+		/// <returns>The zombie's, or the creature's own without Zombie Apocalypse</returns>
+		public static HitData.DamageModifiers UndeadModifiers(HitData.DamageModifiers modifiers)
+		{
+			Func<HitData.DamageModifiers, HitData.DamageModifiers> undead = link.Get<Func<HitData.DamageModifiers, HitData.DamageModifiers>>("UndeadModifiers");
+			return((undead != null) ? undead(modifiers) : modifiers);
+		}
 	}
 }

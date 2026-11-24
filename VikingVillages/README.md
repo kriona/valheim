@@ -104,6 +104,7 @@ The living Vikings go about their lives in their village, and drop everything to
   | Mine silver | Mountains | 3, up to 5 with more pickaxes | A pickaxe that breaks silver, a smelter and a kiln | Silver ore |
   | Raid sunken crypts | Swamp | 3, up to 5 with more pickaxes | A pickaxe, a torch or circlet, a smelter and a kiln | Iron scrap, and what the crypt's chests, draugr and blobs drop |
   | Raid burial chambers | Black Forest | 2, up to 3 | A torch or circlet | What the chambers' chests and skeletons drop, and their surtling cores |
+  | Hunt ghosts | Black Forest | 2, up to 3 | A torch or circlet, and Zombie Apocalypse, for lining weapons with silver | Ectoplasm, and what the chambers' skeletons drop |
   | Hunt trolls | Black Forest | 3 | A torch or circlet | Troll hide and coins |
   | Hunt goblins | Plains | 3, up to 5 | A blast furnace and a kiln | Black metal scrap and what else fulings drop |
   | Kill Eikthyr | Meadows | 2 | | Hard antlers and his trophy - and never counts as you having killed him |
@@ -306,6 +307,10 @@ With [Zombie Apocalypse](https://thunderstore.io/c/valheim/p/Kriona/ZombieApocal
 - They talk of the dead walking (see [DIALOG.md](DIALOG.md)) - of burning the dead only when Zombie Apocalypse's `FireStaysDead` lets fire keep them down, and of silver whenever they do, since spirit damage always keeps the dead down
 - The empty abandoned houses near a farm are its Vikings', so zombie Vikings never hold them
 - A name with Zombie Apocalypse's zombie word in it is one they turn down
+- From the Mountains on, a living or Dvergr Viking may start with silver-lined weapons - each weapon that can be lined at the forge is lined 25% of the time in the Mountains, 50% in the Plains and 75% in the Mistlands, and always from the Ashlands on. An archer whose arrows deal no spirit damage starts with 50 silver arrows by the same chance, when their bow would hurt the undead more with them
+- With more than one kind of arrow, a Viking readies the ones that hurt the enemy in front of them most - silver arrows against the dead, and their other arrows against the living, who take no spirit damage. Silver arrows never count toward the quiver of 100: an archer with fewer than 20 takes more from a chest, or crafts them when the village has what they take, up to 50, when they've nothing more pressing to do
+- Once a village has nothing better to work toward, it works toward lining its Vikings' weapons with silver, the way you do at a forge of level 3 - hunting ghosts in the burial chambers for the ectoplasm, and mining silver - and a Viking lines a weapon of their own whenever the village has what it takes and they've nothing more pressing to do, one Viking at a time
+- A living Viking who rises as a zombie drops their silver-lined weapons and silver arrows as they get up, since the undead can't bear them
 
 Any version of Viking Villages works with any version of Zombie Apocalypse - what one has that the other doesn't know about yet is left out.
 

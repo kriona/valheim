@@ -237,8 +237,57 @@ namespace Kriona.Vikings
 			{
 				return(true);
 			}
-			bool armament = (item.IsWeapon() || shared.m_itemType == ItemDrop.ItemData.ItemType.Ammo || shared.m_itemType == ItemDrop.ItemData.ItemType.AmmoNonEquipable);
+			return(IsSpiritArmament(item));
+		}
+
+		/// <summary>
+		/// Checks whether an item is a weapon or ammo that deals spirit damage, which the undead can't bear - silver
+		/// weapons and arrows, and weapons lined with silver
+		/// </summary>
+		/// <param name="item">The item</param>
+		/// <returns>True when it is</returns>
+		private static bool IsSpiritArmament(ItemDrop.ItemData item)
+		{
+			ItemDrop.ItemData.ItemType type = item.m_shared.m_itemType;
+			bool armament = (item.IsWeapon() || type == ItemDrop.ItemData.ItemType.Ammo || type == ItemDrop.ItemData.ItemType.AmmoNonEquipable);
 			return(armament && item.GetDamage().m_spirit > 0f);
+		}
+
+		/// <summary>
+		/// Drops the weapons and ammo that deal spirit damage from what a corpse holds for its viking, on the ground where
+		/// it rises, since the undead can't bear them - a living viking's silver-lined weapons and silver arrows. A
+		/// player's tombstone already kept theirs back (see StaysInGrave)
+		/// </summary>
+		/// <param name="corpse">The corpse's ZDO, owned by this client</param>
+		/// <param name="position">Where the viking rises</param>
+		public static void DropSpiritArms(ZDO corpse, Vector3 position)
+		{
+			VikingData data = VikingData.FromBytes(corpse.GetByteArray(DataKey));
+			byte[] inventoryBytes = corpse.GetByteArray(InventoryKey);
+			if (data == null || inventoryBytes == null)
+			{
+				return;
+			}
+			Inventory carried = new Inventory(ZombiePrefabName, null, data.Width, data.Height);
+			carried.Load(new ZPackage(inventoryBytes));
+			List<ItemDrop.ItemData> spirit = carried.m_inventory.FindAll(IsSpiritArmament);
+			if (spirit.Count == 0)
+			{
+				return;
+			}
+			foreach (ItemDrop.ItemData item in spirit)
+			{
+				carried.m_inventory.Remove(item);
+				item.m_equipped = false;
+				if (item.m_dropPrefab != null)
+				{
+					Vector3 spot = position + Vector3.up * 0.5f + Random.insideUnitSphere * 0.3f;
+					ItemDrop.DropItem(item, item.m_stack, spot, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
+				}
+			}
+			ZPackage pkg = new ZPackage();
+			carried.Save(pkg);
+			corpse.Set(InventoryKey, pkg.GetArray());
 		}
 
 		/// <summary>

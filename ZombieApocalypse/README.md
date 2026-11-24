@@ -113,6 +113,8 @@ With [Viking Villages](https://thunderstore.io/c/valheim/p/Kriona/VikingVillages
 - They stand ready over corpses about to rise and keep clear of poison clouds
 - What they talk about follows the world's zombies - the dead walking while `RiseChance` is above 0, burning the dead while `FireStaysDead` is above 0 (and silver always), dead deer while `AnimalsRise` is on, the dead raiding while `VikingRaids` is on, and newcomers rising while `TombstoneZombies` is on
 - The empty abandoned houses within 100 meters of a farm are its living Vikings', so zombie Vikings never hold them
+- From the Mountains on, living and Dvergr Vikings may start with silver-lined weapons and silver arrows, and their villages line more weapons at the forge, hunting ghosts for the ectoplasm
+- A living Viking rising as a zombie drops their silver-lined weapons and silver arrows on the spot, since the undead can't bear them
 
 Any version of Zombie Apocalypse works with any version of Viking Villages - what one has that the other doesn't know about yet is left out.
 

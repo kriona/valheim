@@ -115,6 +115,8 @@ namespace VikingVillages
 					return(new List<LootSource> { new LootSource("Goblin", 2f, 2, true), new LootSource("GoblinArcher", 1f, 1, true), new LootSource("GoblinBrute", 0.34f, 1, true) });
 				case QuestKind.KillEikthyr:
 					return(new List<LootSource> { new LootSource("Eikthyr", 0f, 1, true) });
+				case QuestKind.HuntGhosts:
+					return(new List<LootSource> { new LootSource("Ghost", 2f, 2, true), new LootSource("Skeleton", 1f, 1, true) });
 				default:
 					return(new List<LootSource>());
 			}

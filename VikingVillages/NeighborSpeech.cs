@@ -71,6 +71,7 @@ namespace VikingVillages
 			{ QuestKind.MineSilver, "the silver veins" },
 			{ QuestKind.RaidCrypts, "the sunken crypts" },
 			{ QuestKind.RaidBurialChambers, "the burial chambers" },
+			{ QuestKind.HuntGhosts, "hunting ghosts" },
 			{ QuestKind.HuntTrolls, "hunting trolls" },
 			{ QuestKind.HuntGoblins, "raiding a goblin camp" },
 			{ QuestKind.SellTreasure, "trading with Haldor" },

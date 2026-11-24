@@ -114,5 +114,40 @@ namespace ZombieApocalypse
 		{
 			return(Active() && PoisonCloud.CanLeaveCloud(position));
 		}
+
+		/// <summary>
+		/// Gets the recipe that lines a weapon with silver at a forge (see SilverLining.GetRecipe)
+		/// </summary>
+		/// <param name="item">The weapon</param>
+		/// <returns>The recipe, or null when the weapon can't be lined or the mod isn't running</returns>
+		public static Recipe LiningRecipe(ItemDrop.ItemData item)
+		{
+			return(Active() ? SilverLining.GetRecipe(item) : null);
+		}
+
+		/// <summary>
+		/// Lines a weapon with silver, when it can be (see LiningRecipe), without taking anything for it
+		/// </summary>
+		/// <param name="item">The weapon</param>
+		/// <returns>True when it was lined</returns>
+		public static bool Line(ItemDrop.ItemData item)
+		{
+			if (LiningRecipe(item) == null)
+			{
+				return(false);
+			}
+			SilverLining.Line(item);
+			return(true);
+		}
+
+		/// <summary>
+		/// Works out how a zombie of a creature takes damage (see Zombies.UndeadModifiers)
+		/// </summary>
+		/// <param name="modifiers">The creature's resistances</param>
+		/// <returns>The zombie's, or the creature's own when zombies don't take damage like the undead</returns>
+		public static HitData.DamageModifiers UndeadModifiers(HitData.DamageModifiers modifiers)
+		{
+			return(Plugin.UndeadWeaknesses.Value ? Zombies.UndeadModifiers(modifiers) : modifiers);
+		}
 	}
 }

@@ -65,6 +65,7 @@ namespace VikingVillages
 				case QuestKind.RaidCrypts:
 					return("sunkencrypt");
 				case QuestKind.RaidBurialChambers:
+				case QuestKind.HuntGhosts:
 					return("crypt");
 				case QuestKind.HuntTrolls:
 					return("trollcave");
@@ -95,6 +96,7 @@ namespace VikingVillages
 				case QuestKind.MineCopper:
 				case QuestKind.MineTin:
 				case QuestKind.RaidBurialChambers:
+				case QuestKind.HuntGhosts:
 				case QuestKind.HuntTrolls:
 				case QuestKind.SellTreasure:
 				case QuestKind.BuyCirclet:

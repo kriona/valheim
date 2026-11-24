@@ -61,7 +61,8 @@ namespace VikingVillages
 			{ QuestKind.SellTreasure, 120f },
 			{ QuestKind.BuyCirclet, 120f },
 			{ QuestKind.KillEikthyr, 300f },
-			{ QuestKind.FindBees, 600f }
+			{ QuestKind.FindBees, 600f },
+			{ QuestKind.HuntGhosts, 900f }
 		};
 
 		/// <summary>

@@ -2188,6 +2188,26 @@ namespace Kriona.Vikings
 			{
 				humanoid.EquipItem(shield, false);
 			}
+			ReadyAmmo(choice);
+		}
+
+		/// <summary>
+		/// Readies the ammo a bow or crossbow hurts the creature the viking is fighting most with (see BestAmmo), so its
+		/// next shot is that
+		/// </summary>
+		/// <param name="weapon">The weapon in its hands, or null</param>
+		private void ReadyAmmo(ItemDrop.ItemData weapon)
+		{
+			if (!IsRanged(weapon))
+			{
+				return;
+			}
+			Character target = ((ai != null) ? ai.GetTargetCreature() : null);
+			ItemDrop.ItemData best = BestAmmo(weapon, target);
+			if (best != null && best != humanoid.GetAmmoItem())
+			{
+				humanoid.EquipItem(best, false);
+			}
 		}
 
 		/// <summary>
@@ -3626,9 +3646,9 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Adds up the damage a weapon deals to a creature, with the ammo it would shoot, through the creature's
-		/// resistances the way the game applies them - more of what it's weak to, less of what it resists and none of
-		/// what it's immune to, its armor and status effects included - or as it is with no creature
+		/// Adds up the damage a weapon deals to a creature, with the ammo it would shoot at it (see BestAmmo), through
+		/// the creature's resistances the way the game applies them - more of what it's weak to, less of what it resists
+		/// and none of what it's immune to, its armor and status effects included - or as it is with no creature
 		/// </summary>
 		/// <param name="weapon">The weapon</param>
 		/// <param name="target">The creature, or null</param>
@@ -3636,12 +3656,53 @@ namespace Kriona.Vikings
 		private float Damage(ItemDrop.ItemData weapon, Character target)
 		{
 			HitData.DamageTypes damage = weapon.GetDamage();
-			ItemDrop.ItemData ammo = FindAmmo(weapon);
+			ItemDrop.ItemData ammo = (BestAmmo(weapon, target) ?? FindAmmo(weapon));
 			if (ammo != null)
 			{
 				damage.Add(ammo.GetDamage());
 			}
 			return(CombatDamage(Resisted(damage, target)));
+		}
+
+		/// <summary>
+		/// Finds the ammo the viking has that a bow or crossbow hurts a creature most with, along with the weapon's own
+		/// damage, through the creature's resistances - or with no creature, the ammo that hurts the living most, which
+		/// are immune to spirit damage, so silver arrows are kept for the dead. Of ammo that hurts as much, the one with
+		/// the least spirit damage
+		/// </summary>
+		/// <param name="weapon">The weapon</param>
+		/// <param name="target">The creature, or null</param>
+		/// <returns>The ammo, or null when the weapon takes none or the viking has none it can ready</returns>
+		private ItemDrop.ItemData BestAmmo(ItemDrop.ItemData weapon, Character target)
+		{
+			string ammoType = weapon.m_shared.m_ammoType;
+			if (string.IsNullOrEmpty(ammoType))
+			{
+				return(null);
+			}
+			HitData.DamageTypes own = weapon.GetDamage();
+			ItemDrop.ItemData best = null;
+			float bestDamage = 0f;
+			foreach (ItemDrop.ItemData item in humanoid.GetInventory().GetAllItems())
+			{
+				if (item.m_shared.m_itemType != ItemDrop.ItemData.ItemType.Ammo || item.m_shared.m_ammoType != ammoType || VikingItems.IsCarried(item) || VikingItems.IsProp(item))
+				{
+					continue;
+				}
+				HitData.DamageTypes damage = own;
+				damage.Add(item.GetDamage());
+				if (target == null)
+				{
+					damage.m_spirit = 0f;
+				}
+				float hurt = CombatDamage(Resisted(damage, target));
+				if (best == null || hurt > bestDamage || (hurt == bestDamage && item.GetDamage().m_spirit < best.GetDamage().m_spirit))
+				{
+					best = item;
+					bestDamage = hurt;
+				}
+			}
+			return(best);
 		}
 
 		/// <summary>

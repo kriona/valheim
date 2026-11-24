@@ -158,9 +158,10 @@ namespace ZombieApocalypse
 				return;
 			}
 			// A player's corpse holds the things their viking carries, and the viking guards their tombstone rather than
-			// joining a raid
+			// joining a raid. A living viking's corpse holds its own gear, but for what deals spirit damage, which it drops
 			if (zdo.GetByteArray(VikingCore.DataKey) != null)
 			{
+				VikingCore.DropSpiritArms(zdo, middle);
 				VikingCore.HandOver(zdo, zombie);
 			}
 			else

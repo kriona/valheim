@@ -5052,7 +5052,9 @@ namespace VikingVillages
 		/// and is missing a batch, then a torch or a missing weapon to craft, then a weapon, armor or a shield better than
 		/// its own to craft (see FindGearCraftWork), then a piece of its gear to upgrade, each when the village has
 		/// everything it takes (see FindUpgradeWork), then the next step toward the village's goal - smelting or crafting
-		/// what it takes (see FindGoalWork) - then tools for the chests (see FindToolStockWork), then paths and beehives -
+		/// what it takes (see FindGoalWork) - then tools for the chests (see FindToolStockWork), then with Zombie
+		/// Apocalypse a weapon of its own to line with silver (see FindLiningWork) and silver arrows to restock (see
+		/// FindSilverArrowWork), then paths and beehives -
 		/// leaving out work that needs wood for a while after it found none to gather, unless there's wood in the
 		/// village's chests
 		/// </summary>
@@ -5223,6 +5225,16 @@ namespace VikingVillages
 			if (tools != null)
 			{
 				return(tools);
+			}
+			Job lining = FindLiningWork();
+			if (lining != null)
+			{
+				return(lining);
+			}
+			Job silverArrows = FindSilverArrowWork();
+			if (silverArrows != null)
+			{
+				return(silverArrows);
 			}
 			// Paths and beehives wait out a thunderstorm, while light rain doesn't put them off
 			if (VikingWeather.Storming())
@@ -12815,11 +12827,13 @@ namespace VikingVillages
 
 		/// <summary>
 		/// An archer filling its quiver from one of the village's chests - walking to it, opening it, taking the best
-		/// arrows for its bow and putting back its own that don't make the cut (see TakeArrows)
+		/// arrows for its bow and putting back its own that don't make the cut (see TakeArrows) - or restocking its
+		/// silver arrows from it (see TakeSilverArrows)
 		/// </summary>
 		private class AmmoJob : Job
 		{
 			private readonly Container chest;
+			private readonly bool silver;
 			private float actAt = -1f;
 
 			/// <summary>
@@ -12827,9 +12841,11 @@ namespace VikingVillages
 			/// </summary>
 			/// <param name="owner">The viking's life</param>
 			/// <param name="store">The chest, holding arrows for its bow</param>
-			public AmmoJob(VillageLife owner, Container store) : base(owner)
+			/// <param name="silverArrows">True to restock its silver arrows, false to fill its quiver</param>
+			public AmmoJob(VillageLife owner, Container store, bool silverArrows = false) : base(owner)
 			{
 				chest = store;
+				silver = silverArrows;
 			}
 
 			/// <summary>
@@ -12867,7 +12883,7 @@ namespace VikingVillages
 				{
 					return(false);
 				}
-				if (!life.TakeArrows(chest))
+				if (!(silver ? life.TakeSilverArrows(chest) : life.TakeArrows(chest)))
 				{
 					life.Avoid(chest.m_nview);
 				}
@@ -16556,7 +16572,9 @@ namespace VikingVillages
 		/// <summary>
 		/// Arrows, a torch or a hoe a viking can craft, or a piece of its gear it can upgrade - what it crafts, how many a
 		/// craft makes, the wood it takes, what else it takes and how much, the station it's crafted at, or null for one
-		/// crafted anywhere, how much an arrow deals, and for an upgrade, the piece and the quality it's raised to
+		/// crafted anywhere, how much an arrow deals, whether they're silver arrows (see FindSilverArrowWork), and for an
+		/// upgrade, the piece and the quality it's raised to, or for a weapon lined with silver (see FindLiningWork), the
+		/// weapon at its own quality
 		/// </summary>
 		private class ArrowPlan
 		{
@@ -16566,15 +16584,18 @@ namespace VikingVillages
 			public readonly List<KeyValuePair<string, int>> Others = new List<KeyValuePair<string, int>>();
 			public CraftingStation Station;
 			public float Damage;
+			public bool Silver;
 			public ItemDrop.ItemData Upgrade;
 			public int Quality;
+			public bool Lines;
 		}
 
 		/// <summary>
 		/// Works out the best arrows the viking can craft for its bow - the ones that deal the most damage of those the
 		/// game has a recipe for that the village has a station of the recipe's level for, and whose ingredients other
 		/// than wood the viking carries for crafting or the village's chests hold, since wood can always be gathered.
-		/// Wood arrows need only wood, so there are always some
+		/// Wood arrows need only wood, so there are always some. Silver arrows are left out, being crafted apart (see
+		/// PlanSilverArrows)
 		/// </summary>
 		/// <returns>The arrows, or null when it has no bow, or the village has no station for any</returns>
 		private ArrowPlan PlanArrows()
@@ -16594,7 +16615,7 @@ namespace VikingVillages
 					continue;
 				}
 				ItemDrop.ItemData arrow = recipe.m_item.m_itemData;
-				if (arrow.m_shared.m_itemType != ItemDrop.ItemData.ItemType.Ammo || arrow.m_shared.m_ammoType != ammoType)
+				if (arrow.m_shared.m_itemType != ItemDrop.ItemData.ItemType.Ammo || arrow.m_shared.m_ammoType != ammoType || VikingSilver.IsSilverArrows(arrow))
 				{
 					continue;
 				}
@@ -16662,7 +16683,7 @@ namespace VikingVillages
 					continue;
 				}
 				ItemDrop.ItemData arrow = recipe.m_item.m_itemData;
-				if (arrow.m_shared.m_itemType != ItemDrop.ItemData.ItemType.Ammo || arrow.m_shared.m_ammoType != ammoType)
+				if (arrow.m_shared.m_itemType != ItemDrop.ItemData.ItemType.Ammo || arrow.m_shared.m_ammoType != ammoType || VikingSilver.IsSilverArrows(arrow))
 				{
 					continue;
 				}
@@ -16895,14 +16916,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether an item is ammo of a type, of the viking's own or in a chest
+		/// Checks whether an item is ammo of a type for the viking's quiver, of its own or in a chest - silver arrows
+		/// being kept apart from it, for the dead (see FindSilverArrowWork)
 		/// </summary>
 		/// <param name="item">The item</param>
 		/// <param name="ammoType">The ammo type</param>
 		/// <returns>True when it is</returns>
 		private static bool IsAmmoOf(ItemDrop.ItemData item, string ammoType)
 		{
-			return(item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Ammo && item.m_shared.m_ammoType == ammoType && !VikingItems.IsCarried(item) && !VikingItems.IsProp(item));
+			return(item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Ammo && item.m_shared.m_ammoType == ammoType && !VikingItems.IsCarried(item) && !VikingItems.IsProp(item) && !VikingSilver.IsSilverArrows(item));
 		}
 
 		/// <summary>
@@ -17092,7 +17114,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Readies an archer's best arrows, so its bow shoots them before the rest
+		/// Readies an archer's best arrows, so its bow shoots them before the rest - in place of silver arrows it readied
+		/// against the dead, which it readies again when it next fights them (see VikingCore.BestAmmo)
 		/// </summary>
 		private void ReadyBestArrows()
 		{
@@ -17110,7 +17133,7 @@ namespace VikingVillages
 				}
 			}
 			ItemDrop.ItemData readied = humanoid.GetAmmoItem();
-			if (best != null && readied != best && (readied == null || !humanoid.GetInventory().ContainsItem(readied) || AmmoDamage(best) > AmmoDamage(readied)))
+			if (best != null && readied != best && (readied == null || !humanoid.GetInventory().ContainsItem(readied) || VikingSilver.IsSilverArrows(readied) || AmmoDamage(best) > AmmoDamage(readied)))
 			{
 				humanoid.EquipItem(best, false);
 			}
@@ -17424,24 +17447,38 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether the piece an upgrade is for is still the viking's, at the quality it was to be raised from
+		/// Checks whether the piece an upgrade is for is still the viking's, at the quality it was to be raised from - or
+		/// for a lining, still the viking's and not yet lined
 		/// </summary>
 		/// <param name="plan">The upgrade</param>
 		/// <returns>True when it is</returns>
 		private bool CanStillUpgrade(ArrowPlan plan)
 		{
-			return(humanoid.GetInventory().ContainsItem(plan.Upgrade) && plan.Upgrade.m_quality == plan.Quality - 1);
+			if (!humanoid.GetInventory().ContainsItem(plan.Upgrade))
+			{
+				return(false);
+			}
+			return(plan.Lines ? ZombieLink.LiningRecipe(plan.Upgrade) != null : plan.Upgrade.m_quality == plan.Quality - 1);
 		}
 
 		/// <summary>
 		/// Raises a piece of the viking's gear to the quality its upgrade is for, at full durability, as an upgrade a
-		/// player makes leaves it
+		/// player makes leaves it - or lines a weapon with silver, leaving it as it is otherwise, as lining it at the
+		/// forge does a player's
 		/// </summary>
 		/// <param name="plan">The upgrade</param>
 		/// <returns>The piece</returns>
 		private ItemDrop.ItemData UpgradeGear(ArrowPlan plan)
 		{
 			ItemDrop.ItemData item = plan.Upgrade;
+			if (plan.Lines)
+			{
+				ZombieLink.Line(item);
+				humanoid.GetInventory().Changed();
+				TestLog.Count("Gear silver-lined", TestLog.ItemName(item));
+				Plugin.Log.LogInfo(LogName() + " lined its " + Localization.instance.Localize(item.m_shared.m_name) + " with silver");
+				return(item);
+			}
 			item.m_quality = plan.Quality;
 			item.m_durability = item.GetMaxDurability();
 			item.m_worldLevel = (byte)Game.m_worldLevel;
@@ -17563,7 +17600,8 @@ namespace VikingVillages
 		/// Upgrading a piece of its own gear by day, one viking of the village at a time, when the village has everything
 		/// it takes (see FindUpgradeWork) - getting what it takes besides wood from the village's chests and its wood,
 		/// then working at the station its recipe is crafted at, the way it crafts (see ItemRun), and raising the piece a
-		/// quality. Not to be mixed up with UpgradeJob, which takes up better gear from a chest
+		/// quality - or lining a weapon with silver at the forge (see FindLiningWork). Not to be mixed up with UpgradeJob,
+		/// which takes up better gear from a chest
 		/// </summary>
 		private class GearUpgradeJob : Job
 		{
@@ -17579,7 +17617,8 @@ namespace VikingVillages
 			public GearUpgradeJob(VillageLife owner, ArrowPlan upgrade) : base(owner)
 			{
 				upgradeRun = new ItemRun(owner, null, (ItemDrop.ItemData item) => false, upgrade.Prefab, upgrade);
-				label = "Upgrading " + Localization.instance.Localize(upgrade.Upgrade.m_shared.m_name) + " to quality " + upgrade.Quality;
+				string name = Localization.instance.Localize(upgrade.Upgrade.m_shared.m_name);
+				label = (upgrade.Lines ? "Lining " + name + " with silver" : "Upgrading " + name + " to quality " + upgrade.Quality);
 			}
 
 			/// <summary>
@@ -18071,7 +18110,7 @@ namespace VikingVillages
 						VillageSignals.SendEffect(VillageSignals.CraftDoneEffect, bench.GetComponent<ZNetView>().GetZDO().m_uid);
 					}
 					// The next batch is the best the village can make now, at this station
-					ArrowPlan next = life.PlanArrows();
+					ArrowPlan next = (plan.Silver ? life.PlanSilverArrows() : life.PlanArrows());
 					if (next == null || next.Station != bench)
 					{
 						return(true);
@@ -18079,7 +18118,7 @@ namespace VikingVillages
 					plan = next;
 					return(false);
 				}
-				if (!life.MissingArrows(plan.Batch, plan.Wood))
+				if (!(plan.Silver ? life.MissingSilverArrows(plan.Batch) : life.MissingArrows(plan.Batch, plan.Wood)))
 				{
 					return(true);
 				}

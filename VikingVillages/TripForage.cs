@@ -166,6 +166,7 @@ namespace VikingVillages
 				case QuestKind.MineSilver:
 				case QuestKind.RaidCrypts:
 				case QuestKind.RaidBurialChambers:
+				case QuestKind.HuntGhosts:
 					return(true);
 				default:
 					return(false);
