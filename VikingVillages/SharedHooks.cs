@@ -39,6 +39,8 @@ namespace Kriona.Vikings
 			VillagePortals.Forget();
 			VillageDisband.Forget();
 			FarmLayout.Forget();
+			ResourceBookGame.Forget();
+			VillageLife.ForgetGoals();
 		}
 	}
 }

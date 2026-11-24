@@ -121,6 +121,12 @@ namespace VikingVillages
 				text.Append("Setup: " + string.Join(", ", todo) + "\n");
 			}
 			text.Append(VillageLife.DescribePaths(village));
+			string goal = village.Zdo.GetString(VillageLife.GoalKey, "");
+			if (goal.Length > 0)
+			{
+				int quality = village.Zdo.GetInt(VillageLife.GoalQualityKey, 1);
+				text.Append("Goal: " + goal + ((quality > 1) ? " at quality " + quality : "") + " - " + village.Zdo.GetString(VillageLife.GoalStepKey, "") + "\n");
+			}
 			if (village.EnemyNear(VillageRespawn.EnemyReach))
 			{
 				text.Append("Enemies within " + VillageRespawn.EnemyReach.ToString("F0") + "m\n");
