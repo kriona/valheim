@@ -807,9 +807,9 @@ namespace VikingVillages
 			/// <returns>True once it has reached into it</returns>
 			private bool ReachChest(float dt)
 			{
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
+				if (!life.AtChest(chest))
 				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
+					life.GoToChest(dt, chest);
 					if (life.moveFailed)
 					{
 						life.moveFailed = false;

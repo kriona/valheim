@@ -5988,9 +5988,9 @@ namespace VikingVillages
 					}
 					return(false);
 				}
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
+				if (!life.AtChest(chest))
 				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
+					life.GoToChest(dt, chest);
 					if (life.moveFailed)
 					{
 						life.moveFailed = false;
@@ -6039,9 +6039,13 @@ namespace VikingVillages
 			// pieces go back first, so walls and roofs have what holds them up
 			List<PieceRecord> missing = VillageRecords.Missing(village);
 			missing.Sort((PieceRecord a, PieceRecord b) => a.Position.y.CompareTo(b.Position.y));
+			// With no more wood to get for now, it only builds back what the wood it carries is enough for, rather than
+			// starting a piece it gives up on as soon as it looks for the rest of the wood
+			bool moreWood = (Time.time >= noWoodUntil || FindWoodChest() != null);
+			int carried = CarriedWood();
 			foreach (PieceRecord record in missing)
 			{
-				if (!Warded(record.Position) && ClaimWork(RecordKey(record)))
+				if ((moreWood || carried >= Mathf.Min(record.Wood, CarryMax)) && !Warded(record.Position) && ClaimWork(RecordKey(record)))
 				{
 					return(new RebuildJob(this, record, false));
 				}
@@ -6052,7 +6056,7 @@ namespace VikingVillages
 			ruins.Sort((PieceRecord a, PieceRecord b) => a.Position.y.CompareTo(b.Position.y));
 			foreach (PieceRecord record in ruins)
 			{
-				if (!Warded(record.Position) && ClaimWork(RecordKey(record)))
+				if ((moreWood || carried >= Mathf.Min(record.Wood, CarryMax)) && !Warded(record.Position) && ClaimWork(RecordKey(record)))
 				{
 					return(new RebuildJob(this, record, false));
 				}
@@ -6676,8 +6680,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Leaves a chest, loot or piece the viking couldn't get to alone for a while, and notes the failed try for the
-		/// village, whose vikings all leave it alone for longer once enough of them have failed (see VillageGiveUps)
+		/// Leaves a chest, loot or piece the viking couldn't get to alone for a while, and notes the failed try at
+		/// anything but a chest for the village, whose vikings all leave it alone for longer once enough of them have
+		/// failed (see VillageGiveUps)
 		/// </summary>
 		/// <param name="view">The chest, loot or piece</param>
 		/// <param name="seconds">How long it's left alone</param>
@@ -6708,6 +6713,12 @@ namespace VikingVillages
 			{
 				nextGiveUpPrune = Time.time + GiveUpPruneInterval;
 				giveUps.Prune(Time.time);
+			}
+			// A chest is never given up on by the whole village - without it the vikings would have nowhere to put away
+			// what they find or eat from - only by the viking that couldn't get to it, for a while
+			if (view.GetComponent<Container>() != null)
+			{
+				return;
 			}
 			float shared = giveUps.Fail(thing, nview.GetZDO().m_uid, Time.time);
 			if (shared <= 0f)
@@ -7259,6 +7270,81 @@ namespace VikingVillages
 				}
 			}
 			return(wood);
+		}
+
+		/// <summary>
+		/// Where the vikings stand to use each chest, by its ZDO, and when that was found, by Time.time - the nearest a
+		/// viking can stand to it, which can be a little way off when what's around it, like a bed or the wall it stands
+		/// against, keeps the floor right beside it out of reach
+		/// </summary>
+		private static readonly Dictionary<ZDOID, KeyValuePair<float, Vector3>> chestStands = new Dictionary<ZDOID, KeyValuePair<float, Vector3>>();
+
+		/// <summary>
+		/// How far from a chest the spot to stand at to use it is looked for, in meters, and how long a spot found is
+		/// kept before it's looked for again, in seconds, since what stands around the chest can change
+		/// </summary>
+		private const float ChestStandSearch = 2.5f;
+		private const float ChestStandLife = 30f;
+
+		/// <summary>
+		/// Checks whether the viking is near enough a chest to use it - within ChestReach of it, or at the spot to stand
+		/// at to use it (see ChestStand)
+		/// </summary>
+		/// <param name="chest">The chest</param>
+		/// <returns>True when it is</returns>
+		internal bool AtChest(Container chest)
+		{
+			float toChest = Utils.DistanceXZ(chest.transform.position, transform.position);
+			if (toChest <= ChestReach)
+			{
+				return(true);
+			}
+			return(ChestStand(chest, out Vector3 stand) && InReach(toChest, Utils.DistanceXZ(stand, transform.position), ChestReach));
+		}
+
+		/// <summary>
+		/// Walks the viking to the spot to stand at to use a chest, near enough that it's within reach of the chest
+		/// there, rather than to the chest itself, whose own spot can't be stood on
+		/// </summary>
+		/// <param name="dt">Seconds since the AI's last update</param>
+		/// <param name="chest">The chest</param>
+		internal void GoToChest(float dt, Container chest)
+		{
+			if (!ChestStand(chest, out Vector3 stand))
+			{
+				Go(dt, chest.transform.position, ChestReach, false);
+				return;
+			}
+			Go(dt, stand, StandReach(Utils.DistanceXZ(stand, chest.transform.position), ChestReach), false);
+		}
+
+		/// <summary>
+		/// Finds the spot to stand at to use a chest - the nearest point a viking can stand within ChestStandSearch of
+		/// it, found again every ChestStandLife
+		/// </summary>
+		/// <param name="chest">The chest</param>
+		/// <param name="stand">The spot</param>
+		/// <returns>False when there's none</returns>
+		private static bool ChestStand(Container chest, out Vector3 stand)
+		{
+			stand = chest.transform.position;
+			if (chest.m_nview == null || !chest.m_nview.IsValid())
+			{
+				return(false);
+			}
+			ZDOID id = chest.m_nview.GetZDO().m_uid;
+			if (chestStands.TryGetValue(id, out KeyValuePair<float, Vector3> known) && Time.time - known.Key < ChestStandLife)
+			{
+				stand = known.Value;
+				return(true);
+			}
+			if (!NavmeshPoints.FindValidPoint(out Vector3 valid, chest.transform.position, ChestStandSearch, Pathfinding.AgentType.Humanoid))
+			{
+				return(false);
+			}
+			chestStands[id] = new KeyValuePair<float, Vector3>(Time.time, valid);
+			stand = valid;
+			return(true);
 		}
 
 		/// <summary>
@@ -11927,9 +12013,9 @@ namespace VikingVillages
 					}
 					return(true);
 				}
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
+				if (!life.AtChest(chest))
 				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
+					life.GoToChest(dt, chest);
 					if (life.moveFailed)
 					{
 						life.moveFailed = false;
@@ -12157,7 +12243,19 @@ namespace VikingVillages
 		/// <returns>How near it walks to the spot, in meters</returns>
 		internal static float StandReach(float offset)
 		{
-			return(Mathf.Max(ArriveReach, WorkReach - offset));
+			return(StandReach(offset, WorkReach));
+		}
+
+		/// <summary>
+		/// Works out how near the viking walks to the spot it stands at to reach something - near enough that it's within
+		/// reach of it once there, or right up to the spot when it's too far from it for that
+		/// </summary>
+		/// <param name="offset">How far the spot is from what it reaches, seen from above, in meters</param>
+		/// <param name="reach">How near it has to be to what it reaches, in meters</param>
+		/// <returns>How near it walks to the spot, in meters</returns>
+		internal static float StandReach(float offset, float reach)
+		{
+			return(Mathf.Max(ArriveReach, reach - offset));
 		}
 
 		/// <summary>
@@ -12169,7 +12267,20 @@ namespace VikingVillages
 		/// <returns>True when it is</returns>
 		internal static bool InWorkReach(float toPoint, float toStand)
 		{
-			return(toPoint <= WorkReach || toStand <= ArriveReach);
+			return(InReach(toPoint, toStand, WorkReach));
+		}
+
+		/// <summary>
+		/// Checks whether the viking is within reach of something - within reach of it, or at the spot it walks to to
+		/// reach it
+		/// </summary>
+		/// <param name="toPoint">How far it is from what it reaches, seen from above, in meters</param>
+		/// <param name="toStand">How far it is from the spot it walks to, seen from above, in meters</param>
+		/// <param name="reach">How near it has to be to what it reaches, in meters</param>
+		/// <returns>True when it is</returns>
+		internal static bool InReach(float toPoint, float toStand, float reach)
+		{
+			return(toPoint <= reach || toStand <= ArriveReach);
 		}
 
 		/// <summary>
@@ -12730,9 +12841,9 @@ namespace VikingVillages
 				{
 					return(true);
 				}
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
+				if (!life.AtChest(chest))
 				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
+					life.GoToChest(dt, chest);
 					if (life.moveFailed)
 					{
 						life.moveFailed = false;
@@ -12791,9 +12902,9 @@ namespace VikingVillages
 				{
 					return(true);
 				}
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
+				if (!life.AtChest(chest))
 				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
+					life.GoToChest(dt, chest);
 					if (life.moveFailed)
 					{
 						life.moveFailed = false;
@@ -13047,9 +13158,9 @@ namespace VikingVillages
 					chest = null;
 					return(false);
 				}
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
+				if (!life.AtChest(chest))
 				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
+					life.GoToChest(dt, chest);
 					if (life.moveFailed)
 					{
 						life.moveFailed = false;
@@ -14190,9 +14301,9 @@ namespace VikingVillages
 					chest = null;
 					return(false);
 				}
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
+				if (!life.AtChest(chest))
 				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
+					life.GoToChest(dt, chest);
 					if (life.moveFailed)
 					{
 						life.moveFailed = false;
@@ -14342,9 +14453,9 @@ namespace VikingVillages
 					chest = null;
 					return(false);
 				}
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
+				if (!life.AtChest(chest))
 				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
+					life.GoToChest(dt, chest);
 					if (life.moveFailed)
 					{
 						life.moveFailed = false;
@@ -14596,9 +14707,9 @@ namespace VikingVillages
 					chest = null;
 					return(false);
 				}
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
+				if (!life.AtChest(chest))
 				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
+					life.GoToChest(dt, chest);
 					if (life.moveFailed)
 					{
 						life.moveFailed = false;
@@ -17815,9 +17926,9 @@ namespace VikingVillages
 						return(true);
 					}
 				}
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
+				if (!life.AtChest(chest))
 				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
+					life.GoToChest(dt, chest);
 					if (life.moveFailed)
 					{
 						life.moveFailed = false;
@@ -18008,9 +18119,9 @@ namespace VikingVillages
 						return(true);
 					}
 				}
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
+				if (!life.AtChest(chest))
 				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
+					life.GoToChest(dt, chest);
 					if (life.moveFailed)
 					{
 						life.moveFailed = false;
@@ -18195,9 +18306,9 @@ namespace VikingVillages
 						return(true);
 					}
 				}
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
+				if (!life.AtChest(chest))
 				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
+					life.GoToChest(dt, chest);
 					if (life.moveFailed)
 					{
 						life.moveFailed = false;
@@ -19252,9 +19363,9 @@ namespace VikingVillages
 					item = null;
 					return(false);
 				}
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
+				if (!life.AtChest(chest))
 				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
+					life.GoToChest(dt, chest);
 					if (life.moveFailed)
 					{
 						life.moveFailed = false;

@@ -632,6 +632,22 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a viking walking to the spot it stands at to use a chest is near enough the chest once it stops -
+		/// within the 1.5m chest reach when the spot is near the chest, or right at the spot when the spot is farther,
+		/// like 1.6m off past a bed, where it would have stopped short before
+		/// </summary>
+		[Theory]
+		[InlineData(0.3f)]
+		[InlineData(1f)]
+		[InlineData(1.6f)]
+		[InlineData(2.5f)]
+		public void StoppingAtTheChestStandIsWithinReach(float offset)
+		{
+			float reach = VillageLife.StandReach(offset, 1.5f);
+			Assert.True(VillageLife.InReach(offset + reach, reach, 1.5f));
+		}
+
+		/// <summary>
 		/// Checks that a spot on the piece's own ground is walked to within the usual reach, and one far from the piece
 		/// is walked right up to
 		/// </summary>
