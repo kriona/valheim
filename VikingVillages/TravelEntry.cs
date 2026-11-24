@@ -56,9 +56,12 @@ namespace VikingVillages
 		public string FromName = "";
 
 		/// <summary>
-		/// The easiest biome among them, by VikingGear's order, for finding another village they can go to
+		/// The easiest biome among them, by VikingGear's order, for finding another village they can go to, the hardest,
+		/// whose best boat they sail in, and whether any of them carries something a portal won't take
 		/// </summary>
 		public int Biome;
+		public int BoatBiome;
+		public bool Unteleportable;
 
 		/// <summary>
 		/// The villages they found no one in on the way, to leave out when another is looked for
@@ -84,7 +87,7 @@ namespace VikingVillages
 		/// The version of how an entry is written, which a reader skips entries written another way by, and the earliest
 		/// version it still reads, which has no quest
 		/// </summary>
-		private const int FormatVersion = 4;
+		private const int FormatVersion = 5;
 		private const int OldestVersion = 2;
 
 		/// <summary>
@@ -160,6 +163,8 @@ namespace VikingVillages
 			pkg.Write(QuestKind);
 			pkg.Write(QuestDue);
 			pkg.Write(QuestMembers);
+			pkg.Write(BoatBiome);
+			pkg.Write(Unteleportable);
 		}
 
 		/// <summary>
@@ -205,6 +210,12 @@ namespace VikingVillages
 			if (version >= 4)
 			{
 				entry.QuestMembers = pkg.ReadInt();
+			}
+			entry.BoatBiome = entry.Biome;
+			if (version >= 5)
+			{
+				entry.BoatBiome = pkg.ReadInt();
+				entry.Unteleportable = pkg.ReadBool();
 			}
 			return(entry);
 		}

@@ -26,11 +26,13 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void DurationIsThereAndBackAndTheWork()
 		{
-			Assert.Equal(1000f, QuestRules.Duration(300f, 400f, 0f), 3);
-			Assert.Equal(1020f, QuestRules.Duration(300f, 400f, 1f), 3);
-			Assert.Equal(980f, QuestRules.Duration(300f, 400f, -1f), 3);
-			Assert.Equal(1020f, QuestRules.Duration(300f, 400f, 5f), 3);
-			Assert.Equal(400f, QuestRules.Duration(-10f, 400f, 0f), 3);
+			Assert.Equal(1000f, QuestRules.Duration(300f, 300f, 400f, 0f), 3);
+			Assert.Equal(1020f, QuestRules.Duration(300f, 300f, 400f, 1f), 3);
+			Assert.Equal(980f, QuestRules.Duration(300f, 300f, 400f, -1f), 3);
+			Assert.Equal(1020f, QuestRules.Duration(300f, 300f, 400f, 5f), 3);
+			Assert.Equal(400f, QuestRules.Duration(-10f, -10f, 400f, 0f), 3);
+			// Through a portal there, and the long way home with ore no portal takes
+			Assert.Equal(1300f, QuestRules.Duration(100f, 800f, 400f, 0f), 3);
 		}
 
 		/// <summary>

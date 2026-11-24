@@ -13,12 +13,20 @@ namespace VikingVillages
 		public const float Speed = 5f;
 
 		/// <summary>
-		/// The boats vikings cross the sea in - by the first biome, by VikingGear's order, each is the best boat of - and
-		/// how fast each goes on average with the wind as it comes, in meters a second
+		/// The boats vikings cross the sea in - by the first biome, by VikingGear's order, each is the best boat of - how
+		/// fast each goes on average with the wind as it comes, in meters a second, each one's prefab, and whether it
+		/// holds up in the Ashlands' boiling sea (see Ship.m_ashlandsReady), for when its prefab can't be read
 		/// </summary>
 		private static readonly string[] Boats = { "raft", "karve", "longship", "drakkar" };
 		private static readonly int[] BoatFrom = { 0, 1, 3, 6 };
 		private static readonly float[] BoatSpeeds = { 3f, 6f, 7.5f, 8.5f };
+		private static readonly string[] BoatPrefabs = { "Raft", "Karve", "VikingShip", "VikingShip_Ashlands" };
+		private static readonly bool[] BoatFireproof = { false, false, false, true };
+
+		/// <summary>
+		/// How long stepping through a portal takes, in seconds - the walk into it and out the other side
+		/// </summary>
+		public const float PortalSeconds = 5f;
 
 		/// <summary>
 		/// How many game hours a game day has
@@ -72,6 +80,27 @@ namespace VikingVillages
 		public static string BoatName(int biome)
 		{
 			return(Boats[Boat(biome)]);
+		}
+
+		/// <summary>
+		/// Gets the prefab of the best boat vikings of a biome have
+		/// </summary>
+		/// <param name="biome">The biome, by VikingGear's order</param>
+		/// <returns>The prefab's name, like "VikingShip"</returns>
+		public static string BoatPrefab(int biome)
+		{
+			return(BoatPrefabs[Boat(biome)]);
+		}
+
+		/// <summary>
+		/// Checks whether the best boat vikings of a biome have holds up in the Ashlands' boiling sea, by the game's boats
+		/// as they are - only the drakkar does
+		/// </summary>
+		/// <param name="biome">The biome, by VikingGear's order</param>
+		/// <returns>True when it does</returns>
+		public static bool BoatSurvivesAshlands(int biome)
+		{
+			return(BoatFireproof[Boat(biome)]);
 		}
 
 		/// <summary>

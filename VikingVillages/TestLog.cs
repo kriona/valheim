@@ -13,8 +13,8 @@ namespace VikingVillages
 	/// the hits it took before, a snapshot of every village and viking every SnapshotInterval seconds, raids starting and
 	/// ending, vikings leaving the village, ending up under the ground, in the water, badly hurt, hungry with no food or
 	/// with broken gear, creatures killed around the village, loot that despawned before a viking put it away, each kind
-	/// of exception once, and frames that hitch - and totals of what the vikings did and what happened to them, written
-	/// with each snapshot and as the run ends
+	/// of exception once, and frames that hitch, the groups of vikings the server keeps on the road with each snapshot -
+	/// and totals of what the vikings did and what happened to them, written with each snapshot and as the run ends
 	/// </summary>
 	/// <remarks>
 	/// It all runs on the client that owns the vikings, which is the only one that knows what they're doing. The totals
@@ -853,6 +853,10 @@ namespace VikingVillages
 				{
 					Plugin.Log.LogInfo("Snapshot of " + life.LogName() + ": " + life.LogSnapshot());
 				}
+			}
+			foreach (string line in VillageTravel.DescribeQueue())
+			{
+				Plugin.Log.LogInfo("Snapshot of travel: " + line);
 			}
 			WriteTotals("so far");
 			Flush();

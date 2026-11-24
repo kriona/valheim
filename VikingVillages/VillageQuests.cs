@@ -83,19 +83,68 @@ namespace VikingVillages
 		private static readonly HashSet<int> routesAsked = new HashSet<int>();
 
 		/// <summary>
-		/// Gets the key how long the road to a quest takes from a village is noted at on the village's ZDO, in seconds
-		/// each way, once the server has worked it out
+		/// How long a road to a quest is kept on its village before the server is asked for it again, in game days - so
+		/// portals built or broken since are taken into account
+		/// </summary>
+		private const double RouteKeepDays = 1.0;
+
+		/// <summary>
+		/// Gets the keys how long the road to a quest takes from a village is noted at on the village's ZDO, once the
+		/// server has worked it out - there and back, in seconds, and when it was worked out, in ZNet time ticks
 		/// </summary>
 		/// <param name="kind">The quest</param>
 		/// <param name="item">What it's for, or ""</param>
-		/// <returns>The key</returns>
-		private static int RouteKey(QuestKind kind, string item)
+		/// <param name="there">The key of the time there</param>
+		/// <param name="back">The key of the time back</param>
+		/// <param name="at">The key of when it was worked out</param>
+		private static void RouteKeys(QuestKind kind, string item, out int there, out int back, out int at)
 		{
-			return(("kriona.VikingVillages.villageQuestRoute." + kind + "." + item).GetStableHashCode());
+			string name = "kriona.VikingVillages.villageQuestRoad." + kind + "." + item;
+			there = (name + ".there").GetStableHashCode();
+			back = (name + ".back").GetStableHashCode();
+			at = (name + ".at").GetStableHashCode();
 		}
 
 		/// <summary>
-		/// Gets how long the road to a quest takes from a village, each way - asking the server the first time
+		/// Gets how long the road to a quest takes from a village, there and back - asking the server the first time, and
+		/// again once what it said is RouteKeepDays old, going by what it said before until it answers
+		/// </summary>
+		/// <param name="village">The village, run by this client</param>
+		/// <param name="kind">The quest</param>
+		/// <param name="item">What it's for, or ""</param>
+		/// <param name="back">Set to the time back, in seconds, or less than 0 while the server hasn't answered</param>
+		/// <returns>The time there, in seconds, or less than 0 while the server hasn't answered</returns>
+		private static float RouteSeconds(Village village, QuestKind kind, string item, out float back)
+		{
+			RouteKeys(kind, item, out int thereKey, out int backKey, out int atKey);
+			float there = village.Zdo.GetFloat(thereKey, -1f);
+			back = village.Zdo.GetFloat(backKey, -1f);
+			long at = village.Zdo.GetLong(atKey, 0L);
+			bool fresh = (there >= 0f && EnvMan.instance != null && NetTime.Now() - at < NetTime.Ticks((float)(EnvMan.instance.m_dayLengthSec * RouteKeepDays)));
+			// Asked once per village and road until the server answers
+			int asked = thereKey ^ village.Zdo.m_uid.GetHashCode();
+			if (fresh || routesAsked.Contains(asked))
+			{
+				return(there);
+			}
+			routesAsked.Add(asked);
+			ZDOID id = village.Zdo.m_uid;
+			TravelPlanner.AskQuestRoute(village.Farm, VillageCooking.VillageBiome(village), kind, item, (float answerThere, float answerBack) =>
+			{
+				routesAsked.Remove(asked);
+				ZDO zdo = ((ZDOMan.instance != null) ? ZDOMan.instance.GetZDO(id) : null);
+				if (zdo != null && zdo.IsOwner())
+				{
+					zdo.Set(thereKey, answerThere);
+					zdo.Set(backKey, answerBack);
+					zdo.Set(atKey, NetTime.Now());
+				}
+			});
+			return(there);
+		}
+
+		/// <summary>
+		/// Gets how long the road to a quest takes from a village, there - asking the server the first time
 		/// </summary>
 		/// <param name="village">The village, run by this client</param>
 		/// <param name="kind">The quest</param>
@@ -103,26 +152,7 @@ namespace VikingVillages
 		/// <returns>The time, in seconds, or less than 0 while the server hasn't answered</returns>
 		private static float RouteSeconds(Village village, QuestKind kind, string item)
 		{
-			int key = RouteKey(kind, item);
-			float seconds = village.Zdo.GetFloat(key, -1f);
-			// Asked once per village and road until the server answers
-			int asked = key ^ village.Zdo.m_uid.GetHashCode();
-			if (seconds >= 0f || routesAsked.Contains(asked))
-			{
-				return(seconds);
-			}
-			routesAsked.Add(asked);
-			ZDOID id = village.Zdo.m_uid;
-			VillageTravel.AskQuestRoute(village.Farm, VillageCooking.VillageBiome(village), kind, item, (float answer) =>
-			{
-				routesAsked.Remove(asked);
-				ZDO zdo = ((ZDOMan.instance != null) ? ZDOMan.instance.GetZDO(id) : null);
-				if (zdo != null && zdo.IsOwner())
-				{
-					zdo.Set(key, answer);
-				}
-			});
-			return(-1f);
+			return(RouteSeconds(village, kind, item, out float _));
 		}
 
 		/// <summary>
@@ -595,9 +625,11 @@ namespace VikingVillages
 			record.Trapped = exit.Trapped;
 			record.Phase = QuestPhase.Leaving;
 			record.SetOutAt = NetTime.Now();
-			float travel = RouteSeconds(village, record.Kind, record.Item);
+			float travel = RouteSeconds(village, record.Kind, record.Item, out float back);
+			travel = ((travel >= 0f) ? travel : QuestRules.DefaultTravel);
+			back = ((back >= 0f) ? back : travel);
 			ResourceSource source = QuestGame.SourceFor(ResourceBookGame.Get(), record.Kind, record.Item);
-			if (!QuestGame.Prepare(village, record, source, ((travel >= 0f) ? travel : QuestRules.DefaultTravel)))
+			if (!QuestGame.Prepare(village, record, source, travel, back))
 			{
 				Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " was given up on, as its vikings aren't all here");
 				TestLog.Count("Quests", record.Kind + " given up on");
@@ -608,7 +640,7 @@ namespace VikingVillages
 			VillageLife.CallToQuest(village, record);
 			TestLog.Count("Quests", record.Kind + " set out");
 			float seconds = (record.Due - record.SetOutAt) / (float)NetTime.Ticks(1f);
-			Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " sets out from " + record.Exit.ToString("F0") + (record.Trapped ? ", inside the village, as it's trapped" : "") + ", " + travel.ToString("F0") + "s each way and " + record.ActiveSeconds.ToString("F0") + "s there, due back in " + seconds.ToString("F0") + "s");
+			Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " sets out from " + record.Exit.ToString("F0") + (record.Trapped ? ", inside the village, as it's trapped" : "") + ", " + travel.ToString("F0") + "s there, " + back.ToString("F0") + "s back and " + record.ActiveSeconds.ToString("F0") + "s there, due back in " + seconds.ToString("F0") + "s");
 		}
 
 		/// <summary>
@@ -814,10 +846,13 @@ namespace VikingVillages
 				{
 					foreach (string item in RouteItems(book, kind))
 					{
-						float seconds = village.Zdo.GetFloat(RouteKey(kind, item), -1f);
-						if (seconds >= 0f)
+						RouteKeys(kind, item, out int thereKey, out int backKey, out int atKey);
+						float there = village.Zdo.GetFloat(thereKey, -1f);
+						if (there >= 0f)
 						{
-							roads.Add(kind + ((item.Length > 0) ? " " + item : "") + " " + seconds.ToString("F0") + "s");
+							float back = village.Zdo.GetFloat(backKey, there);
+							float age = (NetTime.Now() - village.Zdo.GetLong(atKey, 0L)) / (float)NetTime.Ticks(1f);
+							roads.Add(kind + ((item.Length > 0) ? " " + item : "") + " " + there.ToString("F0") + "s" + ((Mathf.Abs(back - there) >= 1f) ? "/" + back.ToString("F0") + "s back" : "") + " (" + age.ToString("F0") + "s old)");
 						}
 					}
 				}

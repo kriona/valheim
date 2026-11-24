@@ -23,13 +23,16 @@ namespace VikingVillages
 		/// <summary>
 		/// On a bonfire, when the village at it was disbanded and when its vikings had all gathered at it, in ZNet time
 		/// ticks, how long they stay once they have, in seconds, whether the village they go to is known yet (see Searched),
-		/// and the easiest biome among them
+		/// the easiest and hardest biomes among them, and whether any of them carries something a portal won't take (see
+		/// TravelParty)
 		/// </summary>
 		public static readonly int DisbandAtKey = "kriona.VikingVillages.fireDisbandAt".GetStableHashCode();
 		public static readonly int GatheredAtKey = "kriona.VikingVillages.fireGatheredAt".GetStableHashCode();
 		public static readonly int RemainKey = "kriona.VikingVillages.fireRemain".GetStableHashCode();
 		public static readonly int SearchedKey = "kriona.VikingVillages.fireSearched".GetStableHashCode();
 		public static readonly int BiomeKey = "kriona.VikingVillages.fireBiome".GetStableHashCode();
+		public static readonly int HardestKey = "kriona.VikingVillages.fireHardestBiome".GetStableHashCode();
+		public static readonly int UnteleportableKey = "kriona.VikingVillages.fireUnteleportable".GetStableHashCode();
 
 		/// <summary>
 		/// Whether the village a disbanded village's vikings go to is known - not yet, found, or there's none
@@ -82,37 +85,57 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Notes on a bonfire that its village was just disbanded, so its vikings gather at it, and asks the server for the
-		/// village they go to - the easiest biome among them, or the village's own when none of them is loaded here
+		/// village they go to - by what its vikings loaded here can do on the road together (see TravelParty), or the
+		/// village's own biome when none of them is loaded here
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="fire">Its bonfire's ZDO, owned by this client</param>
 		public static void Begin(Village village, ZDO fire)
 		{
-			int biome = int.MaxValue;
+			TravelParty party = null;
 			foreach (Character character in village.Vikings())
 			{
-				VikingCore core = ((character != null) ? character.GetComponent<VikingCore>() : null);
-				if (core != null)
+				Humanoid viking = (character as Humanoid);
+				if (viking != null && viking.GetComponent<VikingCore>() != null)
 				{
-					biome = Mathf.Min(biome, core.BiomeIndex());
+					bool first = (party == null);
+					party = (party ?? new TravelParty());
+					TravelPlanner.AddTo(party, viking, first);
 				}
 			}
-			if (biome == int.MaxValue)
+			if (party == null)
 			{
-				biome = VillageFarmhouses.HardestBiomeNear(village.Farm, VillageFarmhouses.HardBiomeVikingReach);
+				party = TravelParty.Of(VillageFarmhouses.HardestBiomeNear(village.Farm, VillageFarmhouses.HardBiomeVikingReach));
 			}
 			fire.Set(DisbandAtKey, NetTime.Now());
 			fire.Set(GatheredAtKey, 0L);
 			fire.Set(RemainKey, Random.Range(RemainMin, RemainMax));
 			fire.Set(SearchedKey, SearchPending);
-			fire.Set(BiomeKey, biome);
+			fire.Set(BiomeKey, party.Easiest);
+			fire.Set(HardestKey, party.Hardest);
+			fire.Set(UnteleportableKey, party.Unteleportable);
 			fire.Set(VillageTravel.DestinationKey, Vector3.zero);
 			ZDOID id = fire.m_uid;
 			fires.Remove(id);
 			fires.Add(id);
 			Vector3 from = fire.GetPosition();
 			Vector3 farm = village.Farm;
-			VillageTravel.Ask(from, biome, new List<Vector3> { farm }, (VillageTravel.Answer answer) => Answered(id, farm, answer));
+			TravelPlanner.Ask(from, party, new List<Vector3> { farm }, (TravelPlanner.Answer answer) => Answered(id, farm, answer));
+		}
+
+		/// <summary>
+		/// Reads what a disbanded village's vikings can do on the road together, as noted on its bonfire
+		/// </summary>
+		/// <param name="fire">The bonfire's ZDO</param>
+		/// <param name="fallback">The biome to take when none is noted, by VikingGear's order</param>
+		/// <returns>The party</returns>
+		public static TravelParty PartyOf(ZDO fire, int fallback)
+		{
+			TravelParty party = new TravelParty();
+			party.Easiest = fire.GetInt(BiomeKey, fallback);
+			party.Hardest = fire.GetInt(HardestKey, party.Easiest);
+			party.Unteleportable = fire.GetBool(UnteleportableKey);
+			return(party);
 		}
 
 		/// <summary>
@@ -123,7 +146,7 @@ namespace VikingVillages
 		/// <param name="id">The bonfire's ZDO</param>
 		/// <param name="farm">Where the village disbanded stood</param>
 		/// <param name="answer">The server's answer</param>
-		private static void Answered(ZDOID id, Vector3 farm, VillageTravel.Answer answer)
+		private static void Answered(ZDOID id, Vector3 farm, TravelPlanner.Answer answer)
 		{
 			ZDO fire = ((ZDOMan.instance != null) ? ZDOMan.instance.GetZDO(id) : null);
 			if (fire == null || fire.GetLong(DisbandAtKey, 0L) == 0L)
@@ -160,7 +183,10 @@ namespace VikingVillages
 			entry.Remaining = answer.Seconds;
 			entry.Due = entry.Unloaded + NetTime.Ticks(answer.Seconds);
 			entry.FromName = VillageNames.AtFire(fire);
-			entry.Biome = fire.GetInt(BiomeKey, 0);
+			TravelParty party = PartyOf(fire, 0);
+			entry.Biome = party.Easiest;
+			entry.BoatBiome = party.Hardest;
+			entry.Unteleportable = party.Unteleportable;
 			VillageTravel.Queue(entry);
 			Plugin.Log.LogInfo("Travel: " + kept.Count + " vikings of the village disbanded at " + fire.GetPosition().ToString("F0") + " that no player was near set out for the village at " + answer.Destination.ToString("F0"));
 		}
@@ -289,9 +315,9 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="fire">The bonfire's ZDO</param>
 		/// <returns>The answer, not found when there's none</returns>
-		public static VillageTravel.Answer Destination(ZDO fire)
+		public static TravelPlanner.Answer Destination(ZDO fire)
 		{
-			VillageTravel.Answer answer = new VillageTravel.Answer();
+			TravelPlanner.Answer answer = new TravelPlanner.Answer();
 			answer.Destination = fire.GetVec3(VillageTravel.DestinationKey, Vector3.zero);
 			answer.Found = (fire.GetInt(SearchedKey, SearchPending) == SearchFound && answer.Destination != Vector3.zero);
 			answer.Name = fire.GetString(VillageTravel.DestinationNameKey, "");

@@ -82,7 +82,7 @@ namespace VikingVillages.Tests
 			Assert.Equal(village, route.Road.Points[route.Road.Count - 1]);
 			Assert.InRange(route.Length, 799f, 830f);
 			Assert.Equal(route.Length / TravelTime.Speed, route.Seconds, 2);
-			Assert.DoesNotContain(true, route.Road.Sea);
+			Assert.DoesNotContain(TravelLeg.Sea, route.Road.Legs);
 			AssertShortLegs(route.Road);
 		}
 
@@ -110,7 +110,7 @@ namespace VikingVillages.Tests
 		{
 			TravelRoute route = Run(new Vector3(100f, 0f, 0f), 0, Raft, new List<Vector3> { new Vector3(600f, 0f, 0f) }, (float x, float z) => Strait(x, z, 100000f));
 			Assert.Equal(0, route.Found);
-			Assert.Contains(true, route.Road.Sea);
+			Assert.Contains(TravelLeg.Sea, route.Road.Legs);
 			Assert.True(route.Length < 700f);
 			for (int i = 1; i < route.Road.Count; i++)
 			{
@@ -150,7 +150,7 @@ namespace VikingVillages.Tests
 			// The strait ends just north of the road, so walking around is quicker than a slow raft across
 			System.Func<float, float, TravelRoute.Cell> map = (float x, float z) => Strait(x, z, 40f);
 			TravelRoute slow = Run(new Vector3(100f, 0f, 0f), 0, 0.5f, new List<Vector3> { new Vector3(600f, 0f, 0f) }, map);
-			Assert.DoesNotContain(true, slow.Road.Sea);
+			Assert.DoesNotContain(TravelLeg.Sea, slow.Road.Legs);
 		}
 
 		[Fact]
@@ -199,6 +199,120 @@ namespace VikingVillages.Tests
 			TravelRoute route = new TravelRoute(Vector3.zero, 0, Raft, new List<Vector3>(), Meadows);
 			Assert.True(route.Done);
 			Assert.Equal(-1, route.Found);
+		}
+
+		/// <summary>
+		/// Runs a search to the end with a boat that may or may not hold up in a burning sea, and portals
+		/// </summary>
+		/// <param name="from">Where the road starts</param>
+		/// <param name="fireproof">Whether the boat holds up in a burning sea</param>
+		/// <param name="places">Where the places stand</param>
+		/// <param name="map">The map</param>
+		/// <param name="portals">The portals, or null</param>
+		/// <returns>The finished search</returns>
+		private static TravelRoute RunWith(Vector3 from, bool fireproof, List<Vector3> places, System.Func<float, float, TravelRoute.Cell> map, List<TravelRoute.Portal> portals)
+		{
+			TravelRoute route = new TravelRoute(from, 0, Raft, fireproof, places, map, portals);
+			int steps = 0;
+			while (!route.Step(1000))
+			{
+				steps++;
+				Assert.True(steps < 2000, "The search never ended");
+			}
+			return(route);
+		}
+
+		/// <summary>
+		/// Reads a map with a wall of lava at x 300-400 and nothing past 3000 m from the middle, so the far side can only be
+		/// reached through a portal
+		/// </summary>
+		/// <param name="x">The point's x</param>
+		/// <param name="z">The point's z</param>
+		/// <returns>The square</returns>
+		private static TravelRoute.Cell Walled(float x, float z)
+		{
+			return(new TravelRoute.Cell { Open = ((x < 300f || x > 400f) && x * x + z * z < 3000f * 3000f), Biome = 0 });
+		}
+
+		[Fact]
+		public void RoadGoesThroughAPortalPastWhatCantBeCrossed()
+		{
+			TravelRoute.Portal portal = new TravelRoute.Portal { Entry = new Vector3(150f, 0f, 0f), Exit = new Vector3(550f, 0f, 0f) };
+			TravelRoute route = RunWith(new Vector3(100f, 0f, 0f), false, new List<Vector3> { new Vector3(700f, 0f, 0f) }, Walled, new List<TravelRoute.Portal> { portal });
+			Assert.Equal(0, route.Found);
+			Assert.Equal(1, route.Road.PortalCount());
+			int leg = route.Road.Legs.IndexOf(TravelLeg.Portal);
+			Assert.Equal(portal.Entry, route.Road.Points[leg - 1]);
+			Assert.Equal(portal.Exit, route.Road.Points[leg]);
+			Assert.True(route.Seconds < (50f + 150f) / TravelTime.Speed + TravelTime.PortalSeconds + 10f);
+		}
+
+		[Fact]
+		public void NoPortalNoRoadPastAWall()
+		{
+			TravelRoute route = RunWith(new Vector3(100f, 0f, 0f), false, new List<Vector3> { new Vector3(700f, 0f, 0f) }, Walled, null);
+			Assert.Equal(-1, route.Found);
+		}
+
+		[Fact]
+		public void APortalOutOfTheWayIsLeftAlone()
+		{
+			// Out to the portal and back from its far end takes longer than walking straight there
+			TravelRoute.Portal portal = new TravelRoute.Portal { Entry = new Vector3(-600f, 0f, 0f), Exit = new Vector3(600f, 0f, 1200f) };
+			TravelRoute route = RunWith(new Vector3(0f, 0f, 0f), false, new List<Vector3> { new Vector3(600f, 0f, 0f) }, Meadows, new List<TravelRoute.Portal> { portal });
+			Assert.Equal(0, route.Found);
+			Assert.Equal(0, route.Road.PortalCount());
+		}
+
+		[Fact]
+		public void RoadWalksBetweenTwoPortalsThatStandTogether()
+		{
+			// The first portal's far end stands right by the second's near end, as at a hub of portals
+			List<TravelRoute.Portal> portals = new List<TravelRoute.Portal>
+			{
+				new TravelRoute.Portal { Entry = new Vector3(150f, 0f, 0f), Exit = new Vector3(-1000f, 0f, 1000f) },
+				new TravelRoute.Portal { Entry = new Vector3(-1003f, 0f, 1002f), Exit = new Vector3(550f, 0f, 0f) }
+			};
+			System.Func<float, float, TravelRoute.Cell> map = (float x, float z) => ((x < -900f) ? new TravelRoute.Cell { Open = true, Biome = 0 } : Walled(x, z));
+			// The near side is walled off from the hub too, at z 500
+			System.Func<float, float, TravelRoute.Cell> cut = (float x, float z) => ((z > 400f && z < 500f) ? new TravelRoute.Cell { Open = false } : map(x, z));
+			TravelRoute route = RunWith(new Vector3(100f, 0f, 0f), false, new List<Vector3> { new Vector3(700f, 0f, 0f) }, cut, portals);
+			Assert.Equal(0, route.Found);
+			Assert.Equal(2, route.Road.PortalCount());
+			for (int i = 1; i < route.Road.Count; i++)
+			{
+				if (route.Road.PortalLeg(i))
+				{
+					Assert.False(route.Road.PortalLeg(i - 1), "Two portal legs in a row skip the walk between them");
+				}
+			}
+		}
+
+		/// <summary>
+		/// Reads a map with a strait of burning sea at x 300-400, the only way across
+		/// </summary>
+		/// <param name="x">The point's x</param>
+		/// <param name="z">The point's z</param>
+		/// <returns>The square</returns>
+		private static TravelRoute.Cell BurningStrait(float x, float z)
+		{
+			bool sea = (x > 300f && x < 400f);
+			return(new TravelRoute.Cell { Open = (x * x + z * z < 3000f * 3000f), Sea = sea, Burning = sea, Biome = 0 });
+		}
+
+		[Fact]
+		public void ABurningSeaIsNeverCrossedInABoatItWouldBurn()
+		{
+			TravelRoute route = RunWith(new Vector3(100f, 0f, 0f), false, new List<Vector3> { new Vector3(600f, 0f, 0f) }, BurningStrait, null);
+			Assert.Equal(-1, route.Found);
+		}
+
+		[Fact]
+		public void ABurningSeaIsCrossedInABoatMadeForIt()
+		{
+			TravelRoute route = RunWith(new Vector3(100f, 0f, 0f), true, new List<Vector3> { new Vector3(600f, 0f, 0f) }, BurningStrait, null);
+			Assert.Equal(0, route.Found);
+			Assert.Contains(TravelLeg.Sea, route.Road.Legs);
 		}
 	}
 }

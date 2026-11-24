@@ -2300,7 +2300,7 @@ namespace VikingVillages
 			}
 			if (onAnswer != null)
 			{
-				VillageTravel.Forget(onAnswer);
+				TravelPlanner.Forget(onAnswer);
 			}
 		}
 

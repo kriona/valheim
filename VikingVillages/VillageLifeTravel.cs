@@ -13,7 +13,8 @@ namespace VikingVillages
 	/// On the road a viking runs from waypoint to waypoint, stays out of fights unless it can't get away - its enemy is
 	/// faster than it, it's cornered, or it's hurt with its enemy right on it - or someone near it is attacked, waits for
 	/// the rest of its group when they fall behind, and eats what it carries, picking food along the way when it has
-	/// none. Reaching the sea, it sets sail, and the server takes it off the road (see SetSail). A wanderer fights what
+	/// none. Reaching the sea it sets sail, and reaching a portal on its road it steps in, and the server takes it off
+	/// the road with the rest of its group (see SetSail and EnterPortal). A wanderer fights what
 	/// it can take on, keeps away from what it can't, picks up loot and looks for a village
 	/// again every RecheckTime seconds. Neither uses village speech - they greet a player and pass on the news, and say
 	/// their own lines (see VikingRoadSpeech)
@@ -151,10 +152,10 @@ namespace VikingVillages
 		/// Its search for a village - the answer once it's come, whether one is on its way, when it was asked for, what
 		/// takes the answer, and the villages it found no one in
 		/// </summary>
-		private VillageTravel.Answer answered;
+		private TravelPlanner.Answer answered;
 		private bool searching;
 		private float searchedAt;
-		private System.Action<VillageTravel.Answer> onAnswer;
+		private System.Action<TravelPlanner.Answer> onAnswer;
 		private readonly List<Vector3> deadEnds = new List<Vector3>();
 
 		/// <summary>
@@ -342,12 +343,12 @@ namespace VikingVillages
 			}
 			if (onAnswer != null)
 			{
-				VillageTravel.Forget(onAnswer);
+				TravelPlanner.Forget(onAnswer);
 			}
 			searching = true;
 			searchedAt = Time.time;
 			answered = null;
-			onAnswer = (VillageTravel.Answer answer) =>
+			onAnswer = (TravelPlanner.Answer answer) =>
 			{
 				if (this != null)
 				{
@@ -355,7 +356,7 @@ namespace VikingVillages
 					searching = false;
 				}
 			};
-			VillageTravel.Ask(transform.position, RoadBiome(nview.GetZDO()), deadEnds, onAnswer);
+			TravelPlanner.Ask(transform.position, RoadParty(nview.GetZDO()), deadEnds, onAnswer);
 		}
 
 		/// <summary>
@@ -379,14 +380,22 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets the biome the viking looks for a village and picks its boat by - its group's, once it's on the road with
-		/// one, so they all sail in the same boat, or else its own
+		/// Gets what the viking can do on the road - its group's, once it's on the road with one, so they all keep to the
+		/// same road and boat, with its own biome and what it carries added
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
-		/// <returns>The biome, by VikingGear's order</returns>
-		private int RoadBiome(ZDO zdo)
+		/// <returns>The party</returns>
+		private TravelParty RoadParty(ZDO zdo)
 		{
-			return(VillageTravel.OnRoad(zdo) ? Mathf.Min(OwnBiome(), VillageTravel.Biome(zdo)) : OwnBiome());
+			TravelParty party = new TravelParty();
+			TravelPlanner.AddTo(party, humanoid, true);
+			if (VillageTravel.OnRoad(zdo))
+			{
+				TravelParty group = VillageTravel.PartyOf(zdo);
+				party.Add(group.Easiest, group.Unteleportable, false);
+				party.Hardest = Mathf.Max(party.Hardest, group.Hardest);
+			}
+			return(party);
 		}
 
 		/// <summary>
@@ -443,7 +452,7 @@ namespace VikingVillages
 			ai.StopMoving();
 			if (answered != null)
 			{
-				VillageTravel.Answer answer = answered;
+				TravelPlanner.Answer answer = answered;
 				answered = null;
 				TakeAnswer(zdo, answer);
 				return(true);
@@ -457,7 +466,7 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
 		/// <param name="answer">The server's answer</param>
-		private void TakeAnswer(ZDO zdo, VillageTravel.Answer answer)
+		private void TakeAnswer(ZDO zdo, TravelPlanner.Answer answer)
 		{
 			if (!answer.Found)
 			{
@@ -478,7 +487,7 @@ namespace VikingVillages
 				nextSearchAt = Time.time + RecheckTime;
 				return;
 			}
-			VillageTravel.SetOut(zdo, answer, zdo.GetString(VillageTravel.GroupKey, ""), RoadBiome(zdo));
+			VillageTravel.SetOut(zdo, answer, zdo.GetString(VillageTravel.GroupKey, ""), RoadParty(zdo));
 			LoadRoad(zdo);
 			road = Road.Travelling;
 			nextRoadLine = Time.time + Random.Range(RoadLineMin, RoadLineMax) / 3f;
@@ -496,7 +505,7 @@ namespace VikingVillages
 		{
 			if (answered != null)
 			{
-				VillageTravel.Answer answer = answered;
+				TravelPlanner.Answer answer = answered;
 				answered = null;
 				TakeAnswer(zdo, answer);
 				return(true);
@@ -521,6 +530,10 @@ namespace VikingVillages
 			if (travelRoad.SeaLeg(roadLeg))
 			{
 				return(SetSail(zdo));
+			}
+			if (travelRoad.PortalLeg(roadLeg))
+			{
+				return(EnterPortal(dt, zdo));
 			}
 			if (UpdateNeeds(dt, false) || WaitForGroup(zdo))
 			{
@@ -622,10 +635,38 @@ namespace VikingVillages
 			if (!zdo.GetBool(VillageTravel.SailingKey))
 			{
 				VillageTravel.SetSail(zdo);
-				VikingSpeech.Say(humanoid, VikingRoadSpeech.Sail(TravelTime.BoatName(VillageTravel.Biome(zdo))), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
-				Plugin.Log.LogInfo(LogName() + " reached the sea at " + transform.position.ToString("F0") + ", and sets sail");
+				VikingSpeech.Say(humanoid, VikingRoadSpeech.Sail(TravelTime.BoatName(VillageTravel.BoatBiome(zdo))), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+				Plugin.Log.LogInfo(LogName() + " reached the sea at " + transform.position.ToString("F0") + ", and sets sail in a " + TravelTime.BoatName(VillageTravel.BoatBiome(zdo)));
 			}
 			Face(travelRoad.Points[roadLeg]);
+			return(true);
+		}
+
+		/// <summary>
+		/// Has a viking that reached a portal on its road step into it - saying so, and standing at the portal until the
+		/// server takes it and the rest of its group off the road together, which it does once they've all reached it or
+		/// are out of every player's reach (see VillageTravel.TakeOffRoad), so the group never splits up
+		/// </summary>
+		/// <param name="dt">Seconds since the AI's last update</param>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True, as it takes the update over</returns>
+		private bool EnterPortal(float dt, ZDO zdo)
+		{
+			mover = "stepping through a portal";
+			Vector3 entry = travelRoad.Points[roadLeg - 1];
+			if (Utils.DistanceXZ(transform.position, entry) > WaypointReach)
+			{
+				Go(dt, entry, WaypointReach / 2f, false);
+				moveFailed = false;
+				return(true);
+			}
+			ai.StopMoving();
+			if (!zdo.GetBool(VillageTravel.PortalKey))
+			{
+				VillageTravel.EnterPortal(zdo);
+				VikingSpeech.Say(humanoid, VikingRoadSpeech.Portal(), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+				Plugin.Log.LogInfo(LogName() + " reached a portal at " + entry.ToString("F0") + ", and steps through it to " + travelRoad.Points[roadLeg].ToString("F0"));
+			}
 			return(true);
 		}
 
@@ -698,7 +739,7 @@ namespace VikingVillages
 		{
 			if (answered != null)
 			{
-				VillageTravel.Answer answer = answered;
+				TravelPlanner.Answer answer = answered;
 				answered = null;
 				TakeAnswer(zdo, answer);
 				if (road != Road.Wandering)
@@ -1094,7 +1135,7 @@ namespace VikingVillages
 		private bool UpdateGathering(float dt, ZDO zdo, ZDO fire)
 		{
 			VillageDisband.Phase phase = VillageDisband.PhaseOf(fire, out long _, out long _);
-			VillageTravel.Answer answer = VillageDisband.Destination(fire);
+			TravelPlanner.Answer answer = VillageDisband.Destination(fire);
 			Vector3 middle = fire.GetPosition();
 			if (phase == VillageDisband.Phase.Gathering || phase == VillageDisband.Phase.Remaining)
 			{
@@ -1135,7 +1176,7 @@ namespace VikingVillages
 				SayGoodbye();
 				return(true);
 			}
-			VillageTravel.SetOut(zdo, answer, VillageDisband.GroupName(fire), fire.GetInt(VillageDisband.BiomeKey, OwnBiome()));
+			VillageTravel.SetOut(zdo, answer, VillageDisband.GroupName(fire), VillageDisband.PartyOf(fire, OwnBiome()));
 			zdo.Set(VillageTravel.FromNameKey, VillageNames.AtFire(fire));
 			LoadRoad(zdo);
 			road = Road.Travelling;
@@ -1220,8 +1261,9 @@ namespace VikingVillages
 			if (VillageTravel.OnRoad(zdo))
 			{
 				string name = VillageTravel.DestinationName(zdo);
-				int biome = VillageTravel.Biome(zdo);
-				line += " to " + ((name.Length > 0) ? name + " " : "") + "at " + zdo.GetVec3(VillageTravel.DestinationKey, Vector3.zero).ToString("F0") + ", " + travelRoad.Meters(roadLeg, transform.position).ToString("F0") + "m and " + travelRoad.Seconds(roadLeg, transform.position, TravelTime.BoatSpeed(biome)).ToString("F0") + "s left, by " + TravelTime.BoatName(biome) + " across the sea" + (zdo.GetBool(VillageTravel.SailingKey) ? ", setting sail" : "");
+				int biome = VillageTravel.BoatBiome(zdo);
+				int portals = travelRoad.PortalCount();
+				line += " to " + ((name.Length > 0) ? name + " " : "") + "at " + zdo.GetVec3(VillageTravel.DestinationKey, Vector3.zero).ToString("F0") + ", " + travelRoad.Meters(roadLeg, transform.position).ToString("F0") + "m and " + travelRoad.Seconds(roadLeg, transform.position, TravelTime.BoatSpeed(biome)).ToString("F0") + "s left, " + VillageTravel.PartyOf(zdo).Describe() + ((portals > 0) ? ", " + portals + " portals on the road" : "") + ", waypoint " + roadLeg + " of " + travelRoad.Count + (zdo.GetBool(VillageTravel.SailingKey) ? ", setting sail" : "") + (zdo.GetBool(VillageTravel.PortalKey) ? ", stepping through a portal" : "");
 			}
 			text.Append(line + "\n");
 		}

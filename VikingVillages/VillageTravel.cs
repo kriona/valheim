@@ -5,22 +5,19 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Finds the village a living viking with none goes to, and keeps the vikings on the road while no player is near
-	/// them - the server's side of the vikings' travels, and the calls each client makes to it
+	/// Keeps living vikings on the road while no player is near them - the server's side of the vikings' travels once
+	/// they've set out on a road planned for them (see TravelPlanner), and the calls each client makes to it
 	/// </summary>
 	/// <remarks>
-	/// Only the server has the world's plan of its farms and every village's ZDO, so a client asks it for a viking's
-	/// village (see Search) and it plans the road over the world's map (see TravelRoute), to the farm or village a player
-	/// started that it can get to soonest, anywhere in the world, no harder than the viking's biome - generated or not,
-	/// leaving out farms that stayed abandoned - crossing the sea in the best boat its biome has (see
-	/// TravelTime.BoatSpeed). A viking on the road that's out of every player's reach, or has reached the sea and set
-	/// sail, is taken out of the world and kept in a record of the server's, a ZDO far past the edge of the world, until
-	/// it's due at its village - the rest of its road on foot at TravelTime.Speed and by sea at its boat's speed - and
-	/// then handed to the client that runs the village, which brings it in from the side it came from (see Arrive). A
-	/// village that's never loaded keeps it waiting. A village started again at the bonfire of a village its vikings left
-	/// calls back those still on the road, due back as long as they've been gone (see Recall). Vikings out on a quest
-	/// are kept the same way, due back at their own village when the quest is (see VillageQuests), or at the village
-	/// its vikings went to when it was disbanded meanwhile (see QuestsDisbanded)
+	/// A viking on the road that's out of every player's reach, or has reached the sea and set sail, or stepped into a
+	/// portal on its road, is taken out of the world together with the rest of its group and kept in a record of the
+	/// server's, a ZDO far past the edge of the world, until they're due at their village - the rest of the road on foot
+	/// at TravelTime.Speed, by sea at their boat's speed and through portals in TravelTime.PortalSeconds - and then handed
+	/// to the client that runs the village, which brings them in from the side they came from (see Arrive). A village
+	/// that's never loaded keeps them waiting. A village started again at the bonfire of a village its vikings left calls
+	/// back those still on the road, due back as long as they've been gone (see Recall). Vikings out on a quest are kept
+	/// the same way, due back at their own village when the quest is (see VillageQuests), or at the village its vikings
+	/// went to when it was disbanded meanwhile (see QuestsDisbanded)
 	/// </remarks>
 	internal static class VillageTravel
 	{
@@ -31,9 +28,10 @@ namespace VikingVillages
 
 		/// <summary>
 		/// On a living viking on the road, where the village it's going to stands, its name and who gave it, its road (see
-		/// TravelRoad.Encode), the index of the waypoint it's heading for, the group it set out with, or "", its biome -
-		/// the easiest of its group's, which picks the boat they cross the sea in - and that it has reached the sea and
-		/// is setting sail, so the server takes it off the road at once
+		/// TravelRoad.Encode), the index of the waypoint it's heading for, the group it set out with, or "", the easiest
+		/// biome of its group, which the road keeps to, the hardest, which picks the boat they cross the sea in, whether
+		/// any of them carries something a portal won't take, and that it has reached the sea and is setting sail, or
+		/// reached a portal on its road and is stepping into it, so the server takes it off the road at once
 		/// </summary>
 		public static readonly int DestinationKey = "kriona.VikingVillages.vikingDestination".GetStableHashCode();
 		public static readonly int DestinationNameKey = "kriona.VikingVillages.vikingDestinationName".GetStableHashCode();
@@ -42,7 +40,10 @@ namespace VikingVillages
 		public static readonly int LegKey = "kriona.VikingVillages.vikingRouteLeg".GetStableHashCode();
 		public static readonly int GroupKey = "kriona.VikingVillages.vikingTravelGroup".GetStableHashCode();
 		public static readonly int BiomeKey = "kriona.VikingVillages.vikingTravelBiome".GetStableHashCode();
+		public static readonly int BoatBiomeKey = "kriona.VikingVillages.vikingTravelBoatBiome".GetStableHashCode();
+		public static readonly int UnteleportableKey = "kriona.VikingVillages.vikingTravelUnteleportable".GetStableHashCode();
 		public static readonly int SailingKey = "kriona.VikingVillages.vikingSailing".GetStableHashCode();
+		public static readonly int PortalKey = "kriona.VikingVillages.vikingPortal".GetStableHashCode();
 
 		/// <summary>
 		/// On a living viking that left a village a player disbanded, the village's name, kept until it joins another (see
@@ -51,13 +52,10 @@ namespace VikingVillages
 		public static readonly int FromNameKey = "kriona.VikingVillages.vikingFromVillage".GetStableHashCode();
 
 		/// <summary>
-		/// The routed RPCs - a client asking the server for a viking's village, and the server's answer; the server handing
-		/// a group that's due to the client that runs its village, and that client handing it back when it can't bring it
-		/// in; a client handing the server a group to keep on the road; and a client asking the server to call back the
-		/// vikings that left a bonfire, and the server's answer
+		/// The routed RPCs - the server handing a group that's due to the client that runs its village, and that client
+		/// handing it back when it can't bring it in; a client handing the server a group to keep on the road; and a client
+		/// asking the server to call back the vikings that left a bonfire, and the server's answer
 		/// </summary>
-		private const string SearchRpc = Plugin.PluginGuid + ".TravelSearch";
-		private const string FoundRpc = Plugin.PluginGuid + ".TravelFound";
 		private const string DeliverRpc = Plugin.PluginGuid + ".TravelDeliver";
 		private const string HandBackRpc = Plugin.PluginGuid + ".TravelHandBack";
 		private const string QueueRpc = Plugin.PluginGuid + ".TravelQueue";
@@ -71,18 +69,6 @@ namespace VikingVillages
 		private const string QuestsDisbandedRpc = Plugin.PluginGuid + ".TravelQuestsDisbanded";
 
 		/// <summary>
-		/// The routed RPCs that ask the server how long a village's vikings take to get to where a quest goes, and its
-		/// answer
-		/// </summary>
-		private const string QuestRouteRpc = Plugin.PluginGuid + ".TravelQuestRoute";
-		private const string QuestRoutedRpc = Plugin.PluginGuid + ".TravelQuestRouted";
-
-		/// <summary>
-		/// On a client, what to do with the server's answer to each quest's road it asked for, by the question's ID
-		/// </summary>
-		private static readonly Dictionary<long, System.Action<float>> askedRoutes = new Dictionary<long, System.Action<float>>();
-
-		/// <summary>
 		/// The prefab hash of the record the server keeps the vikings on the road in - one no prefab has - where it
 		/// stands, and the key they're written to
 		/// </summary>
@@ -91,25 +77,9 @@ namespace VikingVillages
 		private static readonly int QueueKey = "kriona.VikingVillages.travelQueue".GetStableHashCode();
 
 		/// <summary>
-		/// How far from the middle of the world the sea can be crossed, in meters - short of the edge, past which a boat
-		/// is lost
-		/// </summary>
-		private const float WorldEdge = 10400f;
-
-		/// <summary>
-		/// How many squares of the map a search looks at each update (see TravelRoute.Step)
-		/// </summary>
-		private const int SearchBudget = 3000;
-
-		/// <summary>
-		/// Seconds the server keeps the list of villages to go to before looking through the world again
-		/// </summary>
-		private const float CandidateKeep = 60f;
-
-		/// <summary>
 		/// How near a farm's planned spot its generator, or the spot a village is noted at, has to be to be it, in meters
 		/// </summary>
-		private const float FarmMatch = 16f;
+		private const float FarmMatch = TravelPlanner.FarmMatch;
 
 		/// <summary>
 		/// Seconds between the server's looks for vikings on the road out of every player's reach and for groups due at
@@ -138,110 +108,6 @@ namespace VikingVillages
 		private const float HoldTime = 30f;
 
 		/// <summary>
-		/// How far below a square of lava its paint mask is, from the Ashlands' terrain (see Heightmap.IsLava)
-		/// </summary>
-		private const float LavaMask = 0.6f;
-
-		/// <summary>
-		/// What the server answers about a viking's village - whether it found one, where it stands, its name and who gave
-		/// it, the road there, how long it is, in meters, and how long it takes, in seconds
-		/// </summary>
-		internal class Answer
-		{
-			public bool Found;
-			public Vector3 Destination;
-			public string Name = "";
-			public string Author = "";
-			public TravelRoad Road = new TravelRoad();
-			public float Length;
-			public float Seconds;
-
-			/// <summary>
-			/// Gets the village's name as a viking says it, filtered for its author's words and without rich text
-			/// </summary>
-			/// <returns>The name, or ""</returns>
-			public string Spoken()
-			{
-				return(VikingNames.Filter(Name, Author).RemoveRichTextTags().Trim());
-			}
-
-			/// <summary>
-			/// Writes the answer to a package
-			/// </summary>
-			/// <param name="pkg">The package</param>
-			public void Write(ZPackage pkg)
-			{
-				pkg.Write(Found);
-				pkg.Write(Destination);
-				pkg.Write(Name);
-				pkg.Write(Author);
-				pkg.Write(Road.Encode());
-				pkg.Write(Length);
-				pkg.Write(Seconds);
-			}
-
-			/// <summary>
-			/// Reads an answer from a package
-			/// </summary>
-			/// <param name="pkg">The package</param>
-			/// <returns>The answer</returns>
-			public static Answer Read(ZPackage pkg)
-			{
-				Answer answer = new Answer();
-				answer.Found = pkg.ReadBool();
-				answer.Destination = pkg.ReadVector3();
-				answer.Name = pkg.ReadString();
-				answer.Author = pkg.ReadString();
-				answer.Road = TravelRoad.Decode(pkg.ReadByteArray());
-				answer.Length = pkg.ReadSingle();
-				answer.Seconds = pkg.ReadSingle();
-				return(answer);
-			}
-		}
-
-		/// <summary>
-		/// A village a viking could go to - where it stands, its name, or "", who gave it, and its biome by VikingGear's
-		/// order
-		/// </summary>
-		private struct Candidate
-		{
-			public Vector3 Position;
-			public string Name;
-			public string Author;
-			public int Biome;
-		}
-
-		/// <summary>
-		/// A search the server runs - who asked, with what, and the road search once it's started
-		/// </summary>
-		private class Search
-		{
-			public long Id;
-			public long Requester;
-			public Vector3 From;
-			public int Biome;
-			public List<Vector3> Excluded = new List<Vector3>();
-			public System.Action<Answer> Local;
-			public List<Candidate> Candidates;
-			public TravelRoute Route;
-
-			/// <summary>
-			/// The spots the road may lead to in place of the villages, for the road to a quest, or null
-			/// </summary>
-			public List<Vector3> Targets;
-		}
-
-		/// <summary>
-		/// On the server, the searches waiting and the one running, the villages to go to and when they were listed, and
-		/// the biome of each village's spot as worked out once
-		/// </summary>
-		private static readonly Queue<Search> searches = new Queue<Search>();
-		private static Search running;
-		private static List<Candidate> candidates;
-		private static float candidatesAt;
-		private static readonly Dictionary<Vector3, int> biomes = new Dictionary<Vector3, int>();
-
-		/// <summary>
 		/// On the server, the record and the groups on the road, the look for vikings out of reach going on - how far it
 		/// has got and what it has found - when it next looks, and since when each viking on the road has been out of
 		/// every player's reach, in Time.time seconds
@@ -252,11 +118,6 @@ namespace VikingVillages
 		private static readonly List<ZDO> sweepFound = new List<ZDO>();
 		private static float nextSweep;
 		private static readonly Dictionary<ZDOID, float> outSince = new Dictionary<ZDOID, float>();
-
-		/// <summary>
-		/// On a client, what to do with the server's answer to each search it asked for, by the search's ID
-		/// </summary>
-		private static readonly Dictionary<long, System.Action<Answer>> asked = new Dictionary<long, System.Action<Answer>>();
 
 		/// <summary>
 		/// On a client, the groups handed to it to bring into a village it runs, each with when it was handed over, in
@@ -274,28 +135,19 @@ namespace VikingVillages
 		/// </summary>
 		public static void Register()
 		{
-			ZRoutedRpc.instance.Register<ZPackage>(SearchRpc, OnSearch);
-			ZRoutedRpc.instance.Register<ZPackage>(FoundRpc, OnFound);
 			ZRoutedRpc.instance.Register<ZPackage>(DeliverRpc, OnDeliver);
 			ZRoutedRpc.instance.Register<ZPackage>(HandBackRpc, OnHandBack);
 			ZRoutedRpc.instance.Register<ZPackage>(QueueRpc, OnQueue);
 			ZRoutedRpc.instance.Register<Vector3, Vector3>(RecallRpc, OnRecall);
 			ZRoutedRpc.instance.Register<int, long>(RecalledRpc, OnRecalled);
 			ZRoutedRpc.instance.Register<ZPackage>(QuestsDisbandedRpc, OnQuestsDisbanded);
-			ZRoutedRpc.instance.Register<ZPackage>(QuestRouteRpc, OnQuestRoute);
-			ZRoutedRpc.instance.Register<long, float>(QuestRoutedRpc, OnQuestRouted);
-			askedRoutes.Clear();
-			searches.Clear();
-			running = null;
-			candidates = null;
-			biomes.Clear();
+			TravelPlanner.Register();
 			record = null;
 			queue = new List<TravelEntry>();
 			sweepIndex = -1;
 			sweepFound.Clear();
 			nextSweep = 0f;
 			outSince.Clear();
-			asked.Clear();
 			held.Clear();
 		}
 
@@ -343,6 +195,7 @@ namespace VikingVillages
 			viking.Set(LegKey, 0);
 			viking.Set(GroupKey, "");
 			viking.Set(SailingKey, false);
+			viking.Set(PortalKey, false);
 		}
 
 		/// <summary>
@@ -351,8 +204,8 @@ namespace VikingVillages
 		/// <param name="viking">The viking's ZDO, owned by this client</param>
 		/// <param name="answer">The server's answer, with a village found</param>
 		/// <param name="group">The group it sets out with, or ""</param>
-		/// <param name="biome">Its biome, by VikingGear's order - its group's easiest, so they all sail in the same boat</param>
-		public static void SetOut(ZDO viking, Answer answer, string group, int biome)
+		/// <param name="party">What its group can do on the road, so they all keep to the same road and boat</param>
+		public static void SetOut(ZDO viking, TravelPlanner.Answer answer, string group, TravelParty party)
 		{
 			viking.Set(ConfusedKey, false);
 			viking.Set(DestinationKey, answer.Destination);
@@ -361,8 +214,50 @@ namespace VikingVillages
 			viking.Set(RouteKey, answer.Road.Encode());
 			viking.Set(LegKey, 1);
 			viking.Set(GroupKey, group);
-			viking.Set(BiomeKey, biome);
+			viking.Set(BiomeKey, party.Easiest);
+			viking.Set(BoatBiomeKey, party.Hardest);
+			viking.Set(UnteleportableKey, party.Unteleportable);
 			viking.Set(SailingKey, false);
+			viking.Set(PortalKey, false);
+		}
+
+		/// <summary>
+		/// Gets what a viking on the road's group can do on it, as it set out
+		/// </summary>
+		/// <param name="viking">The viking's ZDO</param>
+		/// <returns>The party</returns>
+		public static TravelParty PartyOf(ZDO viking)
+		{
+			TravelParty party = new TravelParty();
+			party.Easiest = Biome(viking);
+			party.Hardest = BoatBiome(viking);
+			party.Unteleportable = viking.GetBool(UnteleportableKey);
+			return(party);
+		}
+
+		/// <summary>
+		/// Notes a viking on the road as stepping into a portal, having reached one on its road, so the server takes it
+		/// and its group off the road as soon as they all have (see TakeOffRoad) - the rest of the road taking as long as
+		/// it takes from the portal's other end
+		/// </summary>
+		/// <param name="viking">The viking's ZDO, owned by this client</param>
+		public static void EnterPortal(ZDO viking)
+		{
+			if (!viking.GetBool(PortalKey))
+			{
+				viking.Set(PortalKey, true);
+			}
+		}
+
+		/// <summary>
+		/// Checks whether a viking on the road is leaving the world for the rest of it - setting sail or stepping into a
+		/// portal
+		/// </summary>
+		/// <param name="viking">The viking's ZDO</param>
+		/// <returns>True when it is</returns>
+		private static bool Leaving(ZDO viking)
+		{
+			return(viking.GetBool(SailingKey) || viking.GetBool(PortalKey));
 		}
 
 		/// <summary>
@@ -380,13 +275,24 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets the biome a viking on the road picks its boat by
+		/// Gets the biome a viking on the road keeps to - its group's easiest
 		/// </summary>
 		/// <param name="viking">The viking's ZDO</param>
 		/// <returns>The biome, by VikingGear's order</returns>
 		public static int Biome(ZDO viking)
 		{
 			return(viking.GetInt(BiomeKey, 0));
+		}
+
+		/// <summary>
+		/// Gets the biome a viking on the road picks its boat by - its group's hardest, or the one it keeps to when it set
+		/// out before the two were told apart
+		/// </summary>
+		/// <param name="viking">The viking's ZDO</param>
+		/// <returns>The biome, by VikingGear's order</returns>
+		public static int BoatBiome(ZDO viking)
+		{
+			return(viking.GetInt(BoatBiomeKey, Biome(viking)));
 		}
 
 		/// <summary>
@@ -425,53 +331,6 @@ namespace VikingVillages
 				return(true);
 			}
 			return(Utils.DistanceXZ(viking.GetVec3(DestinationKey, Vector3.zero), village.Farm) <= FarmMatch);
-		}
-
-		/// <summary>
-		/// Asks the server for the nearest village a viking can go to - the answer comes back later, to the action given
-		/// </summary>
-		/// <param name="from">Where the viking is</param>
-		/// <param name="biome">Its biome, by VikingGear's order, the hardest a village can be</param>
-		/// <param name="excluded">The villages to leave out</param>
-		/// <param name="done">What to do with the answer</param>
-		public static void Ask(Vector3 from, int biome, List<Vector3> excluded, System.Action<Answer> done)
-		{
-			if (ZRoutedRpc.instance == null)
-			{
-				return;
-			}
-			long id = ((long)Random.Range(int.MinValue, int.MaxValue) << 32) ^ Random.Range(int.MinValue, int.MaxValue);
-			asked[id] = done;
-			ZPackage pkg = new ZPackage();
-			pkg.Write(id);
-			pkg.Write(from);
-			pkg.Write(biome);
-			pkg.Write(excluded.Count);
-			foreach (Vector3 point in excluded)
-			{
-				pkg.Write(point);
-			}
-			ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.instance.GetServerPeerID(), SearchRpc, pkg);
-		}
-
-		/// <summary>
-		/// Forgets the answer to a search no one's waiting for any more
-		/// </summary>
-		/// <param name="done">The action that was to have it</param>
-		public static void Forget(System.Action<Answer> done)
-		{
-			List<long> ids = new List<long>();
-			foreach (KeyValuePair<long, System.Action<Answer>> entry in asked)
-			{
-				if (entry.Value == done)
-				{
-					ids.Add(entry.Key);
-				}
-			}
-			foreach (long id in ids)
-			{
-				asked.Remove(id);
-			}
 		}
 
 		/// <summary>
@@ -576,8 +435,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Runs the server's side - its searches, its look for vikings out of reach and the groups due at their villages -
-		/// and on a client hands back the groups it held too long - call it from the plugin's Update
+		/// Runs the server's side - its road searches (see TravelPlanner), its look for vikings out of reach and the groups
+		/// due at their villages - and on a client hands back the groups it held too long - call it from the plugin's
+		/// Update
 		/// </summary>
 		public static void Update()
 		{
@@ -598,7 +458,7 @@ namespace VikingVillages
 				}
 				Load();
 			}
-			UpdateSearch();
+			TravelPlanner.Update();
 			UpdateSweep();
 		}
 
@@ -674,204 +534,6 @@ namespace VikingVillages
 				Load();
 			}
 			record.Set(QueueKey, TravelEntry.EncodeAll(queue));
-		}
-
-		/// <summary>
-		/// Takes a client's search on the server, to run after those before it
-		/// </summary>
-		/// <param name="sender">The client</param>
-		/// <param name="pkg">The search's ID, where the viking is, its biome and the villages to leave out</param>
-		private static void OnSearch(long sender, ZPackage pkg)
-		{
-			if (ZNet.instance == null || !ZNet.instance.IsServer())
-			{
-				return;
-			}
-			Search search = new Search();
-			search.Id = pkg.ReadLong();
-			search.Requester = sender;
-			search.From = pkg.ReadVector3();
-			search.Biome = pkg.ReadInt();
-			int count = pkg.ReadInt();
-			for (int i = 0; i < count; i++)
-			{
-				search.Excluded.Add(pkg.ReadVector3());
-			}
-			searches.Enqueue(search);
-		}
-
-		/// <summary>
-		/// Gives a client the server's answer to its search
-		/// </summary>
-		/// <param name="sender">The server</param>
-		/// <param name="pkg">The search's ID and the answer</param>
-		private static void OnFound(long sender, ZPackage pkg)
-		{
-			long id = pkg.ReadLong();
-			Answer answer = Answer.Read(pkg);
-			if (asked.TryGetValue(id, out System.Action<Answer> done))
-			{
-				asked.Remove(id);
-				done(answer);
-			}
-		}
-
-		/// <summary>
-		/// Runs the server's searches a little at a time, one after another, answering each as it ends
-		/// </summary>
-		private static void UpdateSearch()
-		{
-			if (running == null)
-			{
-				if (searches.Count == 0)
-				{
-					return;
-				}
-				running = searches.Dequeue();
-				Begin(running);
-			}
-			if (!running.Route.Step(SearchBudget))
-			{
-				return;
-			}
-			Search done = running;
-			running = null;
-			Answer answer = new Answer();
-			if (done.Route.Found >= 0)
-			{
-				Candidate found = done.Candidates[done.Route.Found];
-				answer.Found = true;
-				answer.Destination = found.Position;
-				answer.Name = found.Name;
-				answer.Author = found.Author;
-				answer.Road = done.Route.Road;
-				answer.Length = done.Route.Length;
-				answer.Seconds = done.Route.Seconds;
-			}
-			Plugin.Log.LogInfo("Travel: a viking at " + done.From.ToString("F0") + (answer.Found ? " is going to the village at " + answer.Destination.ToString("F0") + ((answer.Name.Length > 0) ? " (" + answer.Name + ")" : "") + ", " + answer.Length.ToString("F0") + "m away, " + answer.Seconds.ToString("F0") + "s by road and sea" : " found no village it can reach"));
-			if (done.Local != null)
-			{
-				done.Local(answer);
-				return;
-			}
-			ZPackage pkg = new ZPackage();
-			pkg.Write(done.Id);
-			answer.Write(pkg);
-			ZRoutedRpc.instance.InvokeRoutedRPC(done.Requester, FoundRpc, pkg);
-		}
-
-		/// <summary>
-		/// Starts a search - the road search out from the viking to every village in the world that's no harder than its
-		/// biome and isn't left out, or to the spot a quest goes to, crossing the sea in the best boat its biome has
-		/// </summary>
-		/// <param name="search">The search</param>
-		private static void Begin(Search search)
-		{
-			if (search.Targets != null)
-			{
-				search.Candidates = search.Targets.ConvertAll((Vector3 target) => new Candidate { Position = target, Name = "", Author = "", Biome = search.Biome });
-			}
-			else
-			{
-				List<Candidate> all = Candidates();
-				search.Candidates = all.FindAll((Candidate candidate) => candidate.Biome <= search.Biome && !search.Excluded.Exists((Vector3 excluded) => Utils.DistanceXZ(excluded, candidate.Position) <= FarmMatch));
-			}
-			List<Vector3> targets = search.Candidates.ConvertAll((Candidate candidate) => candidate.Position);
-			search.Route = new TravelRoute(search.From, search.Biome, TravelTime.BoatSpeed(search.Biome), targets, Sample);
-		}
-
-		/// <summary>
-		/// Reads a square of the world's map from its plan - the sea is crossed by boat, and the Ashlands' lava and the
-		/// water past WorldEdge can't be crossed at all
-		/// </summary>
-		/// <param name="x">The point's x</param>
-		/// <param name="z">The point's z</param>
-		/// <returns>The square</returns>
-		private static TravelRoute.Cell Sample(float x, float z)
-		{
-			if (x * x + z * z > WorldEdge * WorldEdge)
-			{
-				return(new TravelRoute.Cell { Open = false });
-			}
-			Heightmap.Biome biome = WorldGenerator.instance.GetBiome(x, z);
-			TravelRoute.Cell cell = new TravelRoute.Cell { Open = true, Sea = (biome == Heightmap.Biome.Ocean), Biome = VikingGear.IndexOf(biome) };
-			if (biome == Heightmap.Biome.AshLands)
-			{
-				WorldGenerator.instance.GetBiomeHeight(biome, x, z, out Color mask);
-				cell.Open = (mask.a <= LavaMask);
-			}
-			return(cell);
-		}
-
-		/// <summary>
-		/// Lists the villages a viking could go to - every farm the world was planned with, but those generated that
-		/// stayed abandoned, and every village a player started - named as they're named, or for a farm not set up yet by
-		/// the name settled for it (see VillagePlannedNames), and kept for CandidateKeep seconds
-		/// </summary>
-		/// <returns>The villages</returns>
-		private static List<Candidate> Candidates()
-		{
-			if (candidates != null && Time.time - candidatesAt < CandidateKeep)
-			{
-				return(candidates);
-			}
-			List<ZDO> generators = AllWithPrefab(VillagePaths.GeneratorPrefab);
-			List<ZDO> anchors = AllWithPrefab(VillageFounding.PrefabName);
-			List<Candidate> found = new List<Candidate>();
-			foreach (Vector3 farm in FarmSpawns.PlannedFarms())
-			{
-				ZDO generator = generators.Find((ZDO zdo) => Utils.DistanceXZ(zdo.GetPosition(), farm) <= FarmMatch);
-				if (generator != null && generator.GetBool(VillagePaths.AbandonedKey))
-				{
-					continue;
-				}
-				string name = "";
-				string author = "";
-				if (generator == null || !VillageNames.At(generator, out name, out author))
-				{
-					name = (VillagePlannedNames.For(farm) ?? "");
-					author = "";
-				}
-				found.Add(new Candidate { Position = farm, Name = name, Author = (author ?? ""), Biome = BiomeAt(farm) });
-			}
-			foreach (ZDO anchor in anchors)
-			{
-				VillageNames.At(anchor, out string name, out string author);
-				found.Add(new Candidate { Position = anchor.GetPosition(), Name = (name ?? ""), Author = (author ?? ""), Biome = BiomeAt(anchor.GetPosition()) });
-			}
-			candidates = found;
-			candidatesAt = Time.time;
-			return(candidates);
-		}
-
-		/// <summary>
-		/// Works out the biome of a village's vikings at a spot once (see VillageFarmhouses.HardestBiomeNear)
-		/// </summary>
-		/// <param name="spot">The spot</param>
-		/// <returns>The biome, by VikingGear's order</returns>
-		private static int BiomeAt(Vector3 spot)
-		{
-			if (!biomes.TryGetValue(spot, out int biome))
-			{
-				biome = VillageFarmhouses.HardestBiomeNear(spot, VillageFarmhouses.HardBiomeVikingReach);
-				biomes[spot] = biome;
-			}
-			return(biome);
-		}
-
-		/// <summary>
-		/// Lists every ZDO of a prefab the server has
-		/// </summary>
-		/// <param name="prefab">The prefab's name</param>
-		/// <returns>The ZDOs</returns>
-		private static List<ZDO> AllWithPrefab(string prefab)
-		{
-			List<ZDO> found = new List<ZDO>();
-			int index = 0;
-			while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(prefab, found, ref index))
-			{
-			}
-			return(found);
 		}
 
 		/// <summary>
@@ -961,7 +623,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether every viking of a group has set sail or been out of every player's reach for OutOfReachTime
+		/// Checks whether every viking of a group has set sail, stepped into a portal or been out of every player's reach
+		/// for OutOfReachTime
 		/// </summary>
 		/// <param name="members">The group's vikings</param>
 		/// <returns>True when they all have</returns>
@@ -970,7 +633,7 @@ namespace VikingVillages
 			bool all = true;
 			foreach (ZDO zdo in members)
 			{
-				if (zdo.GetBool(SailingKey))
+				if (Leaving(zdo))
 				{
 					continue;
 				}
@@ -1016,8 +679,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Packs a group taken off the road into an entry - due at its village once the farthest behind of them has
-		/// covered the rest of its road, on foot and by sea in the group's boat, and arriving from the way the road comes
-		/// in
+		/// covered the rest of its road, on foot, by sea in the boat of the group's hardest biome and through portals, and
+		/// arriving from the way the road comes in
 		/// </summary>
 		/// <param name="members">The group's vikings</param>
 		/// <returns>The entry</returns>
@@ -1030,14 +693,20 @@ namespace VikingVillages
 			entry.OriginFire = VillageDeparted.FirePosition(first);
 			entry.FromName = first.GetString(FromNameKey, "");
 			entry.Unloaded = NetTime.Now();
-			entry.Biome = int.MaxValue;
-			foreach (ZDO zdo in members)
+			TravelParty party = new TravelParty();
+			for (int i = 0; i < members.Count; i++)
 			{
-				entry.Biome = Mathf.Min(entry.Biome, Biome(zdo));
+				TravelParty own = PartyOf(members[i]);
+				party.Add(own.Easiest, own.Unteleportable, (i == 0));
+				party.Hardest = Mathf.Max(party.Hardest, own.Hardest);
 			}
-			float boat = TravelTime.BoatSpeed(entry.Biome);
+			entry.Biome = party.Easiest;
+			entry.BoatBiome = party.Hardest;
+			entry.Unteleportable = party.Unteleportable;
+			float boat = TravelTime.BoatSpeed(entry.BoatBiome);
 			float total = 0f;
-			bool sailing = false;
+			string how = "went out of every player's reach";
+			string counted = "out of reach";
 			foreach (ZDO zdo in members)
 			{
 				TravelRoad road = TravelRoad.Decode(zdo.GetByteArray(RouteKey));
@@ -1048,12 +717,22 @@ namespace VikingVillages
 					total = road.TotalSeconds(boat);
 					entry.From = ((road.Count > 0) ? road.Approach() : zdo.GetPosition());
 				}
-				sailing |= zdo.GetBool(SailingKey);
+				if (zdo.GetBool(SailingKey))
+				{
+					how = "set sail in a " + TravelTime.BoatName(entry.BoatBiome);
+					counted = "set sail";
+				}
+				else if (zdo.GetBool(PortalKey))
+				{
+					how = "stepped through a portal";
+					counted = "through a portal";
+				}
 				entry.Vikings.Add(VillageDeparted.SnapshotOf(zdo));
 			}
 			entry.Spent = Mathf.Max(0f, total - entry.Remaining);
 			entry.Due = entry.Unloaded + NetTime.Ticks(entry.Remaining);
-			Plugin.Log.LogInfo("Travel: " + members.Count + " vikings " + (sailing ? "set sail in a " + TravelTime.BoatName(entry.Biome) : "went out of every player's reach") + " on their way to the village at " + entry.Destination.ToString("F0") + ", due there in " + entry.Remaining.ToString("F0") + "s");
+			Plugin.Log.LogInfo("Travel: " + members.Count + " vikings (" + party.Describe() + ") " + how + " on their way to the village at " + entry.Destination.ToString("F0") + ", " + entry.Spent.ToString("F0") + "s into the road, due there in " + entry.Remaining.ToString("F0") + "s");
+			TestLog.Count("Travel", "groups taken off the road, " + counted);
 			return(entry);
 		}
 
@@ -1097,6 +776,8 @@ namespace VikingVillages
 				}
 				queue.RemoveAt(i);
 				changed = true;
+				Plugin.Log.LogInfo("Travel: " + entry.Vikings.Count + " vikings " + (entry.OnQuest ? "out on a quest " + (QuestKind)entry.QuestKind + " " : "") + "are due at the village at " + entry.Destination.ToString("F0") + ((entry.Name.Length > 0) ? " (" + entry.Name + ")" : "") + ", " + ((now - entry.Due) / (float)NetTime.Ticks(1f)).ToString("F0") + "s late, after " + (entry.Spent + entry.Remaining).ToString("F0") + "s on the road");
+				TestLog.Count("Travel", (entry.OnQuest ? "quest groups due home" : (entry.Returning ? "groups due back at a village started again" : "groups due at a village")));
 				ZRoutedRpc.instance.InvokeRoutedRPC(village.GetOwner(), DeliverRpc, new ZPackage(entry.Encode()));
 			}
 			if (changed)
@@ -1125,11 +806,8 @@ namespace VikingVillages
 			entry.Excluded.Add(entry.Destination);
 			entry.Due = long.MaxValue;
 			Vector3 from = entry.Destination;
-			Search search = new Search();
-			search.From = from;
-			search.Biome = entry.Biome;
-			search.Excluded = new List<Vector3>(entry.Excluded);
-			search.Local = (Answer answer) =>
+			TravelParty party = new TravelParty { Easiest = entry.Biome, Hardest = entry.BoatBiome, Unteleportable = entry.Unteleportable };
+			TravelPlanner.PlanHere(from, party, entry.Excluded, entry.Vikings.Count + " vikings on the road that found no one at their village", (TravelPlanner.Answer answer) =>
 			{
 				long now = NetTime.Now();
 				if (!answer.Found)
@@ -1146,10 +824,10 @@ namespace VikingVillages
 					entry.Spent += entry.Remaining;
 					entry.Remaining = answer.Seconds;
 					entry.Due = now + NetTime.Ticks(answer.Seconds);
+					TestLog.Count("Travel", "groups rerouted on the road");
 				}
 				Save();
-			};
-			searches.Enqueue(search);
+			});
 		}
 
 		/// <summary>
@@ -1209,6 +887,35 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Describes the groups the server keeps on the road and its road searches, a line each, for the test run's
+		/// snapshot - nothing on a client, which keeps none
+		/// </summary>
+		/// <returns>The lines</returns>
+		public static List<string> DescribeQueue()
+		{
+			List<string> lines = new List<string>();
+			if (ZNet.instance == null || !ZNet.instance.IsServer() || record == null)
+			{
+				return(lines);
+			}
+			long now = NetTime.Now();
+			float tick = NetTime.Ticks(1f);
+			foreach (TravelEntry entry in queue)
+			{
+				string what = (entry.OnQuest ? "out on a quest " + (QuestKind)entry.QuestKind : (entry.Returning ? "coming back to a village started again" : "on the road"));
+				string due = ((entry.Due == long.MaxValue) ? "looking for another village" : ((entry.Due > now) ? "due in " + ((entry.Due - now) / tick).ToString("F0") + "s" : "due " + ((now - entry.Due) / tick).ToString("F0") + "s ago"));
+				TravelParty party = new TravelParty { Easiest = entry.Biome, Hardest = entry.BoatBiome, Unteleportable = entry.Unteleportable };
+				lines.Add(entry.Vikings.Count + " vikings " + what + " to " + entry.Destination.ToString("F0") + ((entry.Name.Length > 0) ? " (" + entry.Name + ")" : "") + ", " + due + ", " + party.Describe() + ((entry.FromName.Length > 0) ? ", from " + entry.FromName : "") + ((entry.Excluded.Count > 0) ? ", " + entry.Excluded.Count + " villages found empty" : ""));
+			}
+			string searching = TravelPlanner.DescribeSearches();
+			if (searching.Length > 0)
+			{
+				lines.Add(searching);
+			}
+			return(lines);
+		}
+
+		/// <summary>
 		/// Makes the vikings out on a quest due back now, on the server, for the kri_vv_testlog command
 		/// </summary>
 		/// <param name="questId">The quest's ID</param>
@@ -1238,91 +945,13 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Asks the server how long a village's vikings take to get to where a quest goes (see QuestTargets), each way -
-		/// the answer comes back later, to the action given
-		/// </summary>
-		/// <param name="from">Where the village stands</param>
-		/// <param name="biome">The village's biome, by VikingGear's order</param>
-		/// <param name="kind">The quest</param>
-		/// <param name="item">What it's for, or ""</param>
-		/// <param name="done">What to do with the answer, in seconds</param>
-		public static void AskQuestRoute(Vector3 from, int biome, QuestKind kind, string item, System.Action<float> done)
-		{
-			if (ZRoutedRpc.instance == null)
-			{
-				return;
-			}
-			long id = ((long)Random.Range(int.MinValue, int.MaxValue) << 32) ^ Random.Range(int.MinValue, int.MaxValue);
-			askedRoutes[id] = done;
-			ZPackage pkg = new ZPackage();
-			pkg.Write(id);
-			pkg.Write(from);
-			pkg.Write(biome);
-			pkg.Write((int)kind);
-			pkg.Write(item);
-			ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.instance.GetServerPeerID(), QuestRouteRpc, pkg);
-		}
-
-		/// <summary>
-		/// Works out on the server how long a village's vikings take to get to where a quest goes - the road there, over
-		/// land and sea in the best boat the village's biome has, or straight there on foot when there's no road, or
-		/// QuestRules.DefaultTravel when there's nowhere to go - and answers the client that asked
-		/// </summary>
-		/// <param name="sender">The client that asked</param>
-		/// <param name="pkg">The question's ID, where the village stands, its biome, the quest and what it's for</param>
-		private static void OnQuestRoute(long sender, ZPackage pkg)
-		{
-			if (ZNet.instance == null || !ZNet.instance.IsServer())
-			{
-				return;
-			}
-			long id = pkg.ReadLong();
-			Vector3 from = pkg.ReadVector3();
-			int biome = pkg.ReadInt();
-			QuestKind kind = (QuestKind)pkg.ReadInt();
-			string item = pkg.ReadString();
-			Vector3 target = QuestTargets.Find(kind, item, from, biome);
-			if (target == Vector3.zero)
-			{
-				ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, QuestRules.DefaultTravel);
-				return;
-			}
-			Search search = new Search();
-			search.From = from;
-			search.Biome = biome;
-			search.Targets = new List<Vector3> { target };
-			search.Local = (Answer answer) =>
-			{
-				float seconds = (answer.Found ? answer.Seconds : TravelTime.Seconds(Utils.DistanceXZ(from, target)));
-				Plugin.Log.LogInfo("Travel: a quest " + kind + " from the village at " + from.ToString("F0") + " goes to " + target.ToString("F0") + ", " + seconds.ToString("F0") + "s each way");
-				ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, seconds);
-			};
-			searches.Enqueue(search);
-		}
-
-		/// <summary>
-		/// Gives a client the server's answer to how long a quest's road takes
-		/// </summary>
-		/// <param name="sender">The server</param>
-		/// <param name="id">The question's ID</param>
-		/// <param name="seconds">How long it takes each way, in seconds</param>
-		private static void OnQuestRouted(long sender, long id, float seconds)
-		{
-			if (askedRoutes.TryGetValue(id, out System.Action<float> done))
-			{
-				askedRoutes.Remove(id);
-				done(seconds);
-			}
-		}
-
-		/// <summary>
 		/// Tells the server a village was disbanded, so the vikings out on its quest come back to the village its vikings
 		/// went to instead, later by the road from it there (see OnQuestsDisbanded)
 		/// </summary>
 		/// <param name="farm">Where the village stood - its farm's spot or its anchor</param>
 		/// <param name="fire">Where its bonfire stands, which a village started again there calls them back by</param>
 		/// <param name="answer">The village its vikings went to, not found when there's none</param>
-		public static void QuestsDisbanded(Vector3 farm, Vector3 fire, Answer answer)
+		public static void QuestsDisbanded(Vector3 farm, Vector3 fire, TravelPlanner.Answer answer)
 		{
 			if (ZRoutedRpc.instance == null)
 			{
@@ -1351,7 +980,7 @@ namespace VikingVillages
 			}
 			Vector3 farm = pkg.ReadVector3();
 			Vector3 fire = pkg.ReadVector3();
-			Answer answer = Answer.Read(pkg);
+			TravelPlanner.Answer answer = TravelPlanner.Answer.Read(pkg);
 			long now = NetTime.Now();
 			int count = 0;
 			foreach (TravelEntry entry in queue)

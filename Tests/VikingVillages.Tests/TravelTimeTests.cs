@@ -38,6 +38,17 @@ namespace VikingVillages.Tests
 			Assert.Equal(boat, TravelTime.BoatName(biome));
 		}
 
+		[Theory]
+		[InlineData(0, "Raft", false)]
+		[InlineData(2, "Karve", false)]
+		[InlineData(5, "VikingShip", false)]
+		[InlineData(6, "VikingShip_Ashlands", true)]
+		public void OnlyTheDrakkarHoldsUpInTheAshlandsSea(int biome, string prefab, bool fireproof)
+		{
+			Assert.Equal(prefab, TravelTime.BoatPrefab(biome));
+			Assert.Equal(fireproof, TravelTime.BoatSurvivesAshlands(biome));
+		}
+
 		[Fact]
 		public void BetterBoatsAreFaster()
 		{

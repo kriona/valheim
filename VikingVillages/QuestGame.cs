@@ -76,9 +76,10 @@ namespace VikingVillages
 		/// <param name="village">The village</param>
 		/// <param name="record">The quest, its plans and due time filled in</param>
 		/// <param name="source">The way the quest gets its item</param>
-		/// <param name="travel">How long the trip takes each way, in seconds</param>
+		/// <param name="there">How long the trip there takes, in seconds</param>
+		/// <param name="back">How long the trip back takes, in seconds</param>
 		/// <returns>False when one of its vikings isn't loaded here</returns>
-		public static bool Prepare(Village village, QuestRecord record, ResourceSource source, float travel)
+		public static bool Prepare(Village village, QuestRecord record, ResourceSource source, float there, float back)
 		{
 			List<Humanoid> members = Members(village, record);
 			ResourceBook book = ResourceBookGame.Get();
@@ -111,7 +112,7 @@ namespace VikingVillages
 				record.Plans[i].Loot = Ordered(shares[i], record.Item);
 			}
 			record.ActiveSeconds = active;
-			record.Due = record.SetOutAt + NetTime.Ticks(QuestRules.Duration(travel, active, Random.Range(-1f, 1f)));
+			record.Due = record.SetOutAt + NetTime.Ticks(QuestRules.Duration(there, back, active, Random.Range(-1f, 1f)));
 			return(true);
 		}
 

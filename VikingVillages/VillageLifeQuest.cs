@@ -393,6 +393,8 @@ namespace VikingVillages
 			entry.Unloaded = now;
 			entry.Remaining = Mathf.Max(0f, (record.Due - now) / (float)NetTime.Ticks(1f));
 			entry.Biome = VillageCooking.VillageBiome(village);
+			entry.BoatBiome = entry.Biome;
+			entry.Unteleportable = !TravelPlanner.Teleportable(record.Item);
 			entry.QuestId = record.Id;
 			entry.QuestKind = (int)record.Kind;
 			entry.QuestDue = record.Due;

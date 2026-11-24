@@ -98,13 +98,14 @@ namespace VikingVillages
 		/// <summary>
 		/// Works out how long a quest is gone - there and back, and the work there - randomized by up to Jitter either way
 		/// </summary>
-		/// <param name="travel">How long the trip takes each way, in seconds</param>
+		/// <param name="there">How long the trip there takes, in seconds</param>
+		/// <param name="back">How long the trip back takes, in seconds</param>
 		/// <param name="active">How long the work takes, in seconds</param>
 		/// <param name="roll">A random roll from -1 to 1</param>
 		/// <returns>The time, in seconds</returns>
-		public static float Duration(float travel, float active, float roll)
+		public static float Duration(float there, float back, float active, float roll)
 		{
-			float total = System.Math.Max(0f, travel) * 2f + System.Math.Max(0f, active);
+			float total = System.Math.Max(0f, there) + System.Math.Max(0f, back) + System.Math.Max(0f, active);
 			float clamped = System.Math.Max(-1f, System.Math.Min(1f, roll));
 			return(total * (1f + Jitter * clamped));
 		}

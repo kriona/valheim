@@ -441,7 +441,10 @@ namespace VikingVillages
 				VillageTravel.LegKey,
 				VillageTravel.GroupKey,
 				VillageTravel.BiomeKey,
+				VillageTravel.BoatBiomeKey,
+				VillageTravel.UnteleportableKey,
 				VillageTravel.SailingKey,
+				VillageTravel.PortalKey,
 				ZDOVars.s_patrol,
 				ZDOVars.s_patrolPoint,
 				ZDOVars.s_spawnPoint

@@ -144,6 +144,18 @@ namespace VikingVillages
 		};
 
 		/// <summary>
+		/// What a viking on the road says as it reaches a portal on its way and steps through
+		/// </summary>
+		internal static readonly string[] PortalLines =
+		{
+			"Through the portal - it's quicker than walking.",
+			"Hold your breath, everyone. In we go!",
+			"I'll never get used to these things.",
+			"See you on the other side!",
+			"Keep together - the portal won't wait."
+		};
+
+		/// <summary>
 		/// What a viking says as it reaches a farm on its way that no one lives in, and moves on
 		/// </summary>
 		internal static readonly string[] DeadEndLines =
@@ -309,6 +321,15 @@ namespace VikingVillages
 		public static string Sail(string boat)
 		{
 			return(string.Format(VikingSpeech.Pick(SailLines, ""), boat));
+		}
+
+		/// <summary>
+		/// Picks what a viking on the road says as it steps through a portal
+		/// </summary>
+		/// <returns>The line</returns>
+		public static string Portal()
+		{
+			return(VikingSpeech.Pick(PortalLines, ""));
 		}
 
 		/// <summary>

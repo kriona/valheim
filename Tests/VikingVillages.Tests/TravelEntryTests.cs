@@ -29,6 +29,8 @@ namespace VikingVillages.Tests
 			entry.Returning = true;
 			entry.FromName = "Hrafnheim";
 			entry.Biome = 3;
+			entry.BoatBiome = 6;
+			entry.Unteleportable = true;
 			entry.Excluded.Add(new Vector3(9f, 0f, 9f));
 			entry.QuestId = "abc123";
 			entry.QuestKind = (int)QuestKind.RaidCrypts;
@@ -61,6 +63,8 @@ namespace VikingVillages.Tests
 			Assert.Equal(expected.QuestKind, actual.QuestKind);
 			Assert.Equal(expected.QuestDue, actual.QuestDue);
 			Assert.Equal(expected.QuestMembers, actual.QuestMembers);
+			Assert.Equal(expected.BoatBiome, actual.BoatBiome);
+			Assert.Equal(expected.Unteleportable, actual.Unteleportable);
 		}
 
 		[Theory]
@@ -123,6 +127,9 @@ namespace VikingVillages.Tests
 			Assert.NotNull(read);
 			Assert.Equal("Eikvik", read.Name);
 			Assert.False(read.OnQuest);
+			// Written before the boat's biome was told apart, it sails by the biome it keeps to
+			Assert.Equal(3, read.BoatBiome);
+			Assert.False(read.Unteleportable);
 		}
 
 		[Fact]
