@@ -1175,6 +1175,35 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Makes the vikings out on a quest due back now, on the server, for the kri_vv_testlog command
+		/// </summary>
+		/// <param name="questId">The quest's ID</param>
+		/// <returns>How many vikings are due back</returns>
+		public static int DueNow(string questId)
+		{
+			if (record == null)
+			{
+				Load();
+			}
+			int count = 0;
+			long now = NetTime.Now();
+			foreach (TravelEntry entry in queue)
+			{
+				if (entry.QuestId == questId)
+				{
+					entry.Due = now;
+					entry.QuestDue = now;
+					count += entry.Vikings.Count;
+				}
+			}
+			if (count > 0)
+			{
+				Save();
+			}
+			return(count);
+		}
+
+		/// <summary>
 		/// Asks the server how long a village's vikings take to get to where a quest goes (see QuestTargets), each way -
 		/// the answer comes back later, to the action given
 		/// </summary>

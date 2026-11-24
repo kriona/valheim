@@ -33,6 +33,111 @@ namespace VikingVillages
 		private bool questChecked;
 
 		/// <summary>
+		/// The wood in a village's chests it counts as running out at, and how long it goes without finding food to
+		/// forage or prey to hunt before the food around it counts as gone, as a share of a day
+		/// </summary>
+		internal const int WoodLow = 10;
+		private const float FoodGoneDays = 0.5f;
+
+		/// <summary>
+		/// When each village's vikings on this client last found food to forage or prey to hunt, or when that was first
+		/// looked at, by its ZDO, in ZNet time ticks
+		/// </summary>
+		private static readonly Dictionary<ZDOID, long> foodFoundAt = new Dictionary<ZDOID, long>();
+
+		/// <summary>
+		/// Notes that the viking found food to forage or prey to hunt around its village
+		/// </summary>
+		private void NoteFoodFound()
+		{
+			if (village != null && village.Zdo != null)
+			{
+				foodFoundAt[village.Zdo.m_uid] = NetTime.Now();
+			}
+		}
+
+		/// <summary>
+		/// Checks whether a village's vikings have found nothing to forage or hunt around it for FoodGoneDays
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>True when they haven't</returns>
+		internal static bool FoodGone(Village village)
+		{
+			ZDOID id = village.Zdo.m_uid;
+			long now = NetTime.Now();
+			if (!foodFoundAt.TryGetValue(id, out long at))
+			{
+				foodFoundAt[id] = now;
+				return(false);
+			}
+			return(EnvMan.instance != null && now - at > NetTime.Ticks(EnvMan.instance.m_dayLengthSec * FoodGoneDays));
+		}
+
+		/// <summary>
+		/// Checks whether a village's chests hold too little food for its vikings to keep their foods up (see
+		/// FoodEnough)
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>True when they do</returns>
+		internal static bool FoodLow(Village village)
+		{
+			int food = 0;
+			foreach (Container chest in VillageChests(village))
+			{
+				foreach (ItemDrop.ItemData item in chest.GetInventory().GetAllItems())
+				{
+					food += (VikingFood.IsFood(item) ? item.m_stack : 0);
+				}
+			}
+			return(!FoodEnough(food, village.Vikings().Count));
+		}
+
+		/// <summary>
+		/// Counts the wood in a village's chests
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>The wood, of every kind</returns>
+		internal static int ChestWoodOf(Village village)
+		{
+			int wood = 0;
+			foreach (Container chest in VillageChests(village))
+			{
+				wood += ChestWood(chest);
+			}
+			return(wood);
+		}
+
+		/// <summary>
+		/// Checks whether a village is out of wood - fewer than WoodLow in its chests, and a viking of it on this client
+		/// found none to gather lately
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>True when it is</returns>
+		internal static bool OutOfWood(Village village)
+		{
+			if (ChestWoodOf(village) >= WoodLow)
+			{
+				return(false);
+			}
+			foreach (VillageLife life in All)
+			{
+				if (life != null && life.village == village && Time.time < life.noWoodUntil)
+				{
+					return(true);
+				}
+			}
+			return(false);
+		}
+
+		/// <summary>
+		/// Forgets when each village last found food, as the world is left
+		/// </summary>
+		internal static void ForgetFood()
+		{
+			foodFoundAt.Clear();
+		}
+
+		/// <summary>
 		/// Stops what the vikings of a quest on this client are doing, so they get ready to go
 		/// </summary>
 		/// <param name="village">The village</param>
@@ -191,8 +296,15 @@ namespace VikingVillages
 			}
 			foreach (KeyValuePair<string, int> found in outcome.Loot)
 			{
+				// A circlet bought for one still using torches is theirs to wear, in place of a torch
+				int count = found.Value;
+				if (found.Key == ResourceBook.Circlet && OwnTool(ResourceBook.Circlet) == null && inventory.AddItem(ResourceBook.Circlet, 1, 1, 0, 0L, "", false) != null)
+				{
+					count--;
+					TestLog.Count("Brought home from quests", found.Key);
+				}
 				ItemDrop.ItemData template = ItemOf(found.Key);
-				int carried = ((template != null) ? Carry(template, found.Value, CarryLoot) : 0);
+				int carried = ((template != null && count > 0) ? Carry(template, count, CarryLoot) : 0);
 				TestLog.Count("Brought home from quests", found.Key, carried);
 			}
 			inventory.Changed();
@@ -241,14 +353,15 @@ namespace VikingVillages
 			private bool suppliesDone;
 			private int foodWanted;
 			private int potionsWanted;
+			private readonly Dictionary<string, int> spendWanted = new Dictionary<string, int>();
 			private readonly HashSet<Container> searched = new HashSet<Container>();
 			private bool announced;
 			private float actAt = -1f;
 
 			/// <summary>
-			/// Makes the job, working out the food and potions the viking takes along - a full set of foods for as long as
-			/// the quest is gone (see QuestSim.MealsWanted), up to QuestGame.FoodMax, and up to QuestGame.PotionMax
-			/// potions, less what it already carries for the quest
+			/// Makes the job, working out what the viking takes along - a full set of foods for as long as the quest is
+			/// gone (see QuestSim.MealsWanted), up to QuestGame.FoodMax, up to QuestGame.PotionMax potions, and what it
+			/// spends there, like treasure to sell (see MemberPlan.Spend) - less what it already carries for the quest
 			/// </summary>
 			/// <param name="owner">The viking's life</param>
 			/// <param name="record">The quest</param>
@@ -275,7 +388,32 @@ namespace VikingVillages
 				}
 				foodWanted = Mathf.Max(0, Mathf.Min(QuestGame.FoodMax, QuestSim.MealsWanted(seconds, QuestSim.DefaultBurn)) - food);
 				potionsWanted = Mathf.Max(0, QuestGame.PotionMax - potions);
-				suppliesDone = (foodWanted == 0 && potionsWanted == 0);
+				foreach (KeyValuePair<string, int> spend in record.PlanOf(member).Spend)
+				{
+					int carried = 0;
+					foreach (ItemDrop.ItemData item in owner.humanoid.GetInventory().GetAllItems())
+					{
+						if (IsCarriedFor(item, CarryQuest) && item.m_dropPrefab != null && item.m_dropPrefab.name == spend.Key)
+						{
+							carried += item.m_stack;
+						}
+					}
+					if (spend.Value > carried)
+					{
+						spendWanted[spend.Key] = spend.Value - carried;
+					}
+				}
+				suppliesDone = (foodWanted == 0 && potionsWanted == 0 && spendWanted.Count == 0);
+			}
+
+			/// <summary>
+			/// Checks whether the viking still wants more of something it spends on the quest
+			/// </summary>
+			/// <param name="name">The item's prefab name</param>
+			/// <returns>How many more, or 0</returns>
+			private int SpendLeft(string name)
+			{
+				return(spendWanted.TryGetValue(name, out int left) ? left : 0);
 			}
 
 			/// <summary>
@@ -374,9 +512,9 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Walks to the nearest chest it hasn't looked in yet holding food or a healing potion it still wants, and takes
-			/// what it wants of them - no more than half of each stack, so the village keeps some - going with what it has
-			/// once no chest holds any more
+			/// Walks to the nearest chest it hasn't looked in yet holding food, a healing potion or something to spend it
+			/// still wants, and takes what it wants of them - of food and potions no more than half of each stack, so the
+			/// village keeps some - going with what it has once no chest holds any more
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
 			/// <returns>True once it has packed</returns>
@@ -402,15 +540,22 @@ namespace VikingVillages
 					Inventory store = chest.GetInventory();
 					foreach (ItemDrop.ItemData item in store.m_inventory.FindAll(Wanted))
 					{
+						string name = item.m_dropPrefab.name;
+						int spend = SpendLeft(name);
 						bool food = VikingFood.IsFood(item);
-						int wanted = Mathf.Min((food ? foodWanted : potionsWanted), Mathf.Max(1, item.m_stack / 2));
+						// What it spends it takes all of, and food and potions only half a stack
+						int wanted = ((spend > 0) ? Mathf.Min(spend, item.m_stack) : Mathf.Min((food ? foodWanted : potionsWanted), Mathf.Max(1, item.m_stack / 2)));
 						int took = life.Carry(item, wanted, CarryQuest);
 						if (took <= 0)
 						{
 							continue;
 						}
 						store.RemoveItem(item, took);
-						if (food)
+						if (spend > 0)
+						{
+							spendWanted[name] = spend - took;
+						}
+						else if (food)
 						{
 							foodWanted -= took;
 						}
@@ -421,12 +566,33 @@ namespace VikingVillages
 					}
 				}
 				chest = null;
-				suppliesDone = (foodWanted <= 0 && potionsWanted <= 0);
+				suppliesDone = AllSpent();
 				return(suppliesDone);
 			}
 
 			/// <summary>
-			/// Checks whether an item in a chest is food or a healing potion the viking still wants to take along
+			/// Checks whether the viking has all it wants to take along
+			/// </summary>
+			/// <returns>True when it has</returns>
+			private bool AllSpent()
+			{
+				if (foodWanted > 0 || potionsWanted > 0)
+				{
+					return(false);
+				}
+				foreach (int left in spendWanted.Values)
+				{
+					if (left > 0)
+					{
+						return(false);
+					}
+				}
+				return(true);
+			}
+
+			/// <summary>
+			/// Checks whether an item in a chest is food, a healing potion or something to spend the viking still wants to
+			/// take along
 			/// </summary>
 			/// <param name="item">The item</param>
 			/// <returns>True when it is</returns>
@@ -436,7 +602,7 @@ namespace VikingVillages
 				{
 					return(false);
 				}
-				return((foodWanted > 0 && VikingFood.IsFood(item)) || (potionsWanted > 0 && QuestGame.IsPotion(item)));
+				return(SpendLeft(item.m_dropPrefab.name) > 0 || (foodWanted > 0 && VikingFood.IsFood(item)) || (potionsWanted > 0 && QuestGame.IsPotion(item)));
 			}
 
 			/// <summary>

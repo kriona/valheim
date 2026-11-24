@@ -13115,6 +13115,10 @@ namespace VikingVillages
 				livestock = slaughter;
 				party = hunters;
 				prey = ((hunters != null) ? hunters.Prey : null);
+				if (!slaughter)
+				{
+					owner.NoteFoodFound();
+				}
 			}
 
 			/// <summary>
@@ -13850,6 +13854,7 @@ namespace VikingVillages
 			public ForageJob(VillageLife owner, string onlyItem = null) : base(owner)
 			{
 				only = onlyItem;
+				owner.NoteFoodFound();
 			}
 
 			/// <summary>

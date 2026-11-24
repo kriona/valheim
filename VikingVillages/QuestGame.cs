@@ -70,7 +70,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out a quest as it sets out - for one that takes a tool, how much of its item the vikings can carry home
-		/// between them and how long their tools take to get it, wearing each tool; otherwise what it brings back (see
+		/// between them and how long their tools take to get it, wearing each tool; and what else it brings back (see
 		/// QuestLoot) - then shares what it finds out among the vikings by their room, and works out when it's due back
 		/// </summary>
 		/// <param name="village">The village</param>
@@ -103,10 +103,7 @@ namespace VikingVillages
 			{
 				active += Gather(village, record, source, members, spaces, found);
 			}
-			else
-			{
-				QuestLoot.Roll(village, record, members, found);
-			}
+			QuestLoot.Roll(village, record, members, found);
 			List<KeyValuePair<string, int>> ordered = Ordered(found, record.Item);
 			List<Dictionary<string, int>> shares = QuestSim.Share(ordered, spaces, WeightOf, StackOf);
 			for (int i = 0; i < members.Count; i++)
@@ -476,9 +473,9 @@ namespace VikingVillages
 			float health = QuestSim.EndHealth(max, harm, fed, potionCount, heal, out int drunk);
 			UseUp(potions, drunk, outcome.Used);
 			outcome.HealthShare = ((max > 0f) ? health / max : 1f);
-			foreach (KeyValuePair<string, int> spent in plan.Spend)
+			if (record.Kind == QuestKind.SellTreasure || record.Kind == QuestKind.BuyCirclet)
 			{
-				outcome.Used.Add(spent);
+				Trade(record.Kind, carried, outcome);
 			}
 			if (plan.Hits > 0)
 			{
@@ -491,6 +488,45 @@ namespace VikingVillages
 				outcome.Skills.Add(new KeyValuePair<int, float>((int)WeaponSkill(humanoid), plan.Kills * QuestLoot.HitsPerKill));
 			}
 			return(outcome);
+		}
+
+		/// <summary>
+		/// Works out what a viking trading with Haldor brings home for the coins and treasure it took along (see
+		/// QuestLoot.Trade), spending all it took when it trades
+		/// </summary>
+		/// <param name="kind">The quest - selling treasure or buying a circlet</param>
+		/// <param name="carried">What it took along</param>
+		/// <param name="outcome">How the quest goes for it, its loot and what it used filled in</param>
+		private static void Trade(QuestKind kind, List<ItemDrop.ItemData> carried, QuestOutcome outcome)
+		{
+			int coins = 0;
+			int value = 0;
+			List<ItemDrop.ItemData> purse = new List<ItemDrop.ItemData>();
+			foreach (ItemDrop.ItemData item in carried)
+			{
+				string name = item.m_dropPrefab.name;
+				if (name == ResourceBook.Coins)
+				{
+					coins += item.m_stack;
+					purse.Add(item);
+				}
+				else if (System.Array.IndexOf(ResourceBook.Treasure, name) >= 0)
+				{
+					value += item.m_stack * item.m_shared.m_value;
+					purse.Add(item);
+				}
+			}
+			ResourceBook book = ResourceBookGame.Get();
+			QuestRule rule = ((book != null) ? book.RuleOf(QuestKind.BuyCirclet) : null);
+			outcome.Loot = QuestLoot.Trade(kind, coins, value, ((rule != null) ? rule.Coins : int.MaxValue), out bool spends);
+			if (!spends)
+			{
+				return;
+			}
+			foreach (ItemDrop.ItemData item in purse)
+			{
+				outcome.Used.Add(new KeyValuePair<string, int>(item.m_dropPrefab.name, item.m_stack));
+			}
 		}
 
 		/// <summary>

@@ -190,6 +190,7 @@ namespace VikingVillages
 			nextLook.Clear();
 			exits.Clear();
 			routesAsked.Clear();
+			VillageLife.ForgetFood();
 		}
 
 		/// <summary>
@@ -226,6 +227,7 @@ namespace VikingVillages
 					if (EnvMan.instance != null && now > record.Due + NetTime.Ticks(EnvMan.instance.m_dayLengthSec * LostDays))
 					{
 						Plugin.Log.LogWarning("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " never came back, so the village no longer waits for it");
+						TestLog.Count("Quests", record.Kind + " never came back");
 						Write(village, null);
 						village.Zdo.Set(LastQuestKey, now);
 					}
@@ -246,9 +248,42 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks a quest for a village when its goal's next step is one it can go on, it has rested long enough since
-		/// its last, no enemy is near and it can spare the vikings - setting out at once by day, or waiting for the
-		/// morning
+		/// On a village's ZDO, whether its last hunting or foraging quest was a hunt, so they take turns, and when it last
+		/// sent vikings to buy a circlet, in ZNet time ticks
+		/// </summary>
+		public static readonly int LastHuntKey = "kriona.VikingVillages.villageLastHunt".GetStableHashCode();
+		public static readonly int LastCircletKey = "kriona.VikingVillages.villageLastCirclet".GetStableHashCode();
+
+		/// <summary>
+		/// What the treasure in a village's chests has to be worth before it's taken to Haldor to sell, in coins, how many
+		/// game days apart the village buys circlets, and how much wood a quest cutting trees is after
+		/// </summary>
+		public const int SellAt = 100;
+		private const float CircletDays = 7f;
+		private const int WoodWanted = 50;
+
+		/// <summary>
+		/// How many of its item a quest started with the kri_vv_testlog command is after
+		/// </summary>
+		private const int ForcedAmount = 20;
+
+		/// <summary>
+		/// A quest a village could go on - which, what for and how many, and the way it gets that
+		/// </summary>
+		private class Choice
+		{
+			public QuestKind Kind;
+			public string Item = "";
+			public int Amount;
+			public ResourceSource Source;
+		}
+
+		/// <summary>
+		/// Picks a quest for a village once it has rested long enough since its last and no enemy is near - the first it
+		/// can go on and spare the vikings for, of the next step of its goal, hunting or foraging when its chests are low
+		/// on food and it has found none around it for a while, or it's trapped, cutting trees when it's out of wood,
+		/// selling its treasure to Haldor, and buying a Dverger circlet once a week for a viking still using torches -
+		/// setting out at once by day, or waiting for the morning
 		/// </summary>
 		/// <param name="village">The village, run by this client</param>
 		private static void Pick(Village village)
@@ -263,20 +298,28 @@ namespace VikingVillages
 			{
 				return;
 			}
-			PlanStep step = VillageLife.CurrentGoalStep(village);
-			if (step == null || step.Kind != StepKind.Quest || step.Source == null)
+			Choice choice = Choose(village);
+			if (choice == null)
 			{
 				return;
 			}
 			// The road is known before the quest is picked, so it never waits on the server once it's setting out
-			if (RouteSeconds(village, step.Quest, step.Item ?? "") < 0f)
+			if (RouteSeconds(village, choice.Kind, choice.Item) < 0f)
 			{
 				return;
 			}
-			QuestRecord record = Plan(village, step.Quest, step.Item, step.Amount, step.Source);
+			QuestRecord record = Plan(village, choice.Kind, choice.Item, choice.Amount, choice.Source);
 			if (record == null)
 			{
 				return;
+			}
+			if (choice.Kind == QuestKind.Hunt || choice.Kind == QuestKind.Forage)
+			{
+				village.Zdo.Set(LastHuntKey, choice.Kind == QuestKind.Hunt);
+			}
+			if (choice.Kind == QuestKind.BuyCirclet)
+			{
+				village.Zdo.Set(LastCircletKey, now);
 			}
 			Plugin.Log.LogInfo("Quest: the village at " + village.Farm.ToString("F0") + " picked " + record.Kind + " for " + record.Item + " with " + string.Join(", ", record.Names) + (CanSetOutNow() ? "" : ", waiting for the morning"));
 			if (CanSetOutNow())
@@ -291,8 +334,128 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks the vikings for a quest - those fit to go, the ones with a tool good enough for it first, then the
-		/// healthiest - and the tool each takes, as many as the village can spare (see QuestRules.GroupSize)
+		/// Finds the first quest a village could go on now (see Pick)
+		/// </summary>
+		/// <param name="village">The village, run by this client</param>
+		/// <returns>The quest, or null when there's none</returns>
+		private static Choice Choose(Village village)
+		{
+			ResourceBook book = ResourceBookGame.Get();
+			if (book == null)
+			{
+				return(null);
+			}
+			VillageHoldings holdings = VillageLife.HoldingsOf(village);
+			PlanStep step = VillageLife.CurrentGoalStep(village);
+			if (step != null && step.Kind == StepKind.Quest && step.Source != null)
+			{
+				return(new Choice { Kind = step.Quest, Item = (step.Item ?? ""), Amount = step.Amount, Source = step.Source });
+			}
+			bool foodLow = VillageLife.FoodLow(village);
+			bool woodLow = (VillageLife.ChestWoodOf(village) < VillageLife.WoodLow);
+			bool trapped = ((foodLow || woodLow) && IsTrapped(village));
+			if (foodLow && (trapped || VillageLife.FoodGone(village)))
+			{
+				QuestKind kind = (village.Zdo.GetBool(LastHuntKey) ? QuestKind.Forage : QuestKind.Hunt);
+				Choice food = Possible(book, holdings, kind, "", 0) ?? Possible(book, holdings, ((kind == QuestKind.Hunt) ? QuestKind.Forage : QuestKind.Hunt), "", 0);
+				if (food != null)
+				{
+					return(food);
+				}
+			}
+			if ((woodLow && trapped) || VillageLife.OutOfWood(village))
+			{
+				Choice wood = Possible(book, holdings, QuestKind.ChopTrees, "Wood", WoodWanted);
+				if (wood != null)
+				{
+					return(wood);
+				}
+			}
+			if (TreasureValue(holdings) >= SellAt)
+			{
+				Choice sell = Possible(book, holdings, QuestKind.SellTreasure, "", 0);
+				if (sell != null)
+				{
+					return(sell);
+				}
+			}
+			return(CircletChoice(village, book, holdings));
+		}
+
+		/// <summary>
+		/// Works out what the treasure a village has sells for (see ResourceBook.Treasure)
+		/// </summary>
+		/// <param name="holdings">What the village has</param>
+		/// <returns>The coins</returns>
+		private static int TreasureValue(VillageHoldings holdings)
+		{
+			return(holdings.Coins - holdings.Count(ResourceBook.Coins));
+		}
+
+		/// <summary>
+		/// Finds a quest to buy a Dverger circlet, for a village of the Mountains or harder that bought none in the last
+		/// CircletDays days, with a viking still using torches, and the coins and treasure to pay for it
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="book">Every way to get each item</param>
+		/// <param name="holdings">What the village has</param>
+		/// <returns>The quest, or null when it shouldn't buy one</returns>
+		private static Choice CircletChoice(Village village, ResourceBook book, VillageHoldings holdings)
+		{
+			long last = village.Zdo.GetLong(LastCircletKey, 0L);
+			if (holdings.Biome < ResourceBook.Mountain || (last > 0L && NetTime.Now() < last + NetTime.Ticks(EnvMan.instance.m_dayLengthSec * CircletDays)))
+			{
+				return(null);
+			}
+			if (!village.Vikings().Exists((Character viking) => viking is Humanoid humanoid && !HasCirclet(humanoid)))
+			{
+				return(null);
+			}
+			return(Possible(book, holdings, QuestKind.BuyCirclet, ResourceBook.Circlet, 1));
+		}
+
+		/// <summary>
+		/// Checks whether a viking has a Dverger circlet of its own
+		/// </summary>
+		/// <param name="humanoid">The viking</param>
+		/// <returns>True when it has</returns>
+		private static bool HasCirclet(Humanoid humanoid)
+		{
+			return(humanoid.GetInventory().GetAllItems().Exists((ItemDrop.ItemData item) => item.m_dropPrefab != null && item.m_dropPrefab.name == ResourceBook.Circlet && !VikingItems.IsCarried(item)));
+		}
+
+		/// <summary>
+		/// Checks whether a village can go on a quest - its biome isn't easier than the quest's or the item's, it has the
+		/// stations the quest takes, and the coins it costs (see ResourceBook.AddQuests)
+		/// </summary>
+		/// <param name="book">Every way to get each item</param>
+		/// <param name="holdings">What the village has</param>
+		/// <param name="kind">The quest</param>
+		/// <param name="item">What it's for, or ""</param>
+		/// <param name="amount">How many</param>
+		/// <returns>The quest, or null when the village can't go on it</returns>
+		private static Choice Possible(ResourceBook book, VillageHoldings holdings, QuestKind kind, string item, int amount)
+		{
+			QuestRule rule = book.RuleOf(kind);
+			ResourceSource source = QuestGame.SourceFor(book, kind, item);
+			if (rule == null || holdings.Biome < Mathf.Max(rule.MinBiome, source.MinBiome) || holdings.Coins < rule.Coins)
+			{
+				return(null);
+			}
+			foreach (string station in rule.Stations)
+			{
+				if (!holdings.HasStation(station, 1))
+				{
+					return(null);
+				}
+			}
+			return(new Choice { Kind = kind, Item = item, Amount = amount, Source = source });
+		}
+
+		/// <summary>
+		/// Picks the vikings for a quest - those fit to go, for a circlet the one still using torches first, then the
+		/// ones with a tool good enough for it, then the healthiest - and the tool each takes, as many as the village can
+		/// spare (see QuestRules.GroupSize). A quest that takes a tool needs at least one
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="kind">The quest</param>
@@ -335,10 +498,19 @@ namespace VikingVillages
 			}
 			fit.Sort((Humanoid a, Humanoid b) =>
 			{
+				int circlet = ((kind == QuestKind.BuyCirclet) ? HasCirclet(a).CompareTo(HasCirclet(b)) : 0);
+				if (circlet != 0)
+				{
+					return(circlet);
+				}
 				int tools = CarriesTool(b, source).CompareTo(CarriesTool(a, source));
 				return((tools != 0) ? tools : b.GetHealthPercentage().CompareTo(a.GetHealthPercentage()));
 			});
 			int carried = fit.FindAll((Humanoid humanoid) => CarriesTool(humanoid, source)).Count;
+			if (source.Tool != ToolKind.None && carried + chestTools.Count == 0)
+			{
+				return(null);
+			}
 			int biome = VillageCooking.VillageBiome(village);
 			int size = QuestRules.GroupSize(rule, biome, ((source.Tool != ToolKind.None) ? carried + chestTools.Count : 0), fit.Count, vikings.Count);
 			if (size <= 0)
@@ -427,11 +599,13 @@ namespace VikingVillages
 			if (!QuestGame.Prepare(village, record, source, ((travel >= 0f) ? travel : QuestRules.DefaultTravel)))
 			{
 				Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " was given up on, as its vikings aren't all here");
+				TestLog.Count("Quests", record.Kind + " given up on");
 				Write(village, null);
 				return;
 			}
 			Write(village, record);
 			VillageLife.CallToQuest(village, record);
+			TestLog.Count("Quests", record.Kind + " set out");
 			float seconds = (record.Due - record.SetOutAt) / (float)NetTime.Ticks(1f);
 			Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " sets out from " + record.Exit.ToString("F0") + (record.Trapped ? ", inside the village, as it's trapped" : "") + ", " + travel.ToString("F0") + "s each way and " + record.ActiveSeconds.ToString("F0") + "s there, due back in " + seconds.ToString("F0") + "s");
 		}
@@ -593,7 +767,160 @@ namespace VikingVillages
 			}
 			Write(village, null);
 			village.Zdo.Set(LastQuestKey, NetTime.Now());
+			TestLog.Count("Quests", record.Kind + " came back");
 			Plugin.Log.LogInfo("Quest: " + record.Kind + " came back to the village at " + village.Farm.ToString("F0"));
+		}
+
+		/// <summary>
+		/// Describes everything behind a village's quests, for the kri_vv_testlog command - its goal and the next step
+		/// toward it, the quest it's on and what each viking does on it, what would set off its other quests, and the
+		/// roads to quests it knows
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>The lines</returns>
+		public static List<string> Report(Village village)
+		{
+			List<string> lines = new List<string>();
+			ResourceBook book = ResourceBookGame.Get();
+			string goal = village.Zdo.GetString(VillageLife.GoalKey, "");
+			PlanStep step = VillageLife.CurrentGoalStep(village);
+			lines.Add("Village at " + village.Farm.ToString("F0") + (village.IsOwner() ? ", run by this client" : ", run by another client"));
+			lines.Add("Goal: " + ((goal.Length > 0) ? goal + " at quality " + village.Zdo.GetInt(VillageLife.GoalQualityKey, 1) : "none") + " - next step: " + ((step != null) ? step.Describe() : "none"));
+			QuestRecord record = Read(village);
+			if (record == null)
+			{
+				lines.Add("Quest: none");
+			}
+			else
+			{
+				lines.Add(Describe(village).TrimEnd('\n') + ", " + record.Amount + " wanted, " + record.ActiveSeconds.ToString("F0") + "s of work, quest biome " + record.QuestBiome + ", " + record.Wanted + " vikings wanted, leaving from " + record.Exit.ToString("F0"));
+				for (int i = 0; i < record.Members.Count; i++)
+				{
+					MemberPlan plan = ((i < record.Plans.Count) ? record.Plans[i] : new MemberPlan());
+					string loot = string.Join(", ", plan.Loot.ConvertAll((KeyValuePair<string, int> entry) => entry.Value + " " + entry.Key));
+					string spend = string.Join(", ", plan.Spend.ConvertAll((KeyValuePair<string, int> entry) => entry.Value + " " + entry.Key));
+					lines.Add("  " + ((record.Names[i].Length > 0) ? record.Names[i] : record.Members[i]) + ((record.Tools[i].Length > 0) ? ", taking " + record.Tools[i] + " from a chest" : "") + ((plan.Tool.Length > 0) ? ", working with " + plan.Tool + " (" + plan.Hits + " hits, " + plan.ToolLeft.ToString("F0") + " durability left)" : "") + ((plan.Kills > 0) ? ", " + plan.Kills + " kills" : "") + ", bringing home " + ((loot.Length > 0) ? loot : "nothing") + ((spend.Length > 0) ? ", spending " + spend : ""));
+				}
+			}
+			if (book != null)
+			{
+				VillageHoldings holdings = VillageLife.HoldingsOf(village);
+				lines.Add("Food: " + (VillageLife.FoodLow(village) ? "low" : "enough") + (VillageLife.FoodGone(village) ? ", none found around it lately" : ", found around it lately") + " - wood in the chests: " + VillageLife.ChestWoodOf(village) + (VillageLife.OutOfWood(village) ? ", out of wood" : ""));
+				lines.Add("Treasure worth " + TreasureValue(holdings) + " coins, " + holdings.Count(ResourceBook.Coins) + " coins - sells at " + SellAt + " - biome " + holdings.Biome + ", stations: " + string.Join(", ", new List<string>(holdings.Stations.Keys)));
+				lines.Add("Trapped: " + (IsTrapped(village) ? "yes, leaving from " + ExitOf(village).Spot.ToString("F0") : "no"));
+				List<string> roads = new List<string>();
+				foreach (QuestKind kind in System.Enum.GetValues(typeof(QuestKind)))
+				{
+					foreach (string item in RouteItems(book, kind))
+					{
+						float seconds = village.Zdo.GetFloat(RouteKey(kind, item), -1f);
+						if (seconds >= 0f)
+						{
+							roads.Add(kind + ((item.Length > 0) ? " " + item : "") + " " + seconds.ToString("F0") + "s");
+						}
+					}
+				}
+				lines.Add("Roads known: " + ((roads.Count > 0) ? string.Join(", ", roads) : "none"));
+			}
+			long last = village.Zdo.GetLong(LastQuestKey, 0L);
+			lines.Add("Last quest back " + ((last > 0L) ? ((NetTime.Now() - last) / (double)NetTime.Ticks(1f)).ToString("F0") + "s ago" : "never"));
+			return(lines);
+		}
+
+		/// <summary>
+		/// Lists what a quest can be for - each item a quest of its kind brings back, or "" for a quest for nothing in
+		/// particular
+		/// </summary>
+		/// <param name="book">Every way to get each item</param>
+		/// <param name="kind">The quest</param>
+		/// <returns>The items</returns>
+		private static List<string> RouteItems(ResourceBook book, QuestKind kind)
+		{
+			List<string> items = new List<string> { "" };
+			foreach (KeyValuePair<string, List<ResourceSource>> entry in book.Sources)
+			{
+				if (entry.Value.Exists((ResourceSource source) => source.Kind == SourceKind.Quest && source.Quest == kind))
+				{
+					items.Add(entry.Key);
+				}
+			}
+			return(items);
+		}
+
+		/// <summary>
+		/// Starts a quest of a kind for a village at once, for the kri_vv_testlog command - whatever the village wants,
+		/// however long since its last and whatever the time of day - for the item given, or else the first a quest of
+		/// that kind brings back that it's allowed to go for
+		/// </summary>
+		/// <param name="village">The village, run by this client</param>
+		/// <param name="kind">The quest</param>
+		/// <param name="item">What it's for, or "" for the first it can go for</param>
+		/// <returns>What happened</returns>
+		public static string Force(Village village, QuestKind kind, string item)
+		{
+			ResourceBook book = ResourceBookGame.Get();
+			if (book == null || !village.IsOwner())
+			{
+				return("Only the client running the village can start its quests, once the game has loaded");
+			}
+			if (Read(village) != null)
+			{
+				return("The village is already on a quest - kri_vv_testlog quest due brings it home");
+			}
+			VillageHoldings holdings = VillageLife.HoldingsOf(village);
+			List<string> items = ((item.Length > 0) ? new List<string> { item } : RouteItems(book, kind));
+			// An item the quest brings back is tried before going for nothing in particular
+			items.Sort((string a, string b) => (a.Length == 0).CompareTo(b.Length == 0));
+			Choice choice = null;
+			foreach (string candidate in items)
+			{
+				choice = Possible(book, holdings, kind, candidate, ((candidate.Length > 0) ? ForcedAmount : 0));
+				if (choice != null)
+				{
+					break;
+				}
+			}
+			if (choice == null)
+			{
+				return("The village can't go on " + kind + " - its biome is too easy, or it's missing a station or the coins");
+			}
+			if (RouteSeconds(village, choice.Kind, choice.Item) < 0f)
+			{
+				return("Asked the server for the road to " + kind + " - run the command again in a moment");
+			}
+			QuestRecord record = Plan(village, choice.Kind, choice.Item, choice.Amount, choice.Source);
+			if (record == null)
+			{
+				return("The village can't spare the vikings for " + kind + ", or has no tool for it");
+			}
+			SetOut(village, record);
+			record = Read(village);
+			return((record != null) ? "Started " + kind + ((choice.Item.Length > 0) ? " for " + choice.Item : "") + " with " + string.Join(", ", record.Names) + ", due back " + DuePhrase(record) : "The quest's vikings aren't all loaded, so it was given up on");
+		}
+
+		/// <summary>
+		/// Brings a village's quest home now, for the kri_vv_testlog command - on the server, which keeps its vikings
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>What happened</returns>
+		public static string DueNow(Village village)
+		{
+			QuestRecord record = Read(village);
+			if (record == null)
+			{
+				return("The village isn't on a quest");
+			}
+			if (ZNet.instance == null || !ZNet.instance.IsServer())
+			{
+				return("Only the server keeps the vikings out on quests - run this as the host");
+			}
+			int count = VillageTravel.DueNow(record.Id);
+			if (village.IsOwner())
+			{
+				record.Due = NetTime.Now();
+				Write(village, record);
+			}
+			return((count > 0) ? count + " vikings on " + record.Kind + " are due back now" : "None of the quest's vikings have left the village yet");
 		}
 
 		/// <summary>
