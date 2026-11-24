@@ -154,7 +154,23 @@ namespace VikingVillages
 			{
 				return(tag);
 			}
-			GameObject go = new GameObject("VillageNameTag", typeof(RectTransform));
+			TextMeshProUGUI label = MakeLabel(hud, "VillageNameTag");
+			label.rectTransform.pivot = new Vector2(0.5f, 0f);
+			tag = new Tag { Label = label };
+			tags[id] = tag;
+			return(tag);
+		}
+
+		/// <summary>
+		/// Makes a label for a village's name in the health bars' root, styled like their creatures' names in the
+		/// village name's size and color - for the name over its fire, and at the top of the screen (see VillageNameHud)
+		/// </summary>
+		/// <param name="hud">The game's health bars</param>
+		/// <param name="objectName">The label's object's name</param>
+		/// <returns>The label</returns>
+		internal static TextMeshProUGUI MakeLabel(EnemyHud hud, string objectName)
+		{
+			GameObject go = new GameObject(objectName, typeof(RectTransform));
 			go.transform.SetParent(hud.m_hudRoot.transform, false);
 			TextMeshProUGUI label = go.AddComponent<TextMeshProUGUI>();
 			Transform nameTemplate = ((hud.m_baseHud != null) ? hud.m_baseHud.transform.Find("Name") : null);
@@ -168,10 +184,7 @@ namespace VikingVillages
 			label.alignment = TextAlignmentOptions.Center;
 			label.textWrappingMode = TextWrappingModes.NoWrap;
 			label.raycastTarget = false;
-			label.rectTransform.pivot = new Vector2(0.5f, 0f);
-			tag = new Tag { Label = label };
-			tags[id] = tag;
-			return(tag);
+			return(label);
 		}
 	}
 }
