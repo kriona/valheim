@@ -173,6 +173,21 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Works out how long the leg to a waypoint takes, from the waypoint before
+		/// </summary>
+		/// <param name="index">The waypoint's index</param>
+		/// <param name="boatSpeed">How fast the boat goes, in meters a second</param>
+		/// <returns>How long it takes, in seconds, or 0 for the first waypoint or one past the end</returns>
+		public float LegSeconds(int index, float boatSpeed)
+		{
+			if (index <= 0 || index >= Points.Count)
+			{
+				return(0f);
+			}
+			return(LegSeconds(Flat(Points[index - 1], Points[index]), LegTo(index), boatSpeed));
+		}
+
+		/// <summary>
 		/// Works out how long a leg takes
 		/// </summary>
 		/// <param name="meters">How long it is, in meters</param>
@@ -198,7 +213,7 @@ namespace VikingVillages
 		/// <param name="a">One point</param>
 		/// <param name="b">The other</param>
 		/// <returns>The distance, in meters</returns>
-		private static float Flat(Vector3 a, Vector3 b)
+		internal static float Flat(Vector3 a, Vector3 b)
 		{
 			float dx = a.x - b.x;
 			float dz = a.z - b.z;

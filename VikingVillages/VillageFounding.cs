@@ -556,7 +556,7 @@ namespace VikingVillages
 			fireView.GetZDO().Set(VillagePaths.BonfireKey, true);
 			returning = VillageDeparted.HandOver(fireView.GetZDO(), zdo) + TurnBack(fireView.GetZDO(), position);
 			VillageNames.Restore(fireView.GetZDO(), zdo);
-			// Those already on the road to another village come back as long as they've been gone (see
+			// Those already on the road to another village turn around for home once they get there (see
 			// VillageTravel.OnRecall)
 			VillageDisband.Clear(fireView.GetZDO());
 			VillageTravel.Recall(position, zdo.GetPosition());

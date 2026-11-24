@@ -65,6 +65,20 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Notes where the bonfire a viking leaving a village is kept at stands, for one brought back into the world on
+		/// its way to another village
+		/// </summary>
+		/// <param name="viking">The viking's ZDO, owned by this client</param>
+		/// <param name="fire">Where the bonfire stands, or zero when it left none</param>
+		public static void NoteFirePosition(ZDO viking, Vector3 fire)
+		{
+			if (fire != Vector3.zero)
+			{
+				viking.Set(FireKey, fire);
+			}
+		}
+
+		/// <summary>
 		/// Finds the bonfire a viking leaving a village is kept at once it's gone - the one standing where it was noted
 		/// </summary>
 		/// <param name="viking">The viking's ZDO</param>

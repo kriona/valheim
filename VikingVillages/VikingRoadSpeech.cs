@@ -167,6 +167,25 @@ namespace VikingVillages
 		};
 
 		/// <summary>
+		/// What a viking that left a disbanded village says as it reaches where it was going and hears its village was
+		/// started again, turning around for home - with "{0}" the village's name, or a line without it when it has none
+		/// </summary>
+		internal static readonly string[] HomeAgainLines =
+		{
+			"They've lit the fire back home in {0}! We're going back.",
+			"{0} lives again? Then that's where I belong.",
+			"Word is {0} has folk again. Turn around, everyone - we're going home!",
+			"Home to {0}! I knew they wouldn't leave it cold for long."
+		};
+		internal static readonly string[] HomeAgainUnnamedLines =
+		{
+			"They've lit the fire back home! We're going back.",
+			"Home lives again? Then that's where I belong.",
+			"Word is home has folk again. Turn around, everyone!",
+			"Back home we go! I knew they wouldn't leave it cold for long."
+		};
+
+		/// <summary>
 		/// What the vikings of a village a player disbanded say as they gather at its fire - with the village's name, and
 		/// when it has none
 		/// </summary>
@@ -321,6 +340,20 @@ namespace VikingVillages
 		public static string Sail(string boat)
 		{
 			return(string.Format(VikingSpeech.Pick(SailLines, ""), boat));
+		}
+
+		/// <summary>
+		/// Picks what a viking that left a disbanded village says as it turns around for home, started again
+		/// </summary>
+		/// <param name="village">The village's name as it says it, or ""</param>
+		/// <returns>The line</returns>
+		public static string HomeAgain(string village)
+		{
+			if (string.IsNullOrEmpty(village))
+			{
+				return(VikingSpeech.Pick(HomeAgainUnnamedLines, ""));
+			}
+			return(string.Format(VikingSpeech.Pick(HomeAgainLines, ""), village));
 		}
 
 		/// <summary>

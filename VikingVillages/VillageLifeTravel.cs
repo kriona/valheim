@@ -168,6 +168,22 @@ namespace VikingVillages
 		private float waitingSince;
 
 		/// <summary>
+		/// Where the next search for a village looks - the one it gets to soonest, or one at random after a disbanded
+		/// village's viking found its village gone
+		/// </summary>
+		private TravelPlanner.Goal roadGoal = TravelPlanner.Goal.Soonest;
+
+		/// <summary>
+		/// For a viking that left a disbanded village, its look at whether its village was started again once it reaches
+		/// where it was going - the server's answer once it's come, whether it's asked and when, and the village it last
+		/// looked from, so it only looks once there
+		/// </summary>
+		private TravelPlanner.Answer homeAnswer;
+		private bool askingHome;
+		private float askedHomeAt;
+		private Vector3 homeChecked;
+
+		/// <summary>
 		/// When it next says something to itself, and when a wanderer next looks for a village, in Time.time seconds
 		/// </summary>
 		private float nextRoadLine;
@@ -354,9 +370,10 @@ namespace VikingVillages
 				{
 					answered = answer;
 					searching = false;
+					roadGoal = TravelPlanner.Goal.Soonest;
 				}
 			};
-			TravelPlanner.Ask(transform.position, RoadParty(nview.GetZDO()), deadEnds, onAnswer);
+			TravelPlanner.Ask(transform.position, RoadParty(nview.GetZDO()), deadEnds, onAnswer, roadGoal);
 		}
 
 		/// <summary>
@@ -567,8 +584,11 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Has a viking that reached its village join it, once the village takes it in - or go on to the next when it was
-		/// a farm that stayed abandoned, or one that should take it in but has had no house for it for WaitGiveUp seconds.
-		/// Until then it waits by the village, as a farm no one has come near is set up
+		/// a farm that stayed abandoned or a village that's gone, picked at random for a viking that left a disbanded
+		/// village, or when it should take it in but has had no house for it for WaitGiveUp seconds. A viking that left a
+		/// disbanded village turns around for home instead, once it's here, when its village was started again at its
+		/// bonfire, and coming home to a village with no house for it, comes to its beds. Until then it waits by the
+		/// village, as a farm no one has come near is set up
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="zdo">Its ZDO</param>
@@ -577,9 +597,14 @@ namespace VikingVillages
 		private bool Reached(float dt, ZDO zdo, Vector3 destination)
 		{
 			ZDO generator = VillageRespawn.FindGenerator(destination);
-			if (generator != null && generator.GetPrefab() == VillagePaths.GeneratorHash && generator.GetBool(VillagePaths.AbandonedKey))
+			bool abandoned = (generator != null && generator.GetPrefab() == VillagePaths.GeneratorHash && generator.GetBool(VillagePaths.AbandonedKey));
+			if (abandoned || (generator == null && VillageRespawn.ZoneSettled(destination)))
 			{
-				DeadEnd(destination);
+				DeadEnd(destination, DisbandedViking(zdo));
+				return(true);
+			}
+			if (CheckHome(zdo, destination))
+			{
 				return(true);
 			}
 			Village here = Village.ForFarm(destination);
@@ -605,7 +630,11 @@ namespace VikingVillages
 			}
 			else if (Time.time - waitingSince > WaitGiveUp)
 			{
-				DeadEnd(destination);
+				if (ComeHomeToBeds(zdo, here))
+				{
+					return(true);
+				}
+				DeadEnd(destination, false);
 				return(true);
 			}
 			mover = "waiting at the village it came to";
@@ -674,13 +703,103 @@ namespace VikingVillages
 		/// Has the viking move on from a village it found no one in, saying so, and look for the next
 		/// </summary>
 		/// <param name="destination">Where the village stands</param>
-		private void DeadEnd(Vector3 destination)
+		/// <param name="random">Whether to go to a village picked at random rather than the one it gets to soonest</param>
+		private void DeadEnd(Vector3 destination, bool random)
 		{
 			VikingSpeech.Say(humanoid, VikingRoadSpeech.DeadEnd(), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 			deadEnds.Add(destination);
 			road = Road.Travelling;
-			Plugin.Log.LogInfo(LogName() + " found no one at the village at " + destination.ToString("F0") + ", and looks for another");
+			roadGoal = (random ? TravelPlanner.Goal.Random : TravelPlanner.Goal.Soonest);
+			Plugin.Log.LogInfo(LogName() + " found no one at the village at " + destination.ToString("F0") + ", and looks for " + (random ? "another at random" : "another"));
+			TestLog.Count("Travel", "vikings that found their village gone");
 			AskRoad(true);
+		}
+
+		/// <summary>
+		/// Checks whether the viking left a village a player disbanded
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True when it did</returns>
+		private static bool DisbandedViking(ZDO zdo)
+		{
+			return(VillageDeparted.FirePosition(zdo) != Vector3.zero || zdo.GetString(VillageTravel.FromNameKey, "").Length > 0);
+		}
+
+		/// <summary>
+		/// Has a viking that left a disbanded village and reached where it was going ask the server whether its village was
+		/// started again at its bonfire, waiting for the answer - and turn around for home when it was, or else go on into
+		/// the village it reached
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <param name="destination">Where the village it reached stands</param>
+		/// <returns>True while it waits or once it turns around, false to go on into the village</returns>
+		private bool CheckHome(ZDO zdo, Vector3 destination)
+		{
+			Vector3 fire = VillageDeparted.FirePosition(zdo);
+			if (fire == Vector3.zero || Utils.DistanceXZ(destination, fire) <= RoadArriveReach || homeChecked == destination)
+			{
+				return(false);
+			}
+			if (homeAnswer != null)
+			{
+				TravelPlanner.Answer answer = homeAnswer;
+				homeAnswer = null;
+				askingHome = false;
+				if (!answer.Found)
+				{
+					homeChecked = destination;
+					return(false);
+				}
+				VillageTravel.SetOut(zdo, answer, zdo.GetString(VillageTravel.GroupKey, ""), RoadParty(zdo));
+				LoadRoad(zdo);
+				road = Road.Travelling;
+				VikingSpeech.Say(humanoid, VikingRoadSpeech.HomeAgain(answer.Spoken()), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+				Plugin.Log.LogInfo(LogName() + " reached the village at " + destination.ToString("F0") + " and turns around for home at " + answer.Destination.ToString("F0") + ", started again at its bonfire, " + answer.Length.ToString("F0") + "m by " + TravelPlanner.DescribeRoad(answer.Road));
+				TestLog.Count("Travel", "vikings turned around for home");
+				return(true);
+			}
+			if (!askingHome || Time.time - askedHomeAt > SearchTimeout)
+			{
+				askingHome = true;
+				askedHomeAt = Time.time;
+				TravelPlanner.Ask(transform.position, RoadParty(zdo), new List<Vector3>(), (TravelPlanner.Answer answer) =>
+				{
+					if (this != null)
+					{
+						homeAnswer = answer;
+					}
+				}, TravelPlanner.Goal.Home, fire);
+			}
+			mover = "wondering whether home was started again";
+			ai.StopMoving();
+			return(true);
+		}
+
+		/// <summary>
+		/// Has a viking that left a disbanded village and came home to it, started again at its bonfire, come to the
+		/// village's beds when it has no house for it, the way those kept on the road do (see VillageDeparted.AddReturning)
+		/// - taken out of the world, to come back as the village's beds bring vikings
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <param name="here">The village it reached</param>
+		/// <returns>True when it came to the beds</returns>
+		private bool ComeHomeToBeds(ZDO zdo, Village here)
+		{
+			Vector3 fire = VillageDeparted.FirePosition(zdo);
+			if (here == null || fire == Vector3.zero || Utils.DistanceXZ(here.Farm, fire) > RoadArriveReach || !here.IsOwner())
+			{
+				return(false);
+			}
+			VillageTravel.Clear(zdo);
+			VikingItems.RemoveProps(humanoid.GetInventory());
+			ZPackage inventory = new ZPackage();
+			humanoid.GetInventory().Save(inventory);
+			zdo.Set(VikingCore.InventoryKey, inventory.GetArray());
+			VillageDeparted.AddReturning(here, new List<byte[]> { VillageDeparted.SnapshotOf(zdo) });
+			Plugin.Log.LogInfo(LogName() + " came home to the village started again at " + fire.ToString("F0") + ", and waits for its beds");
+			TestLog.Count("Travel", "vikings home to the beds of a village started again");
+			nview.Destroy();
+			return(true);
 		}
 
 		/// <summary>

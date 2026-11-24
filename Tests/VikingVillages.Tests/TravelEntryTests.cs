@@ -36,6 +36,13 @@ namespace VikingVillages.Tests
 			entry.QuestKind = (int)QuestKind.RaidCrypts;
 			entry.QuestDue = 638000000000001234L;
 			entry.QuestMembers = 3;
+			entry.QuestItem = "IronScrap";
+			entry.QuestActive = 300f;
+			TravelRoad road = new TravelRoad();
+			road.Add(Vector3.zero, TravelLeg.Foot);
+			road.Add(new Vector3(100f, 0f, 0f), TravelLeg.Foot);
+			entry.Journey = TravelJourney.Along(road, 6f, true);
+			entry.Foraged = true;
 			return(entry);
 		}
 
@@ -65,6 +72,42 @@ namespace VikingVillages.Tests
 			Assert.Equal(expected.QuestMembers, actual.QuestMembers);
 			Assert.Equal(expected.BoatBiome, actual.BoatBiome);
 			Assert.Equal(expected.Unteleportable, actual.Unteleportable);
+			Assert.Equal(expected.QuestItem, actual.QuestItem);
+			Assert.Equal(expected.QuestActive, actual.QuestActive);
+			Assert.Equal(expected.Foraged, actual.Foraged);
+			Assert.Equal(expected.Journey == null, actual.Journey == null);
+			if (expected.Journey != null)
+			{
+				Assert.Equal(expected.Journey.TotalSeconds(), actual.Journey.TotalSeconds(), 3);
+			}
+		}
+
+		[Fact]
+		public void RestartingCountsWhatWasSpentAndIsDueWhenTheNewTripEnds()
+		{
+			TravelEntry entry = new TravelEntry { Unloaded = 1000L, Spent = 50f, Remaining = 500f, From = Vector3.one };
+			TravelRoad road = new TravelRoad();
+			road.Add(Vector3.zero, TravelLeg.Foot);
+			road.Add(new Vector3(30f, 0f, 0f), TravelLeg.Foot);
+			road.Add(new Vector3(30f * 2f, 0f, 0f), TravelLeg.Foot);
+			TravelJourney journey = TravelJourney.Along(road, 6f, false);
+			entry.Restart(journey, 1000L + 20L * 10L, 10.0, false);
+			Assert.Equal(70f, entry.Spent, 3);
+			Assert.Equal(60f / TravelTime.Speed, entry.Remaining, 3);
+			Assert.Equal(1200L + (long)(60f / TravelTime.Speed * 10f), entry.Due);
+			Assert.Equal(new Vector3(30f, 0f, 0f), entry.From);
+		}
+
+		[Fact]
+		public void GroupIsWhereItsTripHasGot()
+		{
+			TravelRoad road = new TravelRoad();
+			road.Add(Vector3.zero, TravelLeg.Foot);
+			road.Add(new Vector3(100f, 0f, 0f), TravelLeg.Foot);
+			TravelEntry entry = new TravelEntry { Unloaded = 0L, Remaining = 100f / TravelTime.Speed, From = new Vector3(-1f, 0f, 0f), Journey = TravelJourney.Along(road, 6f, false) };
+			Assert.Equal(5f * TravelTime.Speed, entry.Position(50L, 10.0).x, 3);
+			entry.Journey = null;
+			Assert.Equal(new Vector3(-1f, 0f, 0f), entry.Position(50L, 10.0));
 		}
 
 		[Theory]

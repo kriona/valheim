@@ -142,6 +142,27 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Where a search looks for a village to go to - the one the party gets to soonest, one picked at random, or the
+		/// village started again at the bonfire of the village they left, their home
+		/// </summary>
+		internal enum Goal
+		{
+			Soonest,
+			Random,
+			Home
+		}
+
+		/// <summary>
+		/// How many villages picked at random a search tries before it gives up on finding one it can reach
+		/// </summary>
+		private const int RandomTries = 5;
+
+		/// <summary>
+		/// How near a bonfire the anchor of a village started at it stands, in meters
+		/// </summary>
+		private const float AnchorMatch = 2f;
+
+		/// <summary>
 		/// A search the server runs - who asked, with what, what it's for in the log, and the road search once it's started
 		/// </summary>
 		private class Search
@@ -155,6 +176,14 @@ namespace VikingVillages
 			public string Label = "a viking";
 			public List<Candidate> Candidates;
 			public TravelRoute Route;
+
+			/// <summary>
+			/// Where it looks for a village, the bonfire of the village they left for a search for home, and how many
+			/// villages picked at random it has tried
+			/// </summary>
+			public Goal Goal = Goal.Soonest;
+			public Vector3 HomeFire;
+			public int Tries;
 
 			/// <summary>
 			/// The spots the road may lead to in place of the villages, for the road to a quest, or null
@@ -263,13 +292,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Asks the server for the village a party can get to soonest - the answer comes back later, to the action given
+		/// Asks the server for a village a party can go to - the answer comes back later, to the action given
 		/// </summary>
 		/// <param name="from">Where they are</param>
 		/// <param name="party">What they can do on the road</param>
 		/// <param name="excluded">The villages to leave out</param>
 		/// <param name="done">What to do with the answer</param>
-		public static void Ask(Vector3 from, TravelParty party, List<Vector3> excluded, System.Action<Answer> done)
+		/// <param name="goal">Where to look - the village they get to soonest, one at random, or their home</param>
+		/// <param name="homeFire">For their home, the bonfire of the village they left</param>
+		public static void Ask(Vector3 from, TravelParty party, List<Vector3> excluded, System.Action<Answer> done, Goal goal = Goal.Soonest, Vector3 homeFire = default(Vector3))
 		{
 			if (ZRoutedRpc.instance == null)
 			{
@@ -286,21 +317,56 @@ namespace VikingVillages
 			{
 				pkg.Write(point);
 			}
+			pkg.Write((int)goal);
+			pkg.Write(homeFire);
 			ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.instance.GetServerPeerID(), SearchRpc, pkg);
 		}
 
 		/// <summary>
-		/// Plans on the server the road to the village a party can get to soonest - the answer comes back later, to the
-		/// action given, on the server
+		/// Plans on the server the road to a village a party can go to - the answer comes back later, to the action given,
+		/// on the server
 		/// </summary>
 		/// <param name="from">Where they are</param>
 		/// <param name="party">What they can do on the road</param>
 		/// <param name="excluded">The villages to leave out</param>
 		/// <param name="label">Who they are, for the log</param>
 		/// <param name="done">What to do with the answer</param>
-		public static void PlanHere(Vector3 from, TravelParty party, List<Vector3> excluded, string label, System.Action<Answer> done)
+		/// <param name="goal">Where to look - the village they get to soonest, one at random, or their home</param>
+		/// <param name="homeFire">For their home, the bonfire of the village they left</param>
+		public static void PlanHere(Vector3 from, TravelParty party, List<Vector3> excluded, string label, System.Action<Answer> done, Goal goal = Goal.Soonest, Vector3 homeFire = default(Vector3))
 		{
-			searches.Enqueue(new Search { From = from, Party = party, Excluded = new List<Vector3>(excluded), Label = label, Local = done });
+			searches.Enqueue(new Search { From = from, Party = party, Excluded = new List<Vector3>(excluded), Label = label, Local = done, Goal = goal, HomeFire = homeFire });
+		}
+
+		/// <summary>
+		/// Plans on the server the road to whichever of a list of places a party gets to soonest - the answer comes back
+		/// later, to the action given, on the server
+		/// </summary>
+		/// <param name="from">Where they are</param>
+		/// <param name="party">What they can do on the road</param>
+		/// <param name="targets">The places</param>
+		/// <param name="label">Who they are, for the log</param>
+		/// <param name="done">What to do with the answer</param>
+		public static void PlanTo(Vector3 from, TravelParty party, List<Vector3> targets, string label, System.Action<Answer> done)
+		{
+			searches.Enqueue(new Search { From = from, Party = party, Targets = new List<Vector3>(targets), Label = label, Local = done });
+		}
+
+		/// <summary>
+		/// Finds the anchor of the village started at a bonfire, on the server
+		/// </summary>
+		/// <param name="fire">Where the bonfire stands</param>
+		/// <param name="anchor">Set to the anchor's ZDO</param>
+		/// <returns>True when a village was started there</returns>
+		public static bool HomeAnchor(Vector3 fire, out ZDO anchor)
+		{
+			anchor = null;
+			if (fire == Vector3.zero || ZDOMan.instance == null)
+			{
+				return(false);
+			}
+			anchor = AllWithPrefab(VillageFounding.PrefabName).Find((ZDO zdo) => Utils.DistanceXZ(zdo.GetPosition(), fire) <= AnchorMatch);
+			return(anchor != null);
 		}
 
 		/// <summary>
@@ -353,6 +419,8 @@ namespace VikingVillages
 			{
 				search.Excluded.Add(pkg.ReadVector3());
 			}
+			search.Goal = (Goal)pkg.ReadInt();
+			search.HomeFire = pkg.ReadVector3();
 			searches.Enqueue(search);
 		}
 
@@ -392,6 +460,14 @@ namespace VikingVillages
 			}
 			Search done = running;
 			running = null;
+			// A village picked at random that can't be reached is left out, and another picked
+			if (done.Goal == Goal.Random && done.Route.Found < 0 && done.Candidates.Count > 0 && done.Tries < RandomTries)
+			{
+				done.Excluded.Add(done.Candidates[0].Position);
+				done.Tries++;
+				searches.Enqueue(done);
+				return;
+			}
 			Answer answer = new Answer();
 			if (done.Route.Found >= 0)
 			{
@@ -463,10 +539,23 @@ namespace VikingVillages
 			{
 				search.Candidates = search.Targets.ConvertAll((Vector3 target) => new Candidate { Position = target, Name = "", Author = "", Biome = search.Party.Easiest });
 			}
+			else if (search.Goal == Goal.Home)
+			{
+				search.Candidates = new List<Candidate>();
+				if (HomeAnchor(search.HomeFire, out ZDO anchor))
+				{
+					VillageNames.At(anchor, out string name, out string author);
+					search.Candidates.Add(new Candidate { Position = anchor.GetPosition(), Name = (name ?? ""), Author = (author ?? ""), Biome = search.Party.Easiest });
+				}
+			}
 			else
 			{
 				List<Candidate> all = Candidates();
 				search.Candidates = all.FindAll((Candidate candidate) => candidate.Biome <= search.Party.Easiest && !search.Excluded.Exists((Vector3 excluded) => Utils.DistanceXZ(excluded, candidate.Position) <= FarmMatch));
+				if (search.Goal == Goal.Random && search.Candidates.Count > 0)
+				{
+					search.Candidates = new List<Candidate> { search.Candidates[Random.Range(0, search.Candidates.Count)] };
+				}
 			}
 			List<Vector3> targets = search.Candidates.ConvertAll((Candidate candidate) => candidate.Position);
 			int boat = search.Party.Hardest;
@@ -517,6 +606,46 @@ namespace VikingVillages
 				usable.Add(new TravelRoute.Portal { Entry = Front(portal, kind), Exit = Front(other, PortalKind(other)) });
 			}
 			return(usable);
+		}
+
+		/// <summary>
+		/// How far from where a portal on a road was planned the portal can stand and still be it, in meters
+		/// </summary>
+		private const float PortalMatch = 3f;
+
+		/// <summary>
+		/// Finds the first stage of a trip whose road goes through a portal that's no longer there to use - broken, no
+		/// longer joined to the other end, or one that won't take what they carry on that stage
+		/// </summary>
+		/// <param name="journey">The trip</param>
+		/// <param name="any">The portals that can be used carrying anything a portal takes (see UsablePortals)</param>
+		/// <param name="barred">The portals that can be used carrying something most portals won't take</param>
+		/// <returns>The stage's index, or -1 when every portal on the trip is there</returns>
+		internal static int BrokenStage(TravelJourney journey, List<TravelRoute.Portal> any, List<TravelRoute.Portal> barred)
+		{
+			for (int i = 0; i < journey.Stages.Count; i++)
+			{
+				TravelRoad road = journey.Stages[i].Road;
+				if (road == null)
+				{
+					continue;
+				}
+				List<TravelRoute.Portal> usable = (journey.Stages[i].Unteleportable ? barred : any);
+				for (int w = 1; w < road.Count; w++)
+				{
+					if (!road.PortalLeg(w))
+					{
+						continue;
+					}
+					Vector3 entry = road.Points[w - 1];
+					Vector3 exit = road.Points[w];
+					if (!usable.Exists((TravelRoute.Portal portal) => TravelRoad.Flat(portal.Entry, entry) <= PortalMatch && TravelRoad.Flat(portal.Exit, exit) <= PortalMatch))
+					{
+						return(i);
+					}
+				}
+			}
+			return(-1);
 		}
 
 		/// <summary>

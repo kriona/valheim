@@ -805,6 +805,31 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Notes when a village's quest is now due back, as the server worked it out from the trip its vikings make (see
+		/// VillageTravel.PlanQuest) - so what the village says of when they're back follows the trip, not its guess as it
+		/// sent them - on the client that runs the village
+		/// </summary>
+		/// <param name="farm">Where the village stands</param>
+		/// <param name="questId">The quest's ID</param>
+		/// <param name="due">When it's due back, in ZNet time ticks</param>
+		public static void DueChanged(Vector3 farm, string questId, long due)
+		{
+			Village village = Village.ForFarm(farm);
+			if (village == null || !village.IsOwner())
+			{
+				return;
+			}
+			QuestRecord record = Read(village);
+			if (record == null || record.Id != questId || record.Due == due)
+			{
+				return;
+			}
+			Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " is now due back in " + ((due - NetTime.Now()) / (float)NetTime.Ticks(1f)).ToString("F0") + "s, " + ((due - record.Due) / (float)NetTime.Ticks(1f)).ToString("+0;-0") + "s from before");
+			record.Due = due;
+			Write(village, record);
+		}
+
+		/// <summary>
 		/// Describes everything behind a village's quests, for the kri_vv_testlog command - its goal and the next step
 		/// toward it, the quest it's on and what each viking does on it, what would set off its other quests, and the
 		/// roads to quests it knows

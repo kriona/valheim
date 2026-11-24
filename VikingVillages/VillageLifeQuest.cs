@@ -396,6 +396,8 @@ namespace VikingVillages
 			entry.BoatBiome = entry.Biome;
 			entry.Unteleportable = !TravelPlanner.Teleportable(record.Item);
 			entry.QuestId = record.Id;
+			entry.QuestItem = record.Item;
+			entry.QuestActive = record.ActiveSeconds;
 			entry.QuestKind = (int)record.Kind;
 			entry.QuestDue = record.Due;
 			entry.QuestMembers = record.Members.Count;

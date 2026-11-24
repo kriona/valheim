@@ -84,10 +84,28 @@ namespace VikingVillages
 		public int QuestMembers;
 
 		/// <summary>
+		/// For a group out on a quest, what it's for, or "", and how long the work there takes, in seconds - for the
+		/// server to plan the trip there and back (see VillageTravel.PlanQuest)
+		/// </summary>
+		public string QuestItem = "";
+		public float QuestActive;
+
+		/// <summary>
+		/// The rest of the trip as it was when Unloaded, or null when it isn't known - an entry kept before trips were, or
+		/// one whose road couldn't be planned - which tells where the group is and when it's due (see VillageTravel)
+		/// </summary>
+		public TravelJourney Journey;
+
+		/// <summary>
+		/// Whether the group has been given what it picked along its road (see TripForage)
+		/// </summary>
+		public bool Foraged;
+
+		/// <summary>
 		/// The version of how an entry is written, which a reader skips entries written another way by, and the earliest
 		/// version it still reads, which has no quest
 		/// </summary>
-		private const int FormatVersion = 5;
+		private const int FormatVersion = 6;
 		private const int OldestVersion = 2;
 
 		/// <summary>
@@ -127,8 +145,59 @@ namespace VikingVillages
 		/// <returns>How long it has been on the road, in seconds</returns>
 		internal float Progress(long now, double ticksPerSecond)
 		{
+			return(Spent + Elapsed(now, ticksPerSecond));
+		}
+
+		/// <summary>
+		/// Works out how long a group has been on the rest of its trip since Unloaded, no longer than the rest takes
+		/// </summary>
+		/// <param name="now">The time now, in ticks</param>
+		/// <param name="ticksPerSecond">How many ticks a second has</param>
+		/// <returns>How long, in seconds</returns>
+		internal float Elapsed(long now, double ticksPerSecond)
+		{
 			double seconds = System.Math.Max(0.0, (now - Unloaded) / ticksPerSecond);
-			return(Spent + Mathf.Min(Remaining, (float)seconds));
+			return(Mathf.Min(Remaining, (float)seconds));
+		}
+
+		/// <summary>
+		/// Starts the rest of the group's trip over from now - due once it's done, arriving from the way its last road
+		/// comes in - counting what it has spent on the road so far
+		/// </summary>
+		/// <param name="journey">The rest of the trip</param>
+		/// <param name="now">The time now, in ticks</param>
+		/// <param name="ticksPerSecond">How many ticks a second has</param>
+		/// <param name="keepFrom">Whether to keep where it arrives from, as a group coming home from a quest to where it
+		/// left does</param>
+		internal void Restart(TravelJourney journey, long now, double ticksPerSecond, bool keepFrom)
+		{
+			if (Unloaded > 0L && now > Unloaded)
+			{
+				Spent += Elapsed(now, ticksPerSecond);
+			}
+			Journey = journey;
+			Unloaded = now;
+			Remaining = journey.TotalSeconds();
+			Due = now + (long)(Remaining * ticksPerSecond);
+			if (!keepFrom)
+			{
+				From = journey.Approach(From);
+			}
+		}
+
+		/// <summary>
+		/// Works out where the group is now - along its trip, or where it arrives from when its trip isn't known
+		/// </summary>
+		/// <param name="now">The time now, in ticks</param>
+		/// <param name="ticksPerSecond">How many ticks a second has</param>
+		/// <returns>Where it is</returns>
+		internal Vector3 Position(long now, double ticksPerSecond)
+		{
+			if (Journey == null)
+			{
+				return(From);
+			}
+			return(Journey.At(Elapsed(now, ticksPerSecond), From).Position);
 		}
 
 		/// <summary>
@@ -165,6 +234,10 @@ namespace VikingVillages
 			pkg.Write(QuestMembers);
 			pkg.Write(BoatBiome);
 			pkg.Write(Unteleportable);
+			pkg.Write(QuestItem);
+			pkg.Write(QuestActive);
+			pkg.Write((Journey != null) ? Journey.Encode() : new byte[0]);
+			pkg.Write(Foraged);
 		}
 
 		/// <summary>
@@ -216,6 +289,13 @@ namespace VikingVillages
 			{
 				entry.BoatBiome = pkg.ReadInt();
 				entry.Unteleportable = pkg.ReadBool();
+			}
+			if (version >= 6)
+			{
+				entry.QuestItem = pkg.ReadString();
+				entry.QuestActive = pkg.ReadSingle();
+				entry.Journey = TravelJourney.Decode(pkg.ReadByteArray());
+				entry.Foraged = pkg.ReadBool();
 			}
 			return(entry);
 		}

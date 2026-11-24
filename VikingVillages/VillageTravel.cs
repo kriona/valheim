@@ -9,15 +9,19 @@ namespace VikingVillages
 	/// they've set out on a road planned for them (see TravelPlanner), and the calls each client makes to it
 	/// </summary>
 	/// <remarks>
-	/// A viking on the road that's out of every player's reach, or has reached the sea and set sail, or stepped into a
-	/// portal on its road, is taken out of the world together with the rest of its group and kept in a record of the
-	/// server's, a ZDO far past the edge of the world, until they're due at their village - the rest of the road on foot
-	/// at TravelTime.Speed, by sea at their boat's speed and through portals in TravelTime.PortalSeconds - and then handed
-	/// to the client that runs the village, which brings them in from the side they came from (see Arrive). A village
-	/// that's never loaded keeps them waiting. A village started again at the bonfire of a village its vikings left calls
-	/// back those still on the road, due back as long as they've been gone (see Recall). Vikings out on a quest are kept
-	/// the same way, due back at their own village when the quest is (see VillageQuests), or at the village its vikings
-	/// went to when it was disbanded meanwhile (see QuestsDisbanded)
+	/// A group on the road is taken out of the world together once they've all reached the sea and set sail or stepped
+	/// into a portal on their road, or as soon as any one of them is out of every player's reach, so a group is never
+	/// split - or, stepping into a portal whose far end a player is near, brought out there at once (see Emerge). The
+	/// server keeps them in a record of its own, a ZDO far past the edge of the world, with the rest of their trip (see
+	/// TravelJourney), which tells where they are - on foot at TravelTime.Speed, by sea at their boat's speed and through
+	/// portals in TravelTime.PortalSeconds - planning the road again from there when a portal on it is broken (see
+	/// CheckRoads). Once they're due at their village, they're given what they picked along the way (see TripForage) and
+	/// handed to the client that runs the village, which brings them in from the side they came from (see Arrive). A
+	/// village that's never loaded keeps them waiting. A group of a disbanded village that finds its village gone goes on
+	/// to one picked at random, and one whose village was started again at its bonfire meanwhile turns around for home
+	/// once it gets where it was going (see TurnHome). Vikings out on a quest are kept the same way, their trip there,
+	/// the work and the trip back planned as they leave (see PlanQuest), due back at their own village when that's done,
+	/// or at the village its vikings went to when it was disbanded meanwhile (see QuestsDisbanded)
 	/// </remarks>
 	internal static class VillageTravel
 	{
@@ -67,6 +71,25 @@ namespace VikingVillages
 		/// village its vikings went to
 		/// </summary>
 		private const string QuestsDisbandedRpc = Plugin.PluginGuid + ".TravelQuestsDisbanded";
+
+		/// <summary>
+		/// The routed RPCs that hand a group stepping out of a portal near a player to that player's client, and that tell
+		/// every client when a village's quest is now due back, for the one running the village to note
+		/// </summary>
+		private const string EmergeRpc = Plugin.PluginGuid + ".TravelEmerge";
+		private const string QuestDueRpc = Plugin.PluginGuid + ".TravelQuestDue";
+
+		/// <summary>
+		/// Seconds between the server's looks at whether the portals on the roads of the groups it keeps still stand
+		/// </summary>
+		private const float RoadCheckInterval = 30f;
+
+		/// <summary>
+		/// When the server next looks at the portals on its groups' roads, in Time.time seconds, and the groups whose road
+		/// it's planning again
+		/// </summary>
+		private static float nextRoadCheck;
+		private static readonly HashSet<TravelEntry> replanning = new HashSet<TravelEntry>();
 
 		/// <summary>
 		/// The prefab hash of the record the server keeps the vikings on the road in - one no prefab has - where it
@@ -141,7 +164,11 @@ namespace VikingVillages
 			ZRoutedRpc.instance.Register<Vector3, Vector3>(RecallRpc, OnRecall);
 			ZRoutedRpc.instance.Register<int, long>(RecalledRpc, OnRecalled);
 			ZRoutedRpc.instance.Register<ZPackage>(QuestsDisbandedRpc, OnQuestsDisbanded);
+			ZRoutedRpc.instance.Register<ZPackage>(EmergeRpc, OnEmerge);
+			ZRoutedRpc.instance.Register<Vector3, string, long>(QuestDueRpc, OnQuestDue);
 			TravelPlanner.Register();
+			nextRoadCheck = 0f;
+			replanning.Clear();
 			record = null;
 			queue = new List<TravelEntry>();
 			sweepIndex = -1;
@@ -559,6 +586,11 @@ namespace VikingVillages
 					nextSweep = Time.time + SweepInterval;
 					TakeOffRoad(sweepFound.FindAll(OnRoad));
 					Deliver();
+					if (Time.time >= nextRoadCheck)
+					{
+						nextRoadCheck = Time.time + RoadCheckInterval;
+						CheckRoads();
+					}
 					return;
 				}
 			}
@@ -607,7 +639,8 @@ namespace VikingVillages
 				{
 					continue;
 				}
-				queue.Add(Pack(members));
+				bool throughPortal = members.TrueForAll((ZDO zdo) => zdo.GetBool(PortalKey));
+				TravelEntry entry = Pack(members);
 				foreach (ZDO zdo in members)
 				{
 					outSince.Remove(zdo.m_uid);
@@ -615,6 +648,11 @@ namespace VikingVillages
 					ZDOMan.instance.DestroyZDO(zdo);
 				}
 				changed = true;
+				if (throughPortal && Emerge(entry))
+				{
+					continue;
+				}
+				queue.Add(entry);
 			}
 			if (changed)
 			{
@@ -623,37 +661,128 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether every viking of a group has set sail, stepped into a portal or been out of every player's reach
-		/// for OutOfReachTime
+		/// Checks whether a group comes off the road together - once every one of them has set sail or stepped into a
+		/// portal, or as soon as any one of them has been out of every player's reach for OutOfReachTime, so the group is
+		/// never split between the world and the road
 		/// </summary>
 		/// <param name="members">The group's vikings</param>
-		/// <returns>True when they all have</returns>
+		/// <returns>True when it does</returns>
 		private static bool OutOfReach(List<ZDO> members)
 		{
-			bool all = true;
+			bool allLeaving = true;
+			bool anyGone = false;
 			foreach (ZDO zdo in members)
 			{
 				if (Leaving(zdo))
 				{
 					continue;
 				}
+				allLeaving = false;
 				if (InAnyReach(zdo.GetPosition()))
 				{
 					outSince.Remove(zdo.m_uid);
-					all = false;
 					continue;
 				}
 				if (!outSince.TryGetValue(zdo.m_uid, out float since))
 				{
 					outSince[zdo.m_uid] = Time.time;
-					all = false;
 				}
-				else if (Time.time - since < OutOfReachTime)
+				else if (Time.time - since >= OutOfReachTime)
 				{
-					all = false;
+					anyGone = true;
 				}
 			}
-			return(all);
+			return(allLeaving || anyGone);
+		}
+
+		/// <summary>
+		/// Brings a group that stepped into a portal out of its far end at once when a player is near it - handing it to
+		/// the client nearest there, which brings each of them out as they were, on the rest of their road (see OnEmerge)
+		/// </summary>
+		/// <param name="entry">The group, just taken off the road</param>
+		/// <returns>True when a player is near the far end, false to keep the group on the road</returns>
+		private static bool Emerge(TravelEntry entry)
+		{
+			TravelRoad road = ((entry.Journey != null && entry.Journey.Stages.Count > 0) ? entry.Journey.Stages[0].Road : null);
+			if (road == null || road.Count < 2 || !road.PortalLeg(1))
+			{
+				return(false);
+			}
+			long peer = PeerNear(road.Points[1]);
+			if (peer == 0L)
+			{
+				return(false);
+			}
+			Plugin.Log.LogInfo("Travel: " + entry.Vikings.Count + " vikings come out of the portal at " + road.Points[1].ToString("F0") + ", a player being near it");
+			TestLog.Count("Travel", "groups out of a portal near a player");
+			ZRoutedRpc.instance.InvokeRoutedRPC(peer, EmergeRpc, new ZPackage(entry.Encode()));
+			return(true);
+		}
+
+		/// <summary>
+		/// Finds a client in whose reach a point is
+		/// </summary>
+		/// <param name="point">The point</param>
+		/// <returns>The client's peer ID - this one's when its own player is - or 0 when it's in no one's reach</returns>
+		private static long PeerNear(Vector3 point)
+		{
+			if (!ZNet.instance.IsDedicated() && ZNetScene.InActiveArea(point, ZNet.instance.GetReferencePosition()))
+			{
+				return(ZDOMan.GetSessionID());
+			}
+			foreach (ZNetPeer peer in ZNet.instance.GetPeers())
+			{
+				if (peer.IsReady() && ZNetScene.InActiveArea(point, peer.m_refPos))
+				{
+					return(peer.m_uid);
+				}
+			}
+			return(0L);
+		}
+
+		/// <summary>
+		/// Brings a group out of the far end of a portal on this client, each viking as it was, on the rest of its road
+		/// together - or hands the group back to the server to keep on the road when they can't be brought out
+		/// </summary>
+		/// <param name="sender">The server</param>
+		/// <param name="pkg">The group</param>
+		private static void OnEmerge(long sender, ZPackage pkg)
+		{
+			TravelEntry entry = TravelEntry.Decode(pkg.GetArray());
+			GameObject prefab = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(VikingCore.LivingPrefabHash) : null);
+			TravelRoad road = ((entry != null && entry.Journey != null && entry.Journey.Stages.Count > 0) ? entry.Journey.Stages[0].Road : null);
+			if (entry == null || road == null || road.Count < 2)
+			{
+				return;
+			}
+			if (prefab == null)
+			{
+				ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.instance.GetServerPeerID(), HandBackRpc, new ZPackage(entry.Encode()));
+				return;
+			}
+			TravelRoad rest = new TravelRoad();
+			for (int i = 1; i < road.Count; i++)
+			{
+				rest.Add(road.Points[i], road.LegTo(i));
+			}
+			TravelPlanner.Answer answer = new TravelPlanner.Answer { Found = true, Destination = entry.Destination, Name = entry.Name, Road = rest };
+			TravelParty party = new TravelParty { Easiest = entry.Biome, Hardest = entry.BoatBiome, Unteleportable = entry.Unteleportable };
+			string group = ((entry.Vikings.Count > 1) ? "portal" + NetTime.Now() : "");
+			foreach (byte[] snapshot in entry.Vikings)
+			{
+				Vector3 spot = road.Points[1] + Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Vector3.forward * Random.Range(0.5f, 2f);
+				if (ZoneSystem.instance != null)
+				{
+					spot.y = ZoneSystem.instance.GetGroundHeight(spot);
+				}
+				GameObject instance = Object.Instantiate(prefab, spot, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
+				ZDO zdo = instance.GetComponent<ZNetView>().GetZDO();
+				VillageDeparted.ApplySnapshot(snapshot, zdo);
+				SetOut(zdo, answer, group, party);
+				zdo.Set(FromNameKey, entry.FromName);
+				VillageDeparted.NoteFirePosition(zdo, entry.OriginFire);
+			}
+			Plugin.Log.LogInfo("Travel: " + entry.Vikings.Count + " vikings came out of the portal at " + road.Points[1].ToString("F0") + " on their way to the village at " + entry.Destination.ToString("F0"));
 		}
 
 		/// <summary>
@@ -707,15 +836,18 @@ namespace VikingVillages
 			float total = 0f;
 			string how = "went out of every player's reach";
 			string counted = "out of reach";
+			TravelRoad behind = null;
 			foreach (ZDO zdo in members)
 			{
 				TravelRoad road = TravelRoad.Decode(zdo.GetByteArray(RouteKey));
-				float left = road.Seconds(zdo.GetInt(LegKey, 1), zdo.GetPosition(), boat);
+				int leg = zdo.GetInt(LegKey, 1);
+				float left = road.Seconds(leg, zdo.GetPosition(), boat);
 				if (left >= entry.Remaining)
 				{
 					entry.Remaining = left;
 					total = road.TotalSeconds(boat);
 					entry.From = ((road.Count > 0) ? road.Approach() : zdo.GetPosition());
+					behind = Rest(road, leg, zdo.GetPosition());
 				}
 				if (zdo.GetBool(SailingKey))
 				{
@@ -730,6 +862,11 @@ namespace VikingVillages
 				entry.Vikings.Add(VillageDeparted.SnapshotOf(zdo));
 			}
 			entry.Spent = Mathf.Max(0f, total - entry.Remaining);
+			if (behind != null && behind.Count > 1)
+			{
+				entry.Journey = TravelJourney.Along(behind, boat, entry.Unteleportable);
+				entry.Remaining = entry.Journey.TotalSeconds();
+			}
 			entry.Due = entry.Unloaded + NetTime.Ticks(entry.Remaining);
 			Plugin.Log.LogInfo("Travel: " + members.Count + " vikings (" + party.Describe() + ") " + how + " on their way to the village at " + entry.Destination.ToString("F0") + ", " + entry.Spent.ToString("F0") + "s into the road, due there in " + entry.Remaining.ToString("F0") + "s");
 			TestLog.Count("Travel", "groups taken off the road, " + counted);
@@ -737,11 +874,110 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Looks at the portals on the rest of each kept group's trip, and plans the road again from where the group is for
+		/// the first stage with a portal that was broken, lost its other end, or no longer takes what they carry - the
+		/// group due again once the new road is done
+		/// </summary>
+		private static void CheckRoads()
+		{
+			long now = NetTime.Now();
+			double ticksPerSecond = NetTime.Ticks(1f);
+			List<TravelRoute.Portal> any = null;
+			List<TravelRoute.Portal> barred = null;
+			foreach (TravelEntry entry in queue)
+			{
+				if (entry.Journey == null || entry.Due == long.MaxValue || replanning.Contains(entry))
+				{
+					continue;
+				}
+				TravelJourney rest = entry.Journey.From(entry.Elapsed(now, ticksPerSecond));
+				any = (any ?? TravelPlanner.UsablePortals(new TravelParty()));
+				barred = (barred ?? TravelPlanner.UsablePortals(new TravelParty { Unteleportable = true }));
+				int broken = TravelPlanner.BrokenStage(rest, any, barred);
+				if (broken >= 0)
+				{
+					Replan(entry, rest, broken);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Plans the road of a stage of a kept group's trip again, past a portal that's gone - from where the group is when
+		/// it's the stage they're on, or from where the stage starts - starting the rest of the trip over from when the new
+		/// road is found, or across open ground straight there when there's none
+		/// </summary>
+		/// <param name="entry">The group</param>
+		/// <param name="rest">The rest of its trip from now</param>
+		/// <param name="stage">The index in the rest of the trip of the stage to plan again</param>
+		private static void Replan(TravelEntry entry, TravelJourney rest, int stage)
+		{
+			TravelRoad road = rest.Stages[stage].Road;
+			Vector3 from = road.Points[0];
+			Vector3 to = road.Points[road.Count - 1];
+			TravelParty party = PartyOf(entry);
+			party.Unteleportable = rest.Stages[stage].Unteleportable;
+			float before = entry.Remaining - entry.Elapsed(NetTime.Now(), NetTime.Ticks(1f));
+			replanning.Add(entry);
+			string label = entry.Vikings.Count + " vikings whose road has a broken portal";
+			TravelPlanner.PlanTo(from, party, new List<Vector3> { to }, label, (TravelPlanner.Answer answer) =>
+			{
+				replanning.Remove(entry);
+				if (!queue.Contains(entry) || entry.Journey == null)
+				{
+					return;
+				}
+				long now = NetTime.Now();
+				double ticksPerSecond = NetTime.Ticks(1f);
+				// The group has gone on a little while the road was planned, which the new road doesn't count
+				TravelJourney current = entry.Journey.From(entry.Elapsed(now, ticksPerSecond));
+				int at = stage - (rest.Stages.Count - current.Stages.Count);
+				if (at < 0 || at >= current.Stages.Count || current.Stages[at].Road == null)
+				{
+					return;
+				}
+				TravelRoad replaced = answer.Road;
+				if (!answer.Found)
+				{
+					replaced = new TravelRoad();
+					replaced.Add(from, TravelLeg.Foot);
+					replaced.Add(to, TravelLeg.Foot);
+				}
+				current.Stages[at] = new TravelJourney.Stage { Road = replaced, Unteleportable = current.Stages[at].Unteleportable, Homeward = current.Stages[at].Homeward };
+				entry.Restart(current, now, ticksPerSecond, entry.OnQuest);
+				Plugin.Log.LogInfo("Travel: " + label + " at " + from.ToString("F0") + " take " + (answer.Found ? "another road, by " + TravelPlanner.DescribeRoad(replaced) : "the long way straight there, finding no road") + " to " + to.ToString("F0") + " - " + entry.Remaining.ToString("F0") + "s left, " + (entry.Remaining - before).ToString("+0;-0") + "s from before");
+				TestLog.Count("Travel", "groups rerouted past a broken portal");
+				NoteQuestDue(entry);
+				Save();
+			});
+		}
+
+		/// <summary>
+		/// Makes the rest of a viking's road from where it is - there, then the waypoint it's heading for and every one
+		/// after
+		/// </summary>
+		/// <param name="road">Its road</param>
+		/// <param name="leg">The index of the waypoint it's heading for</param>
+		/// <param name="position">Where it is</param>
+		/// <returns>The rest of the road</returns>
+		internal static TravelRoad Rest(TravelRoad road, int leg, Vector3 position)
+		{
+			TravelRoad rest = new TravelRoad();
+			rest.Add(position, TravelLeg.Foot);
+			for (int i = Mathf.Max(1, leg); i < road.Count; i++)
+			{
+				rest.Add(road.Points[i], road.LegTo(i));
+			}
+			return(rest);
+		}
+
+		/// <summary>
 		/// Hands each group that's due to the client running its village, once the village has had every viking it starts
 		/// with - or finds it another village when it turned out to be a farm that stayed abandoned or a village since
-		/// disbanded. A group due at a farm not generated or loaded yet waits for it, and a group out on a quest waits for
+		/// disbanded, one picked at random for the vikings of a disbanded village. The vikings of a disbanded village
+		/// whose village was started again at its bonfire meanwhile turn around for home once they've got where they were
+		/// going. A group due at a farm not generated or loaded yet waits for it, and a group out on a quest waits for
 		/// the rest of its vikings to leave the village and join it, so they all come home together (see
-		/// TravelEntry.QuestWaiting)
+		/// TravelEntry.QuestWaiting). Each group is given what it picked along its road as it's due (see TripForage)
 		/// </summary>
 		private static void Deliver()
 		{
@@ -755,24 +991,30 @@ namespace VikingVillages
 					continue;
 				}
 				ZDO village = VillageRespawn.FindGenerator(entry.Destination);
-				if (village == null && !IsPlannedFarm(entry.Destination))
+				bool abandoned = (village != null && village.GetPrefab() == VillagePaths.GeneratorHash && village.GetBool(VillagePaths.AbandonedKey));
+				if (abandoned || (village == null && !IsPlannedFarm(entry.Destination)))
 				{
 					Reroute(entry);
+					continue;
+				}
+				if (!entry.Returning && TravelPlanner.HomeAnchor(entry.OriginFire, out ZDO home) && Utils.DistanceXZ(home.GetPosition(), entry.Destination) > FarmMatch)
+				{
+					TurnHome(entry, home.GetPosition());
 					continue;
 				}
 				if (village == null)
 				{
 					continue;
 				}
-				if (village.GetPrefab() == VillagePaths.GeneratorHash && village.GetBool(VillagePaths.AbandonedKey))
-				{
-					Reroute(entry);
-					continue;
-				}
 				bool ready = (VillageFounding.IsAnchor(village.GetPrefab()) || village.GetBool(VillageRespawn.PopulatedKey) || entry.Returning);
 				if (!ready || !village.HasOwner())
 				{
 					continue;
+				}
+				if (!entry.Foraged)
+				{
+					TripForage.Give(entry);
+					changed = true;
 				}
 				queue.RemoveAt(i);
 				changed = true;
@@ -797,8 +1039,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds a group on the road another village, from the one it found no one in - due there once it has run the
-		/// road from there, or trying again after LostRetry when there's none
+		/// Finds a group on the road another village, from the one it found no one in - one picked at random for the
+		/// vikings of a disbanded village, or else the one they get to soonest - due there once it has run the road from
+		/// there, or trying again after LostRetry when there's none
 		/// </summary>
 		/// <param name="entry">The group, kept in the queue meanwhile</param>
 		private static void Reroute(TravelEntry entry)
@@ -806,8 +1049,9 @@ namespace VikingVillages
 			entry.Excluded.Add(entry.Destination);
 			entry.Due = long.MaxValue;
 			Vector3 from = entry.Destination;
-			TravelParty party = new TravelParty { Easiest = entry.Biome, Hardest = entry.BoatBiome, Unteleportable = entry.Unteleportable };
-			TravelPlanner.PlanHere(from, party, entry.Excluded, entry.Vikings.Count + " vikings on the road that found no one at their village", (TravelPlanner.Answer answer) =>
+			bool disbanded = (entry.OriginFire != Vector3.zero || entry.FromName.Length > 0);
+			TravelPlanner.Goal goal = (disbanded ? TravelPlanner.Goal.Random : TravelPlanner.Goal.Soonest);
+			TravelPlanner.PlanHere(from, PartyOf(entry), entry.Excluded, entry.Vikings.Count + " vikings on the road that found no one at their village", (TravelPlanner.Answer answer) =>
 			{
 				long now = NetTime.Now();
 				if (!answer.Found)
@@ -819,15 +1063,52 @@ namespace VikingVillages
 				{
 					entry.Destination = answer.Destination;
 					entry.Name = answer.Name;
-					entry.From = ((answer.Road.Count > 0) ? answer.Road.Approach() : from);
-					entry.Unloaded = now;
-					entry.Spent += entry.Remaining;
-					entry.Remaining = answer.Seconds;
-					entry.Due = now + NetTime.Ticks(answer.Seconds);
+					entry.Restart(TravelJourney.Along(answer.Road, TravelTime.BoatSpeed(entry.BoatBiome), entry.Unteleportable), now, NetTime.Ticks(1f), false);
+					Plugin.Log.LogInfo("Travel: " + entry.Vikings.Count + " vikings that found no one at the village at " + from.ToString("F0") + " go on to " + (disbanded ? "a village picked at random" : "the nearest village") + " at " + answer.Destination.ToString("F0") + ", " + answer.Seconds.ToString("F0") + "s away");
 					TestLog.Count("Travel", "groups rerouted on the road");
 				}
 				Save();
+			}, goal);
+		}
+
+		/// <summary>
+		/// Turns a group of a disbanded village around for home, now that they've got where they were going and their
+		/// village was started again at its bonfire - due there once they've run the road back, coming to its beds
+		/// </summary>
+		/// <param name="entry">The group, kept in the queue meanwhile</param>
+		/// <param name="anchor">Where the village started again stands</param>
+		private static void TurnHome(TravelEntry entry, Vector3 anchor)
+		{
+			entry.Due = long.MaxValue;
+			Vector3 from = entry.Destination;
+			TravelPlanner.PlanTo(from, PartyOf(entry), new List<Vector3> { anchor }, entry.Vikings.Count + " vikings turning home", (TravelPlanner.Answer answer) =>
+			{
+				long now = NetTime.Now();
+				entry.Returning = true;
+				entry.Destination = anchor;
+				entry.Excluded.Clear();
+				TravelRoad road = answer.Road;
+				if (!answer.Found)
+				{
+					road = new TravelRoad();
+					road.Add(from, TravelLeg.Foot);
+					road.Add(anchor, TravelLeg.Foot);
+				}
+				entry.Restart(TravelJourney.Along(road, TravelTime.BoatSpeed(entry.BoatBiome), entry.Unteleportable), now, NetTime.Ticks(1f), false);
+				Plugin.Log.LogInfo("Travel: " + entry.Vikings.Count + " vikings got to the village at " + from.ToString("F0") + " and turn around for home at " + anchor.ToString("F0") + ", started again at their bonfire, " + entry.Remaining.ToString("F0") + "s away");
+				TestLog.Count("Travel", "groups turned around for home");
+				Save();
 			});
+		}
+
+		/// <summary>
+		/// Gets what a group on the road can do on it
+		/// </summary>
+		/// <param name="entry">The group</param>
+		/// <returns>The party</returns>
+		private static TravelParty PartyOf(TravelEntry entry)
+		{
+			return(new TravelParty { Easiest = entry.Biome, Hardest = entry.BoatBiome, Unteleportable = entry.Unteleportable });
 		}
 
 		/// <summary>
@@ -877,13 +1158,94 @@ namespace VikingVillages
 			{
 				group.Vikings.AddRange(entry.Vikings);
 				group.QuestMembers = Mathf.Max(group.QuestMembers, entry.QuestMembers);
-				group.Due = System.Math.Max(group.Due, entry.Due);
+				// A group whose trip is planned is due when its trip is over, not when the village guessed
+				if (group.Journey == null)
+				{
+					group.Due = System.Math.Max(group.Due, entry.Due);
+				}
 			}
 			else
 			{
 				queue.Add(entry);
+				if (entry.OnQuest && entry.Journey == null && !entry.Returning)
+				{
+					PlanQuest(entry);
+				}
 			}
 			Save();
+		}
+
+		/// <summary>
+		/// Plans the trip of a group out on a quest, on the server, as its first viking leaves - the road from where they
+		/// left the village to whichever place the quest could go they get to soonest (see QuestTargets), the work there,
+		/// and the road home, without the portals that won't take what they bring back - due back once it's done, rather
+		/// than when the village guessed as it sent them, which it's told (see OnQuestDue). A trip that can't be planned
+		/// leaves the group due when the village guessed
+		/// </summary>
+		/// <param name="entry">The group, kept in the queue meanwhile</param>
+		private static void PlanQuest(TravelEntry entry)
+		{
+			QuestKind kind = (QuestKind)entry.QuestKind;
+			Vector3 home = entry.Destination;
+			List<Vector3> targets = QuestTargets.FindAll(kind, entry.QuestItem, home, entry.Biome);
+			if (targets.Count == 0)
+			{
+				return;
+			}
+			string label = "the quest " + kind + " from the village at " + home.ToString("F0");
+			TravelParty outward = PartyOf(entry);
+			outward.Unteleportable = false;
+			TravelPlanner.PlanTo(entry.From, outward, targets, label, (TravelPlanner.Answer there) =>
+			{
+				if (!there.Found)
+				{
+					return;
+				}
+				TravelParty homeward = PartyOf(entry);
+				homeward.Unteleportable = !TravelPlanner.Teleportable(entry.QuestItem);
+				TravelPlanner.PlanTo(there.Destination, homeward, new List<Vector3> { entry.From }, label + " coming home", (TravelPlanner.Answer back) =>
+				{
+					if (!back.Found || entry.Journey != null || !queue.Contains(entry))
+					{
+						return;
+					}
+					TravelJourney journey = new TravelJourney { BoatSpeed = TravelTime.BoatSpeed(entry.BoatBiome) };
+					journey.AddRoad(there.Road, outward.Unteleportable, false);
+					journey.AddStay(entry.QuestActive);
+					journey.AddRoad(back.Road, homeward.Unteleportable, true);
+					long guessed = entry.Due;
+					entry.Restart(journey, entry.Unloaded, NetTime.Ticks(1f), true);
+					Plugin.Log.LogInfo("Travel: " + label + " goes to " + there.Destination.ToString("F0") + ", " + there.Seconds.ToString("F0") + "s there by " + TravelPlanner.DescribeRoad(there.Road) + ", " + entry.QuestActive.ToString("F0") + "s of work and " + back.Seconds.ToString("F0") + "s back by " + TravelPlanner.DescribeRoad(back.Road) + " - due " + ((entry.Due - guessed) / (float)NetTime.Ticks(1f)).ToString("+0;-0") + "s from the village's guess");
+					TestLog.Count("Travel", "quest trips planned");
+					NoteQuestDue(entry);
+					Save();
+				});
+			});
+		}
+
+		/// <summary>
+		/// Tells every client when a group out on a quest is now due back at its village, for the one running the village
+		/// to note on its quest (see VillageQuests.DueChanged)
+		/// </summary>
+		/// <param name="entry">The group</param>
+		private static void NoteQuestDue(TravelEntry entry)
+		{
+			if (entry.OnQuest && !entry.Returning)
+			{
+				ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, QuestDueRpc, entry.Destination, entry.QuestId, entry.Due);
+			}
+		}
+
+		/// <summary>
+		/// Notes on a village this client runs when its quest is now due back, as the server worked it out
+		/// </summary>
+		/// <param name="sender">The server</param>
+		/// <param name="farm">Where the village stands</param>
+		/// <param name="questId">The quest's ID</param>
+		/// <param name="due">When it's due back, in ZNet time ticks</param>
+		private static void OnQuestDue(long sender, Vector3 farm, string questId, long due)
+		{
+			VillageQuests.DueChanged(farm, questId, due);
 		}
 
 		/// <summary>
@@ -904,8 +1266,13 @@ namespace VikingVillages
 			{
 				string what = (entry.OnQuest ? "out on a quest " + (QuestKind)entry.QuestKind : (entry.Returning ? "coming back to a village started again" : "on the road"));
 				string due = ((entry.Due == long.MaxValue) ? "looking for another village" : ((entry.Due > now) ? "due in " + ((entry.Due - now) / tick).ToString("F0") + "s" : "due " + ((now - entry.Due) / tick).ToString("F0") + "s ago"));
-				TravelParty party = new TravelParty { Easiest = entry.Biome, Hardest = entry.BoatBiome, Unteleportable = entry.Unteleportable };
-				lines.Add(entry.Vikings.Count + " vikings " + what + " to " + entry.Destination.ToString("F0") + ((entry.Name.Length > 0) ? " (" + entry.Name + ")" : "") + ", " + due + ", " + party.Describe() + ((entry.FromName.Length > 0) ? ", from " + entry.FromName : "") + ((entry.Excluded.Count > 0) ? ", " + entry.Excluded.Count + " villages found empty" : ""));
+				string where = "";
+				if (entry.Journey != null && entry.Due != long.MaxValue)
+				{
+					TravelJourney.Place place = entry.Journey.At(entry.Elapsed(now, tick), entry.From);
+					where = ", at about " + place.Position.ToString("F0") + ((place.Stage < entry.Journey.Stages.Count) ? " on stage " + (place.Stage + 1) + " of " + entry.Journey.Stages.Count + ((entry.Journey.Stages[place.Stage].Road == null) ? " (at work)" : " (" + place.Leg.ToString().ToLowerInvariant() + ")") : "");
+				}
+				lines.Add(entry.Vikings.Count + " vikings " + what + " to " + entry.Destination.ToString("F0") + ((entry.Name.Length > 0) ? " (" + entry.Name + ")" : "") + ", " + due + where + ", " + PartyOf(entry).Describe() + ((entry.FromName.Length > 0) ? ", from " + entry.FromName : "") + ((entry.OriginFire != Vector3.zero) ? ", left the bonfire at " + entry.OriginFire.ToString("F0") : "") + ((entry.Excluded.Count > 0) ? ", " + entry.Excluded.Count + " villages found empty" : "") + (replanning.Contains(entry) ? ", planning its road again" : ""));
 			}
 			string searching = TravelPlanner.DescribeSearches();
 			if (searching.Length > 0)
@@ -995,7 +1362,17 @@ namespace VikingVillages
 					entry.Destination = answer.Destination;
 					entry.Name = answer.Name;
 					entry.From = ((answer.Road.Count > 0) ? answer.Road.Approach() : entry.From);
-					entry.Due = System.Math.Max(entry.Due, now) + NetTime.Ticks(answer.Seconds);
+					if (entry.Journey != null && entry.Due != long.MaxValue)
+					{
+						// The road on from the disbanded village follows the road home to it
+						entry.Journey.AddRoad(answer.Road, entry.Unteleportable, true);
+						entry.Remaining = entry.Journey.TotalSeconds();
+						entry.Due = entry.Unloaded + NetTime.Ticks(entry.Remaining);
+					}
+					else
+					{
+						entry.Due = System.Math.Max(entry.Due, now) + NetTime.Ticks(answer.Seconds);
+					}
 				}
 				count += entry.Vikings.Count;
 			}
@@ -1007,10 +1384,10 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Calls back on the server the groups on the road that left the village disbanded at a bonfire, to the village
-		/// just started there - each due back after as long as it had been on the road, coming back the way it went, or
-		/// for vikings out on a quest, when the quest was due back, and coming to the village's beds - and tells the client
-		/// that started it how many and when the last are due
+		/// Counts on the server the groups on the road that left the village disbanded at a bonfire, now that a village
+		/// was started there - they go on to where they were going and turn around for home once they get there (see
+		/// Deliver and TurnHome) - and tells the client that started it how many, and roughly when the last are due back,
+		/// as though the road back takes as long as the road there
 		/// </summary>
 		/// <param name="sender">The client that started the village</param>
 		/// <param name="fire">Where the bonfire stands</param>
@@ -1024,31 +1401,19 @@ namespace VikingVillages
 			long now = NetTime.Now();
 			int count = 0;
 			long latest = 0L;
-			double ticksPerSecond = NetTime.Ticks(1f);
 			foreach (TravelEntry entry in queue)
 			{
 				if (entry.Returning || entry.OriginFire == Vector3.zero || Utils.DistanceXZ(entry.OriginFire, fire) > 1f)
 				{
 					continue;
 				}
-				entry.Returning = true;
-				entry.Destination = anchor;
-				// Vikings out on a quest come back when the quest was due, as though the village had never been disbanded
-				if (entry.OnQuest)
-				{
-					entry.Due = System.Math.Max(now, entry.QuestDue);
-				}
-				else
-				{
-					entry.Due = now + NetTime.Ticks(entry.Progress(now, ticksPerSecond));
-				}
+				long there = ((entry.Due == long.MaxValue) ? now : System.Math.Max(now, entry.Due));
 				count += entry.Vikings.Count;
-				latest = System.Math.Max(latest, entry.Due);
+				latest = System.Math.Max(latest, there + NetTime.Ticks(entry.Spent + entry.Remaining));
 			}
 			if (count > 0)
 			{
-				Save();
-				Plugin.Log.LogInfo("Travel: " + count + " vikings on the road were called back to the village started at " + fire.ToString("F0"));
+				Plugin.Log.LogInfo("Travel: " + count + " vikings on the road that left the village started again at " + fire.ToString("F0") + " turn around for home once they get where they're going");
 			}
 			ZRoutedRpc.instance.InvokeRoutedRPC(sender, RecalledRpc, count, latest);
 		}
