@@ -67,6 +67,7 @@ namespace VikingVillages
 			{ QuestKind.KillEikthyr, new[] { new[] { "{away} went to face Eikthyr.", "The stag? For his antlers?", "For a pickaxe, they said." }, new[] { "Thunder over the meadow, {name}. Hear it?", "That'll be {away} and the stag." } } },
 			{ QuestKind.FindBees, new[] { new[] { "{away} went looking for wild bees.", "I hope they bring back more honey than stings." }, new[] { "Wild hives are hard to find, {name}.", "Follow the buzzing, they said." } } },
 			{ QuestKind.HuntGhosts, new[] { new[] { "{away} went into a burial chamber after ghosts.", "On purpose?", "Ectoplasm, they said. For silvering blades." }, new[] { "How do you kill something that's already dead, {name}?", "Ask {away} when they get back." } } },
+			{ QuestKind.RaidFrostCaves, new[] { new[] { "{away} went up into the frost caves.", "Cultists and wolves in the dark. I hope they took a torch." }, new[] { "The frost caves are colder than the mountain itself, {name}.", "Then let's hope {away} wrapped up warm." } } },
 			{ QuestKind.None, new[] { new[] { "Any word from {away}?", "Not yet. They'll be back {when}." }, new[] { "It's quiet without {away}, {name}.", "Too quiet. I'll be glad when they're back." } } }
 		};
 
@@ -88,6 +89,7 @@ namespace VikingVillages
 			{ QuestKind.KillEikthyr, new[] { "{away} went to face Eikthyr, {player}. For his antlers." } },
 			{ QuestKind.FindBees, new[] { "{away} went looking for wild bees, {player}." } },
 			{ QuestKind.HuntGhosts, new[] { "{away} went hunting ghosts in the burial chambers, {player}. We need their ectoplasm." } },
+			{ QuestKind.RaidFrostCaves, new[] { "{away} went raiding the frost caves, {player}. Up past the snow line." } },
 			{ QuestKind.None, new[] { "{away} went out on a quest, {player}. Back {when}, they said.", "We're short-handed until {away} gets back, {player}." } }
 		};
 
@@ -109,6 +111,7 @@ namespace VikingVillages
 			{ QuestKind.KillEikthyr, new[] { new[] { "Eikthyr is down, {name}! {with} and I saw to it.", "The stag himself?", "Antlers and all." }, new[] { "My hair's still standing up from the stag's lightning.", "It suits you, {name}." } } },
 			{ QuestKind.FindBees, new[] { new[] { "We found wild bees, {name}.", "And the stings to prove it, I see." }, new[] { "Honey, {name}! Straight from a wild hive.", "Save some for the rest of us." } } },
 			{ QuestKind.HuntGhosts, new[] { new[] { "Ghosts are cold, {name}. Colder than the grave. {with} felt it too.", "But you got the ectoplasm?", "Enough to line a blade or two." }, new[] { "I keep hearing wailing, {name}.", "That's just the wind.", "I hope so." } } },
+			{ QuestKind.RaidFrostCaves, new[] { new[] { "The frost caves were full of cultists, {name}. {with} took on the worst of them.", "Was it worth it?", "Red jute, crystals and a chill I can't shake." }, new[] { "Bats everywhere in those caves, {name}.", "Better bats than fenrings.", "There were those too." } } },
 			{ QuestKind.None, new[] { new[] { "We made it back, {name}.", "In one piece?", "Mostly." }, new[] { "{with} and I are home.", "And not empty-handed, I see." } } }
 		};
 
@@ -130,6 +133,7 @@ namespace VikingVillages
 			{ QuestKind.KillEikthyr, new[] { "We faced Eikthyr, {player}! {with} and I brought back his antlers." } },
 			{ QuestKind.FindBees, new[] { "I found wild bees, {player}. They found me too." } },
 			{ QuestKind.HuntGhosts, new[] { "We hunted ghosts in a burial chamber, {player}. {with} and I brought back their ectoplasm." } },
+			{ QuestKind.RaidFrostCaves, new[] { "We raided a frost cave, {player}! {with} and I brought back red jute and crystals." } },
 			{ QuestKind.None, new[] { "We're back, {player}! {with} and I didn't come home empty-handed.", "Home again, {player}. It was a long trip." } }
 		};
 

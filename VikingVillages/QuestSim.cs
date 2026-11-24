@@ -104,7 +104,8 @@ namespace VikingVillages
 			{ QuestKind.BuyCirclet, 0.05f },
 			{ QuestKind.KillEikthyr, 0.8f },
 			{ QuestKind.FindBees, 0.15f },
-			{ QuestKind.HuntGhosts, 0.5f }
+			{ QuestKind.HuntGhosts, 0.5f },
+			{ QuestKind.RaidFrostCaves, 0.6f }
 		};
 
 		/// <summary>

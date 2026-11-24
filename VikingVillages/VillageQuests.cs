@@ -533,7 +533,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Picks the vikings for a quest - those fit to go, leaving home any whose gear is so far behind the quest's biome
-		/// that it would be expected to lose all its health there (see QuestSim.ExpectedToDie), for a circlet the one
+		/// that it would be expected to lose all its health there (see QuestSim.ExpectedToDie), or on a quest that
+		/// kills creatures, in the fight (see QuestFightGame.ExpectedToDie), for a circlet the one
 		/// still using torches first, then the ones with a tool good enough for it, then the healthiest - and the tool
 		/// each takes, as many as the village can spare (see QuestRules.GroupSize). A quest that takes a tool needs at
 		/// least one
@@ -565,7 +566,7 @@ namespace VikingVillages
 				}
 				// One whose gear is so far behind the quest that it would be expected to lose all its health stays home
 				VikingCore core = humanoid.GetComponent<VikingCore>();
-				if (QuestSim.ExpectedToDie(kind, questBiome - ((core != null) ? core.BiomeIndex() : biome)))
+				if (QuestFightGame.ExpectedToDie(kind, humanoid, rule.VikingsFor(biome)) ?? QuestSim.ExpectedToDie(kind, questBiome - ((core != null) ? core.BiomeIndex() : biome)))
 				{
 					continue;
 				}
@@ -1165,7 +1166,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Describes what a viking does on a quest - the tool it takes from a chest, and once the quest has set out, the
-		/// tool it works with, the enemies it kills, the share of its health a boss fight harms it by, what it brings home
+		/// tool it works with, the enemies it kills, the share of its health the quest's fight harms it by, what it brings home
 		/// and what it spends
 		/// </summary>
 		/// <param name="record">The quest</param>

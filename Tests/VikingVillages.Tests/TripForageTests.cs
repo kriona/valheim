@@ -124,6 +124,7 @@ namespace VikingVillages.Tests
 			Assert.True(TripForage.OnlyHomeward(QuestKind.MineCopper));
 			Assert.True(TripForage.OnlyHomeward(QuestKind.RaidCrypts));
 			Assert.True(TripForage.OnlyHomeward(QuestKind.RaidBurialChambers));
+			Assert.True(TripForage.OnlyHomeward(QuestKind.RaidFrostCaves));
 			Assert.False(TripForage.OnlyHomeward(QuestKind.ChopTrees));
 			Assert.False(TripForage.OnlyHomeward(QuestKind.KillEikthyr));
 		}

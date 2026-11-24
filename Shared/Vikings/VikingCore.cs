@@ -1612,13 +1612,14 @@ namespace Kriona.Vikings
 		{
 			ItemDrop.ItemData best = null;
 			float bestDamage = 0f;
+			HitData.DamageModifiers? resistances = Resistances(target);
 			foreach (ItemDrop.ItemData item in humanoid.GetInventory().GetAllItems())
 			{
 				if (item.m_shared.m_itemType != type || !CanUse(item) || IsRanged(item))
 				{
 					continue;
 				}
-				float damage = Damage(item, target);
+				float damage = Damage(item, resistances);
 				if (best == null || damage > bestDamage)
 				{
 					best = item;
@@ -2203,7 +2204,7 @@ namespace Kriona.Vikings
 				return;
 			}
 			Character target = ((ai != null) ? ai.GetTargetCreature() : null);
-			ItemDrop.ItemData best = BestAmmo(weapon, target);
+			ItemDrop.ItemData best = BestAmmo(weapon, Resistances(target));
 			if (best != null && best != humanoid.GetAmmoItem())
 			{
 				humanoid.EquipItem(best, false);
@@ -3188,8 +3189,9 @@ namespace Kriona.Vikings
 			}
 			// Each weapon is weighed against the enemy in front of it, through its resistances
 			Character target = ((ai != null) ? ai.GetTargetCreature() : null);
-			ItemDrop.ItemData melee = BestWeapon(true, target);
-			ItemDrop.ItemData ranged = BestRanged(target);
+			HitData.DamageModifiers? resistances = Resistances(target);
+			ItemDrop.ItemData melee = BestWeapon(true, resistances);
+			ItemDrop.ItemData ranged = BestRanged(resistances);
 			if (melee == null || ranged == null)
 			{
 				return(melee ?? ranged);
@@ -3235,7 +3237,8 @@ namespace Kriona.Vikings
 					return(ranged);
 				}
 			}
-			return(PrefersRanged(Hurt(ranged, target), Hurt(melee, target)) ? ranged : melee);
+			HitData.DamageModifiers? resistances = Resistances(target);
+			return(PrefersRanged(Hurt(ranged, resistances), Hurt(melee, resistances)) ? ranged : melee);
 		}
 
 		/// <summary>
@@ -3261,12 +3264,12 @@ namespace Kriona.Vikings
 		/// by its biome's MeleeScale (see DamageScale)
 		/// </summary>
 		/// <param name="weapon">The weapon</param>
-		/// <param name="target">The creature, or null for its damage as it is</param>
+		/// <param name="resistances">The creature's resistances, or null for its damage as it is</param>
 		/// <returns>The damage</returns>
-		private float Hurt(ItemDrop.ItemData weapon, Character target)
+		private float Hurt(ItemDrop.ItemData weapon, HitData.DamageModifiers? resistances)
 		{
 			float scale = ((!IsRanged(weapon) && GetData() != null && !data.Tombstone) ? VikingGear.Get(BiomeIndex()).MeleeScale : 1f);
-			return(SkillScaled(Damage(weapon, target) * scale, SkillLevel(weapon.m_shared.m_skillType)));
+			return(SkillScaled(Damage(weapon, resistances) * scale, SkillLevel(weapon.m_shared.m_skillType)));
 		}
 
 		/// <summary>
@@ -3303,9 +3306,9 @@ namespace Kriona.Vikings
 		/// <summary>
 		/// Finds the viking's best bow or crossbow it has ammo for, by the damage it deals with that ammo
 		/// </summary>
-		/// <param name="target">The creature it's for, whose resistances the damage goes through, or null</param>
+		/// <param name="resistances">The resistances of the creature it's for, which the damage goes through, or null</param>
 		/// <returns>The weapon, or null when it has none it can shoot</returns>
-		private ItemDrop.ItemData BestRanged(Character target = null)
+		private ItemDrop.ItemData BestRanged(HitData.DamageModifiers? resistances = null)
 		{
 			ItemDrop.ItemData best = null;
 			float bestDamage = 0f;
@@ -3315,7 +3318,7 @@ namespace Kriona.Vikings
 				{
 					continue;
 				}
-				float damage = Damage(item, target);
+				float damage = Damage(item, resistances);
 				if (best == null || damage > bestDamage)
 				{
 					best = item;
@@ -3333,20 +3336,63 @@ namespace Kriona.Vikings
 		/// <returns>The damage</returns>
 		public float StrikeDamage(Character target = null)
 		{
-			ItemDrop.ItemData melee = BestWeapon(true, target);
-			ItemDrop.ItemData ranged = BestRanged(target);
+			return(Strike(Resistances(target), 1f));
+		}
+
+		/// <summary>
+		/// Measures how much the viking deals a creature in the time a melee swing takes - its hardest hit (see
+		/// StrikeDamage), counting a bow or crossbow at RangedPace of its damage, since it shoots more slowly
+		/// </summary>
+		/// <param name="resistances">The creature's resistances</param>
+		/// <returns>The damage</returns>
+		public float SwingDamage(HitData.DamageModifiers resistances)
+		{
+			return(Strike(resistances, RangedPace));
+		}
+
+		/// <summary>
+		/// Measures the hardest the viking hits a creature with its best melee weapon, its best bow or crossbow or its
+		/// fists, through the creature's resistances and its skill
+		/// </summary>
+		/// <param name="resistances">The creature's resistances, or null for the damage as it is</param>
+		/// <param name="rangedShare">The share of a bow's or crossbow's damage it's counted for</param>
+		/// <returns>The damage</returns>
+		private float Strike(HitData.DamageModifiers? resistances, float rangedShare)
+		{
+			ItemDrop.ItemData melee = BestWeapon(true, resistances);
+			ItemDrop.ItemData ranged = BestRanged(resistances);
 			HitData.DamageTypes fists = new HitData.DamageTypes();
 			fists.m_blunt = ((GetData() != null) ? VikingGear.Get(BiomeIndex()).Unarmed : 0f);
-			float best = SkillScaled(CombatDamage(Resisted(fists, target)), SkillLevel(Skills.SkillType.Unarmed));
+			float best = SkillScaled(CombatDamage(Resisted(fists, resistances)), SkillLevel(Skills.SkillType.Unarmed));
 			if (melee != null)
 			{
-				best = Mathf.Max(best, Hurt(melee, target));
+				best = Mathf.Max(best, Hurt(melee, resistances));
 			}
 			if (ranged != null)
 			{
-				best = Mathf.Max(best, Hurt(ranged, target));
+				best = Mathf.Max(best, Hurt(ranged, resistances) * rangedShare);
 			}
 			return(best);
+		}
+
+		/// <summary>
+		/// Measures how much a working shield of the viking's holds back of a blocked hit - its block power at the
+		/// viking's blocking skill, the way the game works it out as it blocks (see Humanoid.BlockAttack)
+		/// </summary>
+		/// <returns>The block power, or 0 with no shield that works</returns>
+		public float BlockPower()
+		{
+			return(ShieldWorks() ? shield.GetBlockPower(Mathf.Clamp01(SkillLevel(Skills.SkillType.Blocking) / 100f)) : 0f);
+		}
+
+		/// <summary>
+		/// Gets a creature's resistances, as the game puts a hit on it through them
+		/// </summary>
+		/// <param name="target">The creature, or null</param>
+		/// <returns>Its resistances, or null with no creature</returns>
+		private static HitData.DamageModifiers? Resistances(Character target)
+		{
+			return((target != null) ? target.GetDamageModifiers() : (HitData.DamageModifiers?)null);
 		}
 
 		/// <summary>
@@ -3490,10 +3536,10 @@ namespace Kriona.Vikings
 		/// Finds the weapon the viking can fight with that deals the most damage
 		/// </summary>
 		/// <param name="melee">True to leave out bows and crossbows</param>
-		/// <param name="target">The creature it's for, whose resistances the damage goes through - so a weapon of what
-		/// it's weak to over one of what it resists - or null</param>
+		/// <param name="resistances">The resistances of the creature it's for, which the damage goes through - so a
+		/// weapon of what it's weak to over one of what it resists - or null</param>
 		/// <returns>The weapon, or null when it has none</returns>
-		private ItemDrop.ItemData BestWeapon(bool melee, Character target = null)
+		private ItemDrop.ItemData BestWeapon(bool melee, HitData.DamageModifiers? resistances = null)
 		{
 			ItemDrop.ItemData best = null;
 			float bestDamage = 0f;
@@ -3503,7 +3549,7 @@ namespace Kriona.Vikings
 				{
 					continue;
 				}
-				float damage = Damage(item, target);
+				float damage = Damage(item, resistances);
 				if (best == null || damage > bestDamage)
 				{
 					best = item;
@@ -3665,17 +3711,17 @@ namespace Kriona.Vikings
 		/// and none of what it's immune to, its armor and status effects included - or as it is with no creature
 		/// </summary>
 		/// <param name="weapon">The weapon</param>
-		/// <param name="target">The creature, or null</param>
+		/// <param name="resistances">The creature's resistances, or null</param>
 		/// <returns>Its damage, leaving out chopping and mining</returns>
-		private float Damage(ItemDrop.ItemData weapon, Character target)
+		private float Damage(ItemDrop.ItemData weapon, HitData.DamageModifiers? resistances)
 		{
 			HitData.DamageTypes damage = weapon.GetDamage();
-			ItemDrop.ItemData ammo = (BestAmmo(weapon, target) ?? FindAmmo(weapon));
+			ItemDrop.ItemData ammo = (BestAmmo(weapon, resistances) ?? FindAmmo(weapon));
 			if (ammo != null)
 			{
 				damage.Add(ammo.GetDamage());
 			}
-			return(CombatDamage(Resisted(damage, target)));
+			return(CombatDamage(Resisted(damage, resistances)));
 		}
 
 		/// <summary>
@@ -3685,9 +3731,9 @@ namespace Kriona.Vikings
 		/// the least spirit damage
 		/// </summary>
 		/// <param name="weapon">The weapon</param>
-		/// <param name="target">The creature, or null</param>
+		/// <param name="resistances">The creature's resistances, or null with no creature</param>
 		/// <returns>The ammo, or null when the weapon takes none or the viking has none it can ready</returns>
-		private ItemDrop.ItemData BestAmmo(ItemDrop.ItemData weapon, Character target)
+		private ItemDrop.ItemData BestAmmo(ItemDrop.ItemData weapon, HitData.DamageModifiers? resistances)
 		{
 			string ammoType = weapon.m_shared.m_ammoType;
 			if (string.IsNullOrEmpty(ammoType))
@@ -3705,11 +3751,11 @@ namespace Kriona.Vikings
 				}
 				HitData.DamageTypes damage = own;
 				damage.Add(item.GetDamage());
-				if (target == null)
+				if (resistances == null)
 				{
 					damage.m_spirit = 0f;
 				}
-				float hurt = CombatDamage(Resisted(damage, target));
+				float hurt = CombatDamage(Resisted(damage, resistances));
 				if (best == null || hurt > bestDamage || (hurt == bestDamage && item.GetDamage().m_spirit < best.GetDamage().m_spirit))
 				{
 					best = item;
@@ -3723,17 +3769,17 @@ namespace Kriona.Vikings
 		/// Puts damage through a creature's resistances, the way the game does as it's hit
 		/// </summary>
 		/// <param name="damage">The damage</param>
-		/// <param name="target">The creature, or null to leave the damage as it is</param>
+		/// <param name="resistances">The creature's resistances, or null to leave the damage as it is</param>
 		/// <returns>The damage it would take</returns>
-		private static HitData.DamageTypes Resisted(HitData.DamageTypes damage, Character target)
+		private static HitData.DamageTypes Resisted(HitData.DamageTypes damage, HitData.DamageModifiers? resistances)
 		{
-			if (target == null)
+			if (resistances == null)
 			{
 				return(damage);
 			}
 			HitData hit = new HitData();
 			hit.m_damage = damage;
-			hit.ApplyResistance(target.GetDamageModifiers(), out HitData.DamageModifier _);
+			hit.ApplyResistance(resistances.Value, out HitData.DamageModifier _);
 			return(hit.m_damage);
 		}
 

@@ -22,7 +22,8 @@ namespace VikingVillages
 		BuyCirclet,
 		KillEikthyr,
 		FindBees,
-		HuntGhosts
+		HuntGhosts,
+		RaidFrostCaves
 	}
 
 	/// <summary>
@@ -295,6 +296,7 @@ namespace VikingVillages
 			eikthyr.OfferingCount = 2;
 			Rule(QuestKind.FindBees, Meadows, 1, 1, 1, false, new string[0]).HivesBelow = HivesWanted;
 			Rule(QuestKind.HuntGhosts, BlackForest, 2, 2, 3, true, new string[0]);
+			Rule(QuestKind.RaidFrostCaves, Mountain, 3, 3, 3, true, new string[0]);
 			Brings("RawMeat", QuestKind.Hunt, Meadows);
 			Brings("LeatherScraps", QuestKind.Hunt, Meadows);
 			Brings("DeerHide", QuestKind.Hunt, Meadows);
@@ -332,6 +334,12 @@ namespace VikingVillages
 			Brings("QueenBee", QuestKind.FindBees, Meadows);
 			Brings("Honey", QuestKind.FindBees, Meadows);
 			Brings("Ectoplasm", QuestKind.HuntGhosts, BlackForest);
+			Brings("JuteRed", QuestKind.RaidFrostCaves, Mountain);
+			Brings("Crystal", QuestKind.RaidFrostCaves, Mountain);
+			Brings("Obsidian", QuestKind.RaidFrostCaves, Mountain);
+			Brings("WolfFang", QuestKind.RaidFrostCaves, Mountain);
+			Brings("TrophyUlv", QuestKind.RaidFrostCaves, Mountain);
+			Brings("TrophyCultist", QuestKind.RaidFrostCaves, Mountain);
 			Add("Honey", new ResourceSource { Kind = SourceKind.Gather });
 		}
 

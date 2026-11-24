@@ -147,6 +147,8 @@ namespace VikingVillages
 					return("trollcave");
 				case QuestKind.HuntGoblins:
 					return("goblincamp");
+				case QuestKind.RaidFrostCaves:
+					return("mountaincave");
 				case QuestKind.BuyCirclet:
 					return("vendor_blackforest");
 				case QuestKind.KillEikthyr:
@@ -179,6 +181,7 @@ namespace VikingVillages
 					// The hardest biome with a trader the village can sell to, when the world has none of their camps
 					return(TraderBiomes[System.Math.Max(0, TradersFor(villageBiome).Count - 1)]);
 				case QuestKind.MineSilver:
+				case QuestKind.RaidFrostCaves:
 					return(ResourceBook.Mountain);
 				case QuestKind.RaidCrypts:
 					return(ResourceBook.Swamp);

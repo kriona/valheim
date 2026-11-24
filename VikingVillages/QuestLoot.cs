@@ -141,7 +141,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Lists what a quest kills, opens and picks besides hunting and foraging - the chests and creatures of the place
-		/// it goes to
+		/// it goes to, every creature they meet there, which they fight (see QuestFightGame), and bring home the drops of
 		/// </summary>
 		/// <param name="kind">The quest</param>
 		/// <returns>The sources, empty for a quest with none</returns>
@@ -150,9 +150,11 @@ namespace VikingVillages
 			switch (kind)
 			{
 				case QuestKind.RaidCrypts:
-					return(new List<LootSource> { new LootSource("TreasureChest_sunkencrypt", 1f, 1, false), new LootSource("Draugr", 2f, 2, true), new LootSource("Blob", 1f, 1, true) });
+					return(new List<LootSource> { new LootSource("TreasureChest_sunkencrypt", 1f, 1, false), new LootSource("Draugr", 3f, 3, true), new LootSource("Draugr_Elite", 0.5f, 1, true), new LootSource("Blob", 1f, 1, true) });
 				case QuestKind.RaidBurialChambers:
-					return(new List<LootSource> { new LootSource("TreasureChest_forestcrypt", 2f, 2, false), new LootSource("Skeleton", 2f, 2, true), new LootSource("Pickable_SurtlingCoreStand", 1f, 1, false) });
+					return(new List<LootSource> { new LootSource("TreasureChest_forestcrypt", 2f, 2, false), new LootSource("Skeleton", 4f, 4, true), new LootSource("Skeleton_Poison", 1f, 1, true), new LootSource("Ghost", 0.5f, 1, true), new LootSource("Pickable_SurtlingCoreStand", 1f, 1, false) });
+				case QuestKind.RaidFrostCaves:
+					return(new List<LootSource> { new LootSource("TreasureChest_mountaincave", 1f, 1, false), new LootSource("Pickable_MountainCaveCrystal", 1f, 1, false), new LootSource("Ulv", 3f, 3, true), new LootSource("Fenring_Cultist", 1f, 1, true), new LootSource("Bat", 2f, 2, true) });
 				case QuestKind.HuntTrolls:
 					return(new List<LootSource> { new LootSource("Troll", 0.5f, 1, true) });
 				case QuestKind.HuntGoblins:
@@ -160,7 +162,7 @@ namespace VikingVillages
 				case QuestKind.KillEikthyr:
 					return(new List<LootSource> { new LootSource("Eikthyr", 0f, 1, true) });
 				case QuestKind.HuntGhosts:
-					return(new List<LootSource> { new LootSource("Ghost", 2f, 2, true), new LootSource("Skeleton", 1f, 1, true) });
+					return(new List<LootSource> { new LootSource("Ghost", 2f, 2, true), new LootSource("Skeleton", 3f, 3, true), new LootSource("Skeleton_Poison", 1f, 1, true) });
 				default:
 					return(new List<LootSource>());
 			}

@@ -285,7 +285,7 @@ namespace VikingVillages.Tests
 			record.Members.Add("a");
 			record.Names.Add("Ragna");
 			record.Tools.Add("PickaxeAntler");
-			MemberPlan plan = new MemberPlan { Tool = "PickaxeAntler", ToolLeft = 30f, Hits = 80, Kills = 1 };
+			MemberPlan plan = new MemberPlan { Tool = "PickaxeAntler", ToolLeft = 30f, Hits = 80, Kills = 1, FightHarm = 0.42f };
 			plan.Loot.Add(new KeyValuePair<string, int>("CopperOre", 20));
 			plan.Spend.Add(new KeyValuePair<string, int>("Amber", 2));
 			record.Plans.Add(plan);
@@ -301,7 +301,9 @@ namespace VikingVillages.Tests
 			Assert.Equal(plan.Hits, readPlan.Hits);
 			Assert.Equal(plan.Kills, readPlan.Kills);
 			Assert.Equal(plan.Spend, readPlan.Spend);
+			Assert.Equal(plan.FightHarm, readPlan.FightHarm);
 			Assert.Empty(read.PlanOf("nobody").Loot);
+			Assert.Equal(-1f, read.PlanOf("nobody").FightHarm);
 		}
 
 		[Theory]
@@ -310,6 +312,7 @@ namespace VikingVillages.Tests
 		[InlineData("sunkencrypt4", "sunkencrypt", true)]
 		[InlineData("trollcave02", "trollcave", true)]
 		[InlineData("hildir_crypt", "crypt", false)]
+		[InlineData("mountaincave02", "mountaincave", true)]
 		public void BurialChambersAreNotSunkenCrypts(string name, string kind, bool expected)
 		{
 			Assert.Equal(expected, QuestTargets.Matches(name, kind));
@@ -322,6 +325,8 @@ namespace VikingVillages.Tests
 			Assert.Equal("vendor_blackforest", QuestTargets.LocationOf(QuestKind.BuyCirclet));
 			Assert.Null(QuestTargets.LocationOf(QuestKind.MineCopper));
 			Assert.Equal(ResourceBook.Mountain, QuestTargets.BiomeOf(QuestKind.MineSilver, "SilverOre", ResourceBook.Plains));
+			Assert.Equal("mountaincave", QuestTargets.LocationOf(QuestKind.RaidFrostCaves));
+			Assert.Equal(ResourceBook.Mountain, QuestTargets.BiomeOf(QuestKind.RaidFrostCaves, "JuteRed", ResourceBook.Plains));
 			Assert.Equal(ResourceBook.Plains, QuestTargets.BiomeOf(QuestKind.Hunt, "", ResourceBook.Plains));
 			Assert.Equal(ResourceBook.BlackForest, QuestTargets.BiomeOf(QuestKind.ChopTrees, "RoundLog", ResourceBook.Swamp));
 			Assert.Equal(ResourceBook.Swamp, QuestTargets.BiomeOf(QuestKind.ChopTrees, "Wood", ResourceBook.Swamp));

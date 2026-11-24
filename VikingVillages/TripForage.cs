@@ -206,6 +206,7 @@ namespace VikingVillages
 				case QuestKind.RaidCrypts:
 				case QuestKind.RaidBurialChambers:
 				case QuestKind.HuntGhosts:
+				case QuestKind.RaidFrostCaves:
 					return(true);
 				default:
 					return(false);

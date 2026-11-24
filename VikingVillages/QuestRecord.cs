@@ -18,7 +18,8 @@ namespace VikingVillages
 	/// <summary>
 	/// What one viking does on a quest, worked out as the quest sets out (see QuestGame.Prepare) - what it brings home,
 	/// the tool it works with and the durability that tool has left after, how many times it swings it, the enemies it
-	/// kills, and what it takes along to spend there, like treasure to sell
+	/// kills, what it takes along to spend there, like treasure to sell, and on a quest that kills creatures, the share of
+	/// its health the fight harms it by (see QuestFight), or -1 on one whose danger harms it (see QuestSim.Harm)
 	/// </summary>
 	internal class MemberPlan
 	{
@@ -28,6 +29,7 @@ namespace VikingVillages
 		public int Hits;
 		public int Kills;
 		public List<KeyValuePair<string, int>> Spend = new List<KeyValuePair<string, int>>();
+		public float FightHarm = -1f;
 
 		/// <summary>
 		/// Writes the plan to a package
@@ -41,6 +43,7 @@ namespace VikingVillages
 			pkg.Write(Hits);
 			pkg.Write(Kills);
 			QuestRecord.WriteItems(pkg, Spend);
+			pkg.Write(FightHarm);
 		}
 
 		/// <summary>
@@ -57,6 +60,7 @@ namespace VikingVillages
 			plan.Hits = pkg.ReadInt();
 			plan.Kills = pkg.ReadInt();
 			plan.Spend = QuestRecord.ReadItems(pkg);
+			plan.FightHarm = pkg.ReadSingle();
 			return(plan);
 		}
 	}
@@ -98,7 +102,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The version of how a record is written, which a reader skips a record written another way by
 		/// </summary>
-		private const int FormatVersion = 2;
+		private const int FormatVersion = 3;
 
 		/// <summary>
 		/// Gets the tool a viking on the quest takes from a chest

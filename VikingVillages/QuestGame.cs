@@ -10,8 +10,9 @@ namespace VikingVillages
 	/// </summary>
 	/// <remarks>
 	/// The quest as a whole is worked out as it sets out (see Prepare): how long the work takes, what each viking brings
-	/// home and how worn its tool comes back. What happens to each viking - its harm, what it eats and drinks, and how
-	/// its skills rise - is worked out as it leaves (see OutcomeFor), from what it took along
+	/// home, how worn its tool comes back, and how a fight with what it kills goes. What happens to each viking - its harm,
+	/// what it eats and drinks, and how its skills rise - is worked out as it leaves (see OutcomeFor), from what it
+	/// took along
 	/// </remarks>
 	internal static class QuestGame
 	{
@@ -98,7 +99,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Works out a quest as it sets out - for one that takes a tool, how much of its item the vikings can carry home
 		/// between them and how long their tools take to get it, wearing each tool; and what else it brings back (see
-		/// QuestLoot) - then shares what it finds out among the vikings by their room, and works out when it's due back
+		/// QuestLoot) - then shares what it finds out among the vikings by their room, works out a fight with the creatures
+		/// the quest kills, if any, and the harm it does each viking (see QuestFightGame), and when it's due back
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="record">The quest, its plans and due time filled in</param>
@@ -166,6 +168,17 @@ namespace VikingVillages
 			{
 				record.Plans[i].Loot = Ordered(shares[i], record.Item);
 			}
+			FightResult fight = QuestFightGame.Fight(record.Kind, members);
+			if (fight != null)
+			{
+				// The work there takes as long as the fight, when that's longer than the quest's usual work
+				active = Mathf.Max(active, fight.Seconds);
+				for (int i = 0; i < members.Count; i++)
+				{
+					record.Plans[i].FightHarm = fight.HarmShares[i];
+				}
+				LogFight(record, members, fight, active);
+			}
 			record.ActiveSeconds = active;
 			float seconds = QuestRules.Duration(there, back, active, Random.Range(-1f, 1f));
 			if (byNight && seconds > toNight)
@@ -174,6 +187,30 @@ namespace VikingVillages
 			}
 			record.Due = record.SetOutAt + NetTime.Ticks(seconds);
 			return(true);
+		}
+
+		/// <summary>
+		/// Logs how a quest's fight is worked out to go - how long it takes, and each viking's swing, armor,
+		/// block power and health, the harm the fight does it and the harm the quest's danger would have done it instead
+		/// (see QuestSim.Harm), to weigh the two up against each other
+		/// </summary>
+		/// <param name="record">The quest, its biome and how many it takes filled in</param>
+		/// <param name="members">Its vikings</param>
+		/// <param name="fight">How the fight goes</param>
+		/// <param name="active">How long the work there takes, in seconds</param>
+		private static void LogFight(QuestRecord record, List<Humanoid> members, FightResult fight, float active)
+		{
+			List<string> sides = new List<string>();
+			for (int i = 0; i < members.Count; i++)
+			{
+				Humanoid humanoid = members[i];
+				VikingCore core = humanoid.GetComponent<VikingCore>();
+				int gap = record.QuestBiome - ((core != null) ? core.BiomeIndex() : 0);
+				float danger = QuestSim.HarmShare(QuestSim.Danger(record.Kind), gap, members.Count, record.Wanted, QuestRules.ActiveSeconds(record.Kind));
+				float swing = ((core != null) ? core.StrikeDamage() : 0f);
+				sides.Add(VikingNames.Get(humanoid) + " (hits for " + swing.ToString("F0") + ", armor " + humanoid.GetBodyArmor().ToString("F0") + ", block " + ((core != null) ? core.BlockPower() : 0f).ToString("F0") + ", health " + humanoid.GetMaxHealth().ToString("F0") + ") harmed by " + (fight.HarmShares[i] * 100f).ToString("F0") + "% - " + (danger * 100f).ToString("F0") + "% by the quest's danger");
+			}
+			Plugin.Log.LogInfo("Quest fight: " + record.Kind + " takes " + fight.Seconds.ToString("F0") + "s of fighting, " + active.ToString("F0") + "s there in all - " + string.Join("; ", sides));
 		}
 
 		/// <summary>
@@ -494,7 +531,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out how a quest goes for one of its vikings as it leaves - what it brings home and its tool's wear from
-		/// the quest's plan, then the harm it takes for the quest's danger and its gear, whether it dies of it (see
+		/// the quest's plan, then the harm it takes - the fight's on a quest that kills creatures (see QuestFight), and
+		/// otherwise the quest's danger for its gear - whether it dies of it (see
 		/// QuestSim.DeathChance), the foods it eats and potions it drinks of what it took along, how its skills rise, and
 		/// what it spends
 		/// </summary>
@@ -540,7 +578,7 @@ namespace VikingVillages
 				heal = Mathf.Max(heal, PotionHeal(potion));
 			}
 			float max = humanoid.GetMaxHealth();
-			float harm = QuestSim.Harm(record.Kind, record.QuestBiome, ((core != null) ? core.BiomeIndex() : 0), record.Members.Count, record.Wanted, record.ActiveSeconds, max);
+			float harm = ((plan.FightHarm >= 0f) ? plan.FightHarm * max : QuestSim.Harm(record.Kind, record.QuestBiome, ((core != null) ? core.BiomeIndex() : 0), record.Members.Count, record.Wanted, record.ActiveSeconds, max));
 			float health = QuestSim.EndHealth(max, harm, fed, potionCount, heal, out int drunk);
 			UseUp(potions, drunk, outcome.Used);
 			outcome.HealthShare = ((max > 0f) ? health / max : 1f);

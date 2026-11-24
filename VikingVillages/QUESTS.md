@@ -18,7 +18,7 @@ A village can only go on a quest when its biome isn't easier than the quest's or
 
 ## The Quests
 
-Vikings is how many go - the second number from the Plains on - and up to how many go when the village has more of the tool, or for a hunt, when the village can spare them. Work is how long they're at it once they're there, before the trip there and back, in real time - which is the world's time - and Game time is the same in the game's hours, at the default day of 30 real minutes, each real minute 48 game minutes. Danger is the share of a Viking's health it would lose in half an hour of the work, with the group the quest takes and gear of the quest's biome - see [How Hurt They Come Home](#how-hurt-they-come-home) for what that comes to.
+Vikings is how many go - the second number from the Plains on - and up to how many go when the village has more of the tool, or for a hunt, when the village can spare them. Work is how long they're at it once they're there, before the trip there and back, in real time - which is the world's time - and Game time is the same in the game's hours, at the default day of 30 real minutes, each real minute 48 game minutes. Danger is the share of a Viking's health it would lose in half an hour of the work, with the group the quest takes and gear of the quest's biome - see [How Hurt They Come Home](#how-hurt-they-come-home) for what that comes to. A quest that kills creatures has no danger: the fight is worked out from the creatures' attacks and the Vikings' own gear instead - see [Fights](#fights).
 
 | Quest | Biome from | Vikings | Needs | Goes to | Work | Game time | Danger | Brings back |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -28,12 +28,13 @@ Vikings is how many go - the second number from the Plains on - and up to how ma
 | Mine copper | Black Forest | 2, up to 4 | A pickaxe that breaks copper, a smelter and a kiln | Ground of the Black Forest | 3 min, and as long as their pickaxes take | 2 h 24 min, and as long as their pickaxes take | 20% | See [Mining](#mining) |
 | Mine tin | Black Forest | 2, up to 4 | A pickaxe that breaks tin, a smelter and a kiln | Ground of the Black Forest | 3 min, and as long as their pickaxes take | 2 h 24 min, and as long as their pickaxes take | 15% | See [Mining](#mining) |
 | Mine silver | Mountains | 3, up to 5 | A pickaxe that breaks silver, a smelter and a kiln | Ground of the Mountains | 10 min, and as long as their pickaxes take | 8 h, and as long as their pickaxes take | 50% | See [Mining](#mining) |
-| Raid sunken crypts | Swamp | 3, up to 5 | A pickaxe that breaks muddy scrap piles, a torch or circlet, a smelter and a kiln | The nearest sunken crypts | 30 min, and as long as their pickaxes take | 24 h, and as long as their pickaxes take | 60% | See [Sunken crypts](#sunken-crypts) |
-| Raid burial chambers | Black Forest | 2, up to 3 | A torch or circlet | The nearest burial chambers | 15 min | 12 h | 50% | See [Burial chambers](#burial-chambers) |
-| Hunt ghosts | Black Forest | 2, up to 3 | A torch or circlet, and Zombie Apocalypse, whose silver-lining takes ectoplasm | The nearest burial chambers | 15 min | 12 h | 50% | See [Ghosts](#ghosts) |
-| Hunt trolls | Black Forest | 3 | A torch or circlet | The nearest troll caves | 15 min | 12 h | 80% | See [Trolls](#trolls) |
-| Hunt goblins | Plains | 3, up to 5 | A blast furnace and a kiln | The nearest fuling villages | 20 min | 16 h | 80% | See [Fulings](#fulings) |
-| Kill Eikthyr | Meadows | 2 | 2 deer trophies, which they leave on his altar to summon him - hunted for first when the village has fewer | Eikthyr's altar | 5 min | 4 h | 80% | See [Eikthyr](#eikthyr) |
+| Raid sunken crypts | Swamp | 3, up to 5 | A pickaxe that breaks muddy scrap piles, a torch or circlet, a smelter and a kiln | The nearest sunken crypts | 30 min, and as long as their pickaxes take | 24 h, and as long as their pickaxes take | A fight - see [Fights](#fights) | See [Sunken crypts](#sunken-crypts) |
+| Raid burial chambers | Black Forest | 2, up to 3 | A torch or circlet | The nearest burial chambers | 15 min | 12 h | A fight - see [Fights](#fights) | See [Burial chambers](#burial-chambers) |
+| Hunt ghosts | Black Forest | 2, up to 3 | A torch or circlet, and Zombie Apocalypse, whose silver-lining takes ectoplasm | The nearest burial chambers | 15 min | 12 h | A fight - see [Fights](#fights) | See [Ghosts](#ghosts) |
+| Raid frost caves | Mountains | 3 | A torch or circlet | The nearest frost caves | 15 min | 12 h | A fight - see [Fights](#fights) | See [Frost caves](#frost-caves) |
+| Hunt trolls | Black Forest | 3 | A torch or circlet | The nearest troll caves | 15 min | 12 h | A fight - see [Fights](#fights) | See [Trolls](#trolls) |
+| Hunt goblins | Plains | 3, up to 5 | A blast furnace and a kiln | The nearest fuling villages | 20 min | 16 h | A fight - see [Fights](#fights) | See [Fulings](#fulings) |
+| Kill Eikthyr | Meadows | 2 | 2 deer trophies, which they leave on his altar to summon him - hunted for first when the village has fewer | Eikthyr's altar | 5 min, or as long as the fight takes when that's longer | 4 h | A fight - see [Fights](#fights) | See [Eikthyr](#eikthyr) |
 | Find bees | Meadows | 1 | Fewer than 6 beehives in the village | Ground of the Meadows | 10 min | 8 h | 15% | See [Bees](#bees) |
 | Sell treasure | Meadows | 2 | | Whichever trader they get to soonest of those the village can sell to - Hildir from the Meadows on, Haldor from the Black Forest on and the Bog Witch from the Swamp on | 2 min | 1 h 36 min | 5% | See [Traders](#traders) |
 | Buy a circlet | Swamp | 2 | Coins and treasure enough | Haldor | 2 min | 1 h 36 min | 5% | See [Traders](#traders) |
@@ -142,53 +143,77 @@ As much ore as they can carry, unless their pickaxes wear out first - about 245 
 
 ### Sunken Crypts
 
-Iron scrap from the muddy scrap piles, as much as they can carry - about 24 each, weighing 10 - and what 1 crypt chest, 2 draugr and 1 blob for each of them drop, at least 1 chest, 2 draugr and 1 blob. The iron scrap the chests hold is left out, since their pickaxes get it. The numbers are for 3 Vikings, with 3 chests, 6 draugr and 3 blobs - more go with more pickaxes, and bring home a share more each.
+Iron scrap from the muddy scrap piles, as much as they can carry - about 24 each, weighing 10 - and what 1 crypt chest, 3 draugr, half a draugr elite and 1 blob for each of them drop, at least 1 chest, 3 draugr, 1 draugr elite and 1 blob - every one of them fought (see [Fights](#fights)). The iron scrap the chests hold is left out, since their pickaxes get it. The numbers are for 3 Vikings, with 3 chests, 9 draugr, 2 draugr elites and 3 blobs - more go with more pickaxes, and bring home a share more each.
 
 - Iron scrap - about 24 each
 - Coins - 52
 - Ancient bark - 33
 - Poison arrows - 16
 - Ironhead arrows - 16
-- Entrails - 6
+- Entrails - 14
 - Ooze - 4.5
 - Amber - 3.9
 - Chains - 2.6
 - Rubies - 2.6
 - Amber pearls - 2.6
+- Draugr trophy - 0.9
 - Withered bones - 0.7
-- Draugr trophy - 0.6
 - Blob trophy - 0.3
+- Draugr elite trophy - 0.2
 - Iron protection idol - 0.2
-- Iron battle idol - 1 in 12
-- Silver battle idol - 1 in 60
-- Silver protection idol - 1 in 65
+- Iron battle idol - 1 in 13
+- Silver battle idol - 1 in 58
+- Silver protection idol - 1 in 67
 
 ### Burial Chambers
 
-What 2 chests and 2 skeletons for each of them drop, at least 2 of each, and a surtling core stand each. The numbers are for 2 Vikings, with 4 chests, 4 skeletons and 2 surtling core stands - a third Viking brings half as much again.
+What 2 chests, 4 skeletons, a rancid remains and half a ghost for each of them drop, at least 2 chests, 4 skeletons, a rancid remains and a ghost, and a surtling core stand each - every one of the dead fought (see [Fights](#fights)). The numbers are for 2 Vikings, with 4 chests, 8 skeletons, 2 rancid remains, a ghost and 2 surtling core stands - a third Viking brings half as much again.
 
 - Coins - 44
 - Flinthead arrows - 16
+- Bone fragments - 14
 - Feathers - 12
 - Amber - 4.4
-- Bone fragments - 4
 - Rubies - 3.3
+- Ectoplasm - 3
 - Surtling cores - 2
+- Skeleton trophy - 0.8
 - Silver necklaces - 0.6
-- Skeleton trophy - 0.4
 - Bronze protection idol - 0.3
-- Bronze battle idol - 0.1
-- Iron battle idol - 1 in 34
-- Iron protection idol - 1 in 34
+- Rancid remains trophy - 0.2
+- Bronze battle idol - 1 in 7
+- Ghost trophy - 1 in 10
+- Iron battle idol - 1 in 33
+- Iron protection idol - 1 in 35
 
 ### Ghosts
 
-What 2 ghosts and a skeleton for each of them drop, at least 2 and 1. The numbers are for 2 Vikings, with 4 ghosts and 2 skeletons - a third Viking brings half as much again.
+What 2 ghosts, 3 skeletons and a rancid remains for each of them drop, at least 2, 3 and 1 - every one of the dead fought (see [Fights](#fights)). The numbers are for 2 Vikings, with 4 ghosts, 6 skeletons and 2 rancid remains - a third Viking brings half as much again.
 
 - Ectoplasm - 12
-- Bone fragments - 2
+- Bone fragments - 12
+- Skeleton trophy - 0.6
 - Ghost trophy - 0.4
-- Skeleton trophy - 0.2
+- Rancid remains trophy - 0.2
+
+### Frost Caves
+
+What 1 frost cave chest, 1 crystal formation, 3 ulvs, a cultist and 2 bats for each of them drop - every creature fought (see [Fights](#fights)). The numbers are for the 3 Vikings it takes, with 3 chests, 3 crystal formations, 9 ulvs, 3 cultists and 6 bats.
+
+- Coins - 121
+- Obsidian - 18
+- Crystals - 10.5
+- Wolf fangs - 6.8
+- Red jute - 6
+- Leather scraps - 3
+- Rubies - 2.6
+- Ulv trophy - 0.9
+- Silver necklaces - 0.5
+- Silver protection idol - 0.5
+- Cultist trophy - 0.3
+- Silver battle idol - 0.2
+- Black metal protection idol - 1 in 21
+- Black metal battle idol - 1 in 21
 
 ### Trolls
 
@@ -230,69 +255,91 @@ Selling treasure, the first of them takes along the village's amber, amber pearl
 
 ## How Hurt They Come Home
 
-Each table goes by the biome a Viking's gear comes from - the quest's own biome and the two after it - and for the fewest and the most of them that go, like "2:" and "3:", gives the harm a Viking takes, how much of their health is still missing when they get home ("hurt after"), and their chance of dying out there. A Viking's harm doubles for each biome the quest is harder than their gear and halves for each easier, and goes down with more of them along - rounded down to a whole percent, so far easier quests do none. On the way home their wounds close, so a Viking who ate enough comes home missing 30% of the harm they took, and one who went hungry 70% - more than twice the numbers below - and one who falls below a quarter of their health drinks a healing potion if they took one. Harm past what they have leaves them at 10% of their health. The hunts are for a full day's hunting - 8 prey's time - and go by the biome they hunt in, for the fewest and most hunters a village of that biome sends.
+The quests that kill creatures are worked out as fights, by the Vikings' own gear - see [Fights](#fights). Each of the other tables goes by the biome a Viking's gear comes from - the quest's own biome and the two after it - and for the fewest and the most of them that go, like "2:" and "3:", gives the harm a Viking takes, how much of their health is still missing when they get home ("hurt after"), and their chance of dying out there. A Viking's harm doubles for each biome the quest is harder than their gear and halves for each easier, and goes down with more of them along - rounded down to a whole percent, so far easier quests do none. On the way home their wounds close, so a Viking who ate enough comes home missing 30% of the harm they took, and one who went hungry 70% - more than twice the numbers below - and one who falls below a quarter of their health drinks a healing potion if they took one. Harm past what they have leaves them at 10% of their health. The hunts are for a full day's hunting - 8 prey's time - and go by the biome they hunt in, for the fewest and most hunters a village of that biome sends.
 
-A Viking can die on a quest, though it's rare: 7.5% for the square of the share of their health the quest harms them by, and never when that's under 1% - shown as "-" - so only a quest that takes more than a third of their health can kill them, like a sunken crypt raid at their own biome, at 2.7%. One who dies doesn't come home: the others mourn them by name as they get back, the village remembers them, the neighbors hear of it, and in time another Viking comes in their place - what they carried, and any tool they took, is lost with them. A Viking whose gear is so far behind the quest that they'd be expected to lose all their health never goes on it - like one of the Swamp's gear or easier on a fuling raid - and the quest waits for enough Vikings who can.
+A Viking can die on a quest, though it's rare: 7.5% for the square of the share of their health the quest harms them by, and never when that's under 1% - shown as "-" - so only a quest that takes more than a third of their health can kill them, like a sunken crypt raid in the Swamp's root armor, at 2%. One who dies doesn't come home: the others mourn them by name as they get back, the village remembers them, the neighbors hear of it, and in time another Viking comes in their place - what they carried, and any tool they took, is lost with them. A Viking whose gear is so far behind the quest that they'd be expected to lose all their health never goes on it - like one in the Meadows' gear mining silver, or one who'd lose it all in a quest's fight beside others as strong as them, like one with only a bronze mace against trolls, who shrug off blunt damage - and the quest waits for enough Vikings who can.
+
+### Fights
+
+A quest that kills creatures - raiding sunken crypts, burial chambers and frost caves, hunting ghosts, trolls and fulings, and killing Eikthyr - works out the fight as it sets out. They fight every creature they bring home the drops of, as many as [What They Bring Back](#what-they-bring-back) lists for each of them - like 3 draugr, half a draugr elite and a blob each in a sunken crypt. The fight goes by each creature's own health, resistances and attacks and each Viking's weapons, skills, armor, shield and health:
+
+- The creatures come at them a few at a time, one of each kind in turn: the dead of a crypt or burial chamber in twos, a frost cave's beasts and cultists and fulings in threes, and trolls and Eikthyr alone. The Vikings bring down one at a time while the rest keep attacking
+- Each Viking swings every 1.6 seconds with whatever hits the creature hardest through its resistances - their best melee weapon, their bow at 60% of its damage since it shoots more slowly, or their fists - scaled by their skill with it the way yours is, and 75% of their swings land
+- Each creature uses each of its attacks as often as its own interval between them lets it, never more than once every 2 seconds, and 60% of them land. A creature that spawns with one of a few weapons, like a draugr's axe or bow, is weighed by the chance it has each. An attack that strikes all around, like Eikthyr's stomp or a blob's, hits every Viking, and the rest are shared out among them evenly as it turns from one to another. Poison, fire and spirit damage harm over time, and a new dose only takes the place of the last, so each attack's lands once at most
+- A Viking with a shield blocks half the hits that land, which go through its block power first, the way a block does for you - and every hit then goes through their armor, the way yours does. The world's player and enemy damage rates scale both sides' hits, and every creature counts as one with no stars
+- The work there takes as long as the fight when that's longer than the quest's own, and a fight that would never end stops at half an hour. What it harms them by comes home the same as any quest's harm, and their chance of dying out there goes by it the same way
+
+The numbers below are for Vikings alike, at the middle of their biome's skills - 10 in the Meadows, 19 in the Black Forest, 31 in the Swamp, 44 in the Mountains and 56 in the Plains - blocking at the same skill. Fight is how long it takes in all.
 
 ### Kill Eikthyr
 
-The Meadows, always 2 of them
+The Meadows, always 2 of them. Eikthyr has 500 health and no resistances, gores for 20 pierce every 5 seconds, charges for 15 lightning every 25 and stomps all around for 15 lightning every 40.
 
-| Viking's gear | 2: harm | 2: hurt after | 2: died |
-| --- | --- | --- | --- |
-| Meadows | 13% | 3.9% | - |
-| Black Forest | 6% | 1.8% | - |
-| Swamp | 3% | 0.9% | - |
+| Viking's gear | Fight | 2: harm | 2: hurt after | 2: died |
+| --- | --- | --- | --- | --- |
+| Meadows rags, flint spear and wood shield, 50 health | 41 s | 95% | 28.5% | 6.8% |
+| Meadows leather, flint spear and wood shield, 70 health | 41 s | 43% | 12.9% | 1.4% |
+| Black Forest troll leather, bronze mace and bronze buckler, 115 health | 17 s | 3% | 0.9% | - |
 
 ### Raid Burial Chambers
 
-The Black Forest
+The Black Forest - 4 skeletons and a rancid remains each, and a ghost for every 2 of them. Skeletons have 40 health, are weak to blunt and resist pierce, and swing swords for 25 slash or shoot bows for 20 pierce. Rancid remains have 100 health, the same weaknesses, and swing maces for 20 blunt and 30 poison. Ghosts have 60 health, resist slash, blunt and pierce, are weak to spirit, and slash for 25.
 
-| Viking's gear | 2: harm | 2: hurt after | 2: died | 3: harm | 3: hurt after | 3: died |
-| --- | --- | --- | --- | --- | --- | --- |
-| Black Forest | 25% | 7.5% | - | 20% | 6% | - |
-| Swamp | 12% | 3.6% | - | 10% | 3% | - |
-| Mountains | 6% | 1.8% | - | 5% | 1.5% | - |
+| Viking's gear | 2: fight | 2: harm | 2: hurt after | 2: died | 3: fight | 3: harm | 3: hurt after | 3: died |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Black Forest troll leather, bronze mace and bronze buckler, 115 health | 16 s | 19% | 5.7% | - | 18 s | 13% | 3.9% | - |
+| Black Forest troll leather, bronze spear and bronze buckler, 115 health | 40 s | 49% | 14.7% | 1.8% | 42 s | 34% | 10.2% | - |
+| Swamp root armor, iron mace and banded shield, 155 health | 9 s | 4% | 1.2% | - | 9 s | 3% | 0.9% | - |
 
 ### Hunt Ghosts
 
-The Black Forest
+The Black Forest - 2 ghosts, 3 skeletons and a rancid remains each, in the same burial chambers (see [Raid Burial Chambers](#raid-burial-chambers)).
 
-| Viking's gear | 2: harm | 2: hurt after | 2: died | 3: harm | 3: hurt after | 3: died |
-| --- | --- | --- | --- | --- | --- | --- |
-| Black Forest | 25% | 7.5% | - | 20% | 6% | - |
-| Swamp | 12% | 3.6% | - | 10% | 3% | - |
-| Mountains | 6% | 1.8% | - | 5% | 1.5% | - |
+| Viking's gear | 2: fight | 2: harm | 2: hurt after | 2: died | 3: fight | 3: harm | 3: hurt after | 3: died |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Black Forest troll leather, bronze mace and bronze buckler, 115 health | 27 s | 29% | 8.7% | - | 27 s | 18% | 5.4% | - |
+| Black Forest troll leather, bronze spear and bronze buckler, 115 health | 47 s | 58% | 17.4% | 2.5% | 47 s | 38% | 11.4% | 1.1% |
+| Swamp root armor, iron mace and banded shield, 155 health | 14 s | 7% | 2.1% | - | 14 s | 4% | 1.2% | - |
 
 ### Hunt Trolls
 
-The Black Forest, always 3 of them
+The Black Forest, always 3 of them - 2 trolls, at 600 health, resistant to blunt and weak to pierce, punching for 60, slamming for 70 and throwing for 50, or swinging a log for 60-70.
 
-| Viking's gear | 3: harm | 3: hurt after | 3: died |
-| --- | --- | --- | --- |
-| Black Forest | 40% | 12% | 1.2% |
-| Swamp | 20% | 6% | - |
-| Mountains | 10% | 3% | - |
+| Viking's gear | 3: fight | 3: harm | 3: hurt after | 3: died |
+| --- | --- | --- | --- | --- |
+| Black Forest troll leather, bronze mace and bronze buckler, 115 health | Stays home - 120% | | | |
+| Black Forest troll leather, bronze spear and bronze buckler, 115 health | 19 s | 40% | 12% | 1.2% |
+| Swamp root armor, iron mace and banded shield, 155 health | 29 s | 29% | 8.7% | - |
+| Swamp iron armor, iron mace and banded shield, 155 health | 29 s | 17% | 5.1% | - |
 
 ### Raid Sunken Crypts
 
-The Swamp
+The Swamp - 3 draugr, half a draugr elite and a blob each, at least 1 draugr elite. Draugr have 100 health and swing axes for 48 slash or shoot bows for 48 pierce, draugr elites have 200 and swing swords for 58 slash, and blobs have 50 and splash everyone near for 90 poison.
 
-| Viking's gear | 3: harm | 3: hurt after | 3: died | 5: harm | 5: hurt after | 5: died |
-| --- | --- | --- | --- | --- | --- | --- |
-| Swamp | 60% | 18% | 2.7% | 46% | 13.8% | 1.6% |
-| Mountains | 30% | 9% | - | 23% | 6.9% | - |
-| Plains | 15% | 4.5% | - | 11% | 3.3% | - |
+| Viking's gear | 3: fight | 3: harm | 3: hurt after | 3: died | 5: fight | 5: harm | 5: hurt after | 5: died |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Swamp root armor, iron mace and banded shield, 155 health | 17 s | 51% | 15.3% | 2% | 15 s | 45% | 13.5% | 1.5% |
+| Swamp iron armor, iron mace and banded shield, 155 health | 17 s | 34% | 10.2% | - | 15 s | 31% | 9.3% | - |
+| Plains lox armor, black metal sword and black metal shield, 195 health | 13 s | 19% | 5.7% | - | 12 s | 17% | 5.1% | - |
+
+### Raid Frost Caves
+
+The Mountains, always 3 of them - 3 ulvs, a cultist and 2 bats each. Ulvs have 50 health and bite for 80 slash or claw for 70, cultists have 200, are immune to fire and claw for 35 slash and 40 fire or spit flames for 50 fire, and bats have 10, resist slash, blunt and pierce, and bite for 20.
+
+| Viking's gear | 3: fight | 3: harm | 3: hurt after | 3: died |
+| --- | --- | --- | --- | --- |
+| Mountains fenris armor, wolf fang spear and silver shield, 175 health | 10 s | 12% | 3.6% | - |
+| Mountains fenris armor and draugr fang bow, 175 health | 23 s | 59% | 17.7% | 2.6% |
+| Plains lox armor, black metal sword and black metal shield, 195 health | 10 s | 7% | 2.1% | - |
 
 ### Hunt Goblins
 
-The Plains
+The Plains - 2 fulings, a fuling archer and a third of a berserker each. Fulings and archers have 175 health and hit for 85 with clubs, swords and spears, or 45 blunt and 45 fire with torches, and berserkers have 800 and hit for 130.
 
-| Viking's gear | 3: harm | 3: hurt after | 3: died | 5: harm | 5: hurt after | 5: died |
-| --- | --- | --- | --- | --- | --- | --- |
-| Plains | 53% | 15.9% | 2.1% | 41% | 12.3% | 1.3% |
-| Mistlands | 26% | 7.8% | - | 20% | 6% | - |
-| Ashlands | 13% | 3.9% | - | 10% | 3% | - |
+| Viking's gear | 3: fight | 3: harm | 3: hurt after | 3: died | 5: fight | 5: harm | 5: hurt after | 5: died |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Plains lox armor, black metal sword and black metal shield, 195 health | 19 s | 39% | 11.7% | 1.1% | 21 s | 26% | 7.8% | - |
+| Plains padded armor, black metal sword and black metal shield, 195 health | 19 s | 25% | 7.5% | - | 21 s | 17% | 5.1% | - |
 
 ### Hunt in the Meadows
 
@@ -352,7 +399,7 @@ The Plains
 ## On the Way
 
 - Each Viking takes along food for as long as they're gone and up to 2 healing potions - no more than half of any stack in the chests
-- They're hurt by the quest's danger for as long as they're at it - twice as much for each biome the quest is harder than their gear, half for each easier, however many, and more with fewer of them than the quest takes, rounded down to a whole percent of their health, so a quest far easier than their gear does them no harm - and come home as hurt as their food couldn't keep up with, drinking a potion when they're badly hurt. A quest's biome is where it works - a hunt's or foraging's the biome they go to, so a Plains village's lox hunt is a Plains quest and its boar hunt a Meadows one, cutting trees the trees' biome, and selling treasure the trader's camp's. Those who come home come home at 10% health at least, and now and then one dies out there and doesn't come home at all - see [How Hurt They Come Home](#how-hurt-they-come-home)
+- They're hurt by the quest's danger for as long as they're at it - twice as much for each biome the quest is harder than their gear, half for each easier, however many, and more with fewer of them than the quest takes, rounded down to a whole percent of their health, so a quest far easier than their gear does them no harm - or on a quest that kills creatures, by the fight (see [Fights](#fights)), and come home as hurt as their food couldn't keep up with, drinking a potion when they're badly hurt. A quest's biome is where it works - a hunt's or foraging's the biome they go to, so a Plains village's lox hunt is a Plains quest and its boar hunt a Meadows one, cutting trees the trees' biome, and selling treasure the trader's camp's. Those who come home come home at 10% health at least, and now and then one dies out there and doesn't come home at all - see [How Hurt They Come Home](#how-hurt-they-come-home)
 - They pick a few things along the road - one for every 3 minutes they walk through a biome where something grows, up to 5 each, less one they ate for every 15 minutes on the road - and hunters take a prey for every 5 minutes they walk through a biome with prey, up to 2 each - a lox three eighths as often and a moose or seal half as often - bringing home what it drops. Only biomes no harder than each Viking's own count, so a Meadows Viking crossing the Plains finds nothing there. Those out to mine, raid or hunt ghosts only pick on the way home
 - What they bring home is scaled by the world's resource rate, and their skills rise for the work they did - their weapon skill for every enemy they killed
 
@@ -371,7 +418,7 @@ The quest command, which needs `devcommands` - every other command is in [COMMAN
 
 - `kri_vv_quest` - standing in a village, shows everything behind its quests - its goal and the next thing it does toward it, the quest it's on, what each Viking on it takes, works with and brings home, whether its food and wood are running out, its treasure, whether it's trapped, the roads to quests it knows and when its last quest came back
 - `kri_vv_quest <kind> [item]` - starts a quest of that kind at once, whatever the village wants, however long since its last and whatever the time of day - as long as its biome isn't too easy for the quest, it has the stations and coins the quest needs and it can spare the Vikings. Only the player whose game runs the village can start its quests - in single player, always you
-  - The kinds are `Hunt`, `Forage`, `ChopTrees`, `MineCopper`, `MineTin`, `MineSilver`, `RaidCrypts`, `RaidBurialChambers`, `HuntGhosts`, `HuntTrolls`, `HuntGoblins`, `KillEikthyr`, `FindBees`, `SellTreasure` and `BuyCirclet`, in any case - and a kind that isn't one lists them
+  - The kinds are `Hunt`, `Forage`, `ChopTrees`, `MineCopper`, `MineTin`, `MineSilver`, `RaidCrypts`, `RaidBurialChambers`, `RaidFrostCaves`, `HuntGhosts`, `HuntTrolls`, `HuntGoblins`, `KillEikthyr`, `FindBees`, `SellTreasure` and `BuyCirclet`, in any case - and a kind that isn't one lists them
   - `item` is what it's for, by its prefab name in any case, and the quest is after 20 of it - `kri_vv_quest ChopTrees FineWood` or `kri_vv_quest Hunt DeerHide`, say. With none, it goes for the first thing the quest brings back that the village can go for. An item the quest doesn't bring back lists the ones it does
   - The first time for a quest, the village asks the server for the road, and the quest starts on its own as soon as the server answers, saying so in the console and at the top left of the screen - or is given up on after 30 seconds
 - `kri_vv_quest due` - brings the village's quest home now, once its Vikings have left - only in single player or for the host, whose game keeps them
