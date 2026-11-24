@@ -215,7 +215,7 @@ namespace CreatureMarker
 					marker.arrow.color = target.color;
 					// While the game's HUD shows the name and level above an on-screen creature, the arrow sits above it and
 					// the label leaves them out - an arrow pinned to the screen edge is away from the HUD, so it keeps them
-					float gameHudHeight = GetGameHudHeight(enemyHud, target.source);
+					float gameHudHeight = (target.ping ? GetHeightAbove(target.source as GameObject) : GetGameHudHeight(enemyHud, target.source));
 					Rect? dialog = GetDialogRect(target.source);
 					bool higher = (target.position.y > playerPosition.y + HigherMargin);
 					Vector2 pointing;
@@ -228,7 +228,8 @@ namespace CreatureMarker
 					{
 						pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset, 0f, dialog, scale.x, higher, out onScreen);
 					}
-					bool underGameHud = (gameHudHeight >= 0f && onScreen);
+					// The game pins a ping's text to the screen edge along with the arrow, so it always shows the sender
+					bool underGameHud = ((gameHudHeight >= 0f && onScreen) || target.ping);
 					bool showText = (underGameHud ? showDistance : showLabel);
 					SetActive(marker.label.gameObject, showText);
 					if (showText)
@@ -509,9 +510,24 @@ namespace CreatureMarker
 			{
 				return(-1f);
 			}
-			float bottom = data.m_gui.transform.position.y;
+			return(GetHeightAbove(data.m_gui));
+		}
+
+		/// <summary>
+		/// How far the top of a piece of the game's screen space UI, like a creature's health bar or a ping's text, sits
+		/// above the UI object's own position, which the game puts at the world point it shows the UI above
+		/// </summary>
+		/// <param name="gui">The UI object, or null</param>
+		/// <returns>The height in screen pixels, or -1 when the UI object is missing or hidden</returns>
+		private float GetHeightAbove(GameObject gui)
+		{
+			if (gui == null || !gui.activeInHierarchy)
+			{
+				return(-1f);
+			}
+			float bottom = gui.transform.position.y;
 			float top = bottom;
-			if (GetGraphicsBounds(data.m_gui, out Rect bounds))
+			if (GetGraphicsBounds(gui, out Rect bounds))
 			{
 				top = Mathf.Max(top, bounds.yMax);
 			}

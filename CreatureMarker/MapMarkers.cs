@@ -94,7 +94,8 @@ namespace CreatureMarker
 				foreach (Target target in marked)
 				{
 					Vector3 position = target.position;
-					if (target.throughPortal || !minimap.IsPointVisible(position, map))
+					// The game shows its own pin for a ping
+					if (target.throughPortal || target.ping || !minimap.IsPointVisible(position, map))
 					{
 						continue;
 					}

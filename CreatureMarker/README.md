@@ -1,6 +1,6 @@
 # Creature Marker
 
-Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans, other players, items on the ground, portals and tombstones. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them, and only creatures higher up than you get one in the top half of the screen.
+Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans, other players, items on the ground, portals, tombstones and map pings. Creatures that are off-screen get an arrow pinned to the edge of the screen, pointing toward them, and only creatures higher up than you get one in the top half of the screen.
 
 - Separate colors for passive creatures, hostile creatures, creatures that are targeting you, bosses, fish, traders, leviathans and your tamed pets
 - Marks traders like Haldor, Hildir and the Bog Witch, and their pets like Halstein, including through portals with [PortalPreview](#portalpreview)
@@ -9,6 +9,7 @@ Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans, o
 - Can mark every item lying on the ground, so dropped loot is easy to spot
 - Can mark every portal, labeled with its tag, so you can find your way back to the one you came through
 - Marks tombstones, labeled with whose they are, so you can find your way back to your things after dying
+- Marks map pings in the game's ping color while the game shows them, however far away they are, so a spot you or another player pinged is easy to find
 - Optional name, level and distance label on each marker, leaving out the name and level while the game shows its own above the creature
 - Markers of creatures side by side on screen stack rather than overlap, the nearest one's kept in place
 - A matching colored dot on the minimap and the large map for each marked creature

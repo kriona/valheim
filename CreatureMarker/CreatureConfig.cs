@@ -307,6 +307,16 @@ namespace CreatureMarker
 		/// Munin, and the Valkyrie who carries a player into a new world
 		/// </summary>
 		private static readonly Color odenColor = ParseColor("#888", Color.gray);
+
+		/// <summary>
+		/// The color of the game's text above a map ping, set in Chat.AddInworldText
+		/// </summary>
+		private static readonly Color pingColor = new Color(0.6f, 0.7f, 1f, 1f);
+
+		/// <summary>
+		/// How far above a ping's position the game puts its text, in meters
+		/// </summary>
+		private const float PingTextHeight = 0.3f;
 		private static bool allPassive;
 		private static bool allHostile = true;
 		private static bool allFish;
@@ -726,7 +736,8 @@ namespace CreatureMarker
 		/// sneaking, the marked traders, pets, Oden and Valkyries, the marked ravens while they are landed, the marked
 		/// traders and pets seen through PortalPreview's portal views, the marked fish and birds, the marked leviathans
 		/// that haven't started diving, the items lying on the ground when Items On Ground is on, the portals when All
-		/// Portals is on and the tombstones when All Tombstones is on, within Max Distance of the player
+		/// Portals is on and the tombstones when All Tombstones is on, within Max Distance of the player, and the map pings
+		/// the game shows in the world
 		/// </summary>
 		/// <param name="player">The local player</param>
 		/// <param name="marked">The list to fill, cleared first</param>
@@ -904,6 +915,40 @@ namespace CreatureMarker
 			if (allTombstones)
 			{
 				GetMarkedTombstones(playerPosition, maxDistanceSquared, marked);
+			}
+			GetMarkedPings(marked);
+		}
+
+		/// <summary>
+		/// Adds the map pings the game is showing in the world, however far away they are, since the game itself decides
+		/// which pings are close enough to show
+		/// </summary>
+		/// <remarks>
+		/// The ping's point follows Chat.UpdateWorldTexts, which puts the ping's text there
+		/// </remarks>
+		/// <param name="marked">The list to add to</param>
+		private static void GetMarkedPings(List<Target> marked)
+		{
+			Chat chat = Chat.instance;
+			if (chat == null)
+			{
+				return;
+			}
+			foreach (Chat.WorldTextInstance text in chat.m_worldTexts)
+			{
+				if (text.m_type != Talker.Type.Ping || text.m_gui == null)
+				{
+					continue;
+				}
+				Target target = new Target();
+				target.source = text.m_gui;
+				target.ping = true;
+				target.position = text.m_position;
+				target.top = text.m_position + Vector3.up * PingTextHeight;
+				target.nameToken = text.m_name;
+				target.level = 1;
+				target.color = pingColor;
+				marked.Add(target);
 			}
 		}
 
