@@ -246,6 +246,7 @@ namespace VikingVillages
 			viking.Set(UnteleportableKey, party.Unteleportable);
 			viking.Set(SailingKey, false);
 			viking.Set(PortalKey, false);
+			TripStory.Begin(viking, answer.Spoken(), answer.Destination, viking.GetString(FromNameKey, ""));
 		}
 
 		/// <summary>
@@ -747,6 +748,14 @@ namespace VikingVillages
 			}
 			Plugin.Log.LogInfo("Travel: " + entry.Vikings.Count + " vikings come out of the portal at " + road.Points[1].ToString("F0") + ", a player being near it");
 			TestLog.Count("Travel", "groups out of a portal near a player");
+			TravelJourney.Stage through = new TravelJourney.Stage { Road = new TravelRoad() };
+			through.Road.Add(road.Points[0], TravelLeg.Foot);
+			through.Road.Add(road.Points[1], TravelLeg.Portal);
+			TravelJourney stepped = entry.Journey;
+			entry.Journey = new TravelJourney { BoatSpeed = stepped.BoatSpeed };
+			entry.Journey.Stages.Add(through);
+			NoteTrip(entry, null, 0L);
+			entry.Journey = stepped;
 			ZRoutedRpc.instance.InvokeRoutedRPC(peer, EmergeRpc, new ZPackage(entry.Encode()));
 			return(true);
 		}
@@ -975,6 +984,7 @@ namespace VikingVillages
 					replaced.Add(to, TravelLeg.Foot);
 				}
 				current.Stages[at] = new TravelJourney.Stage { Road = replaced, Unteleportable = current.Stages[at].Unteleportable, Homeward = current.Stages[at].Homeward };
+				entry.Events |= TravelEntry.ReroutedEvent;
 				entry.Restart(current, now, ticksPerSecond, entry.OnQuest);
 				Plugin.Log.LogInfo("Travel: " + label + " at " + from.ToString("F0") + " take " + (answer.Found ? "another road, by " + TravelPlanner.DescribeRoad(replaced) : "the long way straight there, finding no road") + " to " + to.ToString("F0") + " - " + entry.Remaining.ToString("F0") + "s left, " + (entry.Remaining - before).ToString("+0;-0") + "s from before");
 				TestLog.Count("Travel", "groups rerouted past a broken portal");
@@ -1045,7 +1055,7 @@ namespace VikingVillages
 				}
 				if (!entry.Foraged)
 				{
-					TripForage.Give(entry);
+					NoteTrip(entry, TripForage.Give(entry), now);
 					changed = true;
 				}
 				queue.RemoveAt(i);
@@ -1093,6 +1103,8 @@ namespace VikingVillages
 				}
 				else
 				{
+					entry.Events |= TravelEntry.VillageGoneEvent;
+					NoteTrip(entry, null, 0L);
 					entry.Destination = answer.Destination;
 					entry.Name = answer.Name;
 					entry.Restart(TravelJourney.Along(answer.Road, TravelTime.BoatSpeed(entry.BoatBiome), entry.Unteleportable), now, NetTime.Ticks(1f), false);
@@ -1116,6 +1128,8 @@ namespace VikingVillages
 			TravelPlanner.PlanTo(from, PartyOf(entry), new List<Vector3> { anchor }, entry.Vikings.Count + " vikings turning home", (TravelPlanner.Answer answer) =>
 			{
 				long now = NetTime.Now();
+				entry.Events |= TravelEntry.TurnedHomeEvent;
+				NoteTrip(entry, null, 0L);
 				entry.Returning = true;
 				entry.Destination = anchor;
 				entry.Excluded.Clear();
@@ -1131,6 +1145,69 @@ namespace VikingVillages
 				TestLog.Count("Travel", "groups turned around for home");
 				Save();
 			});
+		}
+
+		/// <summary>
+		/// Notes on each viking of a group what happened on the part of its trip off the road (see TripStory) - the portals
+		/// it went through, the boat it sailed in, the biomes it walked through, what it picked and what happened to the
+		/// group - and that it got where it was going, when it has
+		/// </summary>
+		/// <param name="entry">The group</param>
+		/// <param name="foraged">How many things each viking picked on the way, or null</param>
+		/// <param name="arrivedAt">When the group got there, in ticks, or 0 when it's still on its way</param>
+		private static void NoteTrip(TravelEntry entry, int[] foraged, long arrivedAt)
+		{
+			int portals = 0;
+			bool sailed = false;
+			List<int> biomes = new List<int>();
+			if (entry.Journey != null)
+			{
+				foreach (TravelJourney.Stage stage in entry.Journey.Stages)
+				{
+					if (stage.Road != null)
+					{
+						portals += stage.Road.PortalCount();
+						sailed |= stage.Road.Legs.Contains(TravelLeg.Sea);
+					}
+				}
+				if (WorldGenerator.instance != null)
+				{
+					entry.Journey.FootLegs(0, (Vector3 middle, float seconds) =>
+					{
+						int biome = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(middle));
+						if (!biomes.Contains(biome))
+						{
+							biomes.Add(biome);
+						}
+					});
+				}
+			}
+			string boat = TravelTime.BoatName(entry.BoatBiome);
+			for (int i = 0; i < entry.Vikings.Count; i++)
+			{
+				int picked = ((foraged != null && i < foraged.Length) ? foraged[i] : 0);
+				entry.Vikings[i] = TripStory.Edit(entry.Vikings[i], (TripStory story) =>
+				{
+					story.Portals += portals;
+					if (sailed && story.Boat.Length == 0)
+					{
+						story.Boat = boat;
+					}
+					biomes.ForEach((int biome) => story.AddBiome(biome));
+					story.Foraged += picked;
+					story.Rerouted |= ((entry.Events & TravelEntry.ReroutedEvent) != 0);
+					story.TurnedHome |= ((entry.Events & TravelEntry.TurnedHomeEvent) != 0);
+					story.VillageGone |= ((entry.Events & TravelEntry.VillageGoneEvent) != 0);
+					if (story.To.Length == 0)
+					{
+						story.To = entry.Name;
+					}
+					if (arrivedAt > 0L)
+					{
+						story.Arrived = true;
+					}
+				}, arrivedAt);
+			}
 		}
 
 		/// <summary>

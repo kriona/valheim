@@ -556,6 +556,8 @@ namespace VikingVillages
 			fireView.GetZDO().Set(VillagePaths.BonfireKey, true);
 			returning = VillageDeparted.HandOver(fireView.GetZDO(), zdo) + TurnBack(fireView.GetZDO(), position);
 			VillageNames.Restore(fireView.GetZDO(), zdo);
+			VillageNames.At(zdo, out string name, out string _);
+			NeighborNews.Report(NeighborEvent.Started, zdo.GetPosition(), (name ?? ""), "");
 			// Those already on the road to another village turn around for home once they get there (see
 			// VillageTravel.OnRecall)
 			VillageDisband.Clear(fireView.GetZDO());

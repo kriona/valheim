@@ -416,6 +416,7 @@ namespace VikingVillages
 				return;
 			}
 			ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, DeathRpc, farm, NetTime.Now(), KilledByPlayer(character));
+			NeighborNews.Report(NeighborEvent.Death, farm, VillageNames.Get(Village.ForFarm(farm)), VikingNames.Get(character));
 		}
 
 		/// <summary>
@@ -1290,6 +1291,10 @@ namespace VikingVillages
 			zdo.Set(VillageLife.ArrivingKey, outside);
 			vikings.Add(zdo);
 			TestLog.Count("Vikings", (questHome ? "came home from a quest" : "arrived at a village from the road"));
+			if (!questHome)
+			{
+				NeighborNews.Report(NeighborEvent.Newcomer, village.Farm, VillageNames.Get(village), VikingNames.Get(zdo));
+			}
 			Plugin.Log.LogInfo(TestLog.Name(zdo) + (questHome ? " came home from a quest to the village at " : " arrived from the road at the village at ") + village.Farm.ToString("F0") + ", calling the house at " + home.Center.ToString("F0") + " home");
 			return(zdo);
 		}

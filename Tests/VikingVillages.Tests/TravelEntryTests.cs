@@ -43,6 +43,7 @@ namespace VikingVillages.Tests
 			road.Add(new Vector3(100f, 0f, 0f), TravelLeg.Foot);
 			entry.Journey = TravelJourney.Along(road, 6f, true);
 			entry.Foraged = true;
+			entry.Events = TravelEntry.ReroutedEvent | TravelEntry.TurnedHomeEvent;
 			return(entry);
 		}
 
@@ -75,6 +76,7 @@ namespace VikingVillages.Tests
 			Assert.Equal(expected.QuestItem, actual.QuestItem);
 			Assert.Equal(expected.QuestActive, actual.QuestActive);
 			Assert.Equal(expected.Foraged, actual.Foraged);
+			Assert.Equal(expected.Events, actual.Events);
 			Assert.Equal(expected.Journey == null, actual.Journey == null);
 			if (expected.Journey != null)
 			{

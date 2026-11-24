@@ -224,6 +224,63 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Gets the viking's last trip, while it's still talking about it - for TripStory.TalkHours game hours after it got
+		/// there (see TripSpeech)
+		/// </summary>
+		/// <returns>The trip, or null</returns>
+		private TripStory RecentTrip()
+		{
+			ZDO zdo = nview.GetZDO();
+			if (EnvMan.instance == null || !TripStory.StillTalked(zdo.GetLong(TripStory.TripAtKey, 0L), NetTime.Now(), EnvMan.instance.m_dayLengthSec, NetTime.Ticks(1f)))
+			{
+				return(null);
+			}
+			return(TripStory.Of(zdo));
+		}
+
+		/// <summary>
+		/// Gets the name of the village the viking came from, when it came from one lately - news from there it brought
+		/// itself (see NeighborNews.Heard)
+		/// </summary>
+		/// <returns>The name, or ""</returns>
+		private string CameFrom()
+		{
+			ZDO zdo = nview.GetZDO();
+			TripStory trip = TripStory.Of(zdo);
+			if (trip != null && trip.From.Length > 0 && !trip.TurnedHome)
+			{
+				return(trip.From);
+			}
+			return(VillageNewcomers.From(zdo));
+		}
+
+		/// <summary>
+		/// Gets a biome's name as a viking says it
+		/// </summary>
+		/// <param name="biome">The biome, by VikingGear's order</param>
+		/// <returns>The name</returns>
+		private static string BiomeName(int biome)
+		{
+			return(VillagePortalSpeech.BiomeName(VikingGear.Get(biome).Biome));
+		}
+
+		/// <summary>
+		/// Gets an item's name as a viking says it - the game's name for it, in the player's language
+		/// </summary>
+		/// <param name="prefab">The item's prefab name</param>
+		/// <returns>The name, or the prefab name when the item can't be found</returns>
+		private static string ItemName(string prefab)
+		{
+			GameObject item = ((ObjectDB.instance != null) ? ObjectDB.instance.GetItemPrefab(prefab) : null);
+			ItemDrop drop = ((item != null) ? item.GetComponent<ItemDrop>() : null);
+			if (drop == null || Localization.instance == null)
+			{
+				return(prefab);
+			}
+			return(Localization.instance.Localize(drop.m_itemData.m_shared.m_name).ToLowerInvariant());
+		}
+
+		/// <summary>
 		/// Gets the village's quest that's out now, when it's worth talking about and the viking isn't on it
 		/// </summary>
 		/// <returns>The quest, or null</returns>
@@ -249,6 +306,20 @@ namespace VikingVillages
 			{
 				return(null);
 			}
+			TripStory trip = leader.RecentTrip();
+			if (trip != null && Random.value < TripSpeech.TalkChance)
+			{
+				string[] tripTalk = TripSpeech.Talk(trip, leader.OwnBiome(), BiomeName);
+				if (tripTalk != null)
+				{
+					return(tripTalk);
+				}
+			}
+			NeighborEvent heard = NeighborNews.Heard(leader.village.Farm, leader.CameFrom(), out bool brought);
+			if (heard != null && Random.value < NeighborSpeech.TalkChance)
+			{
+				return(NeighborSpeech.Talk(heard, brought, ItemName));
+			}
 			QuestOutcome story = leader.RecentStory();
 			if (story != null && Random.value < QuestSpeech.BackTalkChance)
 			{
@@ -270,6 +341,25 @@ namespace VikingVillages
 		/// <returns>The line, or null for an answer about anything else</returns>
 		private string QuestAnswer(Player player)
 		{
+			TripStory trip = RecentTrip();
+			if (trip != null && Random.value < TripSpeech.AnswerChance)
+			{
+				string tripLine = TripSpeech.Answer(trip, OwnBiome(), player.GetPlayerName(), BiomeName);
+				if (tripLine != null)
+				{
+					return(tripLine);
+				}
+			}
+			bool brought = false;
+			NeighborEvent heard = null;
+			if (village != null)
+			{
+				heard = NeighborNews.Heard(village.Farm, CameFrom(), out brought);
+			}
+			if (heard != null && Random.value < NeighborSpeech.AnswerChance)
+			{
+				return(NeighborSpeech.Answer(heard, brought, ItemName));
+			}
 			QuestOutcome story = RecentStory();
 			if (story != null && Random.value < QuestSpeech.BackAnswerChance)
 			{
@@ -380,6 +470,7 @@ namespace VikingVillages
 			zdo.Set(VillageQuests.QuestGoneKey, true);
 			zdo.Set(VillageQuests.QuestVillageKey, village.Farm);
 			zdo.Set(VillageQuests.QuestHomeKey, zdo.GetVec3(Village.HomeKey, Vector3.zero));
+			TripStory.Begin(zdo, VillageNames.Get(village), village.Farm, "");
 			VikingItems.RemoveProps(humanoid.GetInventory());
 			ZPackage inventory = new ZPackage();
 			humanoid.GetInventory().Save(inventory);

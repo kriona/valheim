@@ -102,10 +102,23 @@ namespace VikingVillages
 		public bool Foraged;
 
 		/// <summary>
+		/// What happened to the group off the road, for them to talk about (see TripStory) - a set of the flags below
+		/// </summary>
+		public int Events;
+
+		/// <summary>
+		/// The flags of Events - the group went the long way round a broken portal, turned around for home, or found the
+		/// village it was going to gone
+		/// </summary>
+		public const int ReroutedEvent = 1;
+		public const int TurnedHomeEvent = 2;
+		public const int VillageGoneEvent = 4;
+
+		/// <summary>
 		/// The version of how an entry is written, which a reader skips entries written another way by, and the earliest
 		/// version it still reads, which has no quest
 		/// </summary>
-		private const int FormatVersion = 6;
+		private const int FormatVersion = 7;
 		private const int OldestVersion = 2;
 
 		/// <summary>
@@ -238,6 +251,7 @@ namespace VikingVillages
 			pkg.Write(QuestActive);
 			pkg.Write((Journey != null) ? Journey.Encode() : new byte[0]);
 			pkg.Write(Foraged);
+			pkg.Write(Events);
 		}
 
 		/// <summary>
@@ -296,6 +310,10 @@ namespace VikingVillages
 				entry.QuestActive = pkg.ReadSingle();
 				entry.Journey = TravelJourney.Decode(pkg.ReadByteArray());
 				entry.Foraged = pkg.ReadBool();
+			}
+			if (version >= 7)
+			{
+				entry.Events = pkg.ReadInt();
 			}
 			return(entry);
 		}

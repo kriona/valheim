@@ -142,14 +142,16 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Where a search looks for a village to go to - the one the party gets to soonest, one picked at random, or the
-		/// village started again at the bonfire of the village they left, their home
+		/// Where a search looks for a village to go to - the one the party gets to soonest, one picked at random, the
+		/// village started again at the bonfire of the village they left, their home, or one by its name, whatever its
+		/// biome, for the kri_vv_travel command
 		/// </summary>
 		internal enum Goal
 		{
 			Soonest,
 			Random,
-			Home
+			Home,
+			Named
 		}
 
 		/// <summary>
@@ -184,6 +186,11 @@ namespace VikingVillages
 			public Goal Goal = Goal.Soonest;
 			public Vector3 HomeFire;
 			public int Tries;
+
+			/// <summary>
+			/// For a search by name, the name, or part of it
+			/// </summary>
+			public string Named = "";
 
 			/// <summary>
 			/// The spots the road may lead to in place of the villages, for the road to a quest, or null
@@ -298,9 +305,10 @@ namespace VikingVillages
 		/// <param name="party">What they can do on the road</param>
 		/// <param name="excluded">The villages to leave out</param>
 		/// <param name="done">What to do with the answer</param>
-		/// <param name="goal">Where to look - the village they get to soonest, one at random, or their home</param>
+		/// <param name="goal">Where to look - the village they get to soonest, one at random, their home, or one by name</param>
 		/// <param name="homeFire">For their home, the bonfire of the village they left</param>
-		public static void Ask(Vector3 from, TravelParty party, List<Vector3> excluded, System.Action<Answer> done, Goal goal = Goal.Soonest, Vector3 homeFire = default(Vector3))
+		/// <param name="named">For one by name, the name, or part of it</param>
+		public static void Ask(Vector3 from, TravelParty party, List<Vector3> excluded, System.Action<Answer> done, Goal goal = Goal.Soonest, Vector3 homeFire = default(Vector3), string named = "")
 		{
 			if (ZRoutedRpc.instance == null)
 			{
@@ -319,6 +327,7 @@ namespace VikingVillages
 			}
 			pkg.Write((int)goal);
 			pkg.Write(homeFire);
+			pkg.Write(named ?? "");
 			ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.instance.GetServerPeerID(), SearchRpc, pkg);
 		}
 
@@ -421,6 +430,7 @@ namespace VikingVillages
 			}
 			search.Goal = (Goal)pkg.ReadInt();
 			search.HomeFire = pkg.ReadVector3();
+			search.Named = pkg.ReadString();
 			searches.Enqueue(search);
 		}
 
@@ -547,6 +557,10 @@ namespace VikingVillages
 					VillageNames.At(anchor, out string name, out string author);
 					search.Candidates.Add(new Candidate { Position = anchor.GetPosition(), Name = (name ?? ""), Author = (author ?? ""), Biome = search.Party.Easiest });
 				}
+			}
+			else if (search.Goal == Goal.Named)
+			{
+				search.Candidates = Candidates().FindAll((Candidate candidate) => candidate.Name.IndexOf(search.Named, System.StringComparison.OrdinalIgnoreCase) >= 0 && !search.Excluded.Exists((Vector3 excluded) => Utils.DistanceXZ(excluded, candidate.Position) <= FarmMatch));
 			}
 			else
 			{

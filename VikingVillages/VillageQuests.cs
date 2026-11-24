@@ -800,6 +800,10 @@ namespace VikingVillages
 			}
 			Write(village, null);
 			village.Zdo.Set(LastQuestKey, NetTime.Now());
+			if (QuestRules.WorthTalkingAbout(record.Kind))
+			{
+				NeighborNews.Report(NeighborEvent.QuestBack, village.Farm, VillageNames.Get(village), record.Kind + "|" + record.Item);
+			}
 			TestLog.Count("Quests", record.Kind + " came back");
 			Plugin.Log.LogInfo("Quest: " + record.Kind + " came back to the village at " + village.Farm.ToString("F0"));
 		}

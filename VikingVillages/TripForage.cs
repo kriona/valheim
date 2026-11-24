@@ -177,12 +177,14 @@ namespace VikingVillages
 		/// group is due at the end of its trip - on the server, which has the world's plan and its items
 		/// </summary>
 		/// <param name="entry">The group</param>
-		public static void Give(TravelEntry entry)
+		/// <returns>How many things each viking was given, in the order of the group's vikings</returns>
+		public static int[] Give(TravelEntry entry)
 		{
+			int[] given = new int[entry.Vikings.Count];
 			TravelJourney journey = entry.Journey;
 			if (entry.Foraged || journey == null || WorldGenerator.instance == null || ObjectDB.instance == null)
 			{
-				return;
+				return(given);
 			}
 			entry.Foraged = true;
 			int first = ((entry.OnQuest && OnlyHomeward((QuestKind)entry.QuestKind)) ? journey.FirstHomeward() : 0);
@@ -201,11 +203,12 @@ namespace VikingVillages
 				{
 					continue;
 				}
-				byte[] given = AddTo(entry.Vikings[i], left);
-				if (given != null)
+				byte[] added = AddTo(entry.Vikings[i], left);
+				if (added != null)
 				{
-					entry.Vikings[i] = given;
-					left.ForEach((KeyValuePair<string, int> item) => total += item.Value);
+					entry.Vikings[i] = added;
+					left.ForEach((KeyValuePair<string, int> item) => given[i] += item.Value);
+					total += given[i];
 				}
 			}
 			if (total > 0)
@@ -213,6 +216,7 @@ namespace VikingVillages
 				Plugin.Log.LogInfo("Travel: " + entry.Vikings.Count + " vikings on their way to " + entry.Destination.ToString("F0") + " picked " + total + " things along the road");
 				TestLog.Count("Travel", "things picked on the road", total);
 			}
+			return(given);
 		}
 
 		/// <summary>

@@ -243,6 +243,37 @@ When two Vikings talk, they take turns saying the lines of one talk, starting wi
 | Finding wild bees, by a Viking who went | "We found wild bees, {name}." / "And the stings to prove it, I see." |
 | Finding wild bees, by a Viking who went | "Honey, {name}! Straight from a wild hive." / "Save some for the rest of us." |
 
+## Trips and Neighbors
+
+For 12 game hours after a Viking gets where they were going on the road - a village they join, or home from a quest - they talk about the thing most worth telling about the trip: being wrecked, turning around for home, finding their village gone, a broken portal on their road, a portal they stepped through, the boat they sailed in, the hardest biome beyond their own they walked through, or what they picked on the way. Half the time you talk to them they tell you, over their head, within 20 m, for 6 s, and 40% of their talks are about it. {player} is your name, {to} the village they went to - lines naming it are left out when it has none - {boat} the boat they sailed in and {biome} the hardest biome they walked through.
+
+| About | To you | Talks, in turn |
+|---|---|---|
+| Wrecked at sea | "Our {boat} went down on the way, {player}. I swam until my arms burned." / "Lost the boat at sea! I'm still drying out." / "We were wrecked crossing the water. Lucky to be standing here, {player}." | "Our {boat} sank under us on the way." / "And you swam the rest? Tough as an old boot." - "I swallowed half the sea getting here." / "That explains the smell." |
+| Turned around for home | "We got all the way to {to} before we heard home was alive again. So we turned right around!" / "Halfway across the world and back, {player}. But home is home." / "I've seen {to}, {player}. Nice enough. Not home, though." | "We went all the way to {to} and back again." / "Glad you did. It wasn't the same here." - "Couldn't stay in {to} once we heard." / "Home has a pull, doesn't it?" |
+| Found their village gone | "We reached {to} and found nobody. Just cold ashes." / "The village we set out for was gone, {player}. We had to try our luck elsewhere." / "Ever walk for days to find an empty village? I don't recommend it." | "The village we went to was empty." / "Empty? What happened to them?" / "Nobody knows." - "{to} was nothing but cold ashes." / "Grim. Glad you found us instead." |
+| A broken portal on their road | "The portal we meant to take was smashed. We had to go the long way round." / "Someone broke the portal on our road, {player}! Cost us half a day." / "Never trust a portal you didn't build yourself. Ours was gone when we got there." | "Someone broke the portal on our road." / "Trolls, probably. Or careless folk." - "We had to walk around a broken portal." / "Walking never broke anyone." |
+| Stepped through a portal | "Stepped through a portal on the way. My stomach's still somewhere back there." / "Portals, {player}! Halfway across the world in a blink." / "I came through a portal to get here. Still seeing purple." | "I came here through a portal." / "Did it tickle?" / "Like a thousand ants." - "One step and I was half a world away." / "Magic. I'll stick to my feet." |
+| Sailed | "We built a {boat} and sailed the rest of the way." / "My sea legs are still wobbly from the {boat}, {player}." / "Nothing like a {boat} with the wind behind it. Got here in no time." | "We built a {boat} to get here, you know." / "And you're still green from it." - "Sailed in on a {boat}." / "Did you keep it?" / "Broke it up on the beach." |
+| A harder biome | "We came through the {biome} to get here. Long road, {player}." / "Walked through the {biome} the whole way. My boots are done for." / "The {biome}, {player}! I didn't think we'd make it out." | "We crossed the {biome} on the way." / "Rather you than me." - "The {biome} nearly had us." / "But here you are." |
+| Picked things on the way | "Picked a few berries along the road. Want one, {player}?" / "Found mushrooms on the way here - not bad ones either." / "Long road, but there was plenty to pick along it." | "Picked berries all the way here." / "Save some for the rest of us." |
+
+The villages hear of each other too (see News in the [README](README.md)) - 20% of the time you talk to a Viking, and in 15% of their talks, they pass on something from a village within 3 km in the last 3 game days, a village being disbanded most of all. A line is how word came, then what happened. {village} is the village it came from, or "the next village over" when it has no name, {who} the Viking it happened to, {quest} the quest that came home and {item} what it was for.
+
+| How word came | Lines |
+|---|---|
+| By rune stick | "A rune stick came from {village}: " / "Someone carved word from {village} on a stick: " / "Got a rune stick from {village} today - " |
+| By raven | "A raven brought word from {village}: " / "The ravens are full of news from {village}: " / "A raven landed on the roof with word from {village} - " |
+| From a Viking who came from there, half the time when there's news from there | "Before I left {village}, " / "Back in {village}, " / "When I came through {village}, " |
+
+| What happened | Lines | The other Viking's answer, in a talk |
+|---|---|---|
+| The village was disbanded | "they've left their homes, and the fire's gone cold." / "everyone packed up and walked off." / "the village is no more - they've all gone their own ways." | "Gone? Just like that?" / "Where will they all go?" / "Sad news. I liked that village." |
+| A village was started | "someone lit a new fire and started a village." / "a new village has taken root." / "there are folk living around a new bonfire." | "Good. More fires, fewer wolves." / "New neighbors! We should visit." |
+| A quest came home | "their folk came home from {quest} with {item}." / "they're back from {quest}, arms full of {item}." / "{quest} went well for them - plenty of {item}." | "Lucky them." / "We should try that ourselves." |
+| A Viking died | "they lost {who}. Odin keep them." / "{who} fell. They're mourning." / "they buried {who}." | "Hard news." / "May they feast in Valhalla." |
+| A newcomer arrived | "{who} has moved in." / "they've taken in {who}." / "a newcomer called {who} turned up." | "Hope they pull their weight." / "More hands for the work." |
+
 ## News
 
 Word of what you've done gets around (see News in the [README](README.md)). Each piece of news is told by 2-4 Vikings, from any village, each picking a line of its row that none of the others said, in place of their greeting or what they'd say when you talk to them - over their head, within 20 m, for 6 s. They only tell it to the players it happened to, and only news from after they last talked to you. {player} is your name and {creature} is the name of the creature in it.

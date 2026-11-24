@@ -583,7 +583,21 @@ namespace VikingVillages
 			}
 			roadLeg++;
 			zdo.Set(VillageTravel.LegKey, roadLeg);
+			NoteBiome(zdo);
 			return(true);
+		}
+
+		/// <summary>
+		/// Notes the biome the viking is walking through on its trip, the first time (see TripStory)
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		private void NoteBiome(ZDO zdo)
+		{
+			TripStory story = TripStory.Of(zdo);
+			if (story != null && WorldGenerator.instance != null && story.AddBiome(VikingGear.IndexOf(WorldGenerator.instance.GetBiome(transform.position))))
+			{
+				zdo.Set(TripStory.TripKey, story.Encode());
+			}
 		}
 
 		/// <summary>
@@ -604,6 +618,7 @@ namespace VikingVillages
 			bool abandoned = (generator != null && generator.GetPrefab() == VillagePaths.GeneratorHash && generator.GetBool(VillagePaths.AbandonedKey));
 			if (abandoned || (generator == null && VillageRespawn.ZoneSettled(destination)))
 			{
+				TripStory.Note(zdo, (TripStory story) => story.VillageGone = true);
 				DeadEnd(destination, DisbandedViking(zdo));
 				return(true);
 			}
@@ -616,6 +631,7 @@ namespace VikingVillages
 			if (takes && here.NearestCoreHouse(transform.position, out VillagePaths.House house))
 			{
 				leaving = false;
+				TripStory.Arrive(zdo);
 				here.Adopt(zdo, house);
 				zdo.Set(ArrivingKey, !here.Contains(transform.position));
 				village = here;
@@ -755,6 +771,7 @@ namespace VikingVillages
 					return(false);
 				}
 				VillageTravel.SetOut(zdo, answer, zdo.GetString(VillageTravel.GroupKey, ""), RoadParty(zdo));
+				TripStory.Note(zdo, (TripStory story) => story.TurnedHome = true);
 				LoadRoad(zdo);
 				road = Road.Travelling;
 				VikingSpeech.Say(humanoid, VikingRoadSpeech.HomeAgain(answer.Spoken()), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
@@ -794,6 +811,7 @@ namespace VikingVillages
 			{
 				return(false);
 			}
+			TripStory.Arrive(zdo);
 			VillageTravel.Clear(zdo);
 			VikingItems.RemoveProps(humanoid.GetInventory());
 			ZPackage inventory = new ZPackage();
@@ -1299,8 +1317,8 @@ namespace VikingVillages
 				SayGoodbye();
 				return(true);
 			}
-			VillageTravel.SetOut(zdo, answer, VillageDisband.GroupName(fire), VillageDisband.PartyOf(fire, OwnBiome()));
 			zdo.Set(VillageTravel.FromNameKey, VillageNames.AtFire(fire));
+			VillageTravel.SetOut(zdo, answer, VillageDisband.GroupName(fire), VillageDisband.PartyOf(fire, OwnBiome()));
 			LoadRoad(zdo);
 			road = Road.Travelling;
 			nextRoadLine = Time.time + Random.Range(RoadLineMin, RoadLineMax) / 3f;

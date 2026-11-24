@@ -58,7 +58,7 @@ namespace VikingVillages
 		/// out wild, shows the villages' areas the player turns on, notes the villages' reach for running all of a village
 		/// the player is in (see VillageSimulation), moves a dedicated server's own area to the village it runs (see
 		/// ServerVillageRun), keeps the news the vikings tell and watches for more (see VikingNewsStore and
-		/// VikingNewsWatch), has the dvergr's outposts hire their vikings (see DvergrVikingSpawns), and runs the test
+		/// VikingNewsWatch) and the news the villages hear of each other (see NeighborNews), has the dvergr's outposts hire their vikings (see DvergrVikingSpawns), and runs the test
 		/// log's checks (see TestLog)
 		/// </summary>
 		private void Update()
@@ -90,6 +90,7 @@ namespace VikingVillages
 			ServerVillageRun.Update();
 			VikingNewsStore.Update();
 			VikingNewsWatch.Update();
+			NeighborNews.Update();
 			DvergrVikingSpawns.Update();
 			TestLog.Update();
 		}

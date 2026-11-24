@@ -485,6 +485,8 @@ namespace VikingVillages
 			Attach(myBoat.Seat(mySeat), myBoat.gameObject);
 			zdo.Set(VikingBoat.BoatKey, myBoat.Key);
 			SetCrossing(zdo, Crossing.Aboard);
+			string boat = TravelTime.BoatName(VillageTravel.BoatBiome(zdo));
+			TripStory.Note(zdo, (TripStory story) => story.Boat = boat);
 			Plugin.Log.LogInfo(LogName() + " " + how + " on board " + myBoat.Key + ((mySeat == 0) ? ", at the helm" : ""));
 			TestLog.Count("Boats", "vikings " + how + " on board");
 		}
@@ -580,6 +582,7 @@ namespace VikingVillages
 				Detach();
 				Plugin.Log.LogInfo(LogName() + " lost its boat at sea at " + transform.position.ToString("F0") + ", and swims for the shore");
 				TestLog.Count("Boats", "vikings wrecked");
+				TripStory.Note(zdo, (TripStory story) => story.Wrecked = true);
 				VikingSpeech.Say(humanoid, VikingRoadSpeech.Wrecked(), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 				StartSwim(zdo, Crossing.Wrecked, Vector3.zero);
 				return(true);

@@ -858,6 +858,11 @@ namespace VikingVillages
 			{
 				Plugin.Log.LogInfo("Snapshot of travel: " + line);
 			}
+			string neighbors = NeighborNews.Describe();
+			if (neighbors.Length > 0)
+			{
+				Plugin.Log.LogInfo("Snapshot of neighbor news: " + neighbors);
+			}
 			WriteTotals("so far");
 			Flush();
 		}

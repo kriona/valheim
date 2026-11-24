@@ -121,6 +121,7 @@ namespace VikingVillages
 			Vector3 from = fire.GetPosition();
 			Vector3 farm = village.Farm;
 			TravelPlanner.Ask(from, party, new List<Vector3> { farm }, (TravelPlanner.Answer answer) => Answered(id, farm, answer));
+			NeighborNews.Report(NeighborEvent.Disbanded, farm, VillageNames.Get(village), "");
 		}
 
 		/// <summary>
