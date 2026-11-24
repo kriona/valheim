@@ -473,7 +473,9 @@ namespace VikingVillages
 				return;
 			}
 			UpdateHeld();
-			if (!ZNet.instance.IsServer() || WorldGenerator.instance == null)
+			// A world closing takes its players away first, which would take every group off the road and its boats
+			// with it, so a player who logs out on a vikings' boat finds it there again
+			if (!ZNet.instance.IsServer() || WorldGenerator.instance == null || (Game.instance != null && Game.instance.IsShuttingDown()))
 			{
 				return;
 			}
@@ -641,6 +643,7 @@ namespace VikingVillages
 				}
 				bool throughPortal = members.TrueForAll((ZDO zdo) => zdo.GetBool(PortalKey));
 				TravelEntry entry = Pack(members);
+				RemoveBoats(members);
 				foreach (ZDO zdo in members)
 				{
 					outSince.Remove(zdo.m_uid);
@@ -657,6 +660,35 @@ namespace VikingVillages
 			if (changed)
 			{
 				Save();
+			}
+		}
+
+		/// <summary>
+		/// Takes the boats a group built to cross the sea out of the world with it (see VikingBoat), so no empty boat is
+		/// left behind
+		/// </summary>
+		/// <param name="members">The group's vikings</param>
+		private static void RemoveBoats(List<ZDO> members)
+		{
+			HashSet<string> groups = new HashSet<string>();
+			List<Vector3> near = new List<Vector3>();
+			foreach (ZDO zdo in members)
+			{
+				string boat = zdo.GetString(VikingBoat.BoatKey, "");
+				int mark = boat.LastIndexOf('#');
+				if (mark > 0)
+				{
+					groups.Add(boat.Substring(0, mark));
+					near.Add(zdo.GetPosition());
+				}
+			}
+			foreach (string group in groups)
+			{
+				int removed = VikingBoat.RemoveAll(group, near);
+				if (removed > 0)
+				{
+					Plugin.Log.LogInfo("Travel: " + removed + " boats of " + group + " were taken out of the world with their crew");
+				}
 			}
 		}
 

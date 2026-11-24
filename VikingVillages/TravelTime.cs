@@ -24,6 +24,11 @@ namespace VikingVillages
 		private static readonly bool[] BoatFireproof = { false, false, false, true };
 
 		/// <summary>
+		/// How many vikings each boat carries, the one at the helm included
+		/// </summary>
+		private static readonly int[] BoatCrews = { 2, 4, 8, 10 };
+
+		/// <summary>
 		/// How long stepping through a portal takes, in seconds - the walk into it and out the other side
 		/// </summary>
 		public const float PortalSeconds = 5f;
@@ -90,6 +95,16 @@ namespace VikingVillages
 		public static string BoatPrefab(int biome)
 		{
 			return(BoatPrefabs[Boat(biome)]);
+		}
+
+		/// <summary>
+		/// Gets how many vikings the best boat of a biome carries, the one at the helm included
+		/// </summary>
+		/// <param name="biome">The biome, by VikingGear's order</param>
+		/// <returns>How many</returns>
+		public static int BoatCrew(int biome)
+		{
+			return(BoatCrews[Boat(biome)]);
 		}
 
 		/// <summary>

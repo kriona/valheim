@@ -191,6 +191,32 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Works out how much the viking's foods add to its stamina, the way a player's do - each food's stamina, fading
+		/// as it wears off like its health (see FoodHealth) - for how long it can swim (see BoatRules.SwimSeconds)
+		/// </summary>
+		/// <returns>The stamina its food adds</returns>
+		public float FoodStamina()
+		{
+			if (viking.m_nview == null || !viking.m_nview.IsValid() || ObjectDB.instance == null)
+			{
+				return(0f);
+			}
+			long now = NetTime.Now();
+			float stamina = 0f;
+			foreach (Meal meal in Read(viking.m_nview.GetZDO()))
+			{
+				ItemDrop.ItemData food = FoodOf(meal);
+				if (food == null || food.m_shared.m_foodBurnTime <= 0f)
+				{
+					continue;
+				}
+				float left = (float)(meal.Until - now) / System.TimeSpan.TicksPerSecond;
+				stamina += food.m_shared.m_foodStamina * HealthShare(left, BurnTime(food));
+			}
+			return(stamina);
+		}
+
+		/// <summary>
 		/// Works out how long a food lasts on a viking, the way it does on a player - its burn time, worn off faster or
 		/// slower by the world's food rate
 		/// </summary>

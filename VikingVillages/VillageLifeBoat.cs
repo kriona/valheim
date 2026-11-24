@@ -1,0 +1,779 @@
+using System.Collections.Generic;
+using Kriona.Vikings;
+using UnityEngine;
+
+namespace VikingVillages
+{
+	/// <summary>
+	/// A living viking on the road crossing the sea in the world - its group gathering at the shore, the one of the
+	/// hardest biome among them building the boats, the rest getting on board, riding to the far shore and swimming in
+	/// (see VikingBoat)
+	/// </summary>
+	/// <remarks>
+	/// Reaching the sea on its road, a viking waits at the shore for the rest of its group, for up to GatherMax seconds.
+	/// The one of the hardest biome among them then takes out a hammer, swings it a few times and builds as many boats of
+	/// the best kind their biome has as they need - each with one of them at the helm - from nothing. Each tries once to
+	/// jump on board from the shore, and swims to the boat's ladder when it misses; once VikingBoat.BoardTime seconds
+	/// have passed, those still off it are put on board. On board it sits where it's put until the boat reaches the far
+	/// shore, then jumps off and swims in, the one at the helm breaking the boat up once it's ashore. A viking in the water
+	/// - wrecked, or swimming in - swims as long as its stamina would last a player, by its food and Swim skill (see
+	/// BoatRules.SwimSeconds), and drowns after that the way a player does. One wrecked plans its road again once it's
+	/// ashore, building another boat when it still has sea to cross. Where there's no water deep enough for a boat by the
+	/// shore, its group sets sail out of the world the way it did before (see SetSail)
+	/// </remarks>
+	internal partial class VillageLife
+	{
+		/// <summary>
+		/// How far along crossing the sea a viking is - noted on its ZDO (see VikingBoat.BoardKey), so it carries on after
+		/// it loads again
+		/// </summary>
+		private enum Crossing
+		{
+			None = 0,
+			Gathering = 1,
+			Building = 2,
+			Boarding = 3,
+			Landing = 4,
+			Aboard = VikingBoat.Aboard,
+			Wrecked = 6,
+			Breaking = 7
+		}
+
+		/// <summary>
+		/// How long a viking at the shore waits for the rest of its group, how long it waits for a boat before it builds
+		/// its own, and how long one loaded mid-voyage waits for its boat to load before it counts as wrecked, in seconds
+		/// </summary>
+		private const float GatherMax = 30f;
+		private const float BoatWait = 60f;
+		private const float RestoreWait = 20f;
+
+		/// <summary>
+		/// How the boats are built - how many times the builder swings its hammer, and how long between swings, in seconds
+		/// </summary>
+		private const int BuildSwings = 3;
+		private const float BuildSwingGap = 1.1f;
+
+		/// <summary>
+		/// Where boats are put in the water - how far out from the shore the water is looked for and in what steps, how
+		/// deep it has to be, how far past that the boat goes, and how far apart a group's boats are, in meters
+		/// </summary>
+		private const float LaunchSearch = 60f;
+		private const float LaunchStep = 2f;
+		private const float LaunchDepth = 1.8f;
+		private const float LaunchOut = 4f;
+		private const float BoatSpacing = 12f;
+
+		/// <summary>
+		/// How a viking gets on board - how near the water's edge it jumps from, how fast it jumps out and up, in meters a
+		/// second, how long it gives a jump to land, in seconds, and how near the ladder or its seat it has to be to climb
+		/// aboard, in meters
+		/// </summary>
+		private const float JumpReach = 2.5f;
+		private const float JumpOut = 6f;
+		private const float JumpUp = 6f;
+		private const float JumpLand = 1.5f;
+		private const float ClimbReach = 2.5f;
+
+		/// <summary>
+		/// How far out the nearest shore is looked for, in steps of how far, and how many ways, in meters, and how long a
+		/// viking has to be out of the water to count as ashore, in seconds
+		/// </summary>
+		private const float ShoreSearch = 400f;
+		private const float ShoreStep = 10f;
+		private const int ShoreWays = 16;
+		private const float AshoreTime = 1.5f;
+
+		/// <summary>
+		/// How far along crossing the sea the viking is, and since when, in Time.time seconds
+		/// </summary>
+		private Crossing crossing = Crossing.None;
+		private float crossingSince;
+
+		/// <summary>
+		/// Since when a viking loaded mid-voyage has waited for its boat to load, in Time.time seconds, or -1
+		/// </summary>
+		private float resumeSince = -1f;
+
+		/// <summary>
+		/// The boat it crosses in and its seat on it, the helm being 0
+		/// </summary>
+		private VikingBoat myBoat;
+		private int mySeat;
+
+		/// <summary>
+		/// For the builder, its group's IDs, where it puts the boats in the water, how many times it has swung its hammer
+		/// and when it next swings
+		/// </summary>
+		private readonly List<string> buildCrew = new List<string>();
+		private Vector3 launchSpot;
+		private int swings;
+		private float nextSwing;
+
+		/// <summary>
+		/// Its jump on board - whether it has jumped, when, and the water's edge it jumps from
+		/// </summary>
+		private bool jumped;
+		private float jumpedAt;
+		private Vector3 waterEdge;
+		private bool hasEdge;
+
+		/// <summary>
+		/// Its swim ashore - where it swims to, how long it can swim before it drowns, how long it has swum, when it next
+		/// takes drowning damage, and how long it has been out of the water
+		/// </summary>
+		private Vector3 swimTo;
+		private float swimFor;
+		private float swum;
+		private float nextDrown;
+		private float ashoreFor;
+
+		/// <summary>
+		/// Notes how far along crossing the sea the viking is, on it and its ZDO
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <param name="next">How far along it is now</param>
+		private void SetCrossing(ZDO zdo, Crossing next)
+		{
+			crossing = next;
+			crossingSince = Time.time;
+			if (zdo.GetInt(VikingBoat.BoardKey) != (int)next)
+			{
+				zdo.Set(VikingBoat.BoardKey, (int)next);
+			}
+		}
+
+		/// <summary>
+		/// Gets the group the viking crosses the sea with - its group on the road, or itself alone
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>The group's name</returns>
+		private string CrossingGroup(ZDO zdo)
+		{
+			string group = zdo.GetString(VillageTravel.GroupKey, "");
+			return((group.Length > 0) ? group : "alone" + VikingIdentity.Get(zdo));
+		}
+
+		/// <summary>
+		/// Has a viking that reached the sea on its road cross it in the world - waiting for its group, building the boats
+		/// or getting on board - from the shore, until it's on board (see UpdateBoat)
+		/// </summary>
+		/// <param name="dt">Seconds since the AI's last update</param>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True, as it takes the update over</returns>
+		private bool UpdateCrossing(float dt, ZDO zdo)
+		{
+			if (VikingIdentity.Ensure(nview).Length == 0)
+			{
+				return(SetSail(zdo));
+			}
+			if (crossing == Crossing.None)
+			{
+				SetCrossing(zdo, Crossing.Gathering);
+				Plugin.Log.LogInfo(LogName() + " reached the sea at " + transform.position.ToString("F0") + ", and waits for its group to cross it");
+			}
+			if (crossing == Crossing.Gathering || crossing == Crossing.Building)
+			{
+				VikingBoat boat = VikingBoat.FindFor(CrossingGroup(zdo), VikingIdentity.Get(zdo), out int seat);
+				if (boat != null)
+				{
+					myBoat = boat;
+					mySeat = seat;
+					jumped = false;
+					hasEdge = false;
+					HoldHammer(false);
+					zdo.Set(VikingBoat.BoatKey, boat.Key);
+					SetCrossing(zdo, Crossing.Boarding);
+				}
+			}
+			switch (crossing)
+			{
+				case Crossing.Gathering:
+					return(Gather(zdo));
+				case Crossing.Building:
+					return(BuildBoats(zdo));
+				case Crossing.Boarding:
+					return(Board(dt, zdo));
+			}
+			return(true);
+		}
+
+		/// <summary>
+		/// Lists the vikings of the viking's group loaded here near it on the same road, itself included
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>The vikings</returns>
+		private List<VillageLife> CrossingMembers(ZDO zdo)
+		{
+			List<VillageLife> members = new List<VillageLife> { this };
+			string group = zdo.GetString(VillageTravel.GroupKey, "");
+			if (group.Length == 0)
+			{
+				return(members);
+			}
+			Vector3 destination = zdo.GetVec3(VillageTravel.DestinationKey, Vector3.zero);
+			foreach (VillageLife other in All)
+			{
+				if (other == this || other.nview == null || !other.nview.IsValid() || other.humanoid == null || other.humanoid.IsDead())
+				{
+					continue;
+				}
+				ZDO theirs = other.nview.GetZDO();
+				if (theirs.GetString(VillageTravel.GroupKey, "") == group && theirs.GetVec3(VillageTravel.DestinationKey, Vector3.zero) == destination && Utils.DistanceXZ(other.transform.position, transform.position) <= GroupWaitReach)
+				{
+					members.Add(other);
+				}
+			}
+			return(members);
+		}
+
+		/// <summary>
+		/// Waits at the shore for the rest of the group, facing the water - until they're all there or GatherMax seconds
+		/// have passed, when the one of the hardest biome among those there starts building the boats
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True, as it takes the update over</returns>
+		private bool Gather(ZDO zdo)
+		{
+			mover = "waiting at the shore for the rest of its group";
+			Face(travelRoad.Points[Mathf.Min(roadLeg, travelRoad.Count - 1)]);
+			List<VillageLife> members = CrossingMembers(zdo);
+			List<VillageLife> there = members.FindAll((VillageLife member) => member.crossing != Crossing.None);
+			if (there.Count < members.Count && Time.time - crossingSince < GatherMax)
+			{
+				return(true);
+			}
+			List<string> ids = there.ConvertAll((VillageLife member) => VikingIdentity.Get(member.nview.GetZDO()));
+			List<int> biomes = there.ConvertAll((VillageLife member) => member.OwnBiome());
+			int builder = BoatRules.Builder(ids, biomes);
+			if (builder < 0 || there[builder] != this)
+			{
+				// One left waiting on a builder that never came builds its own
+				if (Time.time - crossingSince < BoatWait)
+				{
+					return(true);
+				}
+				ids = new List<string> { VikingIdentity.Get(zdo) };
+			}
+			if (!FindLaunch(out launchSpot))
+			{
+				Plugin.Log.LogInfo(LogName() + " found no water deep enough for a boat by the shore at " + transform.position.ToString("F0") + ", so its group sets sail out of the world");
+				return(SetSail(zdo));
+			}
+			buildCrew.Clear();
+			buildCrew.AddRange(ids);
+			swings = 0;
+			nextSwing = Time.time + 0.5f;
+			SetCrossing(zdo, Crossing.Building);
+			VikingSpeech.Say(humanoid, VikingRoadSpeech.Build(TravelTime.BoatName(VillageTravel.BoatBiome(zdo))), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+			return(true);
+		}
+
+		/// <summary>
+		/// Finds where a boat goes in the water - the first spot out from the shore toward the sea legs of the road where
+		/// the water is deep enough, a little past it, on the water
+		/// </summary>
+		/// <param name="spot">Set to the spot</param>
+		/// <returns>False when there's no water deep enough within LaunchSearch</returns>
+		private bool FindLaunch(out Vector3 spot)
+		{
+			spot = Vector3.zero;
+			if (ZoneSystem.instance == null || roadLeg >= travelRoad.Count)
+			{
+				return(false);
+			}
+			float water = ZoneSystem.instance.m_waterLevel;
+			Vector3 toward = travelRoad.Points[roadLeg] - transform.position;
+			toward.y = 0f;
+			if (toward.sqrMagnitude < 0.01f)
+			{
+				return(false);
+			}
+			toward.Normalize();
+			for (float out1 = LaunchStep; out1 <= LaunchSearch; out1 += LaunchStep)
+			{
+				Vector3 point = transform.position + toward * out1;
+				if (ZoneSystem.instance.GetGroundHeight(point) < water - LaunchDepth)
+				{
+					spot = point + toward * LaunchOut;
+					spot.y = water;
+					return(true);
+				}
+			}
+			return(false);
+		}
+
+		/// <summary>
+		/// Swings the hammer at the water a few times, then builds the group's boats - as many as they need, each with its
+		/// share of the group on board and the first of them at the helm
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True, as it takes the update over</returns>
+		private bool BuildBoats(ZDO zdo)
+		{
+			mover = "building a boat";
+			Face(launchSpot);
+			HoldHammer(true);
+			if (Time.time < nextSwing)
+			{
+				return(true);
+			}
+			if (swings < BuildSwings)
+			{
+				VikingPoses.Swing(humanoid);
+				swings++;
+				nextSwing = Time.time + BuildSwingGap;
+				return(true);
+			}
+			HoldHammer(false);
+			if (!LaunchBoats(zdo))
+			{
+				return(SetSail(zdo));
+			}
+			// Found on the next update, as every viking of the group finds its own (see UpdateCrossing)
+			return(true);
+		}
+
+		/// <summary>
+		/// Puts the group's boats in the water side by side, each sailing the sea legs of the road from here
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>False when the boat's prefab is missing</returns>
+		private bool LaunchBoats(ZDO zdo)
+		{
+			int biome = VillageTravel.BoatBiome(zdo);
+			GameObject prefab = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(TravelTime.BoatPrefab(biome)) : null);
+			if (prefab == null)
+			{
+				return(false);
+			}
+			int ashore = BoatRules.Ashore(travelRoad, roadLeg, out int lastSea);
+			TravelRoad route = new TravelRoad();
+			route.Add(launchSpot, TravelLeg.Foot);
+			for (int i = roadLeg; i <= lastSea && i < travelRoad.Count; i++)
+			{
+				route.Add(travelRoad.Points[i], TravelLeg.Sea);
+			}
+			Vector3 land = ((ashore < travelRoad.Count) ? travelRoad.Points[ashore] : zdo.GetVec3(VillageTravel.DestinationKey, travelRoad.Points[travelRoad.Count - 1]));
+			Vector3 facing = ((route.Count > 1) ? route.Points[1] : land) - launchSpot;
+			facing.y = 0f;
+			Vector3 side = Vector3.Cross(Vector3.up, (facing.sqrMagnitude > 0.01f) ? facing.normalized : transform.forward);
+			List<List<string>> crews = BoatRules.Crews(buildCrew, TravelTime.BoatCrew(biome));
+			string group = CrossingGroup(zdo);
+			for (int i = 0; i < crews.Count; i++)
+			{
+				// The first boat goes where the water was found, the rest to either side of it in turn
+				float offset = ((i + 1) / 2) * ((i % 2 == 1) ? 1f : -1f) * BoatSpacing;
+				Vector3 spot = launchSpot + side * offset;
+				VikingBoat.Build(prefab, spot, facing, group, i, crews[i], route, land, roadLeg, ashore);
+			}
+			Plugin.Log.LogInfo(LogName() + " built " + crews.Count + " " + TravelTime.BoatName(biome) + ((crews.Count == 1) ? "" : "s") + " for " + buildCrew.Count + " vikings at " + launchSpot.ToString("F0") + ", to sail " + route.Count + " waypoints to " + land.ToString("F0"));
+			TestLog.Count("Boats", "built", crews.Count);
+			return(true);
+		}
+
+		/// <summary>
+		/// Gets the viking on board its boat - walking to the water's edge nearest it and jumping once, swimming to its
+		/// ladder when it misses, or put on board once VikingBoat.BoardTime seconds have passed
+		/// </summary>
+		/// <param name="dt">Seconds since the AI's last update</param>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True, as it takes the update over</returns>
+		private bool Board(float dt, ZDO zdo)
+		{
+			if (myBoat == null)
+			{
+				myBoat = VikingBoat.FindFor(CrossingGroup(zdo), VikingIdentity.Get(zdo), out mySeat);
+				if (myBoat == null)
+				{
+					// Its boat broke or unloaded before it got on
+					SetCrossing(zdo, Crossing.Gathering);
+					return(true);
+				}
+			}
+			if (myBoat.CurrentPhase != VikingBoat.Phase.Boarding || myBoat.PhaseSeconds > VikingBoat.BoardTime)
+			{
+				GetAboard(zdo, "was put");
+				return(true);
+			}
+			Vector3 boat = myBoat.transform.position;
+			if (!jumped)
+			{
+				if (!hasEdge)
+				{
+					waterEdge = WaterEdge(transform.position, boat);
+					hasEdge = true;
+				}
+				if (humanoid.InWater() || Utils.DistanceXZ(transform.position, waterEdge) <= JumpReach)
+				{
+					Vector3 toward = boat - transform.position;
+					toward.y = 0f;
+					Face(boat);
+					humanoid.m_body.linearVelocity = toward.normalized * JumpOut + Vector3.up * JumpUp;
+					jumped = true;
+					jumpedAt = Time.time;
+					mover = "jumping on board";
+					return(true);
+				}
+				mover = "walking to its boat";
+				Go(dt, waterEdge, JumpReach / 2f, true);
+				moveFailed = false;
+				return(true);
+			}
+			if (Time.time - jumpedAt < JumpLand)
+			{
+				return(true);
+			}
+			if (humanoid.GetStandingOnShip() == myBoat.Ship || Vector3.Distance(transform.position, myBoat.Seat(mySeat).position) < ClimbReach)
+			{
+				GetAboard(zdo, "jumped");
+				return(true);
+			}
+			Vector3 ladder = myBoat.Ladder(transform.position);
+			if (Vector3.Distance(transform.position, ladder) < ClimbReach)
+			{
+				GetAboard(zdo, "climbed");
+				return(true);
+			}
+			mover = "swimming to its boat's ladder";
+			Vector3 way = ladder - transform.position;
+			way.y = 0f;
+			ai.MoveTowards(way.normalized, true);
+			return(true);
+		}
+
+		/// <summary>
+		/// Finds the water's edge between a viking and its boat - the last dry spot on the way out to it
+		/// </summary>
+		/// <param name="from">Where the viking is</param>
+		/// <param name="boat">Where the boat is</param>
+		/// <returns>The spot, or where the viking is when it's in the water already</returns>
+		private static Vector3 WaterEdge(Vector3 from, Vector3 boat)
+		{
+			if (ZoneSystem.instance == null)
+			{
+				return(from);
+			}
+			float water = ZoneSystem.instance.m_waterLevel;
+			Vector3 toward = boat - from;
+			toward.y = 0f;
+			float length = toward.magnitude;
+			if (length < 0.01f)
+			{
+				return(from);
+			}
+			toward /= length;
+			Vector3 edge = from;
+			for (float out1 = 1f; out1 < length; out1 += 1f)
+			{
+				Vector3 point = from + toward * out1;
+				if (ZoneSystem.instance.GetGroundHeight(point) < water - 0.3f)
+				{
+					break;
+				}
+				edge = point;
+			}
+			return(edge);
+		}
+
+		/// <summary>
+		/// Seats the viking on board its boat, at the helm for the first of its crew
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <param name="how">How it got on, for the log</param>
+		private void GetAboard(ZDO zdo, string how)
+		{
+			Attach(myBoat.Seat(mySeat), myBoat.gameObject);
+			zdo.Set(VikingBoat.BoatKey, myBoat.Key);
+			SetCrossing(zdo, Crossing.Aboard);
+			Plugin.Log.LogInfo(LogName() + " " + how + " on board " + myBoat.Key + ((mySeat == 0) ? ", at the helm" : ""));
+			TestLog.Count("Boats", "vikings " + how + " on board");
+		}
+
+		/// <summary>
+		/// Runs the viking's crossing once it's on board or back in the water - riding along, getting off at the far shore,
+		/// swimming in and breaking the boat up - and picks up a crossing it was in the middle of as it loads again
+		/// </summary>
+		/// <param name="dt">Seconds since the AI's last update</param>
+		/// <returns>True when it took the update over</returns>
+		private bool UpdateBoat(float dt)
+		{
+			ZDO zdo = nview.GetZDO();
+			if (crossing == Crossing.None && !Resume(zdo))
+			{
+				return(false);
+			}
+			switch (crossing)
+			{
+				case Crossing.Aboard:
+					return(RideAlong(zdo));
+				case Crossing.Landing:
+				case Crossing.Wrecked:
+					return(SwimAshore(dt, zdo));
+				case Crossing.Breaking:
+					return(BreakBoat(zdo));
+			}
+			return(false);
+		}
+
+		/// <summary>
+		/// Picks up the crossing a viking was in the middle of when it last unloaded - back on its seat once its boat
+		/// loads, held where it is meanwhile, or swimming ashore when its boat doesn't load within RestoreWait seconds
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True when it was in the middle of one it's still on board or in the water for</returns>
+		private bool Resume(ZDO zdo)
+		{
+			Crossing saved = (Crossing)zdo.GetInt(VikingBoat.BoardKey);
+			if (saved == Crossing.None)
+			{
+				return(false);
+			}
+			if (saved != Crossing.Aboard && saved != Crossing.Landing && saved != Crossing.Wrecked)
+			{
+				// It was still ashore, so it gathers with its group again
+				zdo.Set(VikingBoat.BoardKey, (int)Crossing.None);
+				zdo.Set(VikingBoat.BoatKey, "");
+				return(false);
+			}
+			if (saved == Crossing.Aboard)
+			{
+				myBoat = VikingBoat.FindFor(CrossingGroup(zdo), VikingIdentity.Get(zdo), out mySeat);
+				if (myBoat != null)
+				{
+					Attach(myBoat.Seat(mySeat), myBoat.gameObject);
+					crossing = Crossing.Aboard;
+					crossingSince = Time.time;
+					resumeSince = -1f;
+					Plugin.Log.LogInfo(LogName() + " is back on board " + myBoat.Key + " as it loads");
+					return(true);
+				}
+				if (resumeSince < 0f)
+				{
+					resumeSince = Time.time;
+				}
+				if (Time.time - resumeSince < RestoreWait)
+				{
+					// Held where it was on the deck until its boat loads under it
+					mover = "waiting for its boat to load";
+					ai.StopMoving();
+					humanoid.m_body.useGravity = false;
+					humanoid.m_body.linearVelocity = Vector3.zero;
+					return(true);
+				}
+				humanoid.m_body.useGravity = true;
+				resumeSince = -1f;
+			}
+			StartSwim(zdo, Crossing.Wrecked, Vector3.zero);
+			return(true);
+		}
+
+		/// <summary>
+		/// Rides along on the boat, keeping its place on the road with the boat's - and gets off at the far shore, or swims
+		/// for it when the boat is gone from under it
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True, as it takes the update over</returns>
+		private bool RideAlong(ZDO zdo)
+		{
+			if (myBoat == null || attachPoint == null)
+			{
+				Detach();
+				Plugin.Log.LogInfo(LogName() + " lost its boat at sea at " + transform.position.ToString("F0") + ", and swims for the shore");
+				TestLog.Count("Boats", "vikings wrecked");
+				VikingSpeech.Say(humanoid, VikingRoadSpeech.Wrecked(), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+				StartSwim(zdo, Crossing.Wrecked, Vector3.zero);
+				return(true);
+			}
+			mover = ((mySeat == 0) ? "at the helm" : "on board");
+			int leg = Mathf.Clamp(myBoat.SeaStart + myBoat.Leg - 1, 0, travelRoad.Count);
+			if (leg != roadLeg)
+			{
+				roadLeg = leg;
+				zdo.Set(VillageTravel.LegKey, roadLeg);
+			}
+			if (myBoat.CurrentPhase == VikingBoat.Phase.Landing)
+			{
+				Detach();
+				Vector3 toward = myBoat.Land - transform.position;
+				toward.y = 0f;
+				humanoid.m_body.linearVelocity = toward.normalized * JumpOut + Vector3.up * JumpUp;
+				StartSwim(zdo, Crossing.Landing, myBoat.Land);
+			}
+			return(true);
+		}
+
+		/// <summary>
+		/// Starts the viking swimming for the shore - to a spot given, or the nearest dry ground - working out how long it
+		/// can swim before it drowns
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <param name="why">Landing at the far shore, or wrecked</param>
+		/// <param name="to">Where it swims to, or zero for the nearest dry ground</param>
+		private void StartSwim(ZDO zdo, Crossing why, Vector3 to)
+		{
+			swimTo = ((to != Vector3.zero) ? to : NearestShore(transform.position));
+			swimFor = BoatRules.SwimSeconds(((body != null) ? body.Food.FoodStamina() : 0f), humanoid.GetSkillFactor(Skills.SkillType.Swim), Game.m_moveStaminaRate);
+			swum = 0f;
+			ashoreFor = 0f;
+			nextDrown = 0f;
+			SetCrossing(zdo, why);
+		}
+
+		/// <summary>
+		/// Finds the nearest dry ground to a point, from the world's plan, in rings out from it
+		/// </summary>
+		/// <param name="from">The point</param>
+		/// <returns>The nearest dry ground, or the point when there's none within ShoreSearch</returns>
+		private static Vector3 NearestShore(Vector3 from)
+		{
+			if (WorldGenerator.instance == null || ZoneSystem.instance == null)
+			{
+				return(from);
+			}
+			float water = ZoneSystem.instance.m_waterLevel;
+			for (float radius = ShoreStep; radius <= ShoreSearch; radius += ShoreStep)
+			{
+				for (int i = 0; i < ShoreWays; i++)
+				{
+					float angle = 2f * Mathf.PI * i / ShoreWays;
+					Vector3 point = from + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+					if (WorldGenerator.instance.GetHeight(point.x, point.z) > water + 0.5f)
+					{
+						return(point);
+					}
+				}
+			}
+			return(from);
+		}
+
+		/// <summary>
+		/// Swims the viking for the shore - drowning the way a player does once it has swum longer than it can - and once
+		/// it has been out of the water a moment, goes on along its road from the far shore, or plans its road again from
+		/// where it washed up
+		/// </summary>
+		/// <param name="dt">Seconds since the AI's last update</param>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True, as it takes the update over</returns>
+		private bool SwimAshore(float dt, ZDO zdo)
+		{
+			if (humanoid.InWater())
+			{
+				ashoreFor = 0f;
+				swum += dt;
+				if (swum > swimFor && Time.time >= nextDrown)
+				{
+					nextDrown = Time.time + 1f;
+					HitData hit = new HitData();
+					hit.m_damage.m_damage = BoatRules.DrownDamage(humanoid.GetMaxHealth());
+					hit.m_point = humanoid.GetCenterPoint();
+					hit.m_dir = Vector3.down;
+					hit.m_hitType = HitData.HitType.Drowning;
+					humanoid.Damage(hit);
+				}
+				mover = ((swum > swimFor) ? "drowning on its way to the shore" : "swimming for the shore");
+				Vector3 way = swimTo - transform.position;
+				way.y = 0f;
+				ai.MoveTowards(way.normalized, true);
+				return(true);
+			}
+			ashoreFor += dt;
+			if (ashoreFor < AshoreTime)
+			{
+				mover = "climbing ashore";
+				Go(dt, swimTo, 2f, true);
+				moveFailed = false;
+				return(true);
+			}
+			Ashore(zdo);
+			return(true);
+		}
+
+		/// <summary>
+		/// Brings the viking ashore - on along its road from the far shore, the one at the helm breaking the boat up first,
+		/// or for one wrecked, planning its road again from where it washed up
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		private void Ashore(ZDO zdo)
+		{
+			bool wrecked = (crossing == Crossing.Wrecked);
+			zdo.Set(VikingBoat.BoatKey, "");
+			SetCrossing(zdo, Crossing.None);
+			if (wrecked || myBoat == null)
+			{
+				Plugin.Log.LogInfo(LogName() + " washed up at " + transform.position.ToString("F0") + ", and plans its road again");
+				myBoat = null;
+				AskRoad(true);
+				return;
+			}
+			roadLeg = Mathf.Clamp(myBoat.Ashore, 0, travelRoad.Count);
+			zdo.Set(VillageTravel.LegKey, roadLeg);
+			Plugin.Log.LogInfo(LogName() + " came ashore at " + transform.position.ToString("F0") + " from " + myBoat.Key);
+			TestLog.Count("Boats", "vikings ashore");
+			if (mySeat == 0)
+			{
+				swings = 0;
+				nextSwing = Time.time + 0.5f;
+				SetCrossing(zdo, Crossing.Breaking);
+				return;
+			}
+			myBoat = null;
+		}
+
+		/// <summary>
+		/// Has the viking that was at the helm swing its hammer at the boat a couple of times and ask for it to be broken
+		/// up, once the rest of the crew is off it (see VikingBoat.UpdateLanding)
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True while it works on the boat</returns>
+		private bool BreakBoat(ZDO zdo)
+		{
+			if (myBoat == null)
+			{
+				HoldHammer(false);
+				SetCrossing(zdo, Crossing.None);
+				return(false);
+			}
+			mover = "breaking up its boat";
+			Face(myBoat.transform.position);
+			HoldHammer(true);
+			if (Time.time < nextSwing)
+			{
+				return(true);
+			}
+			if (swings < BuildSwings - 1)
+			{
+				VikingPoses.Swing(humanoid);
+				swings++;
+				nextSwing = Time.time + BuildSwingGap;
+				return(true);
+			}
+			HoldHammer(false);
+			myBoat.RequestBreak();
+			myBoat = null;
+			SetCrossing(zdo, Crossing.None);
+			return(true);
+		}
+
+		/// <summary>
+		/// Describes the viking's crossing for the debug hover text and the test run's snapshot
+		/// </summary>
+		/// <returns>The description, or "" when it isn't crossing the sea</returns>
+		private string DescribeCrossing()
+		{
+			if (crossing == Crossing.None)
+			{
+				return("");
+			}
+			string line = "Crossing: " + crossing.ToString().ToLowerInvariant() + " for " + (Time.time - crossingSince).ToString("F0") + "s";
+			if (myBoat != null)
+			{
+				line += ", " + myBoat.Key + " seat " + mySeat + " (" + myBoat.CurrentPhase.ToString().ToLowerInvariant() + ", " + myBoat.CrewAboard() + " of " + myBoat.Crew.Count + " on board)";
+			}
+			if (crossing == Crossing.Landing || crossing == Crossing.Wrecked)
+			{
+				line += ", swum " + swum.ToString("F0") + "s of " + swimFor.ToString("F0") + "s to " + swimTo.ToString("F0");
+			}
+			return(line);
+		}
+	}
+}

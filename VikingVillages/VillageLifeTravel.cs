@@ -264,6 +264,10 @@ namespace VikingVillages
 			{
 				return(false);
 			}
+			if (UpdateBoat(dt))
+			{
+				return(true);
+			}
 			Character target = ai.m_targetCreature;
 			if (target != null)
 			{
@@ -546,7 +550,7 @@ namespace VikingVillages
 			}
 			if (travelRoad.SeaLeg(roadLeg))
 			{
-				return(SetSail(zdo));
+				return(UpdateCrossing(dt, zdo));
 			}
 			if (travelRoad.PortalLeg(roadLeg))
 			{
@@ -1385,6 +1389,11 @@ namespace VikingVillages
 				line += " to " + ((name.Length > 0) ? name + " " : "") + "at " + zdo.GetVec3(VillageTravel.DestinationKey, Vector3.zero).ToString("F0") + ", " + travelRoad.Meters(roadLeg, transform.position).ToString("F0") + "m and " + travelRoad.Seconds(roadLeg, transform.position, TravelTime.BoatSpeed(biome)).ToString("F0") + "s left, " + VillageTravel.PartyOf(zdo).Describe() + ((portals > 0) ? ", " + portals + " portals on the road" : "") + ", waypoint " + roadLeg + " of " + travelRoad.Count + (zdo.GetBool(VillageTravel.SailingKey) ? ", setting sail" : "") + (zdo.GetBool(VillageTravel.PortalKey) ? ", stepping through a portal" : "");
 			}
 			text.Append(line + "\n");
+			string crossingLine = DescribeCrossing();
+			if (crossingLine.Length > 0)
+			{
+				text.Append(crossingLine + "\n");
+			}
 		}
 	}
 }

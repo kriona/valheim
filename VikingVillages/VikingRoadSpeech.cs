@@ -144,6 +144,40 @@ namespace VikingVillages
 		};
 
 		/// <summary>
+		/// What the viking who builds its group's boats says as it starts, with "{0}" the boat it builds
+		/// </summary>
+		internal static readonly string[] BuildLines =
+		{
+			"Stand back - I'll knock a {0} together.",
+			"Give me a moment and we'll have a {0} in the water.",
+			"No boat? I'll build us a {0}.",
+			"A few swings of the hammer and we sail. One {0}, coming up!"
+		};
+
+		/// <summary>
+		/// What the viking at the helm asks a player standing ashore once the crew is on board, with "{0}" the player's
+		/// name
+		/// </summary>
+		internal static readonly string[] ComingLines =
+		{
+			"Are you coming, {0}?",
+			"{0}! Are you coming with us or not?",
+			"Hop aboard, {0}, or we sail without you!",
+			"Are you coming, {0}? The tide won't wait."
+		};
+
+		/// <summary>
+		/// What a viking says as its boat goes down under it at sea
+		/// </summary>
+		internal static readonly string[] WreckedLines =
+		{
+			"The boat's gone! Swim for it!",
+			"Abandon ship! Make for the shore!",
+			"So much for that boat... everyone swim!",
+			"Into the water! Head for land!"
+		};
+
+		/// <summary>
 		/// What a viking on the road says as it reaches a portal on its way and steps through
 		/// </summary>
 		internal static readonly string[] PortalLines =
@@ -354,6 +388,35 @@ namespace VikingVillages
 				return(VikingSpeech.Pick(HomeAgainUnnamedLines, ""));
 			}
 			return(string.Format(VikingSpeech.Pick(HomeAgainLines, ""), village));
+		}
+
+		/// <summary>
+		/// Picks what the viking who builds its group's boats says as it starts
+		/// </summary>
+		/// <param name="boat">The boat it builds, like "karve"</param>
+		/// <returns>The line</returns>
+		public static string Build(string boat)
+		{
+			return(string.Format(VikingSpeech.Pick(BuildLines, ""), boat));
+		}
+
+		/// <summary>
+		/// Picks what the viking at the helm asks a player standing ashore
+		/// </summary>
+		/// <param name="player">The player's name</param>
+		/// <returns>The line</returns>
+		public static string Coming(string player)
+		{
+			return(string.Format(VikingSpeech.Pick(ComingLines, ""), player));
+		}
+
+		/// <summary>
+		/// Picks what a viking says as its boat goes down under it at sea
+		/// </summary>
+		/// <returns>The line</returns>
+		public static string Wrecked()
+		{
+			return(VikingSpeech.Pick(WreckedLines, ""));
 		}
 
 		/// <summary>

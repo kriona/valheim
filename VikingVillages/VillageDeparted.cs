@@ -459,6 +459,8 @@ namespace VikingVillages
 				VillageTravel.UnteleportableKey,
 				VillageTravel.SailingKey,
 				VillageTravel.PortalKey,
+				VikingBoat.BoatKey,
+				VikingBoat.BoardKey,
 				ZDOVars.s_patrol,
 				ZDOVars.s_patrolPoint,
 				ZDOVars.s_spawnPoint
