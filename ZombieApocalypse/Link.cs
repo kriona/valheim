@@ -116,19 +116,19 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Gets the recipe that lines a weapon with silver at a forge (see SilverLining.GetRecipe)
+		/// Gets the recipe that lines a weapon or shield with silver at a forge (see SilverLining.GetRecipe)
 		/// </summary>
-		/// <param name="item">The weapon</param>
-		/// <returns>The recipe, or null when the weapon can't be lined or the mod isn't running</returns>
+		/// <param name="item">The weapon or shield</param>
+		/// <returns>The recipe, or null when the item can't be lined or the mod isn't running</returns>
 		public static Recipe LiningRecipe(ItemDrop.ItemData item)
 		{
 			return(Active() ? SilverLining.GetRecipe(item) : null);
 		}
 
 		/// <summary>
-		/// Lines a weapon with silver, when it can be (see LiningRecipe), without taking anything for it
+		/// Lines a weapon or shield with silver, when it can be (see LiningRecipe), without taking anything for it
 		/// </summary>
-		/// <param name="item">The weapon</param>
+		/// <param name="item">The weapon or shield</param>
 		/// <returns>True when it was lined</returns>
 		public static bool Line(ItemDrop.ItemData item)
 		{

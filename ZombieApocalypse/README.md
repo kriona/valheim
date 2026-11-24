@@ -31,7 +31,7 @@ Even the fauna will fight you.
 
 ## Your Death
 
-When a zombie kills you, your own body gets back up as a tombstone zombie Viking with your name, looks and health, wearing your armor and carrying everything you had (except food, silver ore and ingots, and spirit weapons / ammo). If you still have corpse run from picking up your tombstone, your body stays dead.
+When a zombie kills you, your own body gets back up as a tombstone zombie Viking with your name, looks and health, wearing your armor and carrying everything you had (except food, silver ore and ingots, spirit weapons / ammo and silver-lined shields). If you still have corpse run from picking up your tombstone, your body stays dead.
 
 - It guards your tombstone (or where you fell, if there isn't one)
 - It won't chase anything more than 20 meters from the tombstone, and if it ends up much farther out than that, it gives up the fight and returns to the spot you died
@@ -82,15 +82,16 @@ Every living dvergr mage can cast a powerful white bolt of spirit damage that de
 
 Note that zombies don't cast healing spells, so a zombie greydwarf shaman or dvergr healer can't heal its allies.
 
-## Silver-Lined Weapons
+## Silver-Lined Weapons and Shields
 
-Line your weapons with silver so the creatures you kill with them stay dead.
+Line your weapons with silver so the creatures you kill with them stay dead, and your shields so the undead burn when they strike them.
 
-- At a forge of level 3, the Upgrade tab has a "Silver-line" entry for each weapon you carry that can be lined - any weapon with metal in its recipe that doesn't already deal spirit damage
-- Lining costs silver - a quarter of the metal in the weapon's recipe, at least 1 - and 1 ectoplasm
+- At a forge of level 3, the Upgrade tab has a "Silver-line" entry for each weapon or shield you carry that can be lined - any weapon or shield with metal in its recipe that doesn't already deal spirit damage
+- Lining costs silver - a quarter of the metal in the item's recipe, at least 1 - and 1 ectoplasm
 - A silver-lined weapon deals extra spirit damage - 5% of its damage at level 1, at least 5. Only the undead and zombies take spirit damage, so it doesn't change how hard it hits anything living, but a creature it kills doesn't rise
-- The lining stays on the weapon through upgrades and repairs, in chests, when traded, and in other worlds. In a world without the mod, it does nothing
-- Like other spirit weapons, a silver-lined weapon stays in your tombstone rather than going with your tombstone zombie Viking
+- When you block a melee blow from the undead or a zombie with a silver-lined shield, it takes spirit damage - 20% of the shield's block armor at level 1, at least 5. A parry that staggers it is a critical hit, dealing double. Blocked arrows and spells don't hurt the one who sent them, and a block that breaks - when you run out of stamina or are staggered - doesn't either. A creature it kills doesn't rise
+- The lining stays on the item through upgrades and repairs, in chests, when traded, and in other worlds. In a world without the mod, it does nothing
+- Like spirit weapons, a silver-lined weapon or shield stays in your tombstone rather than going with your tombstone zombie Viking
 - The first time you have smelted silver, Hugin tells you about silver-lining
 
 ## Immune to Zombification

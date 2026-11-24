@@ -184,7 +184,7 @@ namespace ZombieApocalypse
 		/// </summary>
 		/// <param name="character">The creature</param>
 		/// <returns>True when it's undead</returns>
-		private static bool IsUndead(Character character)
+		public static bool IsUndead(Character character)
 		{
 			HitData.DamageModifier spirit = character.m_damageModifiers.m_spirit;
 			return(character.m_faction == Character.Faction.Undead || spirit == HitData.DamageModifier.Weak || spirit == HitData.DamageModifier.VeryWeak);

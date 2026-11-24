@@ -28,7 +28,7 @@ namespace ZombieApocalypse
 		private const string SilverName = "$item_silver";
 
 		private const string Topic = "Silver";
-		private const string Text = "Silver! The dead cannot abide it. Bring silver and ectoplasm to a forge, and you can line your weapons with silver on its Upgrade tab. A creature slain by a silver-lined weapon stays dead.";
+		private const string Text = "Silver! The dead cannot abide it. Bring silver and ectoplasm to a forge, and you can line your weapons and shields with silver on its Upgrade tab. A creature slain by a silver-lined weapon stays dead, and the dead burn when they strike a silver-lined shield.";
 
 		private static float nextCheck;
 

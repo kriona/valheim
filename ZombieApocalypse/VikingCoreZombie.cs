@@ -222,7 +222,8 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Checks whether an item stays in the player's tombstone instead of going with their viking - food, silver
-		/// ore and ingots, and weapons and ammo that deal spirit damage, which the undead can't bear
+		/// ore and ingots, and weapons and ammo that deal spirit damage and silver-lined shields, which the undead
+		/// can't bear
 		/// </summary>
 		/// <param name="item">The item</param>
 		/// <returns>True when it stays</returns>
@@ -241,13 +242,17 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether an item is a weapon or ammo that deals spirit damage, which the undead can't bear - silver
-		/// weapons and arrows, and weapons lined with silver
+		/// Checks whether an item is a weapon or ammo that deals spirit damage, or a silver-lined shield, which the
+		/// undead can't bear - silver weapons and arrows, and weapons and shields lined with silver
 		/// </summary>
 		/// <param name="item">The item</param>
 		/// <returns>True when it is</returns>
 		private static bool IsSpiritArmament(ItemDrop.ItemData item)
 		{
+			if (SilverLining.IsLined(item))
+			{
+				return(true);
+			}
 			ItemDrop.ItemData.ItemType type = item.m_shared.m_itemType;
 			bool armament = (item.IsWeapon() || type == ItemDrop.ItemData.ItemType.Ammo || type == ItemDrop.ItemData.ItemType.AmmoNonEquipable);
 			return(armament && item.GetDamage().m_spirit > 0f);
@@ -255,7 +260,8 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Drops the weapons and ammo that deal spirit damage from what a corpse holds for its viking, on the ground where
-		/// it rises, since the undead can't bear them - a living viking's silver-lined weapons and silver arrows. A
+		/// it rises, since the undead can't bear them - a living viking's silver-lined weapons and shields and silver
+		/// arrows. A
 		/// player's tombstone already kept theirs back (see StaysInGrave)
 		/// </summary>
 		/// <param name="corpse">The corpse's ZDO, owned by this client</param>

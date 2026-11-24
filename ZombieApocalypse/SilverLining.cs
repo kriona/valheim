@@ -5,13 +5,14 @@ using UnityEngine;
 namespace ZombieApocalypse
 {
 	/// <summary>
-	/// Lines weapons with silver at a forge, giving them a little spirit damage so the creatures they kill stay dead
+	/// Lines weapons and shields with silver at a forge, giving weapons a little spirit damage so the creatures they
+	/// kill stay dead, and shields a little spirit damage against the undead that strike them
 	/// </summary>
 	/// <remarks>
 	/// The lining is a flag in the item's custom data, which the game saves and sends with the item wherever it goes,
-	/// so it survives other worlds, chests, trading, upgrades and repairs. Each weapon prefab gets a lining recipe of
-	/// its own, offered on the forge's Upgrade tab, and the recipe is always read at quality 1 so its cost and forge
-	/// level don't grow with the weapon's level
+	/// so it survives other worlds, chests, trading, upgrades and repairs. Each weapon or shield prefab gets a lining
+	/// recipe of its own, offered on the forge's Upgrade tab, and the recipe is always read at quality 1 so its cost
+	/// and forge level don't grow with the item's level
 	/// </remarks>
 	internal static class SilverLining
 	{
@@ -32,7 +33,15 @@ namespace ZombieApocalypse
 		private const float MinSpirit = 5f;
 
 		/// <summary>
-		/// Lining costs a quarter of the metal in the weapon's recipe, at least 1, in silver, and 1 ectoplasm
+		/// The spirit damage a lined shield deals to an undead attacker whose blow it holds, as a share of its block
+		/// armor at level 1 (at least MinSpirit), and how much more a parry that staggers the attacker deals - a
+		/// critical hit, as the game deals to a staggered creature
+		/// </summary>
+		private const float ShieldShare = 0.2f;
+		private const float CriticalMultiplier = 2f;
+
+		/// <summary>
+		/// Lining costs a quarter of the metal in the item's recipe, at least 1, in silver, and 1 ectoplasm
 		/// </summary>
 		private const int MetalDivisor = 4;
 		private const int EctoplasmCost = 1;
@@ -42,7 +51,7 @@ namespace ZombieApocalypse
 		private const string EctoplasmPrefab = "Ectoplasm";
 
 		/// <summary>
-		/// The metals counted in a weapon's recipe
+		/// The metals counted in an item's recipe
 		/// </summary>
 		private static readonly HashSet<string> Metals = new HashSet<string>
 		{
@@ -86,6 +95,39 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
+		/// Checks whether an item is a shield
+		/// </summary>
+		/// <param name="item">The item, or null</param>
+		/// <returns>True for a shield</returns>
+		public static bool IsShield(ItemDrop.ItemData item)
+		{
+			return(item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shield);
+		}
+
+		/// <summary>
+		/// Works out the spirit damage a silver-lined shield deals to an undead attacker whose blow it holds
+		/// </summary>
+		/// <param name="item">The shield</param>
+		/// <param name="critical">True for a parry that staggers the attacker</param>
+		/// <returns>The damage (see ShieldSpirit(float, bool))</returns>
+		public static float ShieldSpirit(ItemDrop.ItemData item, bool critical)
+		{
+			return(ShieldSpirit(item.GetBaseBlockPower(1), critical));
+		}
+
+		/// <summary>
+		/// Works out the spirit damage a silver-lined shield deals from its block armor
+		/// </summary>
+		/// <param name="blockPower">The shield's block armor at level 1</param>
+		/// <param name="critical">True for a parry that staggers the attacker</param>
+		/// <returns>A share of the block armor, at least MinSpirit, multiplied for a critical hit</returns>
+		internal static float ShieldSpirit(float blockPower, bool critical)
+		{
+			float spirit = Mathf.Max(MinSpirit, Mathf.Round(blockPower * ShieldShare));
+			return(critical ? spirit * CriticalMultiplier : spirit);
+		}
+
+		/// <summary>
 		/// Checks whether a crafting station is a forge
 		/// </summary>
 		/// <param name="station">The station, or null</param>
@@ -110,11 +152,11 @@ namespace ZombieApocalypse
 		/// Gets the lining recipe for an item, making it the first time
 		/// </summary>
 		/// <param name="item">The item</param>
-		/// <returns>The recipe, or null when the item can't be lined - it's lined already, isn't a weapon, already
-		/// deals spirit damage or has no metal in its recipe</returns>
+		/// <returns>The recipe, or null when the item can't be lined - it's lined already, isn't a weapon or shield,
+		/// already deals spirit damage, or is a weapon with no metal in its recipe</returns>
 		public static Recipe GetRecipe(ItemDrop.ItemData item)
 		{
-			if (item == null || IsLined(item) || !item.IsWeapon() || item.m_dropPrefab == null)
+			if (item == null || IsLined(item) || !(item.IsWeapon() || IsShield(item)) || item.m_dropPrefab == null)
 			{
 				return(null);
 			}
@@ -136,8 +178,8 @@ namespace ZombieApocalypse
 		/// Makes the lining recipe for an item's prefab
 		/// </summary>
 		/// <param name="item">The item</param>
-		/// <returns>The recipe, or null when the item's recipe has no metal or the forge, silver or ectoplasm can't
-		/// be found</returns>
+		/// <returns>The recipe, or null when the item is a weapon whose recipe has no metal or the forge, silver or
+		/// ectoplasm can't be found</returns>
 		private static Recipe MakeRecipe(ItemDrop.ItemData item)
 		{
 			ObjectDB objectDB = ObjectDB.instance;
@@ -158,7 +200,7 @@ namespace ZombieApocalypse
 					metal += requirement.m_amount;
 				}
 			}
-			if (metal <= 0)
+			if (metal <= 0 && !IsShield(item))
 			{
 				return(null);
 			}

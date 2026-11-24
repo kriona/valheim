@@ -6,7 +6,8 @@ using UnityEngine;
 namespace ZombieApocalypse
 {
 	/// <summary>
-	/// Lists a "Silver-line" entry on a forge's Upgrade tab for each weapon the player carries that can be lined
+	/// Lists a "Silver-line" entry on a forge's Upgrade tab for each weapon and shield the player carries that can be
+	/// lined
 	/// </summary>
 	/// <remarks>
 	/// The entries go after the game's own upgrades, which are already sorted and placed by then
@@ -44,11 +45,11 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
-	/// Shows a selected lining entry as the weapon will be once lined, with the lining's cost, forge level and button
+	/// Shows a selected lining entry as the item will be once lined, with the lining's cost, forge level and button
 	/// </summary>
 	/// <remarks>
-	/// The game sets up the panel for the weapon's next quality level first, which would show the wrong stats, scale
-	/// the cost and forge level by the weapon's level, and refuse a weapon already at its highest level, so the panel
+	/// The game sets up the panel for the item's next quality level first, which would show the wrong stats, scale
+	/// the cost and forge level by the item's level, and refuse an item already at its highest level, so the panel
 	/// is set up again here at quality 1
 	/// </remarks>
 	[HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.UpdateRecipe))]
@@ -102,17 +103,17 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
-	/// Lines the weapon when a lining entry finishes crafting, in place of the game's upgrade
+	/// Lines the item when a lining entry finishes crafting, in place of the game's upgrade
 	/// </summary>
 	/// <remarks>
-	/// The game's upgrade would replace the weapon with a new one a level higher, so the lining marks the weapon itself
+	/// The game's upgrade would replace the item with a new one a level higher, so the lining marks the item itself
 	/// instead, keeping its level, durability and crafter
 	/// </remarks>
 	[HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.DoCrafting))]
 	public static class SilverLiningCraftPatch
 	{
 		/// <summary>
-		/// Takes the silver and ectoplasm and lines the weapon
+		/// Takes the silver and ectoplasm and lines the item
 		/// </summary>
 		/// <param name="__instance">The inventory screen</param>
 		/// <param name="player">The local player</param>
@@ -168,7 +169,7 @@ namespace ZombieApocalypse
 		/// <param name="__result">Its damage</param>
 		private static void Postfix(ItemDrop.ItemData __instance, ref HitData.DamageTypes __result)
 		{
-			if (SilverLining.IsLined(__instance) && ServerCheck.Active)
+			if (SilverLining.IsLined(__instance) && !SilverLining.IsShield(__instance) && ServerCheck.Active)
 			{
 				__result.m_spirit += SilverLining.SpiritDamage(__instance);
 			}
@@ -176,23 +177,72 @@ namespace ZombieApocalypse
 	}
 
 	/// <summary>
-	/// Marks a silver-lined weapon as one in its tooltip
+	/// Marks a silver-lined weapon or shield as one in its tooltip
 	/// </summary>
 	[HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.GetTooltip), new[] { typeof(ItemDrop.ItemData), typeof(int), typeof(bool), typeof(float), typeof(int), typeof(bool) })]
 	public static class SilverLiningTooltipPatch
 	{
 		/// <summary>
-		/// Adds a "Silver-lined" line to a silver-lined weapon's tooltip
+		/// Adds a "Silver-lined" line to a silver-lined item's tooltip, with the spirit damage a shield deals to the
+		/// undead whose blows it holds
 		/// </summary>
 		/// <param name="item">The item</param>
 		/// <param name="appending">True when the tooltip is being added to another item's</param>
 		/// <param name="__result">The tooltip</param>
 		private static void Postfix(ItemDrop.ItemData item, bool appending, ref string __result)
 		{
-			if (!appending && SilverLining.IsLined(item))
+			if (appending || !SilverLining.IsLined(item))
 			{
-				__result += "\n<color=#C8D2DC>Silver-lined</color>";
+				return;
 			}
+			__result += "\n<color=#C8D2DC>Silver-lined</color>";
+			if (SilverLining.IsShield(item))
+			{
+				__result += "\nSpirit damage to the undead when blocking: <color=orange>" + SilverLining.ShieldSpirit(item, false) + "</color> <color=yellow>(" + SilverLining.ShieldSpirit(item, true) + " on a staggering parry)</color>";
+			}
+		}
+	}
+
+	/// <summary>
+	/// Notes each block a silver-lined shield makes against an undead attacker, for the game's push back at the
+	/// attacker to carry the shield's spirit damage (see SilverShield)
+	/// </summary>
+	[HarmonyPatch(typeof(Humanoid), nameof(Humanoid.BlockAttack))]
+	public static class SilverShieldBlockPatch
+	{
+		/// <summary>
+		/// Notes the block as it starts
+		/// </summary>
+		/// <param name="__instance">The one blocking</param>
+		/// <param name="attacker">The attacker, or null</param>
+		private static void Prefix(Humanoid __instance, Character attacker)
+		{
+			SilverShield.StartBlock(__instance, attacker);
+		}
+
+		/// <summary>
+		/// Forgets the block once it's over, however it ends
+		/// </summary>
+		private static void Finalizer()
+		{
+			SilverShield.EndBlock();
+		}
+	}
+
+	/// <summary>
+	/// Adds a silver-lined shield's spirit damage to the game's push back at an undead attacker whose blow it holds
+	/// </summary>
+	[HarmonyPatch(typeof(Character), nameof(Character.Damage))]
+	public static class SilverShieldDeflectPatch
+	{
+		/// <summary>
+		/// Adds the spirit damage when the hit is that push
+		/// </summary>
+		/// <param name="__instance">The creature being hit</param>
+		/// <param name="hit">The hit</param>
+		private static void Prefix(Character __instance, HitData hit)
+		{
+			SilverShield.Deflect(__instance, hit);
 		}
 	}
 
