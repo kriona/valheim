@@ -66,6 +66,11 @@ namespace VikingVillages
 			}
 			ZoneSystem.ZoneLocation location = farms[Random.Range(0, farms.Count)];
 			Vector3 center = player.transform.position;
+			if (StartClearance.NearStart(center))
+			{
+				args.Context.AddString("Too close to the world's start location - move farther away to spawn a village");
+				return;
+			}
 			center.y = ZoneSystem.instance.GetGroundHeight(center);
 			// Out past where the fence can stand, behind the player, facing the farm
 			Vector3 back = -player.transform.forward;
