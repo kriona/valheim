@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Kriona.Vikings;
 using UnityEngine;
 
@@ -77,14 +78,18 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Takes the viking out of the world as it leaves on a quest - noting the quest, the village it left and the house
-		/// it calls home on it, writing its inventory to its ZDO and handing it to the server to keep until the quest is
-		/// due back (see VillageTravel)
+		/// Takes the viking out of the world as it leaves on a quest - noting the quest, how it goes for the viking (see
+		/// QuestGame.OutcomeFor), the village it left and the house it calls home on it, writing its inventory to its ZDO
+		/// and handing it to the server to keep until the quest is due back (see VillageTravel)
 		/// </summary>
 		/// <param name="record">The quest</param>
 		private void LeaveOnQuest(QuestRecord record)
 		{
 			ZDO zdo = nview.GetZDO();
+			string me = VikingIdentity.Get(zdo);
+			List<ItemDrop.ItemData> carried = humanoid.GetInventory().GetAllItems().FindAll((ItemDrop.ItemData item) => IsCarriedFor(item, CarryQuest) && item.m_dropPrefab != null);
+			QuestOutcome outcome = QuestGame.OutcomeFor(humanoid, viking, record, me, carried, VillageNames.Get(village));
+			zdo.Set(VillageQuests.QuestOutcomeKey, outcome.Encode());
 			zdo.Set(VillageQuests.QuestIdKey, record.Id);
 			zdo.Set(VillageQuests.QuestGoneKey, true);
 			zdo.Set(VillageQuests.QuestVillageKey, village.Farm);
@@ -113,8 +118,10 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Has a viking that just came back from a quest put away what it brought home - the tools it took and what it
-		/// found - before anything else, even at night
+		/// Plays out how a quest went for a viking that just came back from it (see QuestOutcome) - using up the food,
+		/// potions and whatever it spent of what it carried, wearing its tool, giving it what it found, its health as it
+		/// comes home and the skills it raised - and has it put away what it brought home, the tools it took too, before
+		/// anything else, even at night. What happened is kept on it to talk about (see VillageQuests.StoryKey)
 		/// </summary>
 		private void ReturnFromQuest()
 		{
@@ -126,6 +133,14 @@ namespace VikingVillages
 			zdo.Set(VillageQuests.QuestGoneKey, false);
 			zdo.Set(VillageQuests.QuestIdKey, "");
 			Inventory inventory = humanoid.GetInventory();
+			QuestOutcome outcome = QuestOutcome.Decode(zdo.GetByteArray(VillageQuests.QuestOutcomeKey));
+			if (outcome != null)
+			{
+				PlayOut(outcome);
+				zdo.Set(VillageQuests.StoryKey, outcome.Encode());
+				zdo.Set(VillageQuests.BackAtKey, NetTime.Now());
+				zdo.Set(VillageQuests.QuestOutcomeKey, new byte[0]);
+			}
 			bool loot = false;
 			foreach (ItemDrop.ItemData item in inventory.GetAllItems())
 			{
@@ -140,6 +155,53 @@ namespace VikingVillages
 				inventory.Changed();
 				zdo.Set(QuestLootKey, true);
 			}
+		}
+
+		/// <summary>
+		/// Plays out how a quest went for the viking - what it ate, drank and spent goes from what it carried for the
+		/// quest, its tool is worn to what it has left, what it found is carried to put away, its health is set and its
+		/// skills rise
+		/// </summary>
+		/// <param name="outcome">How it went</param>
+		private void PlayOut(QuestOutcome outcome)
+		{
+			Inventory inventory = humanoid.GetInventory();
+			foreach (KeyValuePair<string, int> used in outcome.Used)
+			{
+				int left = used.Value;
+				foreach (ItemDrop.ItemData item in inventory.m_inventory.FindAll((ItemDrop.ItemData carried) => IsCarriedFor(carried, CarryQuest) && carried.m_dropPrefab != null && carried.m_dropPrefab.name == used.Key))
+				{
+					if (left <= 0)
+					{
+						break;
+					}
+					int take = Mathf.Min(left, item.m_stack);
+					inventory.RemoveItem(item, take);
+					left -= take;
+				}
+			}
+			if (outcome.Tool.Length > 0 && outcome.ToolLeft >= 0f)
+			{
+				List<ItemDrop.ItemData> tools = inventory.GetAllItems().FindAll((ItemDrop.ItemData item) => item.m_dropPrefab != null && item.m_dropPrefab.name == outcome.Tool);
+				tools.Sort((ItemDrop.ItemData a, ItemDrop.ItemData b) => IsCarriedFor(b, CarryQuest).CompareTo(IsCarriedFor(a, CarryQuest)));
+				if (tools.Count > 0)
+				{
+					tools[0].m_durability = Mathf.Min(tools[0].m_durability, outcome.ToolLeft);
+				}
+			}
+			foreach (KeyValuePair<string, int> found in outcome.Loot)
+			{
+				ItemDrop.ItemData template = ItemOf(found.Key);
+				int carried = ((template != null) ? Carry(template, found.Value, CarryLoot) : 0);
+				TestLog.Count("Brought home from quests", found.Key, carried);
+			}
+			inventory.Changed();
+			humanoid.SetHealth(humanoid.GetMaxHealth() * Mathf.Clamp01(outcome.HealthShare));
+			foreach (KeyValuePair<int, float> skill in outcome.Skills)
+			{
+				RaiseSkill((Skills.SkillType)skill.Key, skill.Value);
+			}
+			Plugin.Log.LogInfo(TestLog.Name(nview.GetZDO()) + " came home from " + outcome.Kind + " at " + (outcome.HealthShare * 100f).ToString("F0") + "% health with " + outcome.Loot.Count + " kinds of loot, having used " + outcome.Used.Count + " kinds of supplies");
 		}
 
 		/// <summary>
@@ -176,11 +238,17 @@ namespace VikingVillages
 			private readonly float leaveBy;
 			private Container chest;
 			private bool toolDone;
+			private bool suppliesDone;
+			private int foodWanted;
+			private int potionsWanted;
+			private readonly HashSet<Container> searched = new HashSet<Container>();
 			private bool announced;
 			private float actAt = -1f;
 
 			/// <summary>
-			/// Makes the job
+			/// Makes the job, working out the food and potions the viking takes along - a full set of foods for as long as
+			/// the quest is gone (see QuestSim.MealsWanted), up to QuestGame.FoodMax, and up to QuestGame.PotionMax
+			/// potions, less what it already carries for the quest
 			/// </summary>
 			/// <param name="owner">The viking's life</param>
 			/// <param name="record">The quest</param>
@@ -193,6 +261,21 @@ namespace VikingVillages
 				exit = record.Exit;
 				leaveBy = Time.time + QuestRules.LeaveTimeout;
 				toolDone = (tool.Length == 0);
+				float seconds = (record.Due - record.SetOutAt) / (float)NetTime.Ticks(1f);
+				int food = 0;
+				int potions = 0;
+				foreach (ItemDrop.ItemData item in owner.humanoid.GetInventory().GetAllItems())
+				{
+					if (!IsCarriedFor(item, CarryQuest))
+					{
+						continue;
+					}
+					food += (VikingFood.IsFood(item) ? item.m_stack : 0);
+					potions += (QuestGame.IsPotion(item) ? item.m_stack : 0);
+				}
+				foodWanted = Mathf.Max(0, Mathf.Min(QuestGame.FoodMax, QuestSim.MealsWanted(seconds, QuestSim.DefaultBurn)) - food);
+				potionsWanted = Mathf.Max(0, QuestGame.PotionMax - potions);
+				suppliesDone = (foodWanted == 0 && potionsWanted == 0);
 			}
 
 			/// <summary>
@@ -201,7 +284,7 @@ namespace VikingVillages
 			/// <returns>Its name</returns>
 			public override string Describe()
 			{
-				return("Leaving on a quest" + (toolDone ? "" : ", getting a " + tool));
+				return("Leaving on a quest" + (!toolDone ? ", getting a " + tool : (!suppliesDone ? ", packing food" : "")));
 			}
 
 			/// <summary>
@@ -232,6 +315,10 @@ namespace VikingVillages
 					return(true);
 				}
 				if (!toolDone && !FetchTool(dt))
+				{
+					return(false);
+				}
+				if (!suppliesDone && !FetchSupplies(dt))
 				{
 					return(false);
 				}
@@ -271,6 +358,95 @@ namespace VikingVillages
 						return(true);
 					}
 				}
+				if (!ReachChest(dt))
+				{
+					return(false);
+				}
+				ItemDrop.ItemData got = life.TakeTool(chest, (ItemDrop.ItemData item) => item.m_dropPrefab != null && item.m_dropPrefab.name == tool);
+				if (got != null)
+				{
+					got.m_customData[VikingItems.CarryKey] = CarryQuest;
+					life.humanoid.GetInventory().Changed();
+				}
+				chest = null;
+				toolDone = true;
+				return(true);
+			}
+
+			/// <summary>
+			/// Walks to the nearest chest it hasn't looked in yet holding food or a healing potion it still wants, and takes
+			/// what it wants of them - no more than half of each stack, so the village keeps some - going with what it has
+			/// once no chest holds any more
+			/// </summary>
+			/// <param name="dt">Seconds since the AI's last update</param>
+			/// <returns>True once it has packed</returns>
+			private bool FetchSupplies(float dt)
+			{
+				if (chest == null || !life.Usable(chest))
+				{
+					chest = life.Nearest(life.UsableChests().FindAll((Container candidate) => !searched.Contains(candidate) && !life.Avoided(candidate.m_nview.GetZDO().m_uid) && candidate.GetInventory().GetAllItems().Exists(Wanted)));
+					actAt = -1f;
+					if (chest == null)
+					{
+						suppliesDone = true;
+						return(true);
+					}
+				}
+				if (!ReachChest(dt))
+				{
+					return(false);
+				}
+				searched.Add(chest);
+				if (life.OpenChest(chest))
+				{
+					Inventory store = chest.GetInventory();
+					foreach (ItemDrop.ItemData item in store.m_inventory.FindAll(Wanted))
+					{
+						bool food = VikingFood.IsFood(item);
+						int wanted = Mathf.Min((food ? foodWanted : potionsWanted), Mathf.Max(1, item.m_stack / 2));
+						int took = life.Carry(item, wanted, CarryQuest);
+						if (took <= 0)
+						{
+							continue;
+						}
+						store.RemoveItem(item, took);
+						if (food)
+						{
+							foodWanted -= took;
+						}
+						else
+						{
+							potionsWanted -= took;
+						}
+					}
+				}
+				chest = null;
+				suppliesDone = (foodWanted <= 0 && potionsWanted <= 0);
+				return(suppliesDone);
+			}
+
+			/// <summary>
+			/// Checks whether an item in a chest is food or a healing potion the viking still wants to take along
+			/// </summary>
+			/// <param name="item">The item</param>
+			/// <returns>True when it is</returns>
+			private bool Wanted(ItemDrop.ItemData item)
+			{
+				if (item == null || item.m_dropPrefab == null || VikingItems.IsCarried(item))
+				{
+					return(false);
+				}
+				return((foodWanted > 0 && VikingFood.IsFood(item)) || (potionsWanted > 0 && QuestGame.IsPotion(item)));
+			}
+
+			/// <summary>
+			/// Walks to the chest and reaches into it, the way a player opens one - leaving a chest it can't get to alone
+			/// for a while
+			/// </summary>
+			/// <param name="dt">Seconds since the AI's last update</param>
+			/// <returns>True once it has reached into it</returns>
+			private bool ReachChest(float dt)
+			{
 				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
 				{
 					life.Go(dt, chest.transform.position, ChestReach, false);
@@ -294,13 +470,7 @@ namespace VikingVillages
 				{
 					return(false);
 				}
-				ItemDrop.ItemData got = life.TakeTool(chest, (ItemDrop.ItemData item) => item.m_dropPrefab != null && item.m_dropPrefab.name == tool);
-				if (got != null)
-				{
-					got.m_customData[VikingItems.CarryKey] = CarryQuest;
-					life.humanoid.GetInventory().Changed();
-				}
-				toolDone = true;
+				actAt = -1f;
 				return(true);
 			}
 		}

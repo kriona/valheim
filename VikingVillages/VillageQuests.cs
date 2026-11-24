@@ -37,6 +37,14 @@ namespace VikingVillages
 		public static readonly int QuestHomeKey = "kriona.VikingVillages.vikingQuestHome".GetStableHashCode();
 
 		/// <summary>
+		/// On a living viking, how its quest goes for it (see QuestOutcome), noted as it leaves and played out as it comes
+		/// back; then how its last quest went, to talk about, and when it came back from it, in ZNet time ticks
+		/// </summary>
+		public static readonly int QuestOutcomeKey = "kriona.VikingVillages.vikingQuestOutcome".GetStableHashCode();
+		public static readonly int StoryKey = "kriona.VikingVillages.vikingQuestStory".GetStableHashCode();
+		public static readonly int BackAtKey = "kriona.VikingVillages.vikingQuestBackAt".GetStableHashCode();
+
+		/// <summary>
 		/// Seconds between looks at each village's quest this client runs
 		/// </summary>
 		private const float LookInterval = 10f;
@@ -67,6 +75,55 @@ namespace VikingVillages
 		/// When this client next looks at each village's quest, by its ZDO, in Time.time seconds
 		/// </summary>
 		private static readonly Dictionary<ZDOID, float> nextLook = new Dictionary<ZDOID, float>();
+
+		/// <summary>
+		/// The roads to quests this client has asked the server for and not heard back about, by the key they're noted at
+		/// on their village (see RouteKey) mixed with the village's ZDO
+		/// </summary>
+		private static readonly HashSet<int> routesAsked = new HashSet<int>();
+
+		/// <summary>
+		/// Gets the key how long the road to a quest takes from a village is noted at on the village's ZDO, in seconds
+		/// each way, once the server has worked it out
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <param name="item">What it's for, or ""</param>
+		/// <returns>The key</returns>
+		private static int RouteKey(QuestKind kind, string item)
+		{
+			return(("kriona.VikingVillages.villageQuestRoute." + kind + "." + item).GetStableHashCode());
+		}
+
+		/// <summary>
+		/// Gets how long the road to a quest takes from a village, each way - asking the server the first time
+		/// </summary>
+		/// <param name="village">The village, run by this client</param>
+		/// <param name="kind">The quest</param>
+		/// <param name="item">What it's for, or ""</param>
+		/// <returns>The time, in seconds, or less than 0 while the server hasn't answered</returns>
+		private static float RouteSeconds(Village village, QuestKind kind, string item)
+		{
+			int key = RouteKey(kind, item);
+			float seconds = village.Zdo.GetFloat(key, -1f);
+			// Asked once per village and road until the server answers
+			int asked = key ^ village.Zdo.m_uid.GetHashCode();
+			if (seconds >= 0f || routesAsked.Contains(asked))
+			{
+				return(seconds);
+			}
+			routesAsked.Add(asked);
+			ZDOID id = village.Zdo.m_uid;
+			VillageTravel.AskQuestRoute(village.Farm, VillageCooking.VillageBiome(village), kind, item, (float answer) =>
+			{
+				routesAsked.Remove(asked);
+				ZDO zdo = ((ZDOMan.instance != null) ? ZDOMan.instance.GetZDO(id) : null);
+				if (zdo != null && zdo.IsOwner())
+				{
+					zdo.Set(key, answer);
+				}
+			});
+			return(-1f);
+		}
 
 		/// <summary>
 		/// Whether each village is trapped, the spot its vikings leave from, and when that was worked out, by its ZDO
@@ -132,6 +189,7 @@ namespace VikingVillages
 		{
 			nextLook.Clear();
 			exits.Clear();
+			routesAsked.Clear();
 		}
 
 		/// <summary>
@@ -210,7 +268,12 @@ namespace VikingVillages
 			{
 				return;
 			}
-			QuestRecord record = Plan(village, step.Quest, step.Item, step.Source);
+			// The road is known before the quest is picked, so it never waits on the server once it's setting out
+			if (RouteSeconds(village, step.Quest, step.Item ?? "") < 0f)
+			{
+				return;
+			}
+			QuestRecord record = Plan(village, step.Quest, step.Item, step.Amount, step.Source);
 			if (record == null)
 			{
 				return;
@@ -234,9 +297,10 @@ namespace VikingVillages
 		/// <param name="village">The village</param>
 		/// <param name="kind">The quest</param>
 		/// <param name="item">What it's for</param>
+		/// <param name="amount">How many of it the village wants</param>
 		/// <param name="source">The way the quest gets it, with the tool it takes</param>
 		/// <returns>The quest, not noted yet, or null when the village can't spare the vikings</returns>
-		internal static QuestRecord Plan(Village village, QuestKind kind, string item, ResourceSource source)
+		internal static QuestRecord Plan(Village village, QuestKind kind, string item, int amount, ResourceSource source)
 		{
 			ResourceBook book = ResourceBookGame.Get();
 			QuestRule rule = ((book != null) ? book.RuleOf(kind) : null);
@@ -285,6 +349,7 @@ namespace VikingVillages
 			record.Id = System.Guid.NewGuid().ToString("N");
 			record.Kind = kind;
 			record.Item = (item ?? "");
+			record.Amount = amount;
 			for (int i = 0; i < size; i++)
 			{
 				Humanoid member = fit[i];
@@ -307,7 +372,7 @@ namespace VikingVillages
 		/// <param name="item">The item</param>
 		/// <param name="source">The way, with the tool it takes</param>
 		/// <returns>True when it is</returns>
-		private static bool GoodTool(ItemDrop.ItemData item, ResourceSource source)
+		internal static bool GoodTool(ItemDrop.ItemData item, ResourceSource source)
 		{
 			if (item == null || item.m_dropPrefab == null || VikingItems.IsProp(item) || item.m_shared.m_toolTier < source.ToolTier || item.m_durability <= 0f)
 			{
@@ -344,8 +409,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Sets a quest out - working out the spot its vikings leave from and when they're due back, noting it, and
-		/// stopping what its vikings on this client are doing, so they get ready to go
+		/// Sets a quest out - working out the spot its vikings leave from, what each does and when they're due back (see
+		/// QuestGame.Prepare), noting it, and stopping what its vikings on this client are doing, so they get ready to go.
+		/// A quest one of whose vikings isn't here any more is given up on, for another to be picked
 		/// </summary>
 		/// <param name="village">The village, run by this client</param>
 		/// <param name="record">The quest</param>
@@ -356,11 +422,18 @@ namespace VikingVillages
 			record.Trapped = exit.Trapped;
 			record.Phase = QuestPhase.Leaving;
 			record.SetOutAt = NetTime.Now();
-			float seconds = QuestRules.Duration(QuestRules.DefaultTravel, QuestRules.ActiveSeconds(record.Kind), Random.Range(-1f, 1f));
-			record.Due = record.SetOutAt + NetTime.Ticks(seconds);
+			float travel = RouteSeconds(village, record.Kind, record.Item);
+			ResourceSource source = QuestGame.SourceFor(ResourceBookGame.Get(), record.Kind, record.Item);
+			if (!QuestGame.Prepare(village, record, source, ((travel >= 0f) ? travel : QuestRules.DefaultTravel)))
+			{
+				Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " was given up on, as its vikings aren't all here");
+				Write(village, null);
+				return;
+			}
 			Write(village, record);
 			VillageLife.CallToQuest(village, record);
-			Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " sets out from " + record.Exit.ToString("F0") + (record.Trapped ? ", inside the village, as it's trapped" : "") + ", due back in " + seconds.ToString("F0") + "s");
+			float seconds = (record.Due - record.SetOutAt) / (float)NetTime.Ticks(1f);
+			Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " sets out from " + record.Exit.ToString("F0") + (record.Trapped ? ", inside the village, as it's trapped" : "") + ", " + travel.ToString("F0") + "s each way and " + record.ActiveSeconds.ToString("F0") + "s there, due back in " + seconds.ToString("F0") + "s");
 		}
 
 		/// <summary>

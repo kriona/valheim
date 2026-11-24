@@ -71,6 +71,18 @@ namespace VikingVillages
 		private const string QuestsDisbandedRpc = Plugin.PluginGuid + ".TravelQuestsDisbanded";
 
 		/// <summary>
+		/// The routed RPCs that ask the server how long a village's vikings take to get to where a quest goes, and its
+		/// answer
+		/// </summary>
+		private const string QuestRouteRpc = Plugin.PluginGuid + ".TravelQuestRoute";
+		private const string QuestRoutedRpc = Plugin.PluginGuid + ".TravelQuestRouted";
+
+		/// <summary>
+		/// On a client, what to do with the server's answer to each quest's road it asked for, by the question's ID
+		/// </summary>
+		private static readonly Dictionary<long, System.Action<float>> askedRoutes = new Dictionary<long, System.Action<float>>();
+
+		/// <summary>
 		/// The prefab hash of the record the server keeps the vikings on the road in - one no prefab has - where it
 		/// stands, and the key they're written to
 		/// </summary>
@@ -206,6 +218,11 @@ namespace VikingVillages
 			public System.Action<Answer> Local;
 			public List<Candidate> Candidates;
 			public TravelRoute Route;
+
+			/// <summary>
+			/// The spots the road may lead to in place of the villages, for the road to a quest, or null
+			/// </summary>
+			public List<Vector3> Targets;
 		}
 
 		/// <summary>
@@ -259,6 +276,9 @@ namespace VikingVillages
 			ZRoutedRpc.instance.Register<Vector3, Vector3>(RecallRpc, OnRecall);
 			ZRoutedRpc.instance.Register<int, long>(RecalledRpc, OnRecalled);
 			ZRoutedRpc.instance.Register<ZPackage>(QuestsDisbandedRpc, OnQuestsDisbanded);
+			ZRoutedRpc.instance.Register<ZPackage>(QuestRouteRpc, OnQuestRoute);
+			ZRoutedRpc.instance.Register<long, float>(QuestRoutedRpc, OnQuestRouted);
+			askedRoutes.Clear();
 			searches.Clear();
 			running = null;
 			candidates = null;
@@ -712,13 +732,20 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Starts a search - the road search out from the viking to every village in the world that's no harder than its
-		/// biome and isn't left out, crossing the sea in the best boat its biome has
+		/// biome and isn't left out, or to the spot a quest goes to, crossing the sea in the best boat its biome has
 		/// </summary>
 		/// <param name="search">The search</param>
 		private static void Begin(Search search)
 		{
-			List<Candidate> all = Candidates();
-			search.Candidates = all.FindAll((Candidate candidate) => candidate.Biome <= search.Biome && !search.Excluded.Exists((Vector3 excluded) => Utils.DistanceXZ(excluded, candidate.Position) <= FarmMatch));
+			if (search.Targets != null)
+			{
+				search.Candidates = search.Targets.ConvertAll((Vector3 target) => new Candidate { Position = target, Name = "", Author = "", Biome = search.Biome });
+			}
+			else
+			{
+				List<Candidate> all = Candidates();
+				search.Candidates = all.FindAll((Candidate candidate) => candidate.Biome <= search.Biome && !search.Excluded.Exists((Vector3 excluded) => Utils.DistanceXZ(excluded, candidate.Position) <= FarmMatch));
+			}
 			List<Vector3> targets = search.Candidates.ConvertAll((Candidate candidate) => candidate.Position);
 			search.Route = new TravelRoute(search.From, search.Biome, TravelTime.BoatSpeed(search.Biome), targets, Sample);
 		}
@@ -1145,6 +1172,84 @@ namespace VikingVillages
 				queue.Add(entry);
 			}
 			Save();
+		}
+
+		/// <summary>
+		/// Asks the server how long a village's vikings take to get to where a quest goes (see QuestTargets), each way -
+		/// the answer comes back later, to the action given
+		/// </summary>
+		/// <param name="from">Where the village stands</param>
+		/// <param name="biome">The village's biome, by VikingGear's order</param>
+		/// <param name="kind">The quest</param>
+		/// <param name="item">What it's for, or ""</param>
+		/// <param name="done">What to do with the answer, in seconds</param>
+		public static void AskQuestRoute(Vector3 from, int biome, QuestKind kind, string item, System.Action<float> done)
+		{
+			if (ZRoutedRpc.instance == null)
+			{
+				return;
+			}
+			long id = ((long)Random.Range(int.MinValue, int.MaxValue) << 32) ^ Random.Range(int.MinValue, int.MaxValue);
+			askedRoutes[id] = done;
+			ZPackage pkg = new ZPackage();
+			pkg.Write(id);
+			pkg.Write(from);
+			pkg.Write(biome);
+			pkg.Write((int)kind);
+			pkg.Write(item);
+			ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.instance.GetServerPeerID(), QuestRouteRpc, pkg);
+		}
+
+		/// <summary>
+		/// Works out on the server how long a village's vikings take to get to where a quest goes - the road there, over
+		/// land and sea in the best boat the village's biome has, or straight there on foot when there's no road, or
+		/// QuestRules.DefaultTravel when there's nowhere to go - and answers the client that asked
+		/// </summary>
+		/// <param name="sender">The client that asked</param>
+		/// <param name="pkg">The question's ID, where the village stands, its biome, the quest and what it's for</param>
+		private static void OnQuestRoute(long sender, ZPackage pkg)
+		{
+			if (ZNet.instance == null || !ZNet.instance.IsServer())
+			{
+				return;
+			}
+			long id = pkg.ReadLong();
+			Vector3 from = pkg.ReadVector3();
+			int biome = pkg.ReadInt();
+			QuestKind kind = (QuestKind)pkg.ReadInt();
+			string item = pkg.ReadString();
+			Vector3 target = QuestTargets.Find(kind, item, from, biome);
+			if (target == Vector3.zero)
+			{
+				ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, QuestRules.DefaultTravel);
+				return;
+			}
+			Search search = new Search();
+			search.From = from;
+			search.Biome = biome;
+			search.Targets = new List<Vector3> { target };
+			search.Local = (Answer answer) =>
+			{
+				float seconds = (answer.Found ? answer.Seconds : TravelTime.Seconds(Utils.DistanceXZ(from, target)));
+				Plugin.Log.LogInfo("Travel: a quest " + kind + " from the village at " + from.ToString("F0") + " goes to " + target.ToString("F0") + ", " + seconds.ToString("F0") + "s each way");
+				ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, seconds);
+			};
+			searches.Enqueue(search);
+		}
+
+		/// <summary>
+		/// Gives a client the server's answer to how long a quest's road takes
+		/// </summary>
+		/// <param name="sender">The server</param>
+		/// <param name="id">The question's ID</param>
+		/// <param name="seconds">How long it takes each way, in seconds</param>
+		private static void OnQuestRouted(long sender, long id, float seconds)
+		{
+			if (askedRoutes.TryGetValue(id, out System.Action<float> done))
+			{
+				askedRoutes.Remove(id);
+				done(seconds);
+			}
 		}
 
 		/// <summary>
