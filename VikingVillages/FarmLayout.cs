@@ -11,8 +11,9 @@ namespace VikingVillages
 	/// It places the rooms the way the generator's radial camp does - as many as its widened room count, but no more
 	/// farmhouses than the game's own count would have, each a weighted pick among the farm's
 	/// rooms, at a random spot inside the fence on ground that isn't too steep or low, facing the way the room asks,
-	/// clear of the rooms already placed, then the fence around them - except that the farmhouses are placed first,
-	/// within HouseShare of the fence's radius from the middle, then the fields and the rest, then the pens, beyond
+	/// clear of the rooms already placed and the oaks around (see VillageOaks), then the fence around them - except that
+	/// the farmhouses are placed first, within HouseShare of the fence's radius from the middle, then the fields and the
+	/// rest, then the pens, beyond
 	/// PenShare of it, and no room covers the open ground within PlazaRadius of the middle, where the bonfire goes. A pen
 	/// is a room with an animal spawner in it. It runs with the generator's random numbers seeded, so a farm comes out
 	/// the same each time
@@ -211,7 +212,7 @@ namespace VikingVillages
 			{
 				summary += " " + placed[kind] + "/" + picked[kind] + " " + kindNames[kind] + ((placed[kind] > 0) ? " (nearest " + nearest[kind].ToString("F0") + "m)" : "");
 			}
-			summary += ", and " + blueprintsBuilt + " farmhouses built from the " + designs.Count + " house blueprints";
+			summary += ", and " + blueprintsBuilt + " farmhouses built from the " + designs.Count + " house blueprints, kept clear of " + VillageOaks.FarmOakCount + " oaks";
 			Plugin.Log.LogInfo(summary);
 		}
 
@@ -371,8 +372,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Builds a house from a design in the farm's house band, on ground even enough for it, clear of the rooms placed
-		/// and the farm's middle, with its doors facing the middle - noting it as a farmhouse for vikings to live in
+		/// Builds a house from a design in the farm's house band, on ground even enough for it, clear of the rooms placed,
+		/// the farm's middle and the branches of the oaks around, with its doors facing the middle - noting it as a
+		/// farmhouse for vikings to live in
 		/// </summary>
 		/// <param name="generator">The farm's generator</param>
 		/// <param name="design">The design</param>
@@ -390,7 +392,7 @@ namespace VikingVillages
 				toMiddle.y = 0f;
 				Quaternion rotation = Quaternion.Euler(0f, Vector3.SignedAngle(design.DoorDirection, toMiddle, Vector3.up), 0f);
 				Footprint footprint = new Footprint { Center = point, Rotation = rotation, Half = design.Half };
-				if (CoversPlaza(footprint, middle) || blueprintHouses.Exists((Footprint house) => Overlaps(footprint, house)))
+				if (CoversPlaza(footprint, middle) || blueprintHouses.Exists((Footprint house) => Overlaps(footprint, house)) || VillageOaks.CrowdsHouse(footprint))
 				{
 					continue;
 				}
@@ -446,7 +448,7 @@ namespace VikingVillages
 		/// <param name="point">Where its middle is</param>
 		/// <param name="rotation">Which way it faces</param>
 		/// <returns>Its footprint</returns>
-		private static Footprint RoomFootprint(Room room, Vector3 point, Quaternion rotation)
+		internal static Footprint RoomFootprint(Room room, Vector3 point, Quaternion rotation)
 		{
 			return(new Footprint { Center = point, Rotation = rotation, Half = new Vector2(room.m_size.x / 2f, room.m_size.z / 2f) });
 		}
@@ -516,11 +518,23 @@ namespace VikingVillages
 		/// <returns>True when it would</returns>
 		internal static bool CoversPlaza(Footprint footprint, Vector3 middle)
 		{
+			return(Within(footprint, middle, PlazaRadius));
+		}
+
+		/// <summary>
+		/// Checks whether any of a footprint comes within a distance of a point, seen from above
+		/// </summary>
+		/// <param name="footprint">The footprint</param>
+		/// <param name="point">The point</param>
+		/// <param name="distance">The distance, in meters</param>
+		/// <returns>True when it does</returns>
+		internal static bool Within(Footprint footprint, Vector3 point, float distance)
+		{
 			// A footprint's turn is a unit quaternion, whose inverse is its conjugate
 			Quaternion unturn = new Quaternion(-footprint.Rotation.x, -footprint.Rotation.y, -footprint.Rotation.z, footprint.Rotation.w);
-			Vector3 local = unturn * (middle - footprint.Center);
+			Vector3 local = unturn * (point - footprint.Center);
 			Vector2 nearestPoint = new Vector2(Mathf.Clamp(local.x, -footprint.Half.x, footprint.Half.x), Mathf.Clamp(local.z, -footprint.Half.y, footprint.Half.y));
-			return(Vector2.Distance(nearestPoint, new Vector2(local.x, local.z)) < PlazaRadius);
+			return(Vector2.Distance(nearestPoint, new Vector2(local.x, local.z)) < distance);
 		}
 
 		/// <summary>

@@ -143,7 +143,8 @@ namespace VikingVillages
 		/// Sizes a farm about to be generated, so its fence stands at a size picked between FenceRadiusMin and
 		/// FenceRadiusMax from its middle - picked from the farm's own seed, so it's the same each time the farm is
 		/// generated - with as many more fence sections as it's longer than the game's, as many more rooms as it takes
-		/// in more ground, and its rooms allowed past its own zone
+		/// in more ground, its rooms allowed past its own zone, and the oaks around it noted so its rooms are kept clear
+		/// of them (see VillageOaks)
 		/// </summary>
 		/// <param name="generator">The farm's generator, about to place its rooms</param>
 		/// <param name="mode">How the farm is being placed</param>
@@ -171,6 +172,7 @@ namespace VikingVillages
 			RoomScale = size.RoomScale;
 			generator.m_minRooms = Mathf.RoundToInt(own.MinRooms * RoomScale);
 			generator.m_maxRooms = Mathf.RoundToInt(own.MaxRooms * RoomScale);
+			VillageOaks.FindAround(generator.transform.position, generator.m_campRadiusMax + OutsideReach + VillageOaks.SearchMargin);
 			return(own);
 		}
 
@@ -214,12 +216,13 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Puts a farm generator's own settings back after Widen
+		/// Puts a farm generator's own settings back after Widen, and forgets the oaks around it
 		/// </summary>
 		/// <param name="generator">The farm's generator</param>
 		/// <param name="own">Its own settings</param>
 		public static void Unwiden(DungeonGenerator generator, FarmSettings own)
 		{
+			VillageOaks.Forget();
 			if (!own.Widened)
 			{
 				return;
@@ -344,8 +347,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Places a farmhouse at a random spot between two distances from a farm's middle, on ground that isn't too steep
-		/// or low, clear of the rooms already placed and inside the generator's area - the same checks the generator
-		/// makes for its own rooms
+		/// or low, clear of the rooms already placed and the oaks around, and inside the generator's area - the same
+		/// checks the generator makes for its own rooms, with the oaks added (see FarmOakPatch)
 		/// </summary>
 		/// <param name="generator">The farm's generator</param>
 		/// <param name="room">The farmhouse room</param>
@@ -380,7 +383,7 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="room">The room, placed or a prefab's</param>
 		/// <returns>True when it is</returns>
-		private static bool IsFarmhouse(Room room)
+		internal static bool IsFarmhouse(Room room)
 		{
 			return(room.gameObject.name.StartsWith(FarmSpawns.FarmhousePrefix, System.StringComparison.OrdinalIgnoreCase));
 		}

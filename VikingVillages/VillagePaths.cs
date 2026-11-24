@@ -309,12 +309,13 @@ namespace VikingVillages
 			public Kind Kind;
 
 			/// <summary>
-			/// Its solid colliders, which give its true shape, or empty when it was measured by what's drawn of it
+			/// Its solid colliders, which give its true shape, or empty when it's measured as a circle - by what's drawn
+			/// of it, or an oak by its trunk
 			/// </summary>
 			public List<Collider> Colliders;
 
 			/// <summary>
-			/// Whether it's a building piece, which the ground around isn't flattened under
+			/// Whether it's a building piece or an oak, which the ground around isn't flattened under
 			/// </summary>
 			public bool Structure;
 		}
@@ -1949,13 +1950,15 @@ namespace VikingVillages
 				{
 					continue;
 				}
+				// An oak is measured by its trunk alone - its branches spread far wider, and the vikings walk under them
+				bool oak = VillageOaks.IsOak(view);
 				Blocker blocker = new Blocker();
 				blocker.View = view;
-				blocker.Colliders = colliders;
-				blocker.Center = bounds.center;
-				blocker.Radius = Mathf.Max(bounds.extents.x, bounds.extents.z);
+				blocker.Colliders = (oak ? new List<Collider>() : colliders);
+				blocker.Center = (oak ? position : bounds.center);
+				blocker.Radius = (oak ? VillageOaks.TrunkRadius * view.transform.localScale.x : Mathf.Max(bounds.extents.x, bounds.extents.z));
 				blocker.Kind = Classify(view, blocker.Radius * 2f);
-				blocker.Structure = (blocker.Kind == Kind.Avoid && view.GetComponent<WearNTear>() != null);
+				blocker.Structure = (blocker.Kind == Kind.Avoid && (oak || view.GetComponent<WearNTear>() != null));
 				if (blocker.Kind != Kind.Ignore)
 				{
 					blockers.Add(blocker);
@@ -2181,7 +2184,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Removes the trees, bushes, rocks and logs the world grew within a distance of a farm's middle - in its own
 		/// zone and the zones around it, which its widened fields, pens and houses reach into - leaving what's picked,
-		/// like branches, stones and berries
+		/// like branches, stones and berries, and the oaks, which the village is built around (see VillageOaks)
 		/// </summary>
 		/// <remarks>
 		/// A location only clears what grows in its own zone, as it's generated, so this is done once everything around
@@ -2204,7 +2207,7 @@ namespace VikingVillages
 			foreach (KeyValuePair<ZDO, ZNetView> instance in ZNetScene.instance.m_instances)
 			{
 				ZNetView view = instance.Value;
-				if (view == null || !view.IsValid() || !wilds.Contains(instance.Key.GetPrefab()) || view.GetComponent<Pickable>() != null)
+				if (view == null || !view.IsValid() || !wilds.Contains(instance.Key.GetPrefab()) || view.GetComponent<Pickable>() != null || VillageOaks.IsOak(view))
 				{
 					continue;
 				}

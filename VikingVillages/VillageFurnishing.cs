@@ -1266,13 +1266,14 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Checks whether something in a shelter's way can be cleared - what grows or lies on the ground, like a tree, a
-		/// fallen log, a bush, a rock or a wild plant, but never a building piece, an item, a chest or a tombstone
+		/// fallen log, a bush, a rock or a wild plant, but never a building piece, an item, a chest, a tombstone or an
+		/// oak, which the village is built around (see VillageOaks)
 		/// </summary>
 		/// <param name="view">What's in the way</param>
 		/// <returns>True when it can</returns>
 		private static bool Clearable(ZNetView view)
 		{
-			if (view.GetComponent<Piece>() != null || view.GetComponent<ItemDrop>() != null || view.GetComponent<Container>() != null || view.GetComponent<TombStone>() != null)
+			if (view.GetComponent<Piece>() != null || view.GetComponent<ItemDrop>() != null || view.GetComponent<Container>() != null || view.GetComponent<TombStone>() != null || VillageOaks.IsOak(view))
 			{
 				return(false);
 			}
