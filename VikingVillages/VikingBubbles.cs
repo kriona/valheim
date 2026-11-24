@@ -8,7 +8,8 @@ namespace VikingVillages
 	/// <summary>
 	/// Shows what a viking says over its head in the game's own speech bubble, made to fit the line and kept just above
 	/// its health bar as it moves - and while it's off screen, pinned to the screen's edge behind an arrow pointing at
-	/// it, with its name. Its name also shows on screen while its health bar doesn't
+	/// it, with its name. Its name also shows on screen while its health bar doesn't. The bubble and its arrow are drawn
+	/// above other mods' markers (see SpeechLayer)
 	/// </summary>
 	/// <remarks>
 	/// The game sizes its bubble for a trader's long speeches and centers the line in it, so a short line sits far above
@@ -117,7 +118,23 @@ namespace VikingVillages
 			bubble.Line = Localization.instance.Localize(text);
 			bubble.Name = null;
 			Style(npc);
+			SpeechLayer.Set(npc.m_gui, true);
 			Place();
+		}
+
+		/// <summary>
+		/// Checks whether a viking's bubble is showing, so its name over its health bar is drawn with it
+		/// </summary>
+		/// <param name="viking">The viking</param>
+		/// <returns>True while it shows</returns>
+		public static bool Showing(Character viking)
+		{
+			Chat chat = Chat.instance;
+			if (chat == null || viking == null || !bubbles.TryGetValue(viking.gameObject, out Bubble bubble))
+			{
+				return(false);
+			}
+			return(bubble.Npc != null && bubble.Npc.m_gui != null && bubble.Npc.m_gui.activeInHierarchy && chat.m_npcTexts.Contains(bubble.Npc));
 		}
 
 		/// <summary>
@@ -331,6 +348,7 @@ namespace VikingVillages
 			}
 			GameObject go = new GameObject("VikingSpeechArrow", typeof(RectTransform));
 			go.transform.SetParent(parent, false);
+			SpeechLayer.Set(go, true);
 			Image image = go.AddComponent<Image>();
 			image.sprite = arrowSprite;
 			image.color = ArrowColor;

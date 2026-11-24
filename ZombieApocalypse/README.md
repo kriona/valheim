@@ -86,7 +86,7 @@ Note that zombies don't cast healing spells, so a zombie greydwarf shaman or dve
 
 Line your weapons with silver so the creatures you kill with them stay dead, and your shields so the undead burn when they strike them.
 
-- At a forge of level 3, the Upgrade tab has a "Silver-line" entry for each weapon or shield you carry that can be lined - any weapon or shield with metal in its recipe that doesn't already deal spirit damage
+- At a forge of level 3, the Upgrade tab has a "Silver-line" entry for each weapon or shield you carry that can be lined - any shield, and any weapon with metal in its recipe that doesn't already deal spirit damage
 - Lining costs silver - a quarter of the metal in the item's recipe, at least 1 - and 1 ectoplasm
 - A silver-lined weapon deals extra spirit damage - 5% of its damage at level 1, at least 5. Only the undead and zombies take spirit damage, so it doesn't change how hard it hits anything living, but a creature it kills doesn't rise
 - When you block a melee blow from the undead or a zombie with a silver-lined shield, it takes spirit damage - 20% of the shield's block armor at level 1, at least 5. A parry that staggers it is a critical hit, dealing double. Blocked arrows and spells don't hurt the one who sent them, and a block that breaks - when you run out of stamina or are staggered - doesn't either. A creature it kills doesn't rise

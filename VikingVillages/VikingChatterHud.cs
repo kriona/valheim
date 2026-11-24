@@ -51,7 +51,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Shows each speaking viking's line under its health bar, and hides the lines of the rest
+		/// Shows each speaking viking's line under its health bar, and hides the lines of the rest - drawing the line, and
+		/// the name over the bar of a viking saying a line or showing a speech bubble, above other mods' markers (see
+		/// SpeechLayer)
 		/// </summary>
 		/// <param name="hud">The game's health bars</param>
 		public static void AfterUpdate(EnemyHud hud)
@@ -64,6 +66,7 @@ namespace VikingVillages
 					continue;
 				}
 				bool speaking = VikingSpeech.Chattering(entry.Key, out string text);
+				SpeechLayer.Set(((data.m_name != null) ? data.m_name.gameObject : null), (speaking || VikingBubbles.Showing(entry.Key)));
 				labels.TryGetValue(data.m_gui, out TextMeshProUGUI label);
 				if (!speaking || !data.m_gui.activeSelf)
 				{
@@ -82,6 +85,7 @@ namespace VikingVillages
 					}
 				}
 				label.gameObject.SetActive(true);
+				SpeechLayer.Set(label.gameObject, true);
 				label.text = text;
 				Place(data, label);
 			}
