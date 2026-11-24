@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using Kriona.Vikings;
 using UnityEngine;
 
@@ -958,13 +959,10 @@ namespace VikingVillages
 			}
 			else
 			{
-				lines.Add(Describe(village).TrimEnd('\n') + ", " + record.Amount + " wanted, " + record.ActiveSeconds.ToString("F0") + "s of work, quest biome " + record.QuestBiome + ", " + record.Wanted + " vikings wanted, leaving from " + record.Exit.ToString("F0"));
+				lines.Add(Headline(record, NetTime.Now(), DuePhrase(record)) + " - " + string.Join(", ", record.Names) + ", " + record.Amount + " wanted, " + record.ActiveSeconds.ToString("F0") + "s of work, quest biome " + record.QuestBiome + ", " + record.Wanted + " vikings wanted, leaving from " + record.Exit.ToString("F0"));
 				for (int i = 0; i < record.Members.Count; i++)
 				{
-					MemberPlan plan = ((i < record.Plans.Count) ? record.Plans[i] : new MemberPlan());
-					string loot = string.Join(", ", plan.Loot.ConvertAll((KeyValuePair<string, int> entry) => entry.Value + " " + entry.Key));
-					string spend = string.Join(", ", plan.Spend.ConvertAll((KeyValuePair<string, int> entry) => entry.Value + " " + entry.Key));
-					lines.Add("  " + ((record.Names[i].Length > 0) ? record.Names[i] : record.Members[i]) + ((record.Tools[i].Length > 0) ? ", taking " + record.Tools[i] + " from a chest" : "") + ((plan.Tool.Length > 0) ? ", working with " + plan.Tool + " (" + plan.Hits + " hits, " + plan.ToolLeft.ToString("F0") + " durability left)" : "") + ((plan.Kills > 0) ? ", " + plan.Kills + " kills" : "") + ", bringing home " + ((loot.Length > 0) ? loot : "nothing") + ((spend.Length > 0) ? ", spending " + spend : ""));
+					lines.Add("  " + MemberLine(record, i));
 				}
 			}
 			if (book != null)
@@ -1107,19 +1105,103 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Describes a village's quest for the debug hover text of its fire
+		/// Describes a village's quest for its debug summary (see VillageDebug) - the quest it's on and when it's due back,
+		/// counting down, where its vikings are, and a line for each of them - or with none, how long it rests before it
+		/// looks for one
 		/// </summary>
 		/// <param name="village">The village</param>
-		/// <returns>The line, or "" when it has none</returns>
-		public static string Describe(Village village)
+		/// <param name="arrivals">The groups on their way to it (see VillageArrivals.Of), or null while the server hasn't
+		/// answered</param>
+		/// <param name="now">The time now, in ZNet time ticks</param>
+		/// <returns>The lines, ending in a line break</returns>
+		public static string Describe(Village village, List<VillageArrivals.Arrival> arrivals, long now)
 		{
 			QuestRecord record = Read(village);
 			if (record == null)
 			{
-				return("");
+				return("Quest: none - " + Resting(village, now) + "\n");
 			}
-			string due = ((record.Phase == QuestPhase.Waiting) ? "waiting for the morning" : "due back " + DuePhrase(record));
-			return("Quest: " + record.Kind + ((record.Item.Length > 0) ? " for " + record.Item : "") + ", " + record.Phase.ToString().ToLowerInvariant() + ", " + due + " - " + string.Join(", ", record.Names) + (record.Trapped ? " (trapped)" : "") + "\n");
+			StringBuilder text = new StringBuilder(Headline(record, now, DuePhrase(record)) + "\n");
+			if (record.Phase != QuestPhase.Waiting)
+			{
+				VillageArrivals.Arrival group = ((arrivals != null) ? arrivals.Find((VillageArrivals.Arrival arrival) => arrival.QuestId == record.Id) : null);
+				if (arrivals == null)
+				{
+					text.Append("  Where they are: asking the server\n");
+				}
+				else if (group != null)
+				{
+					text.Append("  " + group.Count + " of " + record.Members.Count + " left the village, " + group.Where + "\n");
+				}
+				else
+				{
+					text.Append("  " + ((record.Phase == QuestPhase.Leaving) ? "None of them has left the village yet" : "None of them is on the road") + "\n");
+				}
+			}
+			for (int i = 0; i < record.Members.Count; i++)
+			{
+				text.Append("  " + MemberLine(record, i) + "\n");
+			}
+			return(text.ToString());
+		}
+
+		/// <summary>
+		/// Describes a quest on a line of its own - what it's for, where it's at and when it's due back, counting down,
+		/// with the game's time it's due back by, and whether the village is trapped
+		/// </summary>
+		/// <param name="record">The quest</param>
+		/// <param name="now">The time now, in ZNet time ticks</param>
+		/// <param name="gameTime">When it's due back in the game's time (see DuePhrase), or ""</param>
+		/// <returns>The line</returns>
+		internal static string Headline(QuestRecord record, long now, string gameTime)
+		{
+			string due = "waiting for the morning";
+			if (record.Phase != QuestPhase.Waiting)
+			{
+				due = "due back " + VillageArrivals.Countdown(record.Due, now) + ((gameTime.Length > 0 && gameTime != "now") ? " (game time: " + gameTime + ")" : "");
+			}
+			return("Quest: " + record.Kind + ((record.Item.Length > 0) ? " for " + record.Item : "") + ", " + record.Phase.ToString().ToLowerInvariant() + ", " + due + (record.Trapped ? ", trapped" : ""));
+		}
+
+		/// <summary>
+		/// Describes what a viking does on a quest - the tool it takes from a chest, and once the quest has set out, the
+		/// tool it works with, the enemies it kills, the share of its health a boss fight harms it by, what it brings home
+		/// and what it spends
+		/// </summary>
+		/// <param name="record">The quest</param>
+		/// <param name="index">The viking's index among its members</param>
+		/// <returns>The line</returns>
+		internal static string MemberLine(QuestRecord record, int index)
+		{
+			MemberPlan plan = ((index < record.Plans.Count) ? record.Plans[index] : new MemberPlan());
+			string name = ((index < record.Names.Count && record.Names[index].Length > 0) ? record.Names[index] : record.Members[index]);
+			string tool = ((index < record.Tools.Count) ? record.Tools[index] : "");
+			string loot = string.Join(", ", plan.Loot.ConvertAll((KeyValuePair<string, int> entry) => entry.Value + " " + entry.Key));
+			string spend = string.Join(", ", plan.Spend.ConvertAll((KeyValuePair<string, int> entry) => entry.Value + " " + entry.Key));
+			return(name + ((tool.Length > 0) ? ", taking " + tool + " from a chest" : "") + ((plan.Tool.Length > 0) ? ", working with " + plan.Tool + " (" + plan.Hits + " hits, " + plan.ToolLeft.ToString("F0") + " durability left)" : "") + ((plan.Kills > 0) ? ", " + plan.Kills + " kills" : "") + ((plan.FightHarm >= 0f) ? ", harmed by " + (plan.FightHarm * 100f).ToString("F0") + "% in the fight" : "") + ", bringing home " + ((loot.Length > 0) ? loot : "nothing") + ((spend.Length > 0) ? ", spending " + spend : ""));
+		}
+
+		/// <summary>
+		/// Says when a village with no quest looks for one - not until its vikings move in, once it has rested a while
+		/// since its last came back (see QuestRules.RestBetween), counting down, or every LookInterval once it has
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="now">The time now, in ZNet time ticks</param>
+		/// <returns>The phrase</returns>
+		private static string Resting(Village village, long now)
+		{
+			if (!village.Zdo.GetBool(VillageRespawn.PopulatedKey) && !village.IsFounded())
+			{
+				return("not looking for one until its vikings move in");
+			}
+			long last = village.Zdo.GetLong(LastQuestKey, 0L);
+			string back = ((last > 0L) ? "the last came back " + VillageArrivals.Countdown(last, now) + ", " : "");
+			long ready = ((last > 0L && EnvMan.instance != null) ? last + NetTime.Ticks(EnvMan.instance.m_dayLengthSec * QuestRules.RestBetween) : 0L);
+			if (now < ready)
+			{
+				return(back + "resting, looking for one " + VillageArrivals.Countdown(ready, now));
+			}
+			return(back + "looking for one every " + LookInterval.ToString("F0") + "s");
 		}
 	}
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,14 +7,16 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// Shows the debug summary of the village the player is in (see VillageDebug) in a sidebar down the left of the
-	/// screen, in place of the fire's hover text - turned on and off with PanelKey at a village's fire in debug mode,
-	/// and shown whenever the player is inside a village while it's on
+	/// screen, between the hotbar and the food the player has eaten, in place of the fire's hover text - turned on and
+	/// off with PanelKey at a village's fire in debug mode, and shown whenever the player is inside a village while it's
+	/// on
 	/// </summary>
 	/// <remarks>
 	/// The sidebar is the first child of the canvas the game's HUD is drawn on, so everything else on that canvas - the
-	/// HUD, the menus and the windows - is drawn over it, whichever way the canvas is rendered. It's taken away with
-	/// the canvas when the player leaves the world, and made again the next time it's wanted. Whether it's on lasts
-	/// until the game closes
+	/// HUD, the menus and the windows - is drawn over it, whichever way the canvas is rendered. It's fitted between the
+	/// hotbar and the food as it's shown again, so it follows them when the screen or the GUI's scale changes. It's taken
+	/// away with the canvas when the player leaves the world, and made again the next time it's wanted. Whether it's on
+	/// lasts until the game closes
 	/// </remarks>
 	internal static class VillageDebugPanel
 	{
@@ -37,6 +40,13 @@ namespace VikingVillages
 		private const float MinFontSize = 10f;
 
 		/// <summary>
+		/// How far the sidebar stands clear of the hotbar above it and the food below it, and the least height it keeps
+		/// between them before it covers the screen's full height instead, in the canvas's units
+		/// </summary>
+		private const float Gap = 8f;
+		private const float MinHeight = 120f;
+
+		/// <summary>
 		/// The text's size when the hover text's can't be read
 		/// </summary>
 		private const float FallbackFontSize = 18f;
@@ -56,6 +66,13 @@ namespace VikingVillages
 		/// </summary>
 		private static GameObject panel;
 		private static TextMeshProUGUI text;
+
+		/// <summary>
+		/// The game's hotbar, found the first time the sidebar is fitted in a world, and the corners of what's measured,
+		/// reused
+		/// </summary>
+		private static HotkeyBar hotbar;
+		private static readonly Vector3[] corners = new Vector3[4];
 
 		/// <summary>
 		/// The generator's or anchor's ZDO of the village whose summary the sidebar shows, while it shows one, and when
@@ -119,6 +136,7 @@ namespace VikingVillages
 			{
 				text.text = summary;
 			}
+			Fit(hud);
 			if (panel.transform.GetSiblingIndex() != 0)
 			{
 				panel.transform.SetAsFirstSibling();
@@ -162,6 +180,129 @@ namespace VikingVillages
 				}
 			}
 			return(null);
+		}
+
+		/// <summary>
+		/// Fits the sidebar between the bottom of the hotbar and the top of the food the player has eaten (see Between)
+		/// </summary>
+		/// <param name="hud">The game's HUD</param>
+		private static void Fit(Hud hud)
+		{
+			RectTransform rect = (RectTransform)panel.transform;
+			RectTransform parent = rect.parent as RectTransform;
+			if (parent == null)
+			{
+				return;
+			}
+			if (hotbar == null)
+			{
+				hotbar = parent.GetComponentInChildren<HotkeyBar>(true);
+			}
+			Rect area = parent.rect;
+			Vector2 span = Between(area.yMin, area.yMax, FoodTop(parent, hud), HotbarBottom(parent, hotbar));
+			Vector2 low = new Vector2(0f, span.x - area.yMin);
+			Vector2 high = new Vector2(0f, span.y - area.yMax);
+			if (rect.offsetMin != low)
+			{
+				rect.offsetMin = low;
+			}
+			if (rect.offsetMax != high)
+			{
+				rect.offsetMax = high;
+			}
+		}
+
+		/// <summary>
+		/// Works out where the sidebar's bottom and top go - Gap above the food and Gap below the hotbar, an edge at the
+		/// canvas's own when what it goes by isn't found, and both at the canvas's own when that leaves less than
+		/// MinHeight between them
+		/// </summary>
+		/// <param name="floor">The bottom of the canvas</param>
+		/// <param name="ceiling">The top of the canvas</param>
+		/// <param name="foodTop">The top of the food, or null when it isn't found</param>
+		/// <param name="hotbarBottom">The bottom of the hotbar, or null when it isn't found or has no slots</param>
+		/// <returns>The sidebar's bottom as x and its top as y, in the canvas's units</returns>
+		internal static Vector2 Between(float floor, float ceiling, float? foodTop, float? hotbarBottom)
+		{
+			float bottom = (foodTop.HasValue ? Mathf.Max(floor, foodTop.Value + Gap) : floor);
+			float top = (hotbarBottom.HasValue ? Mathf.Min(ceiling, hotbarBottom.Value - Gap) : ceiling);
+			if (top - bottom < MinHeight)
+			{
+				return(new Vector2(floor, ceiling));
+			}
+			return(new Vector2(bottom, top));
+		}
+
+		/// <summary>
+		/// Finds the top of the food the player has eaten - the icons and the time each has left, shown or not, so the
+		/// sidebar stays put as food runs out
+		/// </summary>
+		/// <param name="parent">The canvas the sidebar is on</param>
+		/// <param name="hud">The game's HUD</param>
+		/// <returns>The top, in the canvas's units, or null when there's no food on the HUD</returns>
+		private static float? FoodTop(RectTransform parent, Hud hud)
+		{
+			List<RectTransform> parts = new List<RectTransform>();
+			if (hud.m_foodIcons != null)
+			{
+				foreach (Image icon in hud.m_foodIcons)
+				{
+					if (icon != null)
+					{
+						parts.Add(icon.rectTransform);
+					}
+				}
+			}
+			if (hud.m_foodTime != null)
+			{
+				foreach (TMP_Text time in hud.m_foodTime)
+				{
+					if (time != null)
+					{
+						parts.Add(time.rectTransform);
+					}
+				}
+			}
+			float? top = null;
+			foreach (RectTransform part in parts)
+			{
+				part.GetWorldCorners(corners);
+				foreach (Vector3 corner in corners)
+				{
+					float y = parent.InverseTransformPoint(corner).y;
+					top = (top.HasValue ? Mathf.Max(top.Value, y) : y);
+				}
+			}
+			return(top);
+		}
+
+		/// <summary>
+		/// Finds the bottom of the hotbar - its slots and everything on them, shown or not, like the stack sizes under
+		/// them, so the sidebar stays put as they come and go
+		/// </summary>
+		/// <param name="parent">The canvas the sidebar is on</param>
+		/// <param name="bar">The hotbar, or null</param>
+		/// <returns>The bottom, in the canvas's units, or null when there's no hotbar or it has no slots</returns>
+		private static float? HotbarBottom(RectTransform parent, HotkeyBar bar)
+		{
+			if (bar == null)
+			{
+				return(null);
+			}
+			float? bottom = null;
+			foreach (Transform slot in bar.transform)
+			{
+				foreach (RectTransform part in slot.GetComponentsInChildren<RectTransform>(true))
+				{
+					part.GetWorldCorners(corners);
+					foreach (Vector3 corner in corners)
+					{
+						float y = parent.InverseTransformPoint(corner).y;
+						bottom = (bottom.HasValue ? Mathf.Min(bottom.Value, y) : y);
+					}
+				}
+			}
+			return(bottom);
 		}
 
 		/// <summary>

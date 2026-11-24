@@ -32,5 +32,5 @@ Every console command Viking Villages adds, mostly for trying things out and tes
 ## The Game's Own Commands
 
 - `spawn Viking` spawns a living Viking - near a village they join it, and out in the wild they're lost for a little while before setting out for the nearest village (see Living Vikings and Vikings With No Village in the [README](README.md))
-- With `debugmode` on, looking at a Viking shows what they're doing, and looking at a village's bonfire shows the village's state - and D at a village's bonfire shows it in a sidebar down the left of the screen instead, whenever you're in a village, until you press D at one again (see Living Vikings in the [README](README.md))
+- With `debugmode` on, looking at a Viking shows what they're doing, and looking at a village's bonfire shows the village's state - and D at a village's bonfire shows it in a sidebar down the left of the screen instead, between your hotbar and your food, whenever you're in a village, until you press D at one again (see Living Vikings in the [README](README.md))
 - The game's kill commands, and the K key in `debugmode`, only kill the living Vikings who are angry at you while your PvP is off, and every living Viking with it on

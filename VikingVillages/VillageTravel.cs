@@ -21,7 +21,8 @@ namespace VikingVillages
 	/// to one picked at random, and one whose village was started again at its bonfire meanwhile turns around for home
 	/// once it gets where it was going (see TurnHome). Vikings out on a quest are kept the same way, their trip there,
 	/// the work and the trip back planned as they leave (see PlanQuest), due back at their own village when that's done,
-	/// or at the village its vikings went to when it was disbanded meanwhile (see QuestsDisbanded)
+	/// or at the village its vikings went to when it was disbanded meanwhile (see QuestsDisbanded). The groups on their
+	/// way to a village, kept or walking the road in the world, are listed for its debug summary (see ArrivalsAt)
 	/// </remarks>
 	internal static class VillageTravel
 	{
@@ -143,6 +144,12 @@ namespace VikingVillages
 		private static readonly Dictionary<ZDOID, float> outSince = new Dictionary<ZDOID, float>();
 
 		/// <summary>
+		/// On the server, the vikings on the road its last full look through the world found, by ZDO, for the groups on
+		/// their way to a village (see ArrivalsAt)
+		/// </summary>
+		private static readonly List<ZDOID> onRoad = new List<ZDOID>();
+
+		/// <summary>
 		/// On a client, the groups handed to it to bring into a village it runs, each with when it was handed over, in
 		/// Time.time seconds
 		/// </summary>
@@ -167,6 +174,7 @@ namespace VikingVillages
 			ZRoutedRpc.instance.Register<ZPackage>(EmergeRpc, OnEmerge);
 			ZRoutedRpc.instance.Register<Vector3, string, long>(QuestDueRpc, OnQuestDue);
 			TravelPlanner.Register();
+			VillageArrivals.Register();
 			nextRoadCheck = 0f;
 			replanning.Clear();
 			record = null;
@@ -175,6 +183,7 @@ namespace VikingVillages
 			sweepFound.Clear();
 			nextSweep = 0f;
 			outSince.Clear();
+			onRoad.Clear();
 			held.Clear();
 		}
 
@@ -597,7 +606,10 @@ namespace VikingVillages
 				{
 					sweepIndex = -1;
 					nextSweep = Time.time + SweepInterval;
-					TakeOffRoad(sweepFound.FindAll(OnRoad));
+					List<ZDO> travelling = sweepFound.FindAll(OnRoad);
+					onRoad.Clear();
+					onRoad.AddRange(travelling.ConvertAll((ZDO zdo) => zdo.m_uid));
+					TakeOffRoad(travelling);
 					Deliver();
 					if (Time.time >= nextRoadCheck)
 					{
@@ -1399,6 +1411,110 @@ namespace VikingVillages
 				lines.Add(searching);
 			}
 			return(lines);
+		}
+
+		/// <summary>
+		/// Lists the groups on their way to a village, on the server - those it keeps out of the world, and those walking
+		/// the road in the world that its last full look through the world found - each with what brings it, where it is
+		/// and when it's due
+		/// </summary>
+		/// <param name="farm">Where the village stands - its farm's planned spot or its anchor</param>
+		/// <returns>The groups</returns>
+		internal static List<VillageArrivals.Arrival> ArrivalsAt(Vector3 farm)
+		{
+			List<VillageArrivals.Arrival> arrivals = new List<VillageArrivals.Arrival>();
+			long now = NetTime.Now();
+			double tick = NetTime.Ticks(1f);
+			foreach (TravelEntry entry in queue)
+			{
+				if (Utils.DistanceXZ(entry.Destination, farm) <= FarmMatch)
+				{
+					arrivals.Add(VillageArrivals.FromEntry(entry, VillageArrivals.Where(entry, now, tick)));
+				}
+			}
+			Dictionary<string, List<ZDO>> groups = new Dictionary<string, List<ZDO>>();
+			foreach (ZDOID id in onRoad)
+			{
+				ZDO zdo = ((ZDOMan.instance != null) ? ZDOMan.instance.GetZDO(id) : null);
+				if (zdo == null || !OnRoad(zdo) || Utils.DistanceXZ(zdo.GetVec3(DestinationKey, Vector3.zero), farm) > FarmMatch)
+				{
+					continue;
+				}
+				string group = zdo.GetString(GroupKey, "");
+				if (group.Length == 0)
+				{
+					group = id.ToString();
+				}
+				if (!groups.TryGetValue(group, out List<ZDO> members))
+				{
+					members = new List<ZDO>();
+					groups[group] = members;
+				}
+				members.Add(zdo);
+			}
+			foreach (List<ZDO> members in groups.Values)
+			{
+				arrivals.Add(InWorld(members, now));
+			}
+			return(arrivals);
+		}
+
+		/// <summary>
+		/// Describes a group walking the road to a village in the world - due once the farthest behind of them has covered
+		/// the rest of its road, on foot, by sea in the boat of the group's hardest biome and through portals, the same as
+		/// when the group is taken off the road (see Pack)
+		/// </summary>
+		/// <param name="members">The group's vikings</param>
+		/// <param name="now">The time now, in ZNet time ticks</param>
+		/// <returns>The group</returns>
+		private static VillageArrivals.Arrival InWorld(List<ZDO> members, long now)
+		{
+			int boatBiome = 0;
+			foreach (ZDO zdo in members)
+			{
+				boatBiome = Mathf.Max(boatBiome, BoatBiome(zdo));
+			}
+			float boat = TravelTime.BoatSpeed(boatBiome);
+			VillageArrivals.Arrival arrival = new VillageArrivals.Arrival { Count = members.Count, What = VillageArrivals.OnTheRoad(members[0].GetString(FromNameKey, "")) };
+			float left = -1f;
+			foreach (ZDO zdo in members)
+			{
+				TravelRoad road = TravelRoad.Decode(zdo.GetByteArray(RouteKey));
+				int leg = zdo.GetInt(LegKey, 1);
+				Vector3 position = zdo.GetPosition();
+				float seconds = road.Seconds(leg, position, boat);
+				if (seconds > left)
+				{
+					left = seconds;
+					string leaving = (zdo.GetBool(SailingKey) ? ", setting sail" : (zdo.GetBool(PortalKey) ? ", stepping into a portal" : ""));
+					arrival.Where = "in the world at " + position.ToString("F0") + ", " + VillageArrivals.Leg(road.LegTo(leg)) + ", " + road.Meters(leg, position).ToString("F0") + "m to go" + leaving;
+				}
+				string name = VikingNames.Get(zdo);
+				if (name.Length > 0)
+				{
+					arrival.Names.Add(name);
+				}
+			}
+			arrival.Due = now + NetTime.Ticks(Mathf.Max(0f, left));
+			return(arrival);
+		}
+
+		/// <summary>
+		/// Lists the groups the server has handed to this client to bring into a village, which it hasn't brought in yet
+		/// </summary>
+		/// <param name="farm">Where the village stands - its farm's planned spot or its anchor</param>
+		/// <returns>The groups</returns>
+		internal static List<VillageArrivals.Arrival> HeldAt(Vector3 farm)
+		{
+			List<VillageArrivals.Arrival> arrivals = new List<VillageArrivals.Arrival>();
+			foreach (KeyValuePair<TravelEntry, float> pair in held)
+			{
+				if (Utils.DistanceXZ(pair.Key.Destination, farm) <= FarmMatch)
+				{
+					arrivals.Add(VillageArrivals.FromEntry(pair.Key, "handed to this client to bring in"));
+				}
+			}
+			return(arrivals);
 		}
 
 		/// <summary>

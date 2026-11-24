@@ -1,15 +1,19 @@
 using System.Collections.Generic;
 using System.Text;
+using Kriona.Vikings;
 using UnityEngine;
 
 namespace VikingVillages
 {
 	/// <summary>
-	/// A summary of a village's state, shown when the player looks at its fire with debug mode on
+	/// A summary of a village's state, shown when the player looks at its fire with debug mode on, or in the debug
+	/// sidebar (see VillageDebugPanel) - with its quest and the vikings on their way to it, counting down to when
+	/// they're due (see VillageArrivals)
 	/// </summary>
 	/// <remarks>
 	/// Some of it looks through every piece and creature across the village, so it's worked out at most once every
-	/// RefreshInterval seconds for each village rather than every frame the fire's hover text is shown
+	/// RefreshInterval seconds for each village rather than every frame the fire's hover text is shown - which also
+	/// counts down the times it gives once a second
 	/// </remarks>
 	internal static class VillageDebug
 	{
@@ -127,7 +131,11 @@ namespace VikingVillages
 				int quality = village.Zdo.GetInt(VillageLife.GoalQualityKey, 1);
 				text.Append("Goal: " + goal + ((quality > 1) ? " at quality " + quality : "") + " - " + village.Zdo.GetString(VillageLife.GoalStepKey, "") + "\n");
 			}
-			text.Append(VillageQuests.Describe(village));
+			long now = NetTime.Now();
+			List<VillageArrivals.Arrival> arrivals = VillageArrivals.Of(village);
+			text.Append(VillageQuests.Describe(village, arrivals, now));
+			QuestRecord quest = VillageQuests.Read(village);
+			VillageArrivals.Describe(arrivals, ((quest != null) ? quest.Id : ""), now, text);
 			if (village.EnemyNear(VillageRespawn.EnemyReach))
 			{
 				text.Append("Enemies within " + VillageRespawn.EnemyReach.ToString("F0") + "m\n");
