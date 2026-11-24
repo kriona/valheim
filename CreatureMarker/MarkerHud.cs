@@ -215,7 +215,8 @@ namespace CreatureMarker
 					marker.arrow.color = target.color;
 					// While the game's HUD shows the name and level above an on-screen creature, the arrow sits above it and
 					// the label leaves them out - an arrow pinned to the screen edge is away from the HUD, so it keeps them
-					float gameHudHeight = (target.ping ? GetHeightAbove(target.source as GameObject) : GetGameHudHeight(enemyHud, target.source));
+					GameObject chatText = (target.chatText ? target.source as GameObject : null);
+					float gameHudHeight = (target.chatText ? GetHeightAbove(chatText) : GetGameHudHeight(enemyHud, target.source));
 					Rect? dialog = GetDialogRect(target.source);
 					bool higher = (target.position.y > playerPosition.y + HigherMargin);
 					Vector2 pointing;
@@ -228,8 +229,14 @@ namespace CreatureMarker
 					{
 						pointing = Place(marker.arrow.rectTransform, camera, target.top + Vector3.up * HeadOffset, 0f, dialog, scale.x, higher, out onScreen);
 					}
-					// The game pins a ping's text to the screen edge along with the arrow, so it always shows the sender
-					bool underGameHud = ((gameHudHeight >= 0f && onScreen) || target.ping);
+					// A ping's or shout's text is moved behind the arrow when it's pinned to the screen edge, so it always
+					// shows the sender
+					float textBehind = 0f;
+					if (target.chatText && !onScreen)
+					{
+						textBehind = PlaceChatText(marker, chatText, pointing);
+					}
+					bool underGameHud = ((gameHudHeight >= 0f && onScreen) || target.chatText);
 					bool showText = (underGameHud ? showDistance : showLabel);
 					SetActive(marker.label.gameObject, showText);
 					if (showText)
@@ -251,7 +258,7 @@ namespace CreatureMarker
 						int level = ((showLevel && !underGameHud) ? target.level : 0);
 						SetLabelText(marker, name, level, target.fish, target.color, distance);
 						marker.label.color = target.color;
-						PlaceLabel(marker, pointing);
+						PlaceLabel(marker, pointing, textBehind);
 					}
 					// Markers seen through a portal stay where they are, inside its opening
 					if (onScreen && !target.throughPortal)
@@ -656,19 +663,48 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Centers the label just behind the arrow's tail, kept inside the screen
+		/// Centers the label just behind the arrow's tail, or behind the game's text when it was moved there first, kept
+		/// inside the screen
 		/// </summary>
 		/// <param name="marker">The marker whose arrow has already been placed</param>
 		/// <param name="pointing">The screen direction the arrow points in, as a unit vector</param>
-		private static void PlaceLabel(Marker marker, Vector2 pointing)
+		/// <param name="textBehind">How far the game's text placed behind the arrow reaches back from it, gap included,
+		/// in screen pixels, or 0 when there is none</param>
+		private static void PlaceLabel(Marker marker, Vector2 pointing, float textBehind)
 		{
 			RectTransform arrow = marker.arrow.rectTransform;
 			RectTransform label = marker.label.rectTransform;
 			// Sizes are in canvas units, positions in screen pixels
 			float scale = arrow.lossyScale.x;
 			Vector2 halfSize = marker.labelSize * scale * 0.5f;
-			Vector2 center = ScreenEdge.Behind(arrow.position, pointing, (ArrowSize.y + LabelGap) * scale, halfSize, new Vector2(Screen.width, Screen.height));
+			Vector2 center = ScreenEdge.Behind(arrow.position, pointing, (ArrowSize.y + LabelGap) * scale + textBehind, halfSize, new Vector2(Screen.width, Screen.height));
 			label.position = new Vector3(center.x, center.y, 0f);
+		}
+
+		/// <summary>
+		/// Moves the game's text over a ping or shout to just behind its arrow pinned to the screen edge, where the
+		/// marker's own label would go, and holds it there for the rest of the frame (see ChatTexts)
+		/// </summary>
+		/// <param name="marker">The marker whose arrow has already been placed</param>
+		/// <param name="text">The game's text, or null</param>
+		/// <param name="pointing">The screen direction the arrow points in, as a unit vector</param>
+		/// <returns>How far the text reaches back from the arrow, along with the gap after it, in screen pixels, or 0 when
+		/// the text isn't shown</returns>
+		private float PlaceChatText(Marker marker, GameObject text, Vector2 pointing)
+		{
+			if (text == null || !text.activeInHierarchy || !GetGraphicsBounds(text, out Rect bounds))
+			{
+				return(0f);
+			}
+			RectTransform arrow = marker.arrow.rectTransform;
+			float scale = arrow.lossyScale.x;
+			Vector2 center = ScreenEdge.Behind(arrow.position, pointing, (ArrowSize.y + LabelGap) * scale, bounds.size * 0.5f, new Vector2(Screen.width, Screen.height));
+			// The letters sit off the text's own position, so the move is by how far their middle has to go
+			Vector2 shift = center - bounds.center;
+			Vector3 position = text.transform.position + new Vector3(shift.x, shift.y, 0f);
+			text.transform.position = position;
+			ChatTexts.Hold(text, position);
+			return(Mathf.Abs(pointing.x) * bounds.width + Mathf.Abs(pointing.y) * bounds.height + LabelGap);
 		}
 
 		/// <summary>

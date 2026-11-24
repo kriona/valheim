@@ -10,14 +10,15 @@ namespace CreatureMarker
 		/// <summary>
 		/// The Character, Trader, Petable, Fish, RandomFlyingBird, Leviathan, Odin, Raven, Valkyrie, ItemDrop,
 		/// TeleportWorld or TombStone being marked, the portal a trader or pet is seen through, or the game's text above
-		/// a map ping, so a marker can tell when it is given a different one
+		/// a map ping or shout, so a marker can tell when it is given a different one
 		/// </summary>
 		public Object source;
 
 		/// <summary>
-		/// Whether the target is a map ping, whose sender's name the game shows above it and on the map itself
+		/// Whether the target is a map ping or a shout, like the one a player sends when they arrive in the world, whose
+		/// sender's name the game shows above it and on the map itself
 		/// </summary>
-		public bool ping;
+		public bool chatText;
 
 		/// <summary>
 		/// Whether the target is a trader or pet seen through a portal's PortalPreview view, placed where it appears on
@@ -32,7 +33,7 @@ namespace CreatureMarker
 
 		/// <summary>
 		/// The world point the arrow sits above - the top of a creature's head, a portal's frame or a tombstone, a
-		/// fish's, bird's or item's position, or where the game puts a ping's text
+		/// fish's, bird's or item's position, or where the game puts a ping's or shout's text
 		/// </summary>
 		public Vector3 top;
 
