@@ -174,7 +174,8 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Lists the weapons a monster carries in its inventory
+		/// Lists the weapons a monster carries in its inventory, leaving out those that only hurt tamed creatures, like a
+		/// butcher knife a zombie viking carries
 		/// </summary>
 		/// <param name="monster">The monster</param>
 		/// <returns>The weapons, none when it isn't a humanoid</returns>
@@ -186,7 +187,7 @@ namespace Kriona.Vikings
 			{
 				return(new List<ItemDrop.ItemData>());
 			}
-			return(inventory.GetAllItems().FindAll((ItemDrop.ItemData item) => item.IsWeapon()));
+			return(inventory.GetAllItems().FindAll((ItemDrop.ItemData item) => item.IsWeapon() && !item.m_shared.m_tamedOnly));
 		}
 
 		/// <summary>

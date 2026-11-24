@@ -3577,7 +3577,7 @@ namespace Kriona.Vikings
 		/// <summary>
 		/// Checks whether the viking can fight with an item - a weapon of its own, not loot it carries or a tool it holds
 		/// for show, other than a torch that isn't broken, has ammo when it takes ammo, doesn't need eitr, which the viking has none of, and
-		/// deals damage. A living viking keeps a pickaxe for mining and never fights with one
+		/// deals damage to more than tamed creatures. A living viking keeps a pickaxe for mining and never fights with one
 		/// </summary>
 		/// <param name="item">The item</param>
 		/// <returns>True when it can</returns>
@@ -3605,6 +3605,12 @@ namespace Kriona.Vikings
 		private bool CanUse(ItemDrop.ItemData item, bool needAmmo)
 		{
 			if (!item.IsWeapon() || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch || VikingItems.IsCarried(item) || VikingItems.IsProp(item))
+			{
+				return(false);
+			}
+			// A weapon that only hurts tamed creatures, like the butcher knife, can't hurt the viking's enemies (see
+			// Attack.DoMeleeAttack and DoAreaAttack)
+			if (item.m_shared.m_tamedOnly)
 			{
 				return(false);
 			}

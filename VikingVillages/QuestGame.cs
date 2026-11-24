@@ -734,7 +734,7 @@ namespace VikingVillages
 			Skills.SkillType ranged = Skills.SkillType.None;
 			foreach (ItemDrop.ItemData item in humanoid.GetInventory().GetAllItems())
 			{
-				if (VikingItems.IsCarried(item) || VikingItems.IsProp(item) || !item.IsWeapon() || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch || item.m_shared.m_damages.m_pickaxe > 0f)
+				if (VikingItems.IsCarried(item) || VikingItems.IsProp(item) || !item.IsWeapon() || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch || item.m_shared.m_damages.m_pickaxe > 0f || item.m_shared.m_tamedOnly)
 				{
 					continue;
 				}
