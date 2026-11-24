@@ -18,7 +18,9 @@ namespace VikingVillages
 	/// it's due at its village - the rest of its road on foot at TravelTime.Speed and by sea at its boat's speed - and
 	/// then handed to the client that runs the village, which brings it in from the side it came from (see Arrive). A
 	/// village that's never loaded keeps it waiting. A village started again at the bonfire of a village its vikings left
-	/// calls back those still on the road, due back as long as they've been gone (see Recall)
+	/// calls back those still on the road, due back as long as they've been gone (see Recall). Vikings out on a quest
+	/// are kept the same way, due back at their own village when the quest is (see VillageQuests), or at the village
+	/// its vikings went to when it was disbanded meanwhile (see QuestsDisbanded)
 	/// </remarks>
 	internal static class VillageTravel
 	{
@@ -61,6 +63,12 @@ namespace VikingVillages
 		private const string QueueRpc = Plugin.PluginGuid + ".TravelQueue";
 		private const string RecallRpc = Plugin.PluginGuid + ".TravelRecall";
 		private const string RecalledRpc = Plugin.PluginGuid + ".TravelRecalled";
+
+		/// <summary>
+		/// The routed RPC that tells the server a village was disbanded, so the vikings out on its quests go on to the
+		/// village its vikings went to
+		/// </summary>
+		private const string QuestsDisbandedRpc = Plugin.PluginGuid + ".TravelQuestsDisbanded";
 
 		/// <summary>
 		/// The prefab hash of the record the server keeps the vikings on the road in - one no prefab has - where it
@@ -250,6 +258,7 @@ namespace VikingVillages
 			ZRoutedRpc.instance.Register<ZPackage>(QueueRpc, OnQueue);
 			ZRoutedRpc.instance.Register<Vector3, Vector3>(RecallRpc, OnRecall);
 			ZRoutedRpc.instance.Register<int, long>(RecalledRpc, OnRecalled);
+			ZRoutedRpc.instance.Register<ZPackage>(QuestsDisbandedRpc, OnQuestsDisbanded);
 			searches.Clear();
 			running = null;
 			candidates = null;
@@ -471,7 +480,8 @@ namespace VikingVillages
 		/// Brings in the groups handed to this client for a village it runs, as the village is looked after (see
 		/// VillageRespawn.Update) - those coming back to a village started again at their bonfire to its beds (see
 		/// VillageDeparted.AddReturning), and the rest walking in from the side they came from, each as it was, joining the
-		/// village as a newcomer
+		/// village as a newcomer, or coming home from a quest of the village's, which ends its quest (see
+		/// VillageQuests.Returned)
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns, with every viking it starts with</param>
 		/// <param name="vikings">Its living vikings' ZDOs, added to as they come</param>
@@ -499,6 +509,10 @@ namespace VikingVillages
 						break;
 					}
 					entry.Vikings.RemoveAt(0);
+					if (entry.OnQuest)
+					{
+						VillageQuests.Returned(village, entry.QuestId);
+					}
 				}
 				if (entry.Vikings.Count == 0)
 				{
@@ -1105,7 +1119,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Takes a group onto the road on the server
+		/// Takes a group onto the road on the server - a viking leaving on a quest joining the others of its quest that
+		/// left before it, so they come back together
 		/// </summary>
 		/// <param name="sender">The client that handed it over</param>
 		/// <param name="pkg">The group</param>
@@ -1120,15 +1135,85 @@ namespace VikingVillages
 			{
 				return;
 			}
-			queue.Add(entry);
+			TravelEntry group = (entry.OnQuest ? queue.Find((TravelEntry other) => other.QuestId == entry.QuestId) : null);
+			if (group != null)
+			{
+				group.Vikings.AddRange(entry.Vikings);
+			}
+			else
+			{
+				queue.Add(entry);
+			}
 			Save();
 		}
 
 		/// <summary>
+		/// Tells the server a village was disbanded, so the vikings out on its quest come back to the village its vikings
+		/// went to instead, later by the road from it there (see OnQuestsDisbanded)
+		/// </summary>
+		/// <param name="farm">Where the village stood - its farm's spot or its anchor</param>
+		/// <param name="fire">Where its bonfire stands, which a village started again there calls them back by</param>
+		/// <param name="answer">The village its vikings went to, not found when there's none</param>
+		public static void QuestsDisbanded(Vector3 farm, Vector3 fire, Answer answer)
+		{
+			if (ZRoutedRpc.instance == null)
+			{
+				return;
+			}
+			ZPackage pkg = new ZPackage();
+			pkg.Write(farm);
+			pkg.Write(fire);
+			answer.Write(pkg);
+			ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.instance.GetServerPeerID(), QuestsDisbandedRpc, pkg);
+		}
+
+		/// <summary>
+		/// Sends the vikings out on a disbanded village's quests on to the village its vikings went to - due there as much
+		/// later as the road from the disbanded village takes - noting its bonfire on them, so a village started there
+		/// again calls them back. With no village found, they come back to the one disbanded, and find another then
+		/// (see Deliver)
+		/// </summary>
+		/// <param name="sender">The client that disbanded it</param>
+		/// <param name="pkg">Where the village stood, where its bonfire stands, and the village its vikings went to</param>
+		private static void OnQuestsDisbanded(long sender, ZPackage pkg)
+		{
+			if (ZNet.instance == null || !ZNet.instance.IsServer())
+			{
+				return;
+			}
+			Vector3 farm = pkg.ReadVector3();
+			Vector3 fire = pkg.ReadVector3();
+			Answer answer = Answer.Read(pkg);
+			long now = NetTime.Now();
+			int count = 0;
+			foreach (TravelEntry entry in queue)
+			{
+				if (!entry.OnQuest || entry.Returning || Utils.DistanceXZ(entry.Destination, farm) > FarmMatch)
+				{
+					continue;
+				}
+				entry.OriginFire = fire;
+				if (answer.Found)
+				{
+					entry.Destination = answer.Destination;
+					entry.Name = answer.Name;
+					entry.From = ((answer.Road.Count > 0) ? answer.Road.Approach() : entry.From);
+					entry.Due = System.Math.Max(entry.Due, now) + NetTime.Ticks(answer.Seconds);
+				}
+				count += entry.Vikings.Count;
+			}
+			if (count > 0)
+			{
+				Save();
+				Plugin.Log.LogInfo("Travel: " + count + " vikings out on a quest of the village disbanded at " + fire.ToString("F0") + (answer.Found ? " go on to the village at " + answer.Destination.ToString("F0") + " instead, " + answer.Seconds.ToString("F0") + "s later" : " have no village to go to yet"));
+			}
+		}
+
+		/// <summary>
 		/// Calls back on the server the groups on the road that left the village disbanded at a bonfire, to the village
-		/// just started there - each due back after as long as it had been on the road, coming back the way it went, and
-		/// coming to the village's beds - and tells the client that started it how many and when
-		/// the last are due
+		/// just started there - each due back after as long as it had been on the road, coming back the way it went, or
+		/// for vikings out on a quest, when the quest was due back, and coming to the village's beds - and tells the client
+		/// that started it how many and when the last are due
 		/// </summary>
 		/// <param name="sender">The client that started the village</param>
 		/// <param name="fire">Where the bonfire stands</param>
@@ -1149,10 +1234,17 @@ namespace VikingVillages
 				{
 					continue;
 				}
-				float back = entry.Progress(now, ticksPerSecond);
 				entry.Returning = true;
 				entry.Destination = anchor;
-				entry.Due = now + NetTime.Ticks(back);
+				// Vikings out on a quest come back when the quest was due, as though the village had never been disbanded
+				if (entry.OnQuest)
+				{
+					entry.Due = System.Math.Max(now, entry.QuestDue);
+				}
+				else
+				{
+					entry.Due = now + NetTime.Ticks(entry.Progress(now, ticksPerSecond));
+				}
 				count += entry.Vikings.Count;
 				latest = System.Math.Max(latest, entry.Due);
 			}

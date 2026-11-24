@@ -30,6 +30,9 @@ namespace VikingVillages.Tests
 			entry.FromName = "Hrafnheim";
 			entry.Biome = 3;
 			entry.Excluded.Add(new Vector3(9f, 0f, 9f));
+			entry.QuestId = "abc123";
+			entry.QuestKind = (int)QuestKind.RaidCrypts;
+			entry.QuestDue = 638000000000001234L;
 			return(entry);
 		}
 
@@ -53,6 +56,42 @@ namespace VikingVillages.Tests
 			Assert.Equal(expected.FromName, actual.FromName);
 			Assert.Equal(expected.Biome, actual.Biome);
 			Assert.Equal(expected.Excluded, actual.Excluded);
+			Assert.Equal(expected.QuestId, actual.QuestId);
+			Assert.Equal(expected.QuestKind, actual.QuestKind);
+			Assert.Equal(expected.QuestDue, actual.QuestDue);
+		}
+
+		[Fact]
+		public void EntryWrittenBeforeQuestsIsOnTheRoad()
+		{
+			TravelEntry full = Full();
+			ZPackage pkg = new ZPackage();
+			pkg.Write(2);
+			pkg.Write(1);
+			pkg.Write(full.Vikings[0]);
+			pkg.Write(full.Destination);
+			pkg.Write(full.Name);
+			pkg.Write(full.Due);
+			pkg.Write(full.From);
+			pkg.Write(full.OriginFire);
+			pkg.Write(full.Unloaded);
+			pkg.Write(full.Spent);
+			pkg.Write(full.Remaining);
+			pkg.Write(full.Returning);
+			pkg.Write(full.FromName);
+			pkg.Write(full.Biome);
+			pkg.Write(0);
+			TravelEntry read = TravelEntry.Decode(pkg.GetArray());
+			Assert.NotNull(read);
+			Assert.Equal("Eikvik", read.Name);
+			Assert.False(read.OnQuest);
+		}
+
+		[Fact]
+		public void OnlyAQuestIdMakesAQuest()
+		{
+			Assert.True(Full().OnQuest);
+			Assert.False(new TravelEntry().OnQuest);
 		}
 
 		[Fact]

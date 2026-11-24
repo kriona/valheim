@@ -127,6 +127,7 @@ namespace VikingVillages
 				int quality = village.Zdo.GetInt(VillageLife.GoalQualityKey, 1);
 				text.Append("Goal: " + goal + ((quality > 1) ? " at quality " + quality : "") + " - " + village.Zdo.GetString(VillageLife.GoalStepKey, "") + "\n");
 			}
+			text.Append(VillageQuests.Describe(village));
 			if (village.EnemyNear(VillageRespawn.EnemyReach))
 			{
 				text.Append("Enemies within " + VillageRespawn.EnemyReach.ToString("F0") + "m\n");

@@ -4447,6 +4447,11 @@ namespace VikingVillages
 			{
 				return(RoadIdle(dt));
 			}
+			if (!questChecked)
+			{
+				questChecked = true;
+				ReturnFromQuest();
+			}
 			if (UpdateWary(dt))
 			{
 				return(true);
@@ -4803,7 +4808,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks what the viking does next - lightening its load first when it carries more than it can, and otherwise by
+		/// Picks what the viking does next - lightening its load first when it carries more than it can, then putting
+		/// away what it brought home from a quest, and otherwise by
 		/// the time of day: resting or keeping watch at night, getting up in the morning, gathering at the fire at dusk, and by day working whenever there's work, or else talking, petting,
 		/// gathering wood or foraging food for a chest with room for it, getting rested again by the fire before late in
 		/// the day, hunting, strolling or standing about - in the rain leaving out strolling, petting and getting rested
@@ -4837,6 +4843,12 @@ namespace VikingVillages
 				{
 					return(loot);
 				}
+			}
+			// What it brought home from a quest is put away first, even before bed
+			Job questLoot = FindQuestLootWork();
+			if (questLoot != null)
+			{
+				return(questLoot);
 			}
 			if (IsNight())
 			{
@@ -4938,7 +4950,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds work for the viking, most needed first - when it's wounded, eating from a chest and then resting by the
+		/// Finds work for the viking, most needed first - leaving on a quest of its village it's on (see
+		/// FindQuestWork), then when it's wounded, eating from a chest and then resting by the
 		/// fire until it's rested, then eating to keep its foods up while there's food enough to go around (see
 		/// FoodToSpare), then in freezing weather keeping warm by a lit fire, or inside its house when none is
 		/// burning, until the weather clears, then cooking the raw food it carries or the chests hold at a cooking station, then
@@ -4964,6 +4977,12 @@ namespace VikingVillages
 			if (body.IsEncumbered() && HeaviestSpare() != null)
 			{
 				return(new UnburdenJob(this));
+			}
+			// A quest setting out takes its vikings before any other work
+			Job quest = FindQuestWork();
+			if (quest != null)
+			{
+				return(quest);
 			}
 			if (Wounded())
 			{

@@ -869,7 +869,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Puts right a village whose vikings and waiting deaths have kept not adding up to its head count for
 		/// MismatchTime - noting a death now, not by a player, for each viking gone missing, or forgetting the latest
-		/// deaths when there are too many
+		/// deaths when there are too many. Its vikings out on a quest count as its own (see VillageQuests.AwayCount)
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns</param>
 		/// <param name="vikings">Its living vikings' ZDOs</param>
@@ -877,7 +877,7 @@ namespace VikingVillages
 		{
 			ZDOID id = village.Zdo.m_uid;
 			List<Death> deaths = ReadDeaths(village.Zdo);
-			int gap = village.Zdo.GetInt(HeadCountKey) - vikings.Count - deaths.Count;
+			int gap = village.Zdo.GetInt(HeadCountKey) - vikings.Count - deaths.Count - VillageQuests.AwayCount(village, vikings);
 			if (gap == 0)
 			{
 				mismatches.Remove(id);
@@ -945,8 +945,9 @@ namespace VikingVillages
 			{
 				return;
 			}
-			// A village with none of its core standing gets no one back until a house of it is rebuilt
-			if (vikings.Count >= village.Zdo.GetInt(HeadCountKey) || VillageRecords.StandingCore(village).Count == 0)
+			// A village with none of its core standing gets no one back until a house of it is rebuilt, and its vikings out
+			// on a quest are still its own
+			if (vikings.Count + VillageQuests.AwayCount(village, vikings) >= village.Zdo.GetInt(HeadCountKey) || VillageRecords.StandingCore(village).Count == 0)
 			{
 				return;
 			}
@@ -1159,7 +1160,9 @@ namespace VikingVillages
 		/// <summary>
 		/// Brings a viking that was on the road into a village as it was - walking in from the side it came from, when no
 		/// enemy is near and there's a spot out of every player's sight, and calling the house the fewest vikings call home
-		/// its home, the same as a stray taken in
+		/// its home, the same as a stray taken in. One coming home from a quest calls its own house home again, when it
+		/// still stands, and isn't new to the village - and comes back inside a village that was trapped when it left, at
+		/// the spot it left from
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns</param>
 		/// <param name="vikings">Its living vikings' ZDOs, added to</param>
@@ -1169,7 +1172,23 @@ namespace VikingVillages
 		public static ZDO SpawnArrival(Village village, List<ZDO> vikings, byte[] snapshot, Vector3 from)
 		{
 			// A village a player started has no house to give one until its beds bring them
-			if (village.Houses.Count == 0 || !ReadyToArrive(village, from, out Vector3 spot, out bool outside, out string _))
+			if (village.Houses.Count == 0)
+			{
+				return(null);
+			}
+			Vector3 spot;
+			bool outside;
+			bool questHome = VillageQuests.ComingHome(snapshot, village);
+			if (questHome && VillageQuests.TrappedSpot(village, out Vector3 inside))
+			{
+				spot = inside;
+				outside = false;
+				if (village.FindEnemy(EnemyReach) != null)
+				{
+					return(null);
+				}
+			}
+			else if (!ReadyToArrive(village, from, out spot, out outside, out string _))
 			{
 				return(null);
 			}
@@ -1190,11 +1209,24 @@ namespace VikingVillages
 				Plugin.Log.LogWarning("Couldn't read a viking arriving from the road at the village at " + village.Farm.ToString("F0") + ", so a new one came in its place");
 			}
 			VillagePaths.House home = FewestClaimed(village, vikings);
+			if (questHome)
+			{
+				// Noted as the village's already, so it isn't taken in as new to it
+				zdo.Set(Village.VillageKey, village.Farm);
+				Vector3 ownHome = zdo.GetVec3(VillageQuests.QuestHomeKey, Vector3.zero);
+				foreach (VillagePaths.House house in VillageRecords.StandingCore(village))
+				{
+					if (ownHome != Vector3.zero && Utils.DistanceXZ(house.Center, ownHome) <= HomeMatch)
+					{
+						home = house;
+					}
+				}
+			}
 			village.Adopt(zdo, home);
 			zdo.Set(VillageLife.ArrivingKey, outside);
 			vikings.Add(zdo);
-			TestLog.Count("Vikings", "arrived at a village from the road");
-			Plugin.Log.LogInfo(TestLog.Name(zdo) + " arrived from the road at the village at " + village.Farm.ToString("F0") + ", calling the house at " + home.Center.ToString("F0") + " home");
+			TestLog.Count("Vikings", (questHome ? "came home from a quest" : "arrived at a village from the road"));
+			Plugin.Log.LogInfo(TestLog.Name(zdo) + (questHome ? " came home from a quest to the village at " : " arrived from the road at the village at ") + village.Farm.ToString("F0") + ", calling the house at " + home.Center.ToString("F0") + " home");
 			return(zdo);
 		}
 

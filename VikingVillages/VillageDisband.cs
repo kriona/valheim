@@ -15,7 +15,8 @@ namespace VikingVillages
 	/// from the bonfire where the group is at (see PhaseOf). They gather at the fire for up to GatherMax seconds - less
 	/// once they're all there - stay a while, and one of them says where they're going before they set out. The vikings
 	/// of the village no player was near as it was disbanded go straight onto the road once the village is known (see
-	/// VillageTravel.Queue). With no village to go to, they leave the way they always have (see VillageDeparted)
+	/// VillageTravel.Queue). With no village to go to, they leave the way they always have (see VillageDeparted). Those
+	/// out on the village's quest go on to the same village when they're done (see VillageTravel.QuestsDisbanded)
 	/// </remarks>
 	internal static class VillageDisband
 	{
@@ -110,22 +111,26 @@ namespace VikingVillages
 			fires.Remove(id);
 			fires.Add(id);
 			Vector3 from = fire.GetPosition();
-			VillageTravel.Ask(from, biome, new List<Vector3> { village.Farm }, (VillageTravel.Answer answer) => Answered(id, answer));
+			Vector3 farm = village.Farm;
+			VillageTravel.Ask(from, biome, new List<Vector3> { farm }, (VillageTravel.Answer answer) => Answered(id, farm, answer));
 		}
 
 		/// <summary>
 		/// Notes the village the vikings go to on the bonfire, as the server answers - and sends the vikings that were
-		/// kept at the bonfire, as no player was near them, onto the road there
+		/// kept at the bonfire, as no player was near them, onto the road there, and the vikings out on the village's
+		/// quests there too (see VillageTravel.QuestsDisbanded)
 		/// </summary>
 		/// <param name="id">The bonfire's ZDO</param>
+		/// <param name="farm">Where the village disbanded stood</param>
 		/// <param name="answer">The server's answer</param>
-		private static void Answered(ZDOID id, VillageTravel.Answer answer)
+		private static void Answered(ZDOID id, Vector3 farm, VillageTravel.Answer answer)
 		{
 			ZDO fire = ((ZDOMan.instance != null) ? ZDOMan.instance.GetZDO(id) : null);
 			if (fire == null || fire.GetLong(DisbandAtKey, 0L) == 0L)
 			{
 				return;
 			}
+			VillageTravel.QuestsDisbanded(farm, fire.GetPosition(), answer);
 			if (!fire.IsOwner())
 			{
 				fire.SetOwner(ZDOMan.GetSessionID());

@@ -66,9 +66,31 @@ namespace VikingVillages
 		public List<Vector3> Excluded = new List<Vector3>();
 
 		/// <summary>
-		/// The version of how an entry is written, which a reader skips entries written another way by
+		/// For a group out on a quest (see VillageQuests), the quest's ID, or "" for a group on the road, its kind, and
+		/// when it was due back at the village it set out from before that village was disbanded, in ticks - so a
+		/// village started again where it stood calls them back for then
 		/// </summary>
-		private const int FormatVersion = 2;
+		public string QuestId = "";
+		public int QuestKind;
+		public long QuestDue;
+
+		/// <summary>
+		/// The version of how an entry is written, which a reader skips entries written another way by, and the earliest
+		/// version it still reads, which has no quest
+		/// </summary>
+		private const int FormatVersion = 3;
+		private const int OldestVersion = 2;
+
+		/// <summary>
+		/// Checks whether the group is out on a quest rather than on the road
+		/// </summary>
+		public bool OnQuest
+		{
+			get
+			{
+				return(QuestId.Length > 0);
+			}
+		}
 
 		/// <summary>
 		/// Works out how long a group has been on the road since it set out - what it had spent when it went out of every
@@ -112,16 +134,20 @@ namespace VikingVillages
 			{
 				pkg.Write(excluded);
 			}
+			pkg.Write(QuestId);
+			pkg.Write(QuestKind);
+			pkg.Write(QuestDue);
 		}
 
 		/// <summary>
-		/// Reads an entry from a package
+		/// Reads an entry from a package - one written before quests as a group on the road
 		/// </summary>
 		/// <param name="pkg">The package</param>
 		/// <returns>The entry, or null when it was written another way</returns>
 		internal static TravelEntry Read(ZPackage pkg)
 		{
-			if (pkg.ReadInt() != FormatVersion)
+			int version = pkg.ReadInt();
+			if (version < OldestVersion || version > FormatVersion)
 			{
 				return(null);
 			}
@@ -146,6 +172,12 @@ namespace VikingVillages
 			for (int i = 0; i < excluded; i++)
 			{
 				entry.Excluded.Add(pkg.ReadVector3());
+			}
+			if (version >= 3)
+			{
+				entry.QuestId = pkg.ReadString();
+				entry.QuestKind = pkg.ReadInt();
+				entry.QuestDue = pkg.ReadLong();
 			}
 			return(entry);
 		}

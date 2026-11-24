@@ -51,7 +51,7 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <returns>The step, or null when it has no goal</returns>
-		private static PlanStep CurrentGoalStep(Village village)
+		internal static PlanStep CurrentGoalStep(Village village)
 		{
 			ZDOID id = village.Zdo.m_uid;
 			if (goalSteps.TryGetValue(id, out KeyValuePair<float, PlanStep> kept) && Time.time - kept.Key < GoalStepKeep)
