@@ -2207,7 +2207,7 @@ namespace VikingVillages
 		/// Picks what a viking at home says when a player it knows talks to it - now and then about a quest of its
 		/// village's (see QuestAnswer), the village on the other side of its village's portal (see VillagePortalSpeech),
 		/// being old friends or how the player is doing (see VikingFriendSpeech), or a runestone of the biome it stands in
-		/// (see VikingLoreSpeech)
+		/// or of someone with its name (see VikingLoreSpeech)
 		/// </summary>
 		/// <param name="player">The player</param>
 		/// <returns>The line</returns>
@@ -2215,7 +2215,7 @@ namespace VikingVillages
 		{
 			string name = player.GetPlayerName();
 			bool friends = VikingIdentity.OldFriends(nview, player.GetPlayerID());
-			return(QuestAnswer(player) ?? VillagePortalSpeech.Chat(village, name) ?? VikingFriendSpeech.Chat(friends, name) ?? VikingLoreSpeech.Chat(transform.position, name) ?? VikingSpeech.Answer(player, IsNight(), VillageNames.Get(village)));
+			return(QuestAnswer(player) ?? VillagePortalSpeech.Chat(village, name) ?? VikingFriendSpeech.Chat(friends, name) ?? VikingLoreSpeech.Chat(transform.position, name, VikingNames.Get(humanoid)) ?? VikingSpeech.Answer(player, IsNight(), VillageNames.Get(village)));
 		}
 
 		/// <summary>

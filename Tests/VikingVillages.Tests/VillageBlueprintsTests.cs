@@ -241,7 +241,7 @@ namespace VikingVillages.Tests
 		/// Finds the repository's folder - the one holding Valheim.slnx, above the folder the tests run from
 		/// </summary>
 		/// <returns>The folder</returns>
-		private static string RepositoryFolder()
+		internal static string RepositoryFolder()
 		{
 			DirectoryInfo folder = new DirectoryInfo(AppContext.BaseDirectory);
 			while (folder != null && !File.Exists(Path.Combine(folder.FullName, "Valheim.slnx")))

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Kriona.Vikings;
 
 namespace VikingVillages.Tests
@@ -190,6 +191,41 @@ namespace VikingVillages.Tests
 		{
 			Assert.Equal(0.9f, VikingNames.BynameChanceFor(VikingGear.IndexOf(Heightmap.Biome.DeepNorth)), 4);
 			Assert.Equal(0.2f, VikingNames.BynameChanceFor(VikingGear.IndexOf(Heightmap.Biome.Meadows)), 4);
+		}
+
+		/// <summary>
+		/// Checks that a creature's name from the game's text is read without its rich text and spaces, in lowercase, so
+		/// Hildir's quest bosses, whose names are colored, are turned down like the rest
+		/// </summary>
+		/// <param name="localized">The game's text</param>
+		/// <param name="expected">The name it's read as</param>
+		[Theory]
+		[InlineData("<color=orange>Brenna</color>", "brenna")]
+		[InlineData("<color=orange>Zil & Thungr</color>", "zil & thungr")]
+		[InlineData(" Troll ", "troll")]
+		public void LoadedNamesLoseTheirMarkup(string localized, string expected)
+		{
+			Assert.Equal(expected, VikingNames.LoadedName(localized));
+		}
+
+		/// <summary>
+		/// Checks that the bear's names are taken though they're a creature's, while other creatures, the zombie word and
+		/// a zombie bear aren't
+		/// </summary>
+		/// <param name="lower">The name, in lowercase</param>
+		/// <param name="expected">True when it's turned down as a creature's</param>
+		[Theory]
+		[InlineData("troll", true)]
+		[InlineData("bear", false)]
+		[InlineData("bjorn", false)]
+		[InlineData("bjørn", false)]
+		[InlineData("zombie", true)]
+		[InlineData("zombie bear", true)]
+		[InlineData("rolf", false)]
+		public void BearNamesAreTaken(string lower, bool expected)
+		{
+			HashSet<string> creatures = new HashSet<string> { "troll", "bear", "bjorn", "bjørn" };
+			Assert.Equal(expected, VikingNames.IsCreatureName(lower, creatures, " Zombie "));
 		}
 	}
 }

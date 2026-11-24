@@ -45,7 +45,9 @@ namespace VikingVillages
 
 		/// <summary>
 		/// The names a village no player has named is given, picked at random among those no other village in the world
-		/// has (see TryAutoName) - Norse towns and places of the Viking age, and ones of the game's world
+		/// has (see TryAutoName) - Norse towns, farms and places of the Viking age, ones of the game's world, and Old Norse
+		/// words with the endings of the Norse settlers' villages: -by (a farm or village), -thorp (an outlying farm),
+		/// -toft (a homestead), -thwaite (a clearing), -kirk (a church) and -ness (a headland)
 		/// </summary>
 		internal static readonly string[] AutoNames =
 		{
@@ -54,7 +56,34 @@ namespace VikingVillages
 			"Sigtuna", "Uppsala", "Visby", "Bjallabrekka", "Bjarnarøy", "Bjornstead", "Driftgarth", "Eirikrheim",
 			"Fjelldal", "Frostfjord", "Frostvik", "Gråbergsby", "Gullstrand", "Hagagaror", "Hakonarhella", "Hrafntún",
 			"Hringdalir", "Ingolfsfell", "Ironfjell", "Kongsvik", "Lindhavn", "Maelifellsa", "Mogilsa", "Ravenfell",
-			"Sealskerry", "Skalavik", "Skaldford", "Stormnes", "Tømmerby"
+			"Sealskerry", "Skalavik", "Skaldford", "Stormnes", "Tømmerby",
+			"Birka", "Borre", "Gokstad", "Oseberg", "Tønsberg", "Skiringssal", "Hladir", "Stiklestad", "Hafrsfjord",
+			"Trelleborg", "Fyrkat", "Aggersborg", "Roskilde", "Viborg", "Uppåkra", "Vendel", "Valsgärde", "Skara",
+			"Bjørgvin", "Lindholm", "Sliesthorp", "Truso", "Aldeigjuborg", "Holmgard", "Dyflin", "Vedrafjord", "Hlymrek",
+			"Birsay", "Tingwall", "Leirvik", "Brattahlid", "Gardar", "Hvalsey", "Leifsbudir", "Thingvellir", "Reykholt",
+			"Skálholt", "Helgafell", "Mosfell", "Hlidarendi", "Bergthorshvoll", "Hjardarholt", "Haukadal", "Oddi", "Borg",
+			"Askby", "Eikby", "Lindby", "Holmby", "Sandby", "Hagaby", "Akerby", "Fossby", "Strandby", "Sundby", "Hvitby",
+			"Svartby", "Krakaby", "Uxaby", "Geitby", "Svanby", "Laxby", "Hvalby", "Smidby", "Kaupby", "Jarlsby", "Karlsby",
+			"Hofby", "Thingby", "Skalaby", "Kornby", "Mjodby", "Skogby", "Grimsby", "Ivarsby", "Ketilsby", "Gunnarsby",
+			"Asgeirsby", "Einarsby", "Rolfsby",
+			"Birkthorp", "Bergthorpe", "Engthorpe", "Myrthorp", "Vikthorpe", "Raudthorpe", "Ulfthorp", "Saudathorp",
+			"Gasathorpe", "Byggthorp", "Linthorpe", "Haugthorpe", "Brekkuthorp", "Vindthorp", "Solthorpe", "Eldthorpe",
+			"Hamarthorpe", "Klettathorp", "Fiskthorpe", "Saltathorpe", "Hestathorpe", "Nautathorp", "Gamlathorpe",
+			"Austhorpe", "Tokethorpe", "Kolthorpe", "Thorkelthorpe", "Asmundthorp", "Halvarthorpe",
+			"Langtoft", "Brunatoft", "Kjarrtoft", "Grjottoft", "Leirtoft", "Mosatoft", "Hrisatoft", "Vatnatoft",
+			"Tjarnatoft", "Melatoft", "Hvannatoft", "Laukatoft", "Hrossatoft", "Svinatoft", "Lambatoft", "Kalfatoft",
+			"Selatoft", "Batatoft", "Hafratoft", "Rugatoft", "Nytoft", "Sveinstoft", "Bardstoft", "Gormstoft", "Haukstoft",
+			"Dagstoft", "Brandstoft",
+			"Furuthwaite", "Bjarkthwaite", "Reynithwaite", "Einithwaite", "Haslathwaite", "Vidithwaite", "Thornthwaite",
+			"Lyngthwaite", "Lundthwaite", "Brennthwaite", "Setrathwaite", "Breidthwaite", "Keldthwaite", "Bekkthwaite",
+			"Hrafnthwaite", "Refthwaite", "Hjorthwaite", "Elgthwaite", "Hunangthwaite", "Grettisthwaite", "Leifthwaite",
+			"Halfdanthwaite", "Gislithwaite", "Njalsthwaite", "Ottarthwaite",
+			"Steinkirk", "Fjallkirk", "Dalkirk", "Eyjakirk", "Holtkirk", "Hlidkirk", "Brattkirk", "Hafkirk", "Ljosakirk",
+			"Mjollkirk", "Snaekirk", "Himinkirk", "Klukkukirk", "Nordkirk", "Sudkirk", "Vestkirk", "Ormskirk", "Olafskirk",
+			"Magnuskirk", "Haraldskirk", "Knudskirk", "Erlingskirk", "Sigurdskirk",
+			"Arnarness", "Skarfness", "Lundaness", "Thernaness", "Aedarness", "Mavaness", "Drangness", "Skerness",
+			"Brimness", "Rifness", "Bodaness", "Myrkness", "Isaness", "Hrimness", "Graenaness", "Horgness", "Vardaness",
+			"Skipaness", "Naustaness", "Kirkness", "Skegness", "Flokaness", "Hjalmarsness"
 		};
 
 		/// <summary>

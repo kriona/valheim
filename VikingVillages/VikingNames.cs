@@ -71,36 +71,67 @@ namespace VikingVillages
 		};
 
 		/// <summary>
-		/// The names a new living viking is given, picked at random for whether it's a man or a woman (see GiveName)
+		/// The names a new living viking is given, picked at random for whether it's a man or a woman (see GiveName) -
+		/// among them the names carved on the game's runestones, which a viking talks about having (see
+		/// VikingLoreSpeech.NamesakeLines)
 		/// </summary>
-		private static readonly string[] MaleNames =
+		internal static readonly string[] MaleNames =
 		{
 			"Åke", "Alrik", "Arne", "Asger", "Birger", "Bo", "Bram", "Brand", "Knud", "Dag", "Egil", "Einar", "Erik",
-			"Erling", "Eyvind", "Floki", "Frode", "Gorm", "Gunnar", "Håkon", "Halfdan", "Halvar", "Harald", "Hjalmar",
+			"Erling", "Eyvind", "Frode", "Gorm", "Gunnar", "Håkon", "Halfdan", "Halvar", "Harald", "Hjalmar",
 			"Ivar", "Jarl", "Kari", "Kjell", "Leif", "Magnus", "Nils", "Olaf", "Orm", "Ove", "Ragnar", "Rolf", "Sigurd",
 			"Sindre", "Snorri", "Sten", "Stig", "Sven", "Torsten", "Trygve", "Ulf", "Ulfric", "Valdemar", "Vidar", "Viggo",
 			"Grettir", "Njal", "Gisli", "Thorfinn", "Ketil", "Hallvard", "Ragnvald", "Torvald", "Asmund", "Ottar", "Ulfar",
-			"Steinar", "Geir", "Grim", "Hauk", "Orvar", "Svein", "Bard", "Toke", "Skarde"
+			"Steinar", "Geir", "Grim", "Hauk", "Orvar", "Svein", "Bard", "Toke", "Skarde",
+			"Agnar", "Alf", "Ari", "Arnbjorn", "Arnfinn", "Arngrim", "Arnkel", "Arnljot", "Arnor", "Arnulf", "Asbjorn",
+			"Asgeir", "Askel", "Aslak", "Asvald", "Atli", "Audun", "Bersi", "Bjarki", "Bjarni", "Bjørn", "Bodvar", "Bolli",
+			"Brodd", "Brynjolf", "Bui", "Dagfinn", "Eigil", "Eilif", "Eindride", "Eldgrim", "Eskil", "Eyjolf", "Eystein",
+			"Finn", "Finnbogi", "Flosi", "Fridleif", "Gamli", "Gaut", "Gellir", "Gest", "Gizur", "Godfred", "Grimkel",
+			"Grimolf", "Gudbrand", "Gudleif", "Gudmund", "Gunnbjorn", "Gunnlaug", "Gunnstein", "Guthorm", "Gyrd", "Hafgrim",
+			"Haki", "Hallbjorn", "Hallfred", "Hallkel", "Harek", "Hedin", "Helgi", "Hemming", "Hergils", "Herjolf", "Hjalti",
+			"Hjorleif", "Hogni", "Holmstein", "Hord", "Hoskuld", "Hrafn", "Hrafnkel", "Hrani", "Hrapp", "Hroald", "Hromund",
+			"Hrut", "Hvitserk", "Illugi", "Ingimar", "Ingimund", "Ingjald", "Ingolf", "Ingvar", "Isleif", "Jokul", "Jostein",
+			"Kalf", "Ketilbjorn", "Kjartan", "Kodran", "Kol", "Kolbein", "Kolgrim", "Kolskegg", "Kormak", "Lambi", "Ljot",
+			"Oddbjorn", "Ofeig", "Ogmund", "Olvir", "Onund", "Orlyg", "Ospak", "Otho", "Otkel", "Ozur", "Rorik", "Runolf",
+			"Saemund", "Saxi", "Sighvat", "Sigmund", "Sigtrygg", "Sigvald", "Skapti", "Skarphedin", "Skeggi", "Skjold",
+			"Skuli", "Snaebjorn", "Solvi", "Sorli", "Soti", "Starkad", "Steinthor", "Sturla", "Styr", "Svart", "Sverre",
+			"Teit", "Thjodolf", "Thorarin", "Thorbjorn", "Thorgeir", "Thorgils", "Thorgrim", "Thorkel", "Thorleif",
+			"Thormod", "Thorodd", "Thorolf", "Thorvard", "Thrain", "Thrand", "Tjorvi", "Tostig", "Ubbe", "Ulfkel",
+			"Ulfljot", "Vagn", "Valbrand", "Valgard", "Vandrad", "Vebjorn", "Vermund", "Vestein", "Vigfus", "Vigleik"
 		};
-		private static readonly string[] FemaleNames =
+		internal static readonly string[] FemaleNames =
 		{
 			"Alva", "Asta", "Astrid", "Bodil", "Borghild", "Brünnhilde", "Dagmar", "Dagny", "Eira", "Embla", "Estrid",
 			"Frida", "Gerd", "Gro", "Gudrun", "Gunhild", "Helga", "Hilda", "Inga", "Ingrid", "Jorunn", "Kara", "Liv", "Maeva",
 			"Maja", "Nanna", "Oda", "Ragna", "Ragnhild", "Revna", "Runa", "Sif", "Sigrid", "Signe", "Siv", "Solveig",
 			"Thyra", "Tove", "Turid", "Ulfhild", "Unn", "Valdis", "Vigdis", "Aud", "Freydis", "Gudrid", "Hallgerd", "Aslaug",
-			"Hervor", "Lagertha", "Thora", "Thordis", "Gyda", "Ingunn", "Bergljot", "Sigrun", "Svanhild", "Alfhild", "Ylva",
-			"Yrsa", "Torunn"
+			"Hervor", "Lagertha", "Thordis", "Gyda", "Ingunn", "Bergljot", "Sigrun", "Svanhild", "Alfhild", "Ylva",
+			"Yrsa", "Torunn",
+			"Agda", "Aldis", "Alfdis", "Arnbjorg", "Arndis", "Arnfrid", "Arnora", "Åsa", "Asdis", "Asleif", "Asny", "Asvor",
+			"Audbjorg", "Bera", "Bergdis", "Bergthora", "Birna", "Bjorg", "Borgny", "Brynja", "Dagrun", "Dalla", "Eldbjorg",
+			"Eldrid", "Erna", "Eydis", "Eyja", "Freygerd", "Fridgerd", "Geirlaug", "Geirrid", "Grima", "Gudfinna", "Gudlaug",
+			"Gudny", "Gunnbjorg", "Gunnvor", "Gyrid", "Halla", "Hallbera", "Halldis", "Hallfrid", "Hallveig", "Herborg",
+			"Herdis", "Hildigunn", "Hjordis", "Hlif", "Hrafnhild", "Hrefna", "Ingibjorg", "Ingigerd", "Ingileif", "Jodis",
+			"Jofrid", "Kata", "Katla", "Kolbrun", "Kolfinna", "Oddbjorg", "Oddny", "Ormhild", "Osk", "Ragnfrid", "Ragnheid",
+			"Rannveig", "Saeunn", "Snaefrid", "Solbjorg", "Solrun", "Solvor", "Steinunn", "Steinvor", "Svala", "Svava",
+			"Thjodhild", "Thorbjorg", "Thorgerd", "Thorhild", "Thorkatla", "Thorlaug", "Ulfrun", "Valborg", "Valgerd",
+			"Vilborg", "Yngvild"
 		};
+
+		/// <summary>
+		/// The creatures' names a viking takes anyway, in lowercase - the bear's, which is an old Norse name too
+		/// </summary>
+		private static readonly HashSet<string> CreatureNamesAllowed = new HashSet<string> { "bear", "bjorn", "bjørn" };
 
 		/// <summary>
 		/// The bynames of strong leaders, one of which the leader of each village goes by - and the rest, one of which a
 		/// viking is given when it joins a village where another viking already goes by its name (see GiveName)
 		/// </summary>
-		private static readonly string[] LeaderBynames =
+		internal static readonly string[] LeaderBynames =
 		{
 			"Bloodaxe", "Ironside", "Skull-Splitter", "Stormcloak", "Draugr-Bane", "the Wise", "the Strong", "the Bold"
 		};
-		private static readonly string[] Bynames =
+		internal static readonly string[] Bynames =
 		{
 			"the Red", "the Tall", "the Lucky", "the Far-Travelled", "the Quiet",
 			"the Stout", "the Old", "the Young", "Silkbeard", "Greycloak"
@@ -534,13 +565,30 @@ namespace VikingVillages
 			{
 				return(Verdict.Place);
 			}
-			// A zombie is named for the creature it was, after the zombie word, which is a creature too
-			zombie = zombie.Trim().ToLowerInvariant();
-			if (creatureNames.Contains(lower) || (zombie.Length > 0 && (lower == zombie || lower.StartsWith(zombie + " "))))
+			if (IsCreatureName(lower, creatureNames, zombie))
 			{
 				return(Verdict.Creature);
 			}
 			return(Verdict.Taken);
+		}
+
+		/// <summary>
+		/// Checks whether a name is a creature's - one of the game's creatures but those a viking takes anyway (see
+		/// CreatureNamesAllowed), the zombie word, or the zombie word followed by a creature's name, the way a zombie is
+		/// named for the creature it was
+		/// </summary>
+		/// <param name="lower">The name, in lowercase</param>
+		/// <param name="creatures">The game's creatures' names, in lowercase</param>
+		/// <param name="zombie">The word a zombie's name starts with (see ZombieLink.ZombieName), or ""</param>
+		/// <returns>True when it is</returns>
+		internal static bool IsCreatureName(string lower, HashSet<string> creatures, string zombie)
+		{
+			zombie = zombie.Trim().ToLowerInvariant();
+			if (zombie.Length > 0 && (lower == zombie || lower.StartsWith(zombie + " ")))
+			{
+				return(true);
+			}
+			return(creatures.Contains(lower) && !CreatureNamesAllowed.Contains(lower));
 		}
 
 		/// <summary>
@@ -616,7 +664,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Reads the game's creatures' names, in this game's language - a boss or trader among them as a legend - and
-		/// the legends' names, once the game's prefabs are loaded
+		/// the legends' names, once the game's prefabs are loaded. The sets are filled before they're kept, so a name
+		/// judged meanwhile is judged by whole sets
 		/// </summary>
 		private static void LoadNames()
 		{
@@ -624,56 +673,70 @@ namespace VikingVillages
 			{
 				return;
 			}
-			creatureNames = new HashSet<string>();
-			legendNames = new HashSet<string>();
-			placeNames = new HashSet<string>();
+			HashSet<string> creatures = new HashSet<string>();
+			HashSet<string> legends = new HashSet<string>();
+			HashSet<string> places = new HashSet<string>();
 			foreach (string legend in Legends)
 			{
-				legendNames.Add(legend.ToLowerInvariant());
+				legends.Add(legend.ToLowerInvariant());
 			}
 			foreach (string place in Places)
 			{
-				placeNames.Add(place.ToLowerInvariant());
+				places.Add(place.ToLowerInvariant());
 			}
-			if (ZNetScene.instance == null || Localization.instance == null)
+			if (ZNetScene.instance != null && Localization.instance != null)
 			{
-				return;
-			}
-			foreach (Heightmap.Biome biome in Biomes)
-			{
-				string name = Localization.instance.Localize("$biome_" + biome.ToString().ToLowerInvariant()).Trim().ToLowerInvariant();
-				if (name.Length > 0 && !name.StartsWith("["))
+				foreach (Heightmap.Biome biome in Biomes)
 				{
-					placeNames.Add(name);
+					string name = LoadedName(Localization.instance.Localize("$biome_" + biome.ToString().ToLowerInvariant()));
+					if (name.Length > 0 && !name.StartsWith("["))
+					{
+						places.Add(name);
+					}
+				}
+				foreach (UnityEngine.GameObject prefab in ZNetScene.instance.m_prefabs)
+				{
+					if (prefab == null)
+					{
+						continue;
+					}
+					Character character = prefab.GetComponent<Character>();
+					Trader trader = prefab.GetComponent<Trader>();
+					string token = ((character != null) ? character.m_name : ((trader != null) ? trader.m_name : null));
+					if (string.IsNullOrEmpty(token))
+					{
+						continue;
+					}
+					string name = LoadedName(Localization.instance.Localize(token));
+					if (name.Length == 0 || name.StartsWith("[") || name == "viking")
+					{
+						continue;
+					}
+					if (trader != null || character.m_boss)
+					{
+						legends.Add(name);
+					}
+					else
+					{
+						creatures.Add(name);
+					}
 				}
 			}
-			foreach (UnityEngine.GameObject prefab in ZNetScene.instance.m_prefabs)
-			{
-				if (prefab == null)
-				{
-					continue;
-				}
-				Character character = prefab.GetComponent<Character>();
-				Trader trader = prefab.GetComponent<Trader>();
-				string token = ((character != null) ? character.m_name : ((trader != null) ? trader.m_name : null));
-				if (string.IsNullOrEmpty(token))
-				{
-					continue;
-				}
-				string name = Localization.instance.Localize(token).Trim().ToLowerInvariant();
-				if (name.Length == 0 || name.StartsWith("[") || name == "viking")
-				{
-					continue;
-				}
-				if (trader != null || character.m_boss)
-				{
-					legendNames.Add(name);
-				}
-				else
-				{
-					creatureNames.Add(name);
-				}
-			}
+			legendNames = legends;
+			placeNames = places;
+			creatureNames = creatures;
+		}
+
+		/// <summary>
+		/// Works out the name a creature, trader or biome goes by from its text in this game's language, as names given to
+		/// vikings are compared with it - in lowercase, and without the rich text some have, like the color of the names of
+		/// Hildir's quest bosses
+		/// </summary>
+		/// <param name="localized">The text, like "&lt;color=orange&gt;Brenna&lt;/color&gt;"</param>
+		/// <returns>The name, like "brenna"</returns>
+		internal static string LoadedName(string localized)
+		{
+			return(localized.RemoveRichTextTags().Trim().ToLowerInvariant());
 		}
 
 		/// <summary>
