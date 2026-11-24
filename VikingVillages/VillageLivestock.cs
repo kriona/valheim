@@ -9,11 +9,12 @@ namespace VikingVillages
 	/// vikings to keep them
 	/// </summary>
 	/// <remarks>
-	/// A pen's animal is tamed as it spawns when a living viking is near (see VikingFarmAnimalsPatch), but the pens can
-	/// spawn before the village's vikings have loaded, or while they're off in another part of the village. Each farm's
-	/// spawners are looked through every CheckInterval seconds, and the animal each one spawned is tamed by the client
-	/// that owns it, so it's the vikings' livestock like the rest. Only what a farm's spawners spawned is tamed, not wild
-	/// animals that wander in.
+	/// A pen's animal is tamed as it spawns when its village has living vikings (see VikingFarmAnimalsPatch), but the
+	/// pens spawn before a new village's first vikings come, and can spawn before the village's vikings have loaded. A
+	/// new village's pens are tamed right before its first vikings are spawned (see VillageRespawn.Populated), so they
+	/// never see the animals as wild ones to fight, and each farm's spawners are looked through every CheckInterval
+	/// seconds after that. The animal each one spawned is tamed by the client that owns it, so it's the vikings'
+	/// livestock like the rest. Only what a farm's spawners spawned is tamed, not wild animals that wander in.
 	///
 	/// The livestock fights off the enemies that come near its pen, the way the vikings do (see Guard). A boar's own AI
 	/// runs from an enemy more than its alert range off rather than fighting it, lets go of it near a fire, and, once
@@ -54,6 +55,46 @@ namespace VikingVillages
 					villages.Add(village);
 				}
 			}
+			TamePens(villages);
+		}
+
+		/// <summary>
+		/// Tames the wild animals a village's pens spawned, and sets its livestock up to fight off enemies - called right
+		/// before a new village's first vikings are spawned, so they never see the animals as wild ones to fight
+		/// </summary>
+		/// <param name="village">The village</param>
+		public static void TamePens(Village village)
+		{
+			if (ZNetScene.instance != null)
+			{
+				TamePens(new List<Village> { village });
+			}
+		}
+
+		/// <summary>
+		/// Checks whether a point is in a loaded village with living vikings, whose pens' animals are its livestock
+		/// </summary>
+		/// <param name="position">The point</param>
+		/// <returns>True when it is</returns>
+		public static bool InKeptVillage(Vector3 position)
+		{
+			foreach (Village village in Village.Loaded())
+			{
+				if (village.DistanceOutside(position) <= Village.PieceMargin && village.Vikings().Count > 0)
+				{
+					return(true);
+				}
+			}
+			return(false);
+		}
+
+		/// <summary>
+		/// Tames the wild animals the loaded farms' pens in some villages spawned, and sets their livestock up to fight
+		/// off enemies
+		/// </summary>
+		/// <param name="villages">The villages</param>
+		private static void TamePens(List<Village> villages)
+		{
 			if (villages.Count == 0)
 			{
 				return;

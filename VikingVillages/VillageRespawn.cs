@@ -299,7 +299,8 @@ namespace VikingVillages
 		/// its core, since none are spawned as the farm is generated, when there may be no room for its bonfire and the
 		/// houses close by its farmhouses aren't known yet. They come at once, in the village, on open ground beside its
 		/// core's houses (see Village.SpawnSpot), whether or not a player can see them, rather than waiting their turn
-		/// like a viking that died
+		/// like a viking that died. The animals its pens spawned are tamed first, so the vikings never see them as wild
+		/// ones to fight
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns, with everything across it loaded</param>
 		/// <param name="vikings">Its living vikings' ZDOs, added to as they come</param>
@@ -315,6 +316,10 @@ namespace VikingVillages
 			if (vikings.Count < heads && VillageRecords.StandingCore(village).Count == 0)
 			{
 				return(false);
+			}
+			if (vikings.Count < heads)
+			{
+				VillageLivestock.TamePens(village);
 			}
 			while (vikings.Count < heads)
 			{

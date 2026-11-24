@@ -7,7 +7,7 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// Tames the animals an abandoned farm's pens spawn, as the living vikings' livestock, while a living viking is
-	/// still there to keep them
+	/// still there to keep them - one near the pen, or any in the village the pen stands in
 	/// </summary>
 	/// <remarks>
 	/// A tamed animal and a living viking leave each other alone unless the viking has been provoked, and a tamed
@@ -24,7 +24,7 @@ namespace VikingVillages
 		private static void Postfix(CreatureSpawner __instance, ZNetView __result)
 		{
 			Vector3 position = __instance.transform.position;
-			if (__result == null || !FarmSpawns.InFarm(position) || !FarmSpawns.LivingVikingNear(position))
+			if (__result == null || !FarmSpawns.InFarm(position) || (!FarmSpawns.LivingVikingNear(position) && !VillageLivestock.InKeptVillage(position)))
 			{
 				return;
 			}
