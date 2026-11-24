@@ -292,7 +292,7 @@ By hand:
 
 ## Multiplayer
 
-In multiplayer, the server and every player need the same version of the mod. A server with it turns away a player without it, or with another version, and says why. On a server without it, the mod stays off and the player can still join.
+In multiplayer, the server and every player need the same version of the mod. A server with it turns away a player without it, or with another version, and says why. On a server without it, the mod stays off and the player can still join - and its console commands don't work there, and its Vikings and village anchors can't be spawned there, since no one else would have them.
 
 ## TODO
 

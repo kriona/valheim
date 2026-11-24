@@ -506,6 +506,15 @@ namespace Kriona.Vikings
 		public static partial bool Rises(Character dying);
 
 		/// <summary>
+		/// Gets the name of the viking prefab this mod adds
+		/// </summary>
+		/// <returns>Its name, or "" before it's built</returns>
+		public static string OwnPrefabName()
+		{
+			return((prefab != null) ? prefab.name : "");
+		}
+
+		/// <summary>
 		/// Adds this mod's viking prefab to a world's prefabs, building it the first time (see BuildOwnPrefab)
 		/// </summary>
 		/// <param name="scene">The world's ZNetScene, as it wakes</param>

@@ -190,4 +190,4 @@ By hand:
 
 ## Multiplayer
 
-In multiplayer, the server and every player need the same version of the mod. A server with it turns away a player without it, or with another version, and says why. On a server without it, the mod stays off, nothing rises and the player can still join.
+In multiplayer, the server and every player need the same version of the mod. A server with it turns away a player without it, or with another version, and says why. On a server without it, the mod stays off, nothing rises and the player can still join - and its zombie Vikings, poison clouds and spirit spells can't be spawned there, nor its raid started, since no one else would have them.

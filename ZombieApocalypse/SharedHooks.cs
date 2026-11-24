@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ZombieApocalypse;
 
 namespace Kriona.Vikings
@@ -18,6 +19,26 @@ namespace Kriona.Vikings
 			SpiritSpells.Register(scene);
 			VikingSpawns.AddToBodyPiles(scene);
 			ZRoutedRpc.instance?.Register<long>(VikingCore.PowerRpc, VikingCore.OnPowerUsed);
+		}
+	}
+
+	/// <summary>
+	/// What Zombie Apocalypse adds that's held back in a world whose server doesn't have it, besides its zombie viking
+	/// </summary>
+	internal static partial class CommandGuard
+	{
+		/// <summary>
+		/// Names the poison cloud, the spirit spells and what they use, and the zombie viking raid - it has no console
+		/// commands
+		/// </summary>
+		/// <param name="commandPrefixes">The starts of its commands' names, added to</param>
+		/// <param name="prefabs">Its prefabs and items, added to</param>
+		/// <param name="raids">Its raids, added to</param>
+		static partial void AddOwned(List<string> commandPrefixes, List<string> prefabs, List<string> raids)
+		{
+			prefabs.Add(PoisonCloud.PrefabName);
+			prefabs.AddRange(SpiritSpells.Names());
+			raids.Add(VikingRaid.EventName);
 		}
 	}
 

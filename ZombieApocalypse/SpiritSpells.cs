@@ -92,6 +92,30 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
+		/// Lists the names of the spell items and the projectiles and effects they use, once they're built
+		/// </summary>
+		/// <returns>The names</returns>
+		public static List<string> Names()
+		{
+			List<string> names = new List<string>();
+			foreach (GameObject built in spells)
+			{
+				if (built != null)
+				{
+					names.Add(built.name);
+				}
+			}
+			foreach (GameObject built in prefabs)
+			{
+				if (built != null)
+				{
+					names.Add(built.name);
+				}
+			}
+			return(names);
+		}
+
+		/// <summary>
 		/// Adds the spells to an ObjectDB's items, once they're built
 		/// </summary>
 		/// <param name="db">The ObjectDB, or null</param>
