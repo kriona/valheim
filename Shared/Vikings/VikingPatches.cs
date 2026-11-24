@@ -111,6 +111,53 @@ namespace Kriona.Vikings
 	}
 
 	/// <summary>
+	/// Keeps a viking from seeing farther than MistSight.Range in the Mistlands' mist (see MistSight)
+	/// </summary>
+	[HarmonyPatch(typeof(BaseAI), nameof(BaseAI.CanSeeTarget), new Type[] { typeof(Character) })]
+	internal static class VikingMistSightPatch
+	{
+		/// <summary>
+		/// Turns the sight down when the mist is in the way
+		/// </summary>
+		/// <param name="__instance">The AI looking</param>
+		/// <param name="target">What it looks at</param>
+		/// <param name="__result">Whether it sees it</param>
+		private static void Postfix(BaseAI __instance, Character target, ref bool __result)
+		{
+			if (__result && target != null && __instance.TryGetComponent(out VikingCore _) && MistSight.Blocks(__instance.m_character.m_eye.position, target.GetCenterPoint()))
+			{
+				__result = false;
+			}
+		}
+	}
+
+	/// <summary>
+	/// Keeps a viking from picking out an enemy farther than MistSight.Range in the Mistlands' mist that it doesn't
+	/// hear (see MistSight)
+	/// </summary>
+	[HarmonyPatch(typeof(BaseAI), nameof(BaseAI.CanSenseTarget), new Type[] { typeof(Character), typeof(bool) })]
+	internal static class VikingMistSensePatch
+	{
+		/// <summary>
+		/// Turns the sense down when it only saw the target and the mist is in the way
+		/// </summary>
+		/// <param name="__instance">The AI sensing</param>
+		/// <param name="target">What it senses</param>
+		/// <param name="__result">Whether it senses it</param>
+		private static void Postfix(BaseAI __instance, Character target, ref bool __result)
+		{
+			if (!__result || target == null || !__instance.TryGetComponent(out VikingCore _) || __instance.CanHearTarget(target))
+			{
+				return;
+			}
+			if (MistSight.Blocks(__instance.m_character.m_eye.position, target.GetCenterPoint()))
+			{
+				__result = false;
+			}
+		}
+	}
+
+	/// <summary>
 	/// Notes the zombie viking a hit is being dealt to, so its armor is applied as the damage lands
 	/// </summary>
 	/// <remarks>

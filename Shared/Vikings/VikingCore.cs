@@ -640,6 +640,9 @@ namespace Kriona.Vikings
 			CopyFields(typeof(BaseAI), draugrAI, ai);
 			CopyFields(typeof(MonsterAI), draugrAI, ai);
 			ai.m_pathAgentType = Pathfinding.AgentType.Humanoid;
+			// The game's sight through the Mistlands' mist goes by the mist this client shows, so a viking's goes by
+			// MistSight in its place
+			ai.m_mistVision = true;
 			ai.m_avoidWater = false;
 			ai.m_randomMoveRange = GuardRange;
 			ai.m_enableHuntPlayer = false;
