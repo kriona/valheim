@@ -1140,15 +1140,19 @@ namespace VikingVillages
 		/// and the village's own name
 		/// </summary>
 		/// <param name="line">The line, with "{name}" where the viking spoken to is named, "{other}" where another is,
-		/// "{item}" where a material goes (see IsMaterial), "{fallen}" where one of the dead is named and "{village}"
-		/// where the village is</param>
+		/// "{item}" where a material goes (see IsMaterial), "{fallen}" where one of the dead is named, "{village}" where
+		/// the village is, and "{linked}" and "{biome}" where the village on the other side of its portal and its biome
+		/// are</param>
 		/// <param name="listener">The name of the viking spoken to, or ""</param>
 		/// <param name="other">The name of the viking talked about, or ""</param>
 		/// <param name="item">The name of a material the village has, or ""</param>
 		/// <param name="fallen">The name of the viking of the village who died, or ""</param>
 		/// <param name="village">The village's name, or ""</param>
+		/// <param name="linked">The name of the village on the other side of the village's portal, or "" (see
+		/// VillagePortalSpeech)</param>
+		/// <param name="biome">The biome that village stands in, as a viking says it, or ""</param>
 		/// <returns>The line to say</returns>
-		public static string Address(string line, string listener, string other, string item, string fallen, string village)
+		public static string Address(string line, string listener, string other, string item, string fallen, string village, string linked = "", string biome = "")
 		{
 			if (listener.Length == 0)
 			{
@@ -1161,7 +1165,9 @@ namespace VikingVillages
 				{ "{other}", other },
 				{ "{item}", item },
 				{ "{fallen}", fallen },
-				{ VillageToken, village }
+				{ VillageToken, village },
+				{ VillagePortalSpeech.LinkedToken, linked },
+				{ VillagePortalSpeech.BiomeToken, biome }
 			};
 			line = Regex.Replace(line, TalkTokens, (Match token) => values[token.Value]);
 			if (listener.Length == 0 && line.Length > 0)
@@ -1174,7 +1180,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The tokens a talk's lines are filled in at (see Address)
 		/// </summary>
-		private const string TalkTokens = "\\{(?:name|other|item|fallen|village)\\}";
+		private const string TalkTokens = "\\{(?:name|other|item|fallen|village|linked|biome)\\}";
 
 		/// <summary>
 		/// The materials the vikings build and craft with, by prefab name, read once the game's items are loaded
@@ -1346,18 +1352,20 @@ namespace VikingVillages
 		/// out</param>
 		/// <param name="named">Whether the village has a name, without which a talk naming it is left out, and with
 		/// which the talks about it are among those they might have</param>
+		/// <param name="linked">The talks about the village on the other side of the village's portal, among those they
+		/// might have, or null when there's none to talk about (see VillagePortalSpeech)</param>
 		/// <returns>The talk's lines, in turn, to fill in (see Address)</returns>
-		public static string[] Talk(bool night, bool wet, bool fought, bool hurt, bool other, bool material, bool fallen, bool bearded, bool named)
+		public static string[] Talk(bool night, bool wet, bool fought, bool hurt, bool other, bool material, bool fallen, bool bearded, bool named, string[][] linked)
 		{
 			List<string[]> remembered = Spoken(FallenTalks).FindAll((string[] lines) => named || !Names(lines));
 			if (fallen && remembered.Count > 0)
 			{
 				return(remembered[Random.Range(0, remembered.Count)]);
 			}
-			string[] talk = PickTalk(night, wet, fought, hurt, other, bearded, named);
+			string[] talk = PickTalk(night, wet, fought, hurt, other, bearded, named, linked);
 			while ((!material && System.Array.Exists(talk, (string line) => line.Contains("{item}"))) || (!named && Names(talk)))
 			{
-				talk = PickTalk(night, wet, fought, hurt, other, bearded, named);
+				talk = PickTalk(night, wet, fought, hurt, other, bearded, named, linked);
 			}
 			return(talk);
 		}
@@ -1382,8 +1390,9 @@ namespace VikingVillages
 		/// <param name="other">Whether there's another viking with a name to talk about</param>
 		/// <param name="bearded">Whether the viking starting it has a beard</param>
 		/// <param name="named">Whether the village has a name, so the talks about it are among those they might have</param>
+		/// <param name="linked">The talks about the village on the other side of the village's portal, or null</param>
 		/// <returns>The talk's lines, in turn</returns>
-		private static string[] PickTalk(bool night, bool wet, bool fought, bool hurt, bool other, bool bearded, bool named)
+		private static string[] PickTalk(bool night, bool wet, bool fought, bool hurt, bool other, bool bearded, bool named, string[][] linked)
 		{
 			List<string[]> others = Spoken(OtherTalks);
 			if (other && others.Count > 0 && Random.value < OtherChance)
@@ -1416,6 +1425,10 @@ namespace VikingVillages
 			if (named)
 			{
 				talks.AddRange(Spoken(VillageTalks));
+			}
+			if (linked != null)
+			{
+				talks.AddRange(linked);
 			}
 			return(talks[Random.Range(0, talks.Count)]);
 		}

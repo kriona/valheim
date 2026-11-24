@@ -16,6 +16,7 @@ namespace Kriona.Vikings
 			VillageRespawn.Forget();
 			VillageRecords.Forget();
 			VillageLocations.Forget();
+			VillagePortals.Forget();
 			FarmLayout.Forget();
 		}
 	}

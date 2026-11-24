@@ -331,6 +331,53 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks how many floors out from the bank each building material holds up, by the game's support values - 4
+		/// of wood, 2 of grausten's ashstone and none of plain stone
+		/// </summary>
+		/// <param name="maxSupport">The material's most support</param>
+		/// <param name="minSupport">Its least</param>
+		/// <param name="horizontalLoss">Its loss for every meter out</param>
+		/// <param name="expected">The floors held up</param>
+		[Theory]
+		[InlineData(100f, 10f, 0.2f, 4)]
+		[InlineData(2000f, 100f, 1f / 3f, 2)]
+		[InlineData(1000f, 100f, 1f, 0)]
+		[InlineData(1500f, 20f, 0f, 100)]
+		public void HoldsUpFloorsOutFromTheBank(float maxSupport, float minSupport, float horizontalLoss, int expected)
+		{
+			Assert.Equal(expected, VillagePaths.FloorsHeldOut(maxSupport, minSupport, horizontalLoss));
+		}
+
+		/// <summary>
+		/// Checks that a wood bridge spans BridgeSpanMax, one whose floors hold up fewer spans less, and one whose floors
+		/// hold up none can't be built
+		/// </summary>
+		[Fact]
+		public void SpansWhatTheFloorsHoldUp()
+		{
+			Assert.Equal(VillagePaths.BridgeSpanMax, VillagePaths.BridgeSpan(4), 3);
+			Assert.Equal(6.4f, VillagePaths.BridgeSpan(2), 3);
+			Assert.True(VillagePaths.BridgeSpan(0) < 0.1f);
+		}
+
+		/// <summary>
+		/// Checks that only the Ashlands' and the Deep North's villages build their bridges of grausten
+		/// </summary>
+		/// <param name="biome">The village's biome</param>
+		/// <param name="expected">Whether its bridges are grausten</param>
+		[Theory]
+		[InlineData(Heightmap.Biome.AshLands, true)]
+		[InlineData(Heightmap.Biome.DeepNorth, true)]
+		[InlineData(Heightmap.Biome.Meadows, false)]
+		[InlineData(Heightmap.Biome.Mountain, false)]
+		[InlineData(Heightmap.Biome.Mistlands, false)]
+		[InlineData(Heightmap.Biome.None, false)]
+		public void BuildsStoneBridgesInTheHardestBiomes(Heightmap.Biome biome, bool expected)
+		{
+			Assert.Equal(expected, VillagePaths.UsesStoneBridges(biome));
+		}
+
+		/// <summary>
 		/// Checks that a longer bridge never takes fewer floors
 		/// </summary>
 		[Fact]

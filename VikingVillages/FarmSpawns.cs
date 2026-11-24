@@ -229,14 +229,23 @@ namespace VikingVillages
 			}
 			foreach (ZoneSystem.LocationInstance instance in ZoneSystem.instance.m_locationInstances.Values)
 			{
-				ZoneSystem.ZoneLocation location = instance.m_location;
-				string name = ((location != null) ? (!string.IsNullOrEmpty(location.m_prefabName) ? location.m_prefabName : location.m_name) : null);
-				if (name != null && name.StartsWith(FarmPrefix, System.StringComparison.OrdinalIgnoreCase))
+				if (IsFarm(instance.m_location))
 				{
 					farms.Add(instance.m_position);
 				}
 			}
 			return(farms);
+		}
+
+		/// <summary>
+		/// Checks whether a location is one of the game's abandoned farms
+		/// </summary>
+		/// <param name="location">The location, or null</param>
+		/// <returns>True when it is</returns>
+		public static bool IsFarm(ZoneSystem.ZoneLocation location)
+		{
+			string name = ((location != null) ? (!string.IsNullOrEmpty(location.m_prefabName) ? location.m_prefabName : location.m_name) : null);
+			return(name != null && name.StartsWith(FarmPrefix, System.StringComparison.OrdinalIgnoreCase));
 		}
 
 		/// <summary>

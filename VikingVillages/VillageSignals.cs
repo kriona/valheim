@@ -97,6 +97,7 @@ namespace VikingVillages
 			VillageArea.Register();
 			VillagePaths.Register();
 			VillageLocations.Register();
+			VillagePortals.Register();
 			VillageFounding.RegisterRpc();
 			VikingNewsStore.Register();
 			ZRoutedRpc.instance.Register<ZDOID, ZDOID, int>(ForageBonusRpc, OnForageBonus);

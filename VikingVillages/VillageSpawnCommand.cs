@@ -91,7 +91,7 @@ namespace VikingVillages
 		/// Lists the game's farm locations whose prefab is there to place
 		/// </summary>
 		/// <returns>The locations</returns>
-		private static List<ZoneSystem.ZoneLocation> FarmLocations()
+		internal static List<ZoneSystem.ZoneLocation> FarmLocations()
 		{
 			List<ZoneSystem.ZoneLocation> farms = new List<ZoneSystem.ZoneLocation>();
 			if (ZoneSystem.instance == null)

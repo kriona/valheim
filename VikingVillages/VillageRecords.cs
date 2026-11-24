@@ -304,7 +304,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Lists a village's noted pieces that no longer stand, among those in zones that have finished loading - leaving
 		/// out the pieces of a house with none of its pieces standing, which is in ruins and built back last (see
-		/// MissingInRuins), and piles of wood (see IsWoodPile)
+		/// MissingInRuins), piles of wood (see IsWoodPile), and the village's portal and the sign on top of it while
+		/// they can't be built back (see VillagePortals.HoldBack)
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <returns>The missing pieces, or none before the village's pieces are noted</returns>
@@ -329,6 +330,7 @@ namespace VikingVillages
 					missing.Add(record);
 				}
 			}
+			VillagePortals.HoldBack(village, missing);
 			return(missing);
 		}
 
@@ -506,7 +508,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Builds a village's missing piece back where it stood, as a piece no player built, with its place effect
+		/// Builds a village's missing piece back where it stood, as a piece no player built, with its place effect - a
+		/// sign with a name on it, and the village's portal and its sign as they were (see VillagePortals.Restore)
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="record">The piece</param>
@@ -536,7 +539,10 @@ namespace VikingVillages
 			{
 				piece.m_placeEffect.Create(record.Position, record.Rotation, instance.transform);
 			}
-			VillageSigns.Name(instance, village);
+			if (!VillagePortals.Restore(instance, village))
+			{
+				VillageSigns.Name(instance, village);
+			}
 			return(true);
 		}
 

@@ -77,11 +77,41 @@ namespace VikingVillages
 		/// <param name="village">The village, whose generator or anchor this client owns</param>
 		public static void TryAutoName(Village village)
 		{
-			// The names are settled in advance (see VillagePlannedNames), so it waits until they're known
-			if (village == null || village.Zdo == null || EverNamed(village.Zdo) || !VillagePlannedNames.Ready || !VillageNameList.Ready)
+			if (village == null || village.Zdo == null)
 			{
 				return;
 			}
+			TryAutoName(village.Zdo, village.Farm);
+		}
+
+		/// <summary>
+		/// Gives the village a farm's generator or a started village's anchor is the record of the name settled for its
+		/// farm, or one no other village goes by, the way TryAutoName(Village) does
+		/// </summary>
+		/// <param name="zdo">The generator's or anchor's ZDO, owned by this client</param>
+		/// <param name="farm">Where the village's farm stands</param>
+		public static void TryAutoName(ZDO zdo, Vector3 farm)
+		{
+			// The names are settled in advance (see VillagePlannedNames), so it waits until they're known
+			if (zdo == null || EverNamed(zdo) || !VillagePlannedNames.Ready || !VillageNameList.Ready)
+			{
+				return;
+			}
+			string picked = PickName(farm, TakenNames(zdo));
+			if (picked != null)
+			{
+				Give(zdo, farm, picked);
+			}
+		}
+
+		/// <summary>
+		/// Lists the names other villages go by - those in the world's list of names and those of the villages loaded on
+		/// this client
+		/// </summary>
+		/// <param name="own">The generator or anchor of the village being named, whose own name is left out</param>
+		/// <returns>The names, in lower case</returns>
+		internal static HashSet<string> TakenNames(ZDO own)
+		{
 			HashSet<string> taken = new HashSet<string>();
 			foreach (VillageNameList.Entry entry in VillageNameList.Others(""))
 			{
@@ -89,32 +119,51 @@ namespace VikingVillages
 			}
 			foreach (Village other in Village.Loaded())
 			{
-				if (other != village && other.Zdo != null)
+				if (other.Zdo != null && other.Zdo != own)
 				{
 					taken.Add(Raw(other).ToLowerInvariant());
 				}
 			}
-			string picked = VillagePlannedNames.For(village.Farm);
-			if (picked == null || taken.Contains(picked.ToLowerInvariant()))
+			return(taken);
+		}
+
+		/// <summary>
+		/// Picks a name for a village - the one settled for its farm in advance, or with none settled or that one taken,
+		/// one of AutoNames that isn't taken, isn't a place's name and no farm has settled
+		/// </summary>
+		/// <param name="farm">Where the village's farm stands</param>
+		/// <param name="taken">The names other villages go by, in lower case (see TakenNames)</param>
+		/// <returns>The name, or null when every name is taken</returns>
+		internal static string PickName(Vector3 farm, HashSet<string> taken)
+		{
+			string picked = VillagePlannedNames.For(farm);
+			if (picked != null && !taken.Contains(picked.ToLowerInvariant()))
 			{
-				// A village with none settled, like one a player started, takes one no farm has settled
-				List<string> free = new List<string>();
-				foreach (string name in AutoNames)
-				{
-					if (!taken.Contains(name.ToLowerInvariant()) && !VikingNames.IsPlace(name) && !VillagePlannedNames.IsSettled(name))
-					{
-						free.Add(name);
-					}
-				}
-				if (free.Count == 0)
-				{
-					return;
-				}
-				picked = free[Random.Range(0, free.Count)];
+				return(picked);
 			}
-			village.Zdo.Set(NameZdoKey, picked);
-			VillageNameList.Note(picked, "");
-			Plugin.Log.LogInfo("The village at " + village.Farm.ToString("F0") + " is called " + picked);
+			// A village with none settled, like one a player started, takes one no farm has settled
+			List<string> free = new List<string>();
+			foreach (string name in AutoNames)
+			{
+				if (!taken.Contains(name.ToLowerInvariant()) && !VikingNames.IsPlace(name) && !VillagePlannedNames.IsSettled(name))
+				{
+					free.Add(name);
+				}
+			}
+			return((free.Count > 0) ? free[Random.Range(0, free.Count)] : null);
+		}
+
+		/// <summary>
+		/// Names a village, noted as given by no player
+		/// </summary>
+		/// <param name="zdo">Its generator's or anchor's ZDO, owned by this client</param>
+		/// <param name="farm">Where its farm stands</param>
+		/// <param name="name">The name</param>
+		internal static void Give(ZDO zdo, Vector3 farm, string name)
+		{
+			zdo.Set(NameZdoKey, name);
+			VillageNameList.Note(name, "");
+			Plugin.Log.LogInfo("The village at " + farm.ToString("F0") + " is called " + name);
 		}
 
 		/// <summary>

@@ -55,6 +55,7 @@ namespace VikingVillages
 			watcher.Update();
 			ConfigSync.Update();
 			VillagePaths.Update();
+			VillagePortals.Update();
 			VillageWatch.Update();
 			VillageRespawn.Update();
 			VillageLivestock.Update();

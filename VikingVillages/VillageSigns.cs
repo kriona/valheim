@@ -15,7 +15,10 @@ namespace VikingVillages
 	/// A blank signpost can stand with a wooden post through it, which would cut through the text, so each sign is
 	/// slid along the way it faces until its text is clear of every building piece - to the side of the post it's
 	/// mostly on, and turned around when that leaves the post in front of the text. The village's signs no player put
-	/// up that were swapped before they were slid are slid the same way, once, keeping what's written on them
+	/// up that were swapped before they were slid are slid the same way, once, keeping what's written on them.
+	///
+	/// The sign on top of a village's portal names the village on its other side (see VillagePortals), so it's never
+	/// slid, renamed or counted as the sign that points to another village
 	/// </remarks>
 	internal static class VillageSigns
 	{
@@ -101,7 +104,7 @@ namespace VikingVillages
 			foreach (KeyValuePair<ZDO, ZNetView> instance in ZNetScene.instance.m_instances)
 			{
 				int kind = instance.Key.GetPrefab();
-				if ((kind != BlankHash && kind != SignHash) || instance.Value == null || instance.Key.GetLong(ZDOVars.s_creator, 0L) != 0L || !village.OwnsPiece(instance.Key.GetPosition()))
+				if ((kind != BlankHash && kind != SignHash) || instance.Value == null || instance.Key.GetLong(ZDOVars.s_creator, 0L) != 0L || VillagePortals.IsPortalSign(instance.Key) || !village.OwnsPiece(instance.Key.GetPosition()))
 				{
 					continue;
 				}
@@ -235,7 +238,7 @@ namespace VikingVillages
 		/// <param name="text">What was written on it</param>
 		/// <param name="author">Who wrote it</param>
 		/// <param name="authorName">The name shown for who wrote it</param>
-		private static void Rewrite(GameObject instance, string text, string author, string authorName)
+		internal static void Rewrite(GameObject instance, string text, string author, string authorName)
 		{
 			Sign sign = instance.GetComponent<Sign>();
 			ZNetView view = instance.GetComponent<ZNetView>();
@@ -298,7 +301,7 @@ namespace VikingVillages
 			}
 			foreach (KeyValuePair<ZDO, ZNetView> instance in ZNetScene.instance.m_instances)
 			{
-				if (instance.Value == own || instance.Key.GetPrefab() != SignHash || instance.Key.GetLong(ZDOVars.s_creator, 0L) != 0L || !village.OwnsPiece(instance.Key.GetPosition()))
+				if (instance.Value == own || instance.Key.GetPrefab() != SignHash || instance.Key.GetLong(ZDOVars.s_creator, 0L) != 0L || VillagePortals.IsPortalSign(instance.Key) || !village.OwnsPiece(instance.Key.GetPosition()))
 				{
 					continue;
 				}

@@ -389,6 +389,39 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that dry ground that burns is kept out of like water - no way across it until the stretch a bridge can
+		/// span is noted, and then one bridge from bank to bank
+		/// </summary>
+		[Fact]
+		public void CrossesLavaOnlyOnABridge()
+		{
+			System.Func<Vector3, bool> lava = (Vector3 point) => (point.x >= 4f && point.x <= 6f && point.y == Dry);
+			VillagePaths.Grid grid = new VillagePaths.Grid(Vector3.zero, new Vector3(10f, 0f, 10f), Water, (Vector3 point) => Dry, lava, VillagePaths.BridgeSpanMax);
+			Assert.Null(Search(grid, 1, 5, 9, 5, false));
+			grid.MarkBridgeable();
+			Assert.NotNull(Search(grid, 1, 5, 9, 5, false));
+			List<VillagePaths.Bridge> bridges = grid.FindBridges(Row((float x, float z) => Dry, 0, 10, 5f));
+			Assert.Single(bridges);
+			Assert.Equal(new Vector3(3f, Dry, 5f), bridges[0].Start);
+			Assert.Equal(new Vector3(7f, Dry, 5f), bridges[0].End);
+		}
+
+		/// <summary>
+		/// Checks that a bridge whose floors span less leaves water shut that a wood bridge would cross
+		/// </summary>
+		[Fact]
+		public void BridgesOnlyWhatTheBridgeSpans()
+		{
+			System.Func<float, float, float> river = River(1f, 8f);
+			VillagePaths.Grid wood = Ground(20, river);
+			VillagePaths.Grid stone = new VillagePaths.Grid(Vector3.zero, new Vector3(20f, 0f, 20f), Water, (Vector3 point) => river(point.x, point.z), null, VillagePaths.BridgeSpan(2));
+			Assert.Single(wood.FindBridges(Row(river, 0, 20, 5f)));
+			Assert.Empty(stone.FindBridges(Row(river, 0, 20, 5f)));
+			stone.MarkBridgeable();
+			Assert.Null(Search(stone, 0, 5, 12, 5, false));
+		}
+
+		/// <summary>
 		/// Checks that a stretch of water a path crosses is found from its first point in the water to its last
 		/// </summary>
 		[Fact]

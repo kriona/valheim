@@ -14,9 +14,12 @@ namespace VikingVillages
 	/// the first time the whole village is loaded around them, and marks the generator so they're only laid once. The
 	/// houses are joined by the shortest set of paths that connects them all, and each path is found on a grid that
 	/// steers around buildings, fences, large trees, bushes and large rocks, prefers flat ground and keeps out of the
-	/// water - or, when there's no way around them, goes through as few of them and as little water as it can. It's
+	/// water and the Ashlands' lava, which it treats as water - or, when there's no way around them, goes through as few
+	/// of them and as little water as it can. It's
 	/// painted with the hoe's path, and the branches, stones, small trees and small rocks on it are cleared. A farm with
-	/// no open ground for its bonfire stays abandoned - nothing is built or painted, and no living vikings come to it
+	/// no open ground for its bonfire stays abandoned - nothing is built or painted, and no living vikings come to it.
+	/// An Ashlands or Deep North village, and the village its portal leads to, get the portal as their paths are laid,
+	/// with a path of its own (see VillagePortals)
 	/// </remarks>
 	internal static class VillagePaths
 	{
@@ -218,10 +221,23 @@ namespace VikingVillages
 		private const float BridgeCost = 6f;
 
 		/// <summary>
-		/// The widest water a bridge crosses, from bank to bank, in meters - a wood floor holds up about 4 more floors
-		/// out from one resting on the ground, so a bridge resting on both banks spans a little more than this
+		/// The widest water a wood bridge crosses, from bank to bank, in meters - a wood floor holds up 4 more floors out
+		/// from one resting on the ground, so a bridge resting on both banks spans a little more than this. A bridge of
+		/// another piece spans what its floors hold up (see BridgeSpan)
 		/// </summary>
-		private const float BridgeSpanMax = 14f;
+		internal const float BridgeSpanMax = 14f;
+
+		/// <summary>
+		/// How much of the reach of a bridge's floors rests on its banks rather than over the water, in meters - so a
+		/// wood bridge spans BridgeSpanMax
+		/// </summary>
+		private const float BankRest = 3.1f;
+
+		/// <summary>
+		/// The widest water a bridge of each piece crosses, by the piece's name, worked out the first time (see
+		/// BridgeSpanOf)
+		/// </summary>
+		private static readonly Dictionary<string, float> bridgeSpans = new Dictionary<string, float>();
 
 		/// <summary>
 		/// How many times a path is looked for again around water too wide to bridge
@@ -229,10 +245,12 @@ namespace VikingVillages
 		private const int BridgeTries = 4;
 
 		/// <summary>
-		/// The piece bridges are built of, how far apart its floors are laid, so each overlaps the next a little, how far
-		/// above the bank a bridge's ends are, in meters, and the steepest a bridge can be, in degrees
+		/// The piece bridges are built of - a grausten floor in a village of the Ashlands or the Deep North, and a wood
+		/// floor anywhere else - how far apart its floors are laid, so each overlaps the next a little, how far above the
+		/// bank a bridge's ends are, in meters, and the steepest a bridge can be, in degrees
 		/// </summary>
 		private const string BridgePiece = "wood_floor";
+		private const string StoneBridgePiece = "Piece_grausten_floor_2x2";
 		private const float BridgeStep = 1.9f;
 		private const float BridgeLift = 0.05f;
 		private const float BridgeSlopeMax = 25f;
@@ -493,7 +511,7 @@ namespace VikingVillages
 			{
 				return;
 			}
-			Grid grid = new Grid(min, max);
+			Grid grid = new Grid(min, max, farm);
 			List<Blocker> blockers = FindBlockers(min, max);
 			grid.Mark(blockers);
 			grid.MarkBridgeable();
@@ -513,7 +531,7 @@ namespace VikingVillages
 					bridges.AddRange(crossings);
 				}
 			}
-			int built = BuildBridges(farm, bridges);
+			int built = BuildBridges(farm, bridges, BridgePieceAt(farm));
 			zdo.Set(BridgedKey, true);
 			if (built > 0)
 			{
@@ -527,17 +545,18 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="farm">Where the farm's generator stands</param>
 		/// <param name="bridges">The bridges</param>
+		/// <param name="piece">The floor piece they're built of (see BridgePieceAt)</param>
 		/// <returns>How many were built</returns>
-		private static int BuildBridges(Vector3 farm, List<Bridge> bridges)
+		private static int BuildBridges(Vector3 farm, List<Bridge> bridges, string piece)
 		{
 			if (bridges.Count == 0)
 			{
 				return(0);
 			}
-			GameObject prefab = ZNetScene.instance.GetPrefab(BridgePiece);
+			GameObject prefab = ZNetScene.instance.GetPrefab(piece);
 			if (prefab == null)
 			{
-				Plugin.Log.LogWarning("Couldn't find the " + BridgePiece + " piece to build village bridges with");
+				Plugin.Log.LogWarning("Couldn't find the " + piece + " piece to build village bridges with");
 				return(0);
 			}
 			List<PieceRecord> pieces = new List<PieceRecord>();
@@ -572,7 +591,7 @@ namespace VikingVillages
 				return;
 			}
 			Quaternion rotation = Quaternion.LookRotation(along.normalized, Vector3.up);
-			int hash = BridgePiece.GetStableHashCode();
+			int hash = prefab.name.GetStableHashCode();
 			int wood = VillageRecords.WoodCost(hash);
 			for (int i = 0; i < count; i++)
 			{
@@ -596,7 +615,7 @@ namespace VikingVillages
 		/// <param name="span">The bridge</param>
 		public static void BuildHouseBridge(Village village, HouseBridge span)
 		{
-			GameObject prefab = ZNetScene.instance.GetPrefab(BridgePiece);
+			GameObject prefab = ZNetScene.instance.GetPrefab(BridgePieceAt(village.Farm));
 			if (prefab == null)
 			{
 				return;
@@ -619,10 +638,98 @@ namespace VikingVillages
 		/// Works out the wood a bridge takes - its floors, laid as Build lays them, each what the floor piece takes
 		/// </summary>
 		/// <param name="bridge">The bridge</param>
+		/// <param name="piece">The floor piece it's built of</param>
 		/// <returns>The wood</returns>
-		private static int BridgeWood(Bridge bridge)
+		private static int BridgeWood(Bridge bridge, string piece)
 		{
-			return(BridgeFloors(Vector3.Distance(bridge.Start, bridge.End)) * Mathf.Max(1, VillageRecords.WoodCost(BridgePiece.GetStableHashCode())));
+			return(BridgeFloors(Vector3.Distance(bridge.Start, bridge.End)) * Mathf.Max(1, VillageRecords.WoodCost(piece.GetStableHashCode())));
+		}
+
+		/// <summary>
+		/// Picks the floor piece a village's bridges are built of - grausten in the Ashlands and the Deep North, and
+		/// wood everywhere else
+		/// </summary>
+		/// <param name="farm">Where the village's farm stands</param>
+		/// <returns>The piece's name</returns>
+		internal static string BridgePieceAt(Vector3 farm)
+		{
+			Heightmap.Biome biome = ((WorldGenerator.instance != null) ? WorldGenerator.instance.GetBiome(farm) : Heightmap.Biome.None);
+			return(UsesStoneBridges(biome) ? StoneBridgePiece : BridgePiece);
+		}
+
+		/// <summary>
+		/// Checks whether a biome's villages build their bridges of grausten
+		/// </summary>
+		/// <param name="biome">The village's biome</param>
+		/// <returns>True for the Ashlands and the Deep North</returns>
+		internal static bool UsesStoneBridges(Heightmap.Biome biome)
+		{
+			return(biome == Heightmap.Biome.AshLands || biome == Heightmap.Biome.DeepNorth);
+		}
+
+		/// <summary>
+		/// Works out the widest water a bridge of a floor piece crosses, from what its floors hold up (see BridgeSpan),
+		/// the first time for each piece - or BridgeSpanMax, a wood bridge's, when the piece can't be found
+		/// </summary>
+		/// <param name="piece">The floor piece's name</param>
+		/// <returns>The widest water, from bank to bank, in meters</returns>
+		internal static float BridgeSpanOf(string piece)
+		{
+			if (bridgeSpans.TryGetValue(piece, out float span))
+			{
+				return(span);
+			}
+			GameObject prefab = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(piece) : null);
+			WearNTear wear = ((prefab != null) ? prefab.GetComponent<WearNTear>() : null);
+			if (wear == null)
+			{
+				return(BridgeSpanMax);
+			}
+			wear.GetMaterialProperties(out float maxSupport, out float minSupport, out float horizontalLoss, out float _);
+			int floors = FloorsHeldOut(maxSupport, minSupport, horizontalLoss);
+			span = BridgeSpan(floors);
+			bridgeSpans[piece] = span;
+			Plugin.Log.LogInfo("Bridges of " + piece + " hold up " + floors + " floors out from each bank, so they cross water up to " + span.ToString("F1") + " meters across");
+			return(span);
+		}
+
+		/// <summary>
+		/// Works out how many floors laid BridgeStep apart one resting on the ground holds up out over the water, the way
+		/// WearNTear.UpdateSupport works out a piece's support - each floor out has its neighbor's support, less the
+		/// material's horizontal loss of it for every meter between their middles and a tenth more, and breaks below the
+		/// material's least
+		/// </summary>
+		/// <param name="maxSupport">The support of a floor resting on the ground</param>
+		/// <param name="minSupport">The least support a floor stands with</param>
+		/// <param name="horizontalLoss">How much of its support is lost for every meter out</param>
+		/// <returns>The floors held up</returns>
+		internal static int FloorsHeldOut(float maxSupport, float minSupport, float horizontalLoss)
+		{
+			float keep = 1f - horizontalLoss * (BridgeStep + 0.1f);
+			float support = maxSupport;
+			int floors = 0;
+			while (keep > 0f && floors < 100)
+			{
+				support *= keep;
+				if (support < minSupport)
+				{
+					break;
+				}
+				floors++;
+			}
+			return(floors);
+		}
+
+		/// <summary>
+		/// Works out the widest water a bridge crosses, from bank to bank, when each bank's floor holds up some floors out
+		/// over it - the floors held up from both banks, the floor between them and what rests on the banks (see
+		/// BankRest)
+		/// </summary>
+		/// <param name="floorsHeldOut">How many floors each bank's floor holds up (see FloorsHeldOut)</param>
+		/// <returns>The widest water, in meters - below BridgeSpanMin when no bridge can be built</returns>
+		internal static float BridgeSpan(int floorsHeldOut)
+		{
+			return((2 * floorsHeldOut + 1) * BridgeStep - BankRest);
 		}
 
 		/// <summary>
@@ -678,6 +785,10 @@ namespace VikingVillages
 				zdo.Set(BridgedKey, true);
 				return;
 			}
+			if (!VillagePortals.Prepare(zdo, farm, out VillagePortals.Plan portal))
+			{
+				return;
+			}
 			if (!VillageLocations.FindNearbyFarms(zdo, farm, out Vector3 planned, out List<Vector3> neighbors))
 			{
 				return;
@@ -719,8 +830,9 @@ namespace VikingVillages
 				return;
 			}
 			int wilds = ClearWilds(farm, clearRadius);
-			Grid grid = new Grid(min, max);
+			Grid grid = new Grid(min, max, farm);
 			List<Blocker> blockers = FindBlockers(min, max);
+			VillagePortals.LeaveOut(blockers, portal);
 			grid.Flatten(farm, houses, blockers);
 			// A village in the Swamp, or the Plains by the sea, can stand in the water, so its ground is raised out of it
 			// before the paths are found - ground that's already dry is left as it is
@@ -784,6 +896,17 @@ namespace VikingVillages
 				Abandon(zdo, farm, min, max);
 				return;
 			}
+			VillagePortals.Site portalSite = null;
+			if (portal != null)
+			{
+				portalSite = VillagePortals.FindSite(grid, farm, (hasFire ? (Vector3?)null : fireSpot), path, houses);
+				if (portalSite != null && portalSite.Leg != null)
+				{
+					bridges.AddRange(grid.FindBridges(portalSite.Leg));
+					legs.Add(portalSite.Leg);
+					path.AddRange(portalSite.Leg);
+				}
+			}
 			Reshape(grid, min, max);
 			// Before the paths, so their paint goes on over the cleared ground
 			int snow = ClearSnow(zdo, farm, houses, min, max);
@@ -795,9 +918,13 @@ namespace VikingVillages
 			{
 				Plugin.Log.LogInfo("Laid a path from the village at " + farm.ToString("F0") + " to the farmhouse at " + neighbor.ToString("F0"));
 			}
-			int built = BuildBridges(farm, bridges);
+			int built = BuildBridges(farm, bridges, BridgePieceAt(farm));
 			int floors = PaintFloors(houses, blockers);
 			int cleared = Clear(blockers, path);
+			if (portal != null)
+			{
+				VillagePortals.Build(portal, portalSite, zdo, farm);
+			}
 			if (!hasFire)
 			{
 				PlaceBonfire(fireSpot, flatten);
@@ -1118,12 +1245,28 @@ namespace VikingVillages
 		/// <returns>False when there's no ground for it</returns>
 		private static bool FindFireSpot(Grid grid, Vector3 middle, out Vector3 spot, out bool flatten)
 		{
+			return(FindLevelSpot(grid, middle, BonfireRadius, BonfireSearch, out spot, out flatten));
+		}
+
+		/// <summary>
+		/// Finds the open ground nearest a point with room all around it, clear of buildings and paths, the way a fire's
+		/// is found - flat ground if there's any, or else gently sloping ground to flatten for it (see Flatten)
+		/// </summary>
+		/// <param name="grid">The village's ground, with its paths marked</param>
+		/// <param name="middle">The point</param>
+		/// <param name="radius">How much room it needs around it, no more than FlattenReach, in meters</param>
+		/// <param name="search">How far from the point to look, in meters</param>
+		/// <param name="spot">The spot - at the height the ground is flattened to, when it is</param>
+		/// <param name="flatten">Whether the ground there is flattened first</param>
+		/// <returns>False when there's no ground for it</returns>
+		internal static bool FindLevelSpot(Grid grid, Vector3 middle, float radius, float search, out Vector3 spot, out bool flatten)
+		{
 			flatten = false;
-			if (grid.FindOpenSpot(middle, BonfireRadius, BonfireSearch, FireFlatness, out spot, out float level))
+			if (grid.FindOpenSpot(middle, radius, search, FireFlatness, out spot, out float level))
 			{
 				return(true);
 			}
-			if (levelOp == null || !grid.FindOpenSpot(middle, BonfireRadius, BonfireSearch, FlattenLimit, out spot, out level))
+			if (levelOp == null || !grid.FindOpenSpot(middle, radius, search, FlattenLimit, out spot, out level))
 			{
 				return(false);
 			}
@@ -1505,7 +1648,7 @@ namespace VikingVillages
 				{
 					continue;
 				}
-				Grid grid = new Grid(min, max);
+				Grid grid = new Grid(min, max, village.Farm);
 				List<Blocker> blockers = FindBlockers(min, max);
 				grid.Mark(blockers);
 				grid.MarkBridgeable();
@@ -1537,7 +1680,7 @@ namespace VikingVillages
 						}
 					}
 					int before = spotSteps.FindAll((int spotStep) => spotStep <= step).Count;
-					plan.Bridges.Add(new HouseBridge { Start = crossing.Start, End = crossing.End, Before = Mathf.Min(before, Mathf.Max(0, plan.Spots.Count - 1)), Wood = BridgeWood(crossing) });
+					plan.Bridges.Add(new HouseBridge { Start = crossing.Start, End = crossing.End, Before = Mathf.Min(before, Mathf.Max(0, plan.Spots.Count - 1)), Wood = BridgeWood(crossing, BridgePieceAt(village.Farm)) });
 				}
 				return(plan);
 			}
@@ -2123,24 +2266,47 @@ namespace VikingVillages
 			private readonly float[] changes;
 
 			/// <summary>
-			/// Reads the world's ground across an area, blocking the water
+			/// The widest water a bridge crosses, from bank to bank, in meters
+			/// </summary>
+			private readonly float spanMax;
+
+			/// <summary>
+			/// Reads the world's ground across an area, blocking the water, and the Ashlands' lava and the boiling sea
+			/// around it as water too, for the bridges of a village's floor piece to cross (see BridgePieceAt)
 			/// </summary>
 			/// <param name="min">The area's lowest corner</param>
 			/// <param name="max">The area's highest corner</param>
-			public Grid(Vector3 min, Vector3 max) : this(min, max, ZoneSystem.instance.m_waterLevel, (Vector3 point) => ZoneSystem.instance.GetGroundHeight(point))
+			/// <param name="farm">Where the village's farm stands</param>
+			public Grid(Vector3 min, Vector3 max, Vector3 farm) : this(min, max, ZoneSystem.instance.m_waterLevel, (Vector3 point) => ZoneSystem.instance.GetGroundHeight(point), DangerousGround.IsDangerous, BridgeSpanOf(BridgePieceAt(farm)))
 			{
 			}
 
 			/// <summary>
-			/// Reads the ground across an area from the height of the ground at each cell, blocking the water
+			/// Reads the ground across an area from the height of the ground at each cell, blocking the water, for wood
+			/// bridges to cross
 			/// </summary>
 			/// <param name="min">The area's lowest corner</param>
 			/// <param name="max">The area's highest corner</param>
 			/// <param name="waterLevel">The water's height</param>
 			/// <param name="groundHeight">The ground's height at a point</param>
-			internal Grid(Vector3 min, Vector3 max, float waterLevel, System.Func<Vector3, float> groundHeight)
+			internal Grid(Vector3 min, Vector3 max, float waterLevel, System.Func<Vector3, float> groundHeight) : this(min, max, waterLevel, groundHeight, null, BridgeSpanMax)
+			{
+			}
+
+			/// <summary>
+			/// Reads the ground across an area from the height of the ground at each cell, blocking the water and the
+			/// ground that burns whoever stands on it, which paths cross and bridge the way they do the water
+			/// </summary>
+			/// <param name="min">The area's lowest corner</param>
+			/// <param name="max">The area's highest corner</param>
+			/// <param name="waterLevel">The water's height</param>
+			/// <param name="groundHeight">The ground's height at a point</param>
+			/// <param name="dangerous">Whether standing on the ground at a point burns, or null when none does</param>
+			/// <param name="spanMax">The widest water a bridge crosses, from bank to bank, in meters</param>
+			internal Grid(Vector3 min, Vector3 max, float waterLevel, System.Func<Vector3, float> groundHeight, System.Func<Vector3, bool> dangerous, float spanMax)
 			{
 				this.waterLevel = waterLevel;
+				this.spanMax = spanMax;
 				// The cells sit on whole meters, where the terrain's vertices are
 				origin = new Vector3(Mathf.Floor(min.x), 0f, Mathf.Floor(min.z));
 				width = Mathf.CeilToInt((max.x - origin.x) / CellSize) + 1;
@@ -2161,7 +2327,7 @@ namespace VikingVillages
 						int index = z * width + x;
 						float height = groundHeight(Position(x, z, 0f));
 						heights[index] = height;
-						wet[index] = (height < waterLevel + WetHeight);
+						wet[index] = (height < waterLevel + WetHeight || (dangerous != null && dangerous(Position(x, z, height))));
 						blocked[index] = wet[index];
 					}
 				}
@@ -2750,7 +2916,7 @@ namespace VikingVillages
 			public void MarkBridgeable()
 			{
 				int count = width * depth;
-				float reach = BridgeSpanMax / 2f;
+				float reach = spanMax / 2f;
 				float[] distance = new float[count];
 				Queue<int> queue = new Queue<int>();
 				for (int i = 0; i < count; i++)
@@ -2794,7 +2960,7 @@ namespace VikingVillages
 
 			/// <summary>
 			/// Finds the bridges a path needs over the water it crosses - one from bank to bank over each stretch of
-			/// water no bridge found before crosses, when its banks are from BridgeSpanMin to BridgeSpanMax apart, it's no
+			/// water no bridge found before crosses, when its banks are from BridgeSpanMin to spanMax apart, it's no
 			/// steeper than BridgeSlopeMax and has nothing standing in the way - and notes the water under them, so the
 			/// paths found after cross on them
 			/// </summary>
@@ -2808,7 +2974,7 @@ namespace VikingVillages
 					Vector3 start = path[run.Key - 1];
 					Vector3 end = path[run.Value + 1];
 					float span = Utils.DistanceXZ(start, end);
-					if (span < BridgeSpanMin || span > BridgeSpanMax ||Mathf.Atan2(Mathf.Abs(end.y - start.y), span) * Mathf.Rad2Deg > BridgeSlopeMax)
+					if (span < BridgeSpanMin || span > spanMax || Mathf.Atan2(Mathf.Abs(end.y - start.y), span) * Mathf.Rad2Deg > BridgeSlopeMax)
 					{
 						continue;
 					}
@@ -2841,7 +3007,7 @@ namespace VikingVillages
 				bool shut = false;
 				foreach (KeyValuePair<int, int> run in WaterRuns(path))
 				{
-					if (Utils.DistanceXZ(path[run.Key - 1], path[run.Value + 1]) <= BridgeSpanMax)
+					if (Utils.DistanceXZ(path[run.Key - 1], path[run.Value + 1]) <= spanMax)
 					{
 						continue;
 					}

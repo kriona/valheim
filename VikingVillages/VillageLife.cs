@@ -2146,8 +2146,9 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Answers a player talking to the viking, on its owner - in a fight it's busy and asleep it's sleepy, it greets
-		/// a player it has never met as a stranger with a wave and remembers them, and chats with one it knows or tells
-		/// them its news of them (see VikingNewsStore), turning to them either way
+		/// a player it has never met as a stranger with a wave and remembers them, and chats with one it knows - now and
+		/// then about the village on the other side of its village's portal (see VillagePortalSpeech) - or tells them its
+		/// news of them (see VikingNewsStore), turning to them either way
 		/// </summary>
 		/// <param name="sender">The client that sent it</param>
 		/// <param name="playerId">The player's ZDO</param>
@@ -2178,7 +2179,8 @@ namespace VikingVillages
 			if (VikingSpeech.Knows(humanoid, player.GetPlayerID()))
 			{
 				string news = VikingNewsStore.Tell(humanoid, player, NewsBiome());
-				VikingSpeech.Say(humanoid, news ?? VikingSpeech.Answer(player, IsNight(), VillageNames.Get(village)), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+				string answer = (news ?? VillagePortalSpeech.Chat(village, player.GetPlayerName()) ?? VikingSpeech.Answer(player, IsNight(), VillageNames.Get(village)));
+				VikingSpeech.Say(humanoid, answer, VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 				greeting = player;
 				greetUntil = Time.time + GreetFaceTime;
 				return;
@@ -11051,17 +11053,29 @@ namespace VikingVillages
 				ItemName = leader.VillageMaterial();
 				FallenName = VillageFallen.Remember(leader.village);
 				VillageName = VillageNames.Get(leader.village);
-				Lines = VikingSpeech.Talk(IsNight() || IsDusk(), EnvMan.IsWet(), Time.time - leader.lastFightAt < FightTalkTime, leader.Wounded(), OtherName.Length > 0, ItemName.Length > 0, FallenName.Length > 0, leader.body.HasBeard(), VillageName.Length > 0);
+				LinkedName = "";
+				LinkedBiome = "";
+				string[][] linkedTalks = null;
+				if (VillagePortals.Linked(leader.village, out string linked, out Heightmap.Biome biome))
+				{
+					LinkedName = linked;
+					LinkedBiome = VillagePortalSpeech.BiomeName(biome);
+					linkedTalks = VillagePortalSpeech.Talks(biome);
+				}
+				Lines = VikingSpeech.Talk(IsNight() || IsDusk(), EnvMan.IsWet(), Time.time - leader.lastFightAt < FightTalkTime, leader.Wounded(), OtherName.Length > 0, ItemName.Length > 0, FallenName.Length > 0, leader.body.HasBeard(), VillageName.Length > 0, linkedTalks);
 			}
 
 			/// <summary>
 			/// The name of another viking of the village they might talk about, of a material in the village's chests they
-			/// might talk about, of one of the village's dead they talk about, and of the village itself, or ""
+			/// might talk about, of one of the village's dead they talk about, of the village itself, and of the village on
+			/// the other side of its portal and the biome that stands in, or ""
 			/// </summary>
 			public readonly string OtherName;
 			public readonly string ItemName;
 			public readonly string FallenName;
 			public readonly string VillageName;
+			public readonly string LinkedName;
+			public readonly string LinkedBiome;
 
 			/// <summary>
 			/// Has the viking whose turn it is say the talk's next line, while it has lines left - calling the one it speaks
@@ -11072,7 +11086,7 @@ namespace VikingVillages
 				if (Said < Lines.Length && Speaker != null)
 				{
 					string listener = VikingNames.Get(Other(Speaker).humanoid);
-					VikingSpeech.Chatter(Speaker.humanoid, VikingSpeech.Address(Lines[Said], listener, OtherName, ItemName, FallenName, VillageName), VikingSpeech.TalkTime);
+					VikingSpeech.Chatter(Speaker.humanoid, VikingSpeech.Address(Lines[Said], listener, OtherName, ItemName, FallenName, VillageName, LinkedName, LinkedBiome), VikingSpeech.TalkTime);
 					Said++;
 				}
 			}
