@@ -97,13 +97,57 @@ namespace VikingVillages.Tests
 		}
 
 		[Theory]
-		[InlineData(0, 2)]
-		[InlineData(1, 4)]
-		[InlineData(3, 8)]
-		[InlineData(6, 10)]
+		[InlineData(0, 5)]
+		[InlineData(1, 8)]
+		[InlineData(3, 19)]
+		[InlineData(6, 32)]
 		public void BiggerBoatsCarryMore(int biome, int expected)
 		{
 			Assert.Equal(expected, TravelTime.BoatCrew(biome));
+		}
+
+		[Theory]
+		[InlineData(0)]
+		[InlineData(1)]
+		[InlineData(3)]
+		[InlineData(6)]
+		public void EveryBoatHasASeatForEachOfItsCrewTheHelmFirst(int biome)
+		{
+			BoatSeats.Plan[] plan = BoatSeats.For(TravelTime.BoatPrefab(biome));
+			Assert.NotNull(plan);
+			Assert.Equal(TravelTime.BoatCrew(biome), plan.Length);
+			Assert.Equal(BoatSeats.Helm, plan[0].Chair);
+			Assert.Single(plan, (BoatSeats.Plan seat) => seat.Chair == BoatSeats.Helm);
+			Assert.Single(plan, (BoatSeats.Plan seat) => seat.Chair == "mast");
+		}
+
+		[Theory]
+		[InlineData(0)]
+		[InlineData(1)]
+		[InlineData(3)]
+		[InlineData(6)]
+		public void SpotsOnTheDeckKeepApart(int biome)
+		{
+			List<BoatSeats.Plan> deck = new List<BoatSeats.Plan>(BoatSeats.For(TravelTime.BoatPrefab(biome))).FindAll((BoatSeats.Plan seat) => seat.OnDeck);
+			for (int i = 0; i < deck.Count; i++)
+			{
+				for (int j = i + 1; j < deck.Count; j++)
+				{
+					float apart = Mathf.Sqrt((deck[i].X - deck[j].X) * (deck[i].X - deck[j].X) + (deck[i].Z - deck[j].Z) * (deck[i].Z - deck[j].Z));
+					Assert.True(apart >= 0.9f, "Two spots on the deck are only " + apart + " m apart");
+				}
+			}
+		}
+
+		[Fact]
+		public void BoatsAreFoundByName()
+		{
+			Assert.Equal(0, TravelTime.BiomeOfBoat("raft"));
+			Assert.Equal(1, TravelTime.BiomeOfBoat("Karve"));
+			Assert.Equal(3, TravelTime.BiomeOfBoat("LONGSHIP"));
+			Assert.Equal(6, TravelTime.BiomeOfBoat("drakkar"));
+			Assert.Equal(-1, TravelTime.BiomeOfBoat("canoe"));
+			Assert.Equal(new[] { "raft", "karve", "longship", "drakkar" }, TravelTime.BoatNames());
 		}
 	}
 }

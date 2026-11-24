@@ -4841,9 +4841,9 @@ namespace VikingVillages
 				Plugin.Log.LogInfo(LogName() + " was away from its village long enough, and joined the village at " + here.Farm.ToString("F0"));
 				return(here);
 			}
-			// One on the road joins only the village it's going to, and none joins a village before it has every viking it
-			// starts with, so it doesn't take a new viking's place
-			if (here != null && VillageTravel.Bound(zdo, here) && VillageTravel.Takes(here) && here.NearestCoreHouse(transform.position, out VillagePaths.House house))
+			// One on the road joins only the village it's going to, none joins one while sitting on a boat, and none joins
+			// a village before it has every viking it starts with, so it doesn't take a new viking's place
+			if (here != null && zdo.GetInt(VikingBoat.BoardKey) != VikingBoat.Aboard && VillageTravel.Bound(zdo, here) && VillageTravel.Takes(here) && here.NearestCoreHouse(transform.position, out VillagePaths.House house))
 			{
 				here.Adopt(zdo, house);
 				return(here);

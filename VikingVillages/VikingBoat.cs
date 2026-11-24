@@ -103,14 +103,18 @@ namespace VikingVillages
 		private const float CrewlessTime = 20f;
 
 		/// <summary>
-		/// How the seats on deck are laid out where the ship has too few chairs - rows along it and columns across it, as
-		/// shares of its length and breadth, how far above the deck a viking sits, and how near the helm a seat can be, in
-		/// meters
+		/// How the seats on deck are laid out on a ship not of the game's, with no plan in BoatSeats - rows along it and
+		/// columns across it, as shares of its length and breadth, and how near the helm a seat can be, in meters
 		/// </summary>
 		private static readonly float[] SeatRows = { 0.3f, 0.15f, 0f, -0.15f, -0.3f };
 		private static readonly float[] SeatColumns = { -0.22f, 0.22f };
-		private const float SeatHeight = 0.45f;
 		private const float HelmClearance = 1.5f;
+
+		/// <summary>
+		/// On a boat, that it's moored for the kri_vv_spawnboat command, so it never sets off and its crew stays on board
+		/// until it's broken
+		/// </summary>
+		public static readonly int MooredKey = "kriona.VikingVillages.boatMoored".GetStableHashCode();
 
 		/// <summary>
 		/// Every boat loaded on this client
@@ -118,11 +122,13 @@ namespace VikingVillages
 		public static readonly List<VikingBoat> All = new List<VikingBoat>();
 
 		/// <summary>
-		/// The ship, its view, its seats - the helm's first - and its ladders
+		/// The ship, its view, its seats - the helm's first - each with the pose it's sat in (see
+		/// VikingPoses.SetShipPose), and its ladders
 		/// </summary>
 		public Ship Ship { get; private set; }
 		private ZNetView nview;
 		private readonly List<Transform> seats = new List<Transform>();
+		private readonly List<string> seatPoses = new List<string>();
 		private Ladder[] ladders;
 
 		/// <summary>
@@ -236,18 +242,57 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Lays out the boat's seats - the helm's first, then its chairs, then spots along its deck - each a point a viking
-		/// sits at that moves with the boat
+		/// Lays out the boat's seats by its plan (see BoatSeats) - the helm's first - each a point a viking sits at that
+		/// moves with the boat, and the pose it sits in there. A ship with no plan has its helm, its chairs and spots along
+		/// its deck
 		/// </summary>
 		private void MakeSeats()
 		{
-			Transform helm = ((Ship != null && Ship.m_shipControlls != null) ? Ship.m_shipControlls.m_attachPoint : null);
-			seats.Add((helm != null) ? helm : transform);
-			foreach (Chair chair in GetComponentsInChildren<Chair>(true))
+			ShipControlls controls = ((Ship != null) ? Ship.m_shipControlls : null);
+			Transform helm = ((controls != null) ? controls.m_attachPoint : null);
+			AddSeat(((helm != null) ? helm : transform), ((controls != null) ? controls.m_attachAnimation : VikingPoses.FloorPose));
+			Chair[] chairs = GetComponentsInChildren<Chair>(true);
+			BoatSeats.Plan[] plan = BoatSeats.For(Utils.GetPrefabName(gameObject));
+			if (plan == null)
 			{
-				if (chair.m_attachPoint != null && chair.m_attachPoint != helm)
+				MakeOtherSeats(helm, chairs);
+				return;
+			}
+			foreach (BoatSeats.Plan seat in plan)
+			{
+				if (seat.Chair == BoatSeats.Helm)
 				{
-					seats.Add(chair.m_attachPoint);
+					continue;
+				}
+				if (!seat.OnDeck)
+				{
+					Chair chair = System.Array.Find(chairs, (Chair found) => found.gameObject.name == seat.Chair && found.m_attachPoint != null);
+					if (chair != null)
+					{
+						AddSeat(chair.m_attachPoint, chair.m_attachAnimation);
+						continue;
+					}
+					Plugin.Log.LogWarning("Boat: the " + Utils.GetPrefabName(gameObject) + " has no chair called " + seat.Chair + " to seat its crew on");
+					continue;
+				}
+				Vector3 guess = transform.TransformPoint(new Vector3(seat.X, seat.Y, seat.Z));
+				AddDeckSeat(DeckBelow(transform.TransformPoint(new Vector3(seat.X, seat.Y + BoatSeats.ProbeAbove, seat.Z)), out Vector3 onDeck) ? onDeck : guess);
+			}
+		}
+
+		/// <summary>
+		/// Lays out the seats of a ship not of the game's - its active chairs but its figurehead's, then spots along its
+		/// deck - after its helm
+		/// </summary>
+		/// <param name="helm">Where its helm is sat at, or null</param>
+		/// <param name="chairs">Its chairs</param>
+		private void MakeOtherSeats(Transform helm, Chair[] chairs)
+		{
+			foreach (Chair chair in chairs)
+			{
+				if (chair.m_attachPoint != null && chair.m_attachPoint != helm && chair.gameObject.activeInHierarchy && chair.m_attachAnimation != "attach_dragon")
+				{
+					AddSeat(chair.m_attachPoint, chair.m_attachAnimation);
 				}
 			}
 			BoxCollider hull = ((Ship != null) ? Ship.m_floatCollider : null);
@@ -261,17 +306,36 @@ namespace VikingVillages
 				{
 					Vector3 local = hull.center + new Vector3(hull.size.x * column, 0f, hull.size.z * row);
 					Vector3 above = hull.transform.TransformPoint(local) + Vector3.up * 5f;
-					if (!DeckBelow(above, out Vector3 deck) || (helm != null && Vector3.Distance(deck, helm.position) < HelmClearance))
+					if (DeckBelow(above, out Vector3 deck) && (helm == null || Vector3.Distance(deck, helm.position) >= HelmClearance))
 					{
-						continue;
+						AddDeckSeat(deck);
 					}
-					GameObject seat = new GameObject("vikingSeat");
-					seat.transform.SetParent(transform, false);
-					seat.transform.position = deck + Vector3.up * SeatHeight;
-					seat.transform.rotation = Quaternion.LookRotation(transform.forward);
-					seats.Add(seat.transform);
 				}
 			}
+		}
+
+		/// <summary>
+		/// Adds a seat
+		/// </summary>
+		/// <param name="point">The point a viking sits at</param>
+		/// <param name="pose">The pose it sits in there (see VikingPoses.SetShipPose)</param>
+		private void AddSeat(Transform point, string pose)
+		{
+			seats.Add(point);
+			seatPoses.Add(pose);
+		}
+
+		/// <summary>
+		/// Adds a spot on the deck to sit on the boards at, facing the bow
+		/// </summary>
+		/// <param name="deck">The deck's surface there</param>
+		private void AddDeckSeat(Vector3 deck)
+		{
+			GameObject seat = new GameObject("vikingSeat");
+			seat.transform.SetParent(transform, false);
+			seat.transform.position = deck;
+			seat.transform.rotation = Quaternion.LookRotation(transform.forward);
+			AddSeat(seat.transform, VikingPoses.FloorPose);
 		}
 
 		/// <summary>
@@ -417,6 +481,59 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Gets the pose a seat of the boat is sat in (see VikingPoses.SetShipPose)
+		/// </summary>
+		/// <param name="index">The seat's index</param>
+		/// <returns>The pose</returns>
+		public string SeatPose(int index)
+		{
+			return(seatPoses[Mathf.Clamp(index, 0, seatPoses.Count - 1)]);
+		}
+
+		/// <summary>
+		/// Counts the boat's seats
+		/// </summary>
+		public int SeatCount
+		{
+			get
+			{
+				return(seats.Count);
+			}
+		}
+
+		/// <summary>
+		/// Notes the boat's crew, helm first, on its owner
+		/// </summary>
+		/// <param name="crew">The crew's IDs</param>
+		public void SetCrew(List<string> crew)
+		{
+			if (Valid())
+			{
+				nview.GetZDO().Set(CrewKey, string.Join(",", crew));
+			}
+		}
+
+		/// <summary>
+		/// Moors the boat for the kri_vv_spawnboat command, so it never sets off, on its owner
+		/// </summary>
+		public void Moor()
+		{
+			if (Valid())
+			{
+				nview.GetZDO().Set(MooredKey, true);
+			}
+		}
+
+		/// <summary>
+		/// Checks whether the boat is moored for the kri_vv_spawnboat command
+		/// </summary>
+		/// <returns>True when it is</returns>
+		public bool Moored()
+		{
+			return(Valid() && nview.GetZDO().GetBool(MooredKey));
+		}
+
+		/// <summary>
 		/// Finds where a viking in the water climbs aboard - the ladder nearest it, or the boat's middle
 		/// </summary>
 		/// <param name="from">Where the viking is</param>
@@ -474,6 +591,11 @@ namespace VikingVillages
 		{
 			if (!Valid() || !nview.IsOwner() || Ship == null || (Game.instance != null && Game.instance.IsShuttingDown()))
 			{
+				return;
+			}
+			if (Moored())
+			{
+				Hold();
 				return;
 			}
 			float dt = Time.deltaTime;

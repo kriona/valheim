@@ -75,6 +75,17 @@ namespace VikingVillages
 		private static readonly int ChairHash = ZSyncAnimation.GetHash(ChairBool);
 
 		/// <summary>
+		/// The player's animator bools for sitting on a ship's stool or at its helm and holding on to its mast, which the
+		/// player's ZSyncAnimation syncs too (see Chair.m_attachAnimation), and the pose a viking sits on a ship's deck in
+		/// where it has no seat - the floor sit
+		/// </summary>
+		public const string SitShipBool = "attach_sitship";
+		public const string MastBool = "attach_mast";
+		public const string FloorPose = "sit";
+		private static readonly int SitShipHash = ZSyncAnimation.GetHash(SitShipBool);
+		private static readonly int MastHash = ZSyncAnimation.GetHash(MastBool);
+
+		/// <summary>
 		/// The player's emotes the viking uses - the looping floor sit, the roar, the wave and the conversational gestures - and
 		/// the trigger that ends an emote
 		/// </summary>
@@ -474,6 +485,59 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Puts the viking in the pose of a seat on a ship - the seat's own animation, like the stool's sit or the mast's
+		/// hold (see Chair.m_attachAnimation), or the floor sit for a spot on the deck - or takes it out of every ship pose
+		/// </summary>
+		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="pose">The seat's animation, or FloorPose, or "" to take it out of every ship pose</param>
+		/// <param name="on">Whether it takes the pose, or comes out of it</param>
+		public static void SetShipPose(Character viking, string pose, bool on)
+		{
+			VikingPoses poses = Owned(viking);
+			if (poses == null)
+			{
+				return;
+			}
+			if (!on || string.IsNullOrEmpty(pose))
+			{
+				poses.EndSitting();
+				poses.ClearAttachPoses();
+				return;
+			}
+			poses.EndStretch();
+			if (pose == FloorPose)
+			{
+				poses.ClearAttachPoses();
+				if (!poses.IsSitting())
+				{
+					poses.SetEmote(SitEmote, false);
+				}
+				return;
+			}
+			poses.EndSitting();
+			int hash = ((pose == SitShipBool) ? SitShipHash : ((pose == MastBool) ? MastHash : ChairHash));
+			foreach (int other in new[] { BedHash, ChairHash, SitShipHash, MastHash })
+			{
+				if (other != hash)
+				{
+					poses.SetPoseBool(other, false);
+				}
+			}
+			poses.SetPoseBool(hash, true);
+		}
+
+		/// <summary>
+		/// Gets the viking out of every pose it holds on to something in - a bed, a chair, a ship's stool or its mast
+		/// </summary>
+		private void ClearAttachPoses()
+		{
+			SetPoseBool(BedHash, false);
+			SetPoseBool(ChairHash, false);
+			SetPoseBool(SitShipHash, false);
+			SetPoseBool(MastHash, false);
+		}
+
+		/// <summary>
 		/// Has the viking wave with the player's wave emote, unless it's sitting, lying or in a chair
 		/// </summary>
 		/// <param name="viking">The living viking, owned by this client</param>
@@ -721,8 +785,7 @@ namespace VikingVillages
 			{
 				EndStretch();
 				EndSitting();
-				SetPoseBool(BedHash, false);
-				SetPoseBool(ChairHash, false);
+				ClearAttachPoses();
 			}
 		}
 
@@ -741,18 +804,17 @@ namespace VikingVillages
 				zdo.Set(TalkKey, 0);
 			}
 			EndStretch();
-			SetPoseBool(BedHash, false);
-			SetPoseBool(ChairHash, false);
+			ClearAttachPoses();
 		}
 
 		/// <summary>
-		/// Checks whether the viking is sitting on the floor, lying in bed or sitting in a chair
+		/// Checks whether the viking is sitting on the floor, lying in bed, sitting in a chair or on a ship
 		/// </summary>
 		/// <returns>True when it is</returns>
 		private bool IsPosed()
 		{
 			ZDO zdo = nview.GetZDO();
-			return(IsSitting() || zdo.GetInt(AnimationSalt + BedHash) != 0 || zdo.GetInt(AnimationSalt + ChairHash) != 0);
+			return(IsSitting() || zdo.GetInt(AnimationSalt + BedHash) != 0 || zdo.GetInt(AnimationSalt + ChairHash) != 0 || zdo.GetInt(AnimationSalt + SitShipHash) != 0 || zdo.GetInt(AnimationSalt + MastHash) != 0);
 		}
 
 		/// <summary>
@@ -910,7 +972,7 @@ namespace VikingVillages
 			{
 				return(false);
 			}
-			if (animator.GetBool(BedHash) || animator.GetBool(ChairHash) || animator.IsInTransition(0))
+			if (animator.GetBool(BedHash) || animator.GetBool(ChairHash) || animator.GetBool(SitShipHash) || animator.GetBool(MastHash) || animator.IsInTransition(0))
 			{
 				return(false);
 			}

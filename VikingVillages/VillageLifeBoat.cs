@@ -476,13 +476,31 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Sits the viking at its seat on its boat, in the seat's pose
+		/// </summary>
+		private void SitOnBoard()
+		{
+			Attach(myBoat.Seat(mySeat), myBoat.gameObject);
+			VikingPoses.SetShipPose(humanoid, myBoat.SeatPose(mySeat), true);
+		}
+
+		/// <summary>
+		/// Gets the viking up from its seat on its boat, or wherever it was held when its boat is gone
+		/// </summary>
+		private void GetOffBoard()
+		{
+			Detach();
+			VikingPoses.SetShipPose(humanoid, "", false);
+		}
+
+		/// <summary>
 		/// Seats the viking on board its boat, at the helm for the first of its crew
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
 		/// <param name="how">How it got on, for the log</param>
 		private void GetAboard(ZDO zdo, string how)
 		{
-			Attach(myBoat.Seat(mySeat), myBoat.gameObject);
+			SitOnBoard();
 			zdo.Set(VikingBoat.BoatKey, myBoat.Key);
 			SetCrossing(zdo, Crossing.Aboard);
 			string boat = TravelTime.BoatName(VillageTravel.BoatBiome(zdo));
@@ -542,7 +560,7 @@ namespace VikingVillages
 				myBoat = VikingBoat.FindFor(CrossingGroup(zdo), VikingIdentity.Get(zdo), out mySeat);
 				if (myBoat != null)
 				{
-					Attach(myBoat.Seat(mySeat), myBoat.gameObject);
+					SitOnBoard();
 					crossing = Crossing.Aboard;
 					crossingSince = Time.time;
 					resumeSince = -1f;
@@ -579,7 +597,7 @@ namespace VikingVillages
 		{
 			if (myBoat == null || attachPoint == null)
 			{
-				Detach();
+				GetOffBoard();
 				Plugin.Log.LogInfo(LogName() + " lost its boat at sea at " + transform.position.ToString("F0") + ", and swims for the shore");
 				TestLog.Count("Boats", "vikings wrecked");
 				TripStory.Note(zdo, (TripStory story) => story.Wrecked = true);
@@ -596,7 +614,7 @@ namespace VikingVillages
 			}
 			if (myBoat.CurrentPhase == VikingBoat.Phase.Landing)
 			{
-				Detach();
+				GetOffBoard();
 				Vector3 toward = myBoat.Land - transform.position;
 				toward.y = 0f;
 				humanoid.m_body.linearVelocity = toward.normalized * JumpOut + Vector3.up * JumpUp;

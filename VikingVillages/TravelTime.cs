@@ -24,9 +24,9 @@ namespace VikingVillages
 		private static readonly bool[] BoatFireproof = { false, false, false, true };
 
 		/// <summary>
-		/// How many vikings each boat carries, the one at the helm included
+		/// How many vikings each boat carries, the one at the helm included - each seat laid out in BoatSeats
 		/// </summary>
-		private static readonly int[] BoatCrews = { 2, 4, 8, 10 };
+		private static readonly int[] BoatCrews = { 5, 8, 19, 32 };
 
 		/// <summary>
 		/// How long stepping through a portal takes, in seconds - the walk into it and out the other side
@@ -95,6 +95,26 @@ namespace VikingVillages
 		public static string BoatPrefab(int biome)
 		{
 			return(BoatPrefabs[Boat(biome)]);
+		}
+
+		/// <summary>
+		/// Finds the first biome whose best boat is the one named
+		/// </summary>
+		/// <param name="boat">The boat's name, like "karve", in any case</param>
+		/// <returns>The biome, by VikingGear's order, or -1 for no boat of that name</returns>
+		public static int BiomeOfBoat(string boat)
+		{
+			int index = System.Array.FindIndex(Boats, (string name) => string.Equals(name, boat, System.StringComparison.OrdinalIgnoreCase));
+			return((index >= 0) ? BoatFrom[index] : -1);
+		}
+
+		/// <summary>
+		/// Gets the names of the boats vikings cross the sea in, as they say them
+		/// </summary>
+		/// <returns>The names, from the raft up</returns>
+		public static string[] BoatNames()
+		{
+			return((string[])Boats.Clone());
 		}
 
 		/// <summary>
