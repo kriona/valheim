@@ -1171,27 +1171,54 @@ namespace VikingVillages
 		/// <returns>Its ZDO, or null when it couldn't come yet</returns>
 		public static ZDO SpawnArrival(Village village, List<ZDO> vikings, byte[] snapshot, Vector3 from)
 		{
+			if (!ArrivalSpotFor(village, snapshot, from, out Vector3 spot, out bool outside))
+			{
+				return(null);
+			}
+			return(SpawnArrivalAt(village, vikings, snapshot, spot, outside));
+		}
+
+		/// <summary>
+		/// Finds where a viking that was on the road comes into a village - a spot out of every player's sight on the side
+		/// it came from, when no enemy is near (see ReadyToArrive), or for one coming home from a quest of a village that
+		/// was trapped when it left, the spot it left from, inside the village
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="snapshot">The viking's values (see VillageDeparted.SnapshotOf)</param>
+		/// <param name="from">Where it comes from</param>
+		/// <param name="spot">Set to where it comes in</param>
+		/// <param name="outside">Set to whether that's outside the fence</param>
+		/// <returns>False when it can't come yet</returns>
+		public static bool ArrivalSpotFor(Village village, byte[] snapshot, Vector3 from, out Vector3 spot, out bool outside)
+		{
+			spot = Vector3.zero;
+			outside = false;
 			// A village a player started has no house to give one until its beds bring them
 			if (village.Houses.Count == 0)
 			{
-				return(null);
+				return(false);
 			}
-			Vector3 spot;
-			bool outside;
-			bool questHome = VillageQuests.ComingHome(snapshot, village);
-			if (questHome && VillageQuests.TrappedSpot(village, out Vector3 inside))
+			if (VillageQuests.ComingHome(snapshot, village) && VillageQuests.TrappedSpot(village, out Vector3 inside))
 			{
 				spot = inside;
-				outside = false;
-				if (village.FindEnemy(EnemyReach) != null)
-				{
-					return(null);
-				}
+				return(village.FindEnemy(EnemyReach) == null);
 			}
-			else if (!ReadyToArrive(village, from, out spot, out outside, out string _))
-			{
-				return(null);
-			}
+			return(ReadyToArrive(village, from, out spot, out outside, out string _));
+		}
+
+		/// <summary>
+		/// Brings a viking that was on the road into a village as it was, at a spot already found for it (see
+		/// ArrivalSpotFor and SpawnArrival)
+		/// </summary>
+		/// <param name="village">The village, whose generator this client owns</param>
+		/// <param name="vikings">Its living vikings' ZDOs, added to</param>
+		/// <param name="snapshot">The viking's values (see VillageDeparted.SnapshotOf)</param>
+		/// <param name="spot">Where it comes in</param>
+		/// <param name="outside">Whether that's outside the fence, so it walks in</param>
+		/// <returns>Its ZDO, or null when it couldn't be spawned</returns>
+		public static ZDO SpawnArrivalAt(Village village, List<ZDO> vikings, byte[] snapshot, Vector3 spot, bool outside)
+		{
+			bool questHome = VillageQuests.ComingHome(snapshot, village);
 			GameObject prefab = ZNetScene.instance.GetPrefab(VikingCore.LivingPrefabHash);
 			if (prefab == null)
 			{

@@ -75,11 +75,33 @@ namespace VikingVillages
 		public long QuestDue;
 
 		/// <summary>
+		/// For a group out on a quest, how many vikings set out on it, so the group isn't brought home before the last of
+		/// them has left the village (see QuestWaiting)
+		/// </summary>
+		public int QuestMembers;
+
+		/// <summary>
 		/// The version of how an entry is written, which a reader skips entries written another way by, and the earliest
 		/// version it still reads, which has no quest
 		/// </summary>
-		private const int FormatVersion = 3;
+		private const int FormatVersion = 4;
 		private const int OldestVersion = 2;
+
+		/// <summary>
+		/// Checks whether a group out on a quest waits for more of its vikings before it's brought home - while fewer of
+		/// them are with it than set out, until a while past when it's due, so one that never leaves the village, killed
+		/// on its way out, say, doesn't keep the rest away
+		/// </summary>
+		/// <param name="have">How many vikings the group has</param>
+		/// <param name="expected">How many set out, or 0 when that isn't known</param>
+		/// <param name="now">The time now, in ticks</param>
+		/// <param name="due">When the group is due, in ticks</param>
+		/// <param name="grace">How long past that it waits, in ticks</param>
+		/// <returns>True while it waits</returns>
+		internal static bool QuestWaiting(int have, int expected, long now, long due, long grace)
+		{
+			return(have < expected && now < due + grace);
+		}
 
 		/// <summary>
 		/// Checks whether the group is out on a quest rather than on the road
@@ -137,6 +159,7 @@ namespace VikingVillages
 			pkg.Write(QuestId);
 			pkg.Write(QuestKind);
 			pkg.Write(QuestDue);
+			pkg.Write(QuestMembers);
 		}
 
 		/// <summary>
@@ -178,6 +201,10 @@ namespace VikingVillages
 				entry.QuestId = pkg.ReadString();
 				entry.QuestKind = pkg.ReadInt();
 				entry.QuestDue = pkg.ReadLong();
+			}
+			if (version >= 4)
+			{
+				entry.QuestMembers = pkg.ReadInt();
 			}
 			return(entry);
 		}

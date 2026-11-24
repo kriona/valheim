@@ -127,6 +127,12 @@ namespace VikingVillages
 		private const float LostRetry = 600f;
 
 		/// <summary>
+		/// Seconds past when it's due a group out on a quest waits for the rest of its vikings to leave the village - long
+		/// enough for one that left late to catch up, as each leaves within QuestRules.LeaveTimeout of setting out
+		/// </summary>
+		private const float QuestGrace = QuestRules.LeaveTimeout * 2f;
+
+		/// <summary>
 		/// Seconds a client holds a group handed to it for a village it no longer runs before handing it back
 		/// </summary>
 		private const float HoldTime = 30f;
@@ -500,8 +506,8 @@ namespace VikingVillages
 		/// Brings in the groups handed to this client for a village it runs, as the village is looked after (see
 		/// VillageRespawn.Update) - those coming back to a village started again at their bonfire to its beds (see
 		/// VillageDeparted.AddReturning), and the rest walking in from the side they came from, each as it was, joining the
-		/// village as a newcomer, or coming home from a quest of the village's, which ends its quest (see
-		/// VillageQuests.Returned)
+		/// village as a newcomer, or coming home from a quest of the village's all at once, which ends its quest (see
+		/// ArriveTogether)
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns, with every viking it starts with</param>
 		/// <param name="vikings">Its living vikings' ZDOs, added to as they come</param>
@@ -521,7 +527,11 @@ namespace VikingVillages
 					held.RemoveAt(i);
 					continue;
 				}
-				while (entry.Vikings.Count > 0)
+				if (entry.OnQuest)
+				{
+					ArriveTogether(village, vikings, entry);
+				}
+				while (!entry.OnQuest && entry.Vikings.Count > 0)
 				{
 					ZDO zdo = VillageRespawn.SpawnArrival(village, vikings, entry.Vikings[0], entry.From);
 					if (zdo == null)
@@ -529,10 +539,6 @@ namespace VikingVillages
 						break;
 					}
 					entry.Vikings.RemoveAt(0);
-					if (entry.OnQuest)
-					{
-						VillageQuests.Returned(village, entry.QuestId);
-					}
 				}
 				if (entry.Vikings.Count == 0)
 				{
@@ -543,6 +549,30 @@ namespace VikingVillages
 					held[i] = new KeyValuePair<TravelEntry, float>(entry, Time.time);
 				}
 			}
+		}
+
+		/// <summary>
+		/// Brings a group out on a quest into its village all at once, at the one spot found for the first of them - or
+		/// none of them yet, when there's no spot for them, so they come home together - ending the village's quest
+		/// </summary>
+		/// <param name="village">The village, whose generator this client owns</param>
+		/// <param name="vikings">Its living vikings' ZDOs, added to</param>
+		/// <param name="entry">The group, emptied as they come</param>
+		private static void ArriveTogether(Village village, List<ZDO> vikings, TravelEntry entry)
+		{
+			if (entry.Vikings.Count == 0 || !VillageRespawn.ArrivalSpotFor(village, entry.Vikings[0], entry.From, out Vector3 spot, out bool outside))
+			{
+				return;
+			}
+			while (entry.Vikings.Count > 0)
+			{
+				if (VillageRespawn.SpawnArrivalAt(village, vikings, entry.Vikings[0], spot, outside) == null)
+				{
+					break;
+				}
+				entry.Vikings.RemoveAt(0);
+			}
+			VillageQuests.Returned(village, entry.QuestId);
 		}
 
 		/// <summary>
@@ -1030,7 +1060,9 @@ namespace VikingVillages
 		/// <summary>
 		/// Hands each group that's due to the client running its village, once the village has had every viking it starts
 		/// with - or finds it another village when it turned out to be a farm that stayed abandoned or a village since
-		/// disbanded. A group due at a farm not generated or loaded yet waits for it
+		/// disbanded. A group due at a farm not generated or loaded yet waits for it, and a group out on a quest waits for
+		/// the rest of its vikings to leave the village and join it, so they all come home together (see
+		/// TravelEntry.QuestWaiting)
 		/// </summary>
 		private static void Deliver()
 		{
@@ -1039,7 +1071,7 @@ namespace VikingVillages
 			for (int i = queue.Count - 1; i >= 0; i--)
 			{
 				TravelEntry entry = queue[i];
-				if (entry.Due > now)
+				if (entry.Due > now || TravelEntry.QuestWaiting(entry.Vikings.Count, entry.QuestMembers, now, entry.Due, NetTime.Ticks(QuestGrace)))
 				{
 					continue;
 				}
@@ -1166,6 +1198,8 @@ namespace VikingVillages
 			if (group != null)
 			{
 				group.Vikings.AddRange(entry.Vikings);
+				group.QuestMembers = Mathf.Max(group.QuestMembers, entry.QuestMembers);
+				group.Due = System.Math.Max(group.Due, entry.Due);
 			}
 			else
 			{

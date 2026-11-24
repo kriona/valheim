@@ -363,6 +363,7 @@ namespace VikingVillages
 			entry.QuestId = record.Id;
 			entry.QuestKind = (int)record.Kind;
 			entry.QuestDue = record.Due;
+			entry.QuestMembers = record.Members.Count;
 			entry.Vikings.Add(VillageDeparted.SnapshotOf(zdo));
 			VillageTravel.Queue(entry);
 			TestLog.Count("Vikings", "left on a quest");

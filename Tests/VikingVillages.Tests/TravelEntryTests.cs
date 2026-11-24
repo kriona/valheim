@@ -33,6 +33,7 @@ namespace VikingVillages.Tests
 			entry.QuestId = "abc123";
 			entry.QuestKind = (int)QuestKind.RaidCrypts;
 			entry.QuestDue = 638000000000001234L;
+			entry.QuestMembers = 3;
 			return(entry);
 		}
 
@@ -59,6 +60,43 @@ namespace VikingVillages.Tests
 			Assert.Equal(expected.QuestId, actual.QuestId);
 			Assert.Equal(expected.QuestKind, actual.QuestKind);
 			Assert.Equal(expected.QuestDue, actual.QuestDue);
+			Assert.Equal(expected.QuestMembers, actual.QuestMembers);
+		}
+
+		[Theory]
+		[InlineData(1, 3, 100L, false)]
+		[InlineData(1, 3, 99L, true)]
+		[InlineData(3, 3, 50L, false)]
+		[InlineData(1, 0, 50L, false)]
+		public void AQuestGroupWaitsForItsStragglersAWhile(int have, int expected, long now, bool waits)
+		{
+			Assert.Equal(waits, TravelEntry.QuestWaiting(have, expected, now, 40L, 60L));
+		}
+
+		[Fact]
+		public void EntryWrittenBeforeQuestSizesWaitsForNoOne()
+		{
+			ZPackage pkg = new ZPackage();
+			pkg.Write(3);
+			pkg.Write(0);
+			pkg.Write(Vector3.zero);
+			pkg.Write("");
+			pkg.Write(0L);
+			pkg.Write(Vector3.zero);
+			pkg.Write(Vector3.zero);
+			pkg.Write(0L);
+			pkg.Write(0f);
+			pkg.Write(0f);
+			pkg.Write(false);
+			pkg.Write("");
+			pkg.Write(0);
+			pkg.Write(0);
+			pkg.Write("q");
+			pkg.Write(2);
+			pkg.Write(5L);
+			TravelEntry read = TravelEntry.Decode(pkg.GetArray());
+			Assert.True(read.OnQuest);
+			Assert.Equal(0, read.QuestMembers);
 		}
 
 		[Fact]
