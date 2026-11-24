@@ -48,28 +48,19 @@ Zombie Vikings roam the world, each with gear appropriate to the biome it spawns
 
 - By day they spawn in the Dark Meadows, Ruin Black Forest, the Swamp, and the Ashlands, up to 1 star
 - At night they spawn in every biome, up to 2 stars. Night zombie Vikings run faster than normal Vikings
-    - Rarely and one at a time in the Meadows
+  - Rarely and one at a time in the Meadows
   - Up to 2 in the Black Forest
   - In groups of 1-3 from the Swamp on
 - Night zombie Vikings flee at dawn like other night creatures
+- An Ashlands zombie Viking takes no damage from the lava or the boiling sea, though fire from anything else still burns it
 - Draugr body piles spawn zombie Vikings, too
-- An abandoned house with no creatures of its own has a 75% chance to hold 1-2 Vikings
-- A Viking has a 65% chance of wearing armor (always the chest and legs, with a 50% chance each of the set's helmet and cape), an 85% chance of wielding a weapon and a 40% chance of wearing a shield, unless its weapon takes both hands. Every star upgrades its gear one level, and everything is worn (50-95% durability)
+- An abandoned house with no creatures of its own has a 66% chance to hold 1-2 Vikings - with Viking Villages, unless it's within 100 meters of an abandoned farm, whose living Vikings have taken it in
+- A Viking has a 65% chance of wearing armor (always the chest and legs, with a 50% chance each of the set's helmet and cape), an 85% chance of wielding a weapon and a 40% chance of wearing a shield, unless its weapon takes both hands. From the Mountains on, every Viking wears a cape - the set's, or else the biome's own (a wolf fur cape in the Mountains, a lox cape in the Plains, a feather cape in the Mistlands, an Asksvin cloak in the Ashlands and a moose hide cape in the Deep North). Every star upgrades its gear one level, and everything is worn (50-95% durability)
 - A Viking with a bow or crossbow carries 100 arrows or bolts appropriate to its biome. It never carries weapons or ammo that deal spirit damage, and a Deep North Viking never carries Dyrnwyn
-- Its health, skill, fists and coins depend on its biome - from 50 health, skill 0-12 and 0-10 coins in the Meadows to 1200 health, skill 88-100 and 200-300 coins in the Deep North - and stars multiply its health and coins
-- Its armor protects it half as well as a player's and wears down the same way, its weapons and shield wear down as it uses them, and it raises its shield against attacks, more often and with better timing the more skilled it is
+- Its health, skills, fists and coins depend on its biome - from 50 health, skills of 0-12 and 0-10 coins in the Meadows to 1200 health, skills of 88-100 and 200-300 coins in the Deep North, each skill rolled on its own within the range, every one at least 1 - and stars multiply its health and coins
+- Its armor protects it half as well as a player's and wears down the same way, its weapons and shield wear down as it uses them, and it raises its shield against attacks, more often and with better timing the more skilled it is. It knows the reach of what it fights with, closing in until its swing will land before it strikes - right up close with a knife or its fists, farther off with a polearm. It swings every 2 seconds, as monsters do
 - When it dies it drops its coins, and 0-2 entrails from the Swamp on, multiplied by its stars, and each piece of its gear has a 5% chance to drop, at most 2
-
-## Living Vikings
-
-Not every Viking has turned yet.
-
-- They're armed and carry coins like zombie Vikings of the same biome, and fight the same way, but always wear armor and wield a weapon - the helmet, cape and shield are still left to chance
-- Spawn one with the console command `spawn Viking`, or a zombie one with `spawn ZombieViking`
-- Like the dvergr, they fight zombies and monsters and leave you alone - until you hurt one, which turns every Viking and dvergr nearby against you
-- A living Viking that dies rises as a zombie Viking with its looks and gear, which drops its coins when it's killed in turn
-- They don't groan like the draugr
-- At night they pull out a torch while they aren't fighting, beside a one-handed weapon or in place of another. In a fight they put it away for a shield or a two-handed weapon, but keep it beside a one-handed weapon with nothing else in their off hand
+- Spawn one with the console command `spawn ZombieViking`
 
 ## Raids
 
@@ -110,7 +101,19 @@ Creatures that do not turn into zombies:
 - The Deep North's skeletons and shadows
 - Bosses
 - Creatures killed by spirit damage (e.g., silver or silver-lined weapons, or dvergr mages' spells)
+- Creatures that took at least 25% of their damage as fire (e.g., burning, fire arrows or a fire staff), counted after their resistances. Healing takes damage off each kind in proportion, and a creature that heals back to full health starts over
 - Summons, stone golems or creatures that leave no corpse to get up from, like seekers, ticks, serpents, surtlings and deathsquitos
+
+## With Viking Villages
+
+With [Viking Villages](https://thunderstore.io/c/valheim/p/Kriona/VikingVillages/) installed too, the living Vikings of its villages live through the apocalypse:
+
+- A living Viking who dies rises as a zombie Viking with their looks, gear and skills, by the same rules as any slain creature - `RiseChance`, `FireStaysDead` and spirit damage - and drops coins like any zombie Viking when killed in turn, along with the wood and loot they carried for their village
+- They stand ready over corpses about to rise and keep clear of poison clouds
+- What they talk about follows the world's zombies - the dead walking while `RiseChance` is above 0, burning the dead while `FireStaysDead` is above 0 (and silver always), dead deer while `AnimalsRise` is on, the dead raiding while `VikingRaids` is on, and newcomers rising while `TombstoneZombies` is on
+- The empty abandoned houses within 100 meters of a farm are its living Vikings', so zombie Vikings never hold them
+
+Any version of Zombie Apocalypse works with any version of Viking Villages - what one has that the other doesn't know about yet is left out.
 
 ## Configuration
 
@@ -120,7 +123,8 @@ In multiplayer, every player uses the server's settings while connected to it, a
 
 Rising:
 
-- `RiseChance` - percent chance that a slain creature rises (default `100`)
+- `RiseChance` - percent chance that a slain creature rises - with Viking Villages, the living Vikings talk of the dead rising and stand ready over their village's dead while it's above 0 (default `100`)
+- `FireStaysDead` - a creature that took at least this percent of its damage as fire stays dead, or `0` to let burned creatures rise too, which also keeps Viking Villages' living Vikings from talking of burning the dead (default `25`)
 - `RiseDelay` - seconds a corpse lies on the ground before it starts to get up (default `5`)
 - `RiseDuration` - seconds a corpse takes to get up (default `2.5`)
 - `WakeUpAnimation` - creatures that can sleep get up with their own wake-up animation (default `true`)
@@ -155,19 +159,19 @@ Raids:
 
 - `VikingRaids` - zombie Vikings can raid your base, and `false` leaves them out of the raids, though a raid already underway carries on (default `true`)
 
-Zombie Viking Gear:
+Viking Gear:
 
-- `ArmorChance` - percent chance that a Viking wears armor, always the set's chest and legs (default `65`)
-- `HelmetChance` - percent chance that a Viking wearing armor also wears the set's helmet (default `50`)
-- `CapeChance` - percent chance that a Viking wearing armor also wears the set's cape (default `50`)
-- `WeaponChance` - percent chance that a Viking wields a weapon, and fights with its fists otherwise (default `85`)
-- `ShieldChance` - percent chance that a Viking carries a shield, unless its weapon takes both hands (default `40`)
-- `StarsUpgradeGear` - each of a Viking's stars upgrades its gear one level, and `false` leaves it all at level 1 (default `true`)
-- `DurabilityMin` - least durability a Viking's gear spawns with, as a percent of full (default `50`)
-- `DurabilityMax` - most durability a Viking's gear spawns with, as a percent of full (default `95`)
-- `GearDropChance` - percent chance that a Viking drops each piece of its gear, as worn as it is, when it dies (default `5`)
-- `GearDropMax` - most pieces of gear a Viking drops (default `2`)
-- `ArmorEffectiveness` - how well armor protects any zombie Viking, tombstone ones included, as a percent of how well it protects a player (default `50`)
+- `ZombieArmorChance` - percent chance that a zombie Viking wears armor, always the set's chest and legs (default `65`)
+- `HelmetChance` - percent chance that a zombie Viking wearing armor also wears the set's helmet (default `50`)
+- `CapeChance` - percent chance that a zombie Viking wearing armor also wears the set's cape - from the Mountains on, every one wears one (default `50`)
+- `ZombieWeaponChance` - percent chance that a zombie Viking wields a weapon, and fights with its fists otherwise (default `85`)
+- `ShieldChance` - percent chance that a zombie Viking carries a shield, unless its weapon takes both hands (default `40`)
+- `ZombieStarsUpgradeGear` - each of a zombie Viking's stars upgrades its gear one level, and `false` leaves it all at level 1 (default `true`)
+- `ZombieDurabilityMin` - least durability a zombie Viking's gear spawns with, as a percent of full (default `50`)
+- `ZombieDurabilityMax` - most durability a zombie Viking's gear spawns with, as a percent of full (default `95`)
+- `GearDropChance` - percent chance that a zombie Viking drops each piece of its gear, as worn as it is, when it dies (default `5`)
+- `GearDropMax` - most pieces of gear a zombie Viking drops (default `2`)
+- `ZombieArmorEffectiveness` - how well armor protects a zombie Viking, tombstone ones included, as a percent of how well it protects a player (default `50`)
 
 Forsaken Powers:
 
@@ -186,4 +190,4 @@ By hand:
 
 ## Multiplayer
 
-In multiplayer, the server **requires** this mod - on a server without it, the mod stays off and nothing happens. Every player should have it too - each creature is run by one of the players near it, so a player without the mod sees zombies as ordinary creatures, and the creatures they run stay dead.
+In multiplayer, the server and every player need the same version of the mod. A server with it turns away a player without it, or with another version, and says why. On a server without it, the mod stays off, nothing rises and the player can still join.
