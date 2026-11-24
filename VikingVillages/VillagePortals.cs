@@ -6,9 +6,9 @@ namespace VikingVillages
 	/// <summary>
 	/// The portals that join each village of the Ashlands and the Deep North to a village of the Plains or an easier
 	/// biome - an Ashlands stone portal near the middle of the one and a wood portal near the middle of the other, each
-	/// with a path to its village's nearest path and a sign on top naming the village on its other side. Both are named
-	/// after the Ashlands or Deep North village, with a number after the name when another portal has it already, and
-	/// the game joins the two by their name
+	/// with a path to its village's nearest path and a sign on its frame naming the village on its other side. Both are
+	/// named after the Ashlands or Deep North village, with a number after the name when another portal has it already,
+	/// and the game joins the two by their name
 	/// </summary>
 	/// <remarks>
 	/// A portal goes up as its village's paths are laid. Only the server has the world's plan of its locations and every
@@ -41,7 +41,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// The portal in the Ashlands or Deep North village, the one in the village on its other side, and the sign on
-		/// top of each
+		/// each
 		/// </summary>
 		public const string StonePortal = "portal_stone";
 		public const string WoodPortal = "portal_wood";
@@ -70,12 +70,28 @@ namespace VikingVillages
 		private const float FireKeep = 5f;
 
 		/// <summary>
-		/// How far a portal is set into the ground so it touches it, how far a sign is set into the top of its portal so
-		/// it rests on it, and how tall a portal is taken to be when it can't be measured, in meters
+		/// How far a portal is set into the ground so it touches it, in meters
 		/// </summary>
 		public const float PortalSink = 0.1f;
-		private const float SignSink = 0.1f;
-		private const float PortalHeight = 3.5f;
+
+		/// <summary>
+		/// Where a portal's sign hangs on its frame - how far to the portal's right, up from its foot and in front of it,
+		/// in meters, and how far it's turned from the way the portal faces, in degrees
+		/// </summary>
+		internal struct SignPlace
+		{
+			public Vector3 Offset;
+			public float Turn;
+		}
+
+		/// <summary>
+		/// Where the sign hangs on each portal, by the portal's prefab - beside the frame, partway up it
+		/// </summary>
+		private static readonly Dictionary<string, SignPlace> SignPlaces = new Dictionary<string, SignPlace>
+		{
+			{ StonePortal, new SignPlace { Offset = new Vector3(2.283f, 1.716f, 0.748f), Turn = -14.5f } },
+			{ WoodPortal, new SignPlace { Offset = new Vector3(-1.573f, 1.249f, 0.270f), Turn = -174f } }
+		};
 
 		/// <summary>
 		/// The name of a portal whose Ashlands or Deep North village has no name, since every name is taken
@@ -90,7 +106,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// On a village's generator, once its portal is up - the portal's name, where the farm on its other side stands,
-		/// and what the sign on top of the portal says and where it stands, for the vikings to build them back as they
+		/// and what the sign on the portal says and where it stands, for the vikings to build them back as they
 		/// were (see Restore)
 		/// </summary>
 		private static readonly int LinkTagKey = "kriona.VikingVillages.villagePortalTag".GetStableHashCode();
@@ -175,7 +191,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// The portal a village's paths are laid with - the prefab, its name, where the farm on its other side stands and
-		/// what the sign on top says, and the portal already waiting at the farm's middle to put up in its place, if any
+		/// what its sign says, and the portal already waiting at the farm's middle to put up in its place, if any
 		/// </summary>
 		public class Plan
 		{
@@ -520,8 +536,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Puts a village's portal up where it goes, flattening the ground there first when it needs it, taking down the
-		/// portal waiting at the farm's middle in its place, and puts a sign on top of it naming the village on its other
-		/// side. With no site found, a waiting portal stays where it is
+		/// portal waiting at the farm's middle in its place, and hangs a sign on it naming the village on its other side.
+		/// With no site found, a waiting portal stays where it is
 		/// </summary>
 		/// <remarks>
 		/// The portal and its sign are the village's own, the same as the pieces it was generated with - they break into
@@ -557,7 +573,7 @@ namespace VikingVillages
 			generator.Set(LinkTagKey, plan.Tag);
 			generator.Set(LinkKey, plan.Other);
 			generator.Set(LinkSignTextKey, plan.SignText ?? "");
-			if (PutSign(portal, site, plan.SignText, out Vector3 signAt))
+			if (PutSign(portal, plan.Prefab, plan.SignText, out Vector3 signAt))
 			{
 				generator.Set(LinkSignAtKey, signAt);
 			}
@@ -582,35 +598,53 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Puts a sign on top of a portal, facing the way it does, with a village's name on it - unless the village has
+		/// Hangs a sign on a portal's frame where SignPlaces puts it, with a village's name on it - unless the village has
 		/// no name
 		/// </summary>
 		/// <param name="portal">The portal, just put up</param>
-		/// <param name="site">Where it stands</param>
+		/// <param name="portalPrefab">The portal's prefab</param>
 		/// <param name="text">The village's name</param>
 		/// <param name="placed">Where the sign stands</param>
 		/// <returns>False when no sign was put up</returns>
-		private static bool PutSign(GameObject portal, Site site, string text, out Vector3 placed)
+		private static bool PutSign(GameObject portal, string portalPrefab, string text, out Vector3 placed)
 		{
 			placed = Vector3.zero;
 			GameObject prefab = ZNetScene.instance.GetPrefab(SignPrefab);
-			if (prefab == null || string.IsNullOrEmpty(text))
+			if (prefab == null || string.IsNullOrEmpty(text) || !PlaceSign(portalPrefab, portal.transform.position, portal.transform.rotation, out placed, out Quaternion rotation))
 			{
 				return(false);
 			}
-			float top = Top(portal, portal.transform.position.y + PortalHeight);
-			Vector3 at = new Vector3(portal.transform.position.x, top, portal.transform.position.z);
-			GameObject sign = Object.Instantiate(prefab, at, site.Rotation);
-			// The sign's pivot isn't at its bottom, so it's raised until its bottom rests on the portal's top
-			placed = at + Vector3.up * (top - Bottom(sign, top) - SignSink);
-			sign.transform.position = placed;
+			GameObject sign = Object.Instantiate(prefab, placed, rotation);
 			ZNetView view = sign.GetComponent<ZNetView>();
 			if (view != null && view.GetZDO() != null)
 			{
-				view.GetZDO().SetPosition(placed);
 				view.GetZDO().Set(SignKey, true);
 			}
 			VillageSigns.Rewrite(sign, text, "", "");
+			return(true);
+		}
+
+		/// <summary>
+		/// Works out where a portal's sign hangs and which way it faces, from SignPlaces
+		/// </summary>
+		/// <param name="portalPrefab">The portal's prefab</param>
+		/// <param name="at">Where the portal stands</param>
+		/// <param name="rotation">Which way the portal faces</param>
+		/// <param name="signAt">Where the sign hangs</param>
+		/// <param name="signRotation">Which way the sign faces</param>
+		/// <returns>False for a portal with no place for a sign</returns>
+		internal static bool PlaceSign(string portalPrefab, Vector3 at, Quaternion rotation, out Vector3 signAt, out Quaternion signRotation)
+		{
+			signAt = at;
+			signRotation = rotation;
+			if (!SignPlaces.TryGetValue(portalPrefab, out SignPlace place))
+			{
+				return(false);
+			}
+			signAt = at + rotation * place.Offset;
+			// A turn about the up axis, built by hand since Quaternion.AngleAxis calls into the engine
+			float half = place.Turn * Mathf.Deg2Rad * 0.5f;
+			signRotation = rotation * new Quaternion(0f, Mathf.Sin(half), 0f, Mathf.Cos(half));
 			return(true);
 		}
 
@@ -636,12 +670,12 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Gives a portal or sign the vikings just built back what the village's own had - the portal its name and link
-		/// to the village on its other side, and the sign on top of it that village's name as it goes by now, or else the
+		/// to the village on its other side, and the sign on it that village's name as it goes by now, or else the
 		/// name it had
 		/// </summary>
 		/// <param name="instance">The piece just built back</param>
 		/// <param name="village">Its village</param>
-		/// <returns>True when it was the village's portal or the sign on top of it</returns>
+		/// <returns>True when it was the village's portal or the sign on it</returns>
 		public static bool Restore(GameObject instance, Village village)
 		{
 			if (village == null || village.Zdo == null || instance == null)
@@ -677,9 +711,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Leaves a village's portal and the sign on top of it out of the pieces its vikings build back while the village
-		/// on its other side isn't known to be up - not there anymore, abandoned, or not yet heard about from the server
-		/// (see LinkUp) - and the sign while the portal under it is down, since it rests on the portal
+		/// Leaves a village's portal and the sign on it out of the pieces its vikings build back while the village on its
+		/// other side isn't known to be up - not there anymore, abandoned, or not yet heard about from the server (see
+		/// LinkUp) - and the sign while the portal is down, since it hangs on the portal
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="missing">The village's pieces that no longer stand</param>
@@ -815,38 +849,6 @@ namespace VikingVillages
 			{
 				Plugin.Log.LogWarning("Couldn't read the server's answer about the village on the other side of the portal of the village with the generator " + generator + ": " + exception.Message);
 			}
-		}
-
-		/// <summary>
-		/// Finds the height of the top of what's drawn of an object
-		/// </summary>
-		/// <param name="instance">The object</param>
-		/// <param name="fallback">The height when nothing of it is drawn</param>
-		/// <returns>The height</returns>
-		private static float Top(GameObject instance, float fallback)
-		{
-			float top = float.MinValue;
-			foreach (MeshRenderer renderer in instance.GetComponentsInChildren<MeshRenderer>())
-			{
-				top = Mathf.Max(top, renderer.bounds.max.y);
-			}
-			return((top > float.MinValue) ? top : fallback);
-		}
-
-		/// <summary>
-		/// Finds the height of the bottom of what's drawn of an object
-		/// </summary>
-		/// <param name="instance">The object</param>
-		/// <param name="fallback">The height when nothing of it is drawn</param>
-		/// <returns>The height</returns>
-		private static float Bottom(GameObject instance, float fallback)
-		{
-			float bottom = float.MaxValue;
-			foreach (MeshRenderer renderer in instance.GetComponentsInChildren<MeshRenderer>())
-			{
-				bottom = Mathf.Min(bottom, renderer.bounds.min.y);
-			}
-			return((bottom < float.MaxValue) ? bottom : fallback);
 		}
 
 		/// <summary>

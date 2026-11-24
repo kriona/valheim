@@ -5,7 +5,7 @@ namespace VikingVillages.Tests
 {
 	/// <summary>
 	/// Tests the portals between villages - which biomes' villages get one and which they can lead to, how a portal is
-	/// named apart from the world's other portals, and which way it faces
+	/// named apart from the world's other portals, which way it faces and where its sign hangs
 	/// </summary>
 	public class VillagePortalsTests
 	{
@@ -143,6 +143,51 @@ namespace VikingVillages.Tests
 			Assert.Equal(-1f, facing.x, 3);
 			Assert.Equal(0f, facing.z, 3);
 			Assert.Equal(Vector3.forward, VillagePortals.Facing(Vector3.one, Vector3.one, Vector3.one));
+		}
+
+		/// <summary>
+		/// Checks that a portal's sign hangs where one was hung by hand on a portal of its kind in a world save - the
+		/// portal's position and turn, and the sign's
+		/// </summary>
+		/// <param name="prefab">The portal's prefab</param>
+		/// <param name="portalX">Where the portal stands, across</param>
+		/// <param name="portalY">Where the portal stands, up</param>
+		/// <param name="portalZ">Where the portal stands, along</param>
+		/// <param name="portalYaw">Which way the portal faces, in degrees</param>
+		/// <param name="signX">Where the sign hangs, across</param>
+		/// <param name="signY">Where the sign hangs, up</param>
+		/// <param name="signZ">Where the sign hangs, along</param>
+		/// <param name="signYaw">Which way the sign faces, in degrees</param>
+		[Theory]
+		[InlineData(VillagePortals.StonePortal, 5404f, 52.061f, 7991f, 239f, 5402.183f, 53.776f, 7992.572f, 224.5f)]
+		[InlineData(VillagePortals.WoodPortal, -1728f, 32.569f, -256f, 241.5f, -1727.487f, 33.818f, -257.511f, 67.5f)]
+		public void HangsTheSignBesideThePortal(string prefab, float portalX, float portalY, float portalZ, float portalYaw, float signX, float signY, float signZ, float signYaw)
+		{
+			Assert.True(VillagePortals.PlaceSign(prefab, new Vector3(portalX, portalY, portalZ), Yaw(portalYaw), out Vector3 signAt, out Quaternion signRotation));
+			Assert.Equal(signX, signAt.x, 2);
+			Assert.Equal(signY, signAt.y, 2);
+			Assert.Equal(signZ, signAt.z, 2);
+			Assert.Equal(1f, Mathf.Abs(Quaternion.Dot(Yaw(signYaw), signRotation)), 4);
+		}
+
+		/// <summary>
+		/// Checks that a portal of a kind with no place for a sign gets none
+		/// </summary>
+		[Fact]
+		public void HangsNoSignOnOtherPortals()
+		{
+			Assert.False(VillagePortals.PlaceSign("portal", Vector3.zero, Quaternion.identity, out Vector3 _, out Quaternion _));
+		}
+
+		/// <summary>
+		/// Builds a turn about the up axis without calling into the engine
+		/// </summary>
+		/// <param name="degrees">The turn, in degrees</param>
+		/// <returns>The rotation</returns>
+		private static Quaternion Yaw(float degrees)
+		{
+			float half = degrees * Mathf.Deg2Rad * 0.5f;
+			return(new Quaternion(0f, Mathf.Sin(half), 0f, Mathf.Cos(half)));
 		}
 	}
 }
