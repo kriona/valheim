@@ -60,7 +60,7 @@ Zombie Vikings roam the world, each with gear appropriate to the biome it spawns
 - Its health, skills, fists and coins depend on its biome - from 50 health, skills of 0-12 and 0-10 coins in the Meadows to 1200 health, skills of 88-100 and 200-300 coins in the Deep North, each skill rolled on its own within the range, every one at least 1 - and stars multiply its health and coins
 - Its armor protects it half as well as a player's and wears down the same way, its weapons and shield wear down as it uses them, and it raises its shield against attacks, more often and with better timing the more skilled it is. It knows the reach of what it fights with, closing in until its swing will land before it strikes - right up close with a knife or its fists, farther off with a polearm. It swings every 2 seconds, as monsters do
 - When it dies it drops its coins, and 0-2 entrails from the Swamp on, multiplied by its stars, and each piece of its gear has a 5% chance to drop, at most 2
-- In the Mistlands' mist it sees only 15 meters - unless it or what it's looking at is within reach of a wisp light, a wisp torch or one of the Dvergr's demisters - though it still hears you coming as far off as always
+- In the Mistlands' mist it sees only 10 meters, as the game's other creatures do - unless it or what it's looking at is within reach of a wisp light, a wisp torch or one of the Dvergr's demisters - though it still hears you coming as far off as always
 - Spawn one with the console command `spawn ZombieViking`
 
 ## Raids

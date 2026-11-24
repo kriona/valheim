@@ -14,9 +14,9 @@ namespace Kriona.Vikings
 	internal static class MistSight
 	{
 		/// <summary>
-		/// How far a viking sees in the mist, in meters
+		/// How far a viking sees in the mist, in meters - as far as the dvergr and the game's other creatures do
 		/// </summary>
-		public const float Range = 15f;
+		public const float Range = 10f;
 
 		/// <summary>
 		/// Checks whether the mist keeps a viking from seeing something

@@ -26,12 +26,12 @@ namespace VikingVillages
 			"Hail, stranger. You're a long way into the mist.",
 			"Easy there. This outpost is under Dvergr protection.",
 			"A traveler? Mind your manners - the Dvergr are watching.",
-			"Hail! Don't mind the little folk. They pay me to stand here and look fierce."
+			"Hail! Don't mind me. The Dvergr pay me to stand here and look fierce."
 		};
 
 		private static readonly string[] NightFirstGreetings =
 		{
-			"Who's there? ...A traveler. Keep your hands where I can see them.",
+			"Who's there? ...Oh, a traveler. Come in out of the dark.",
 			"Late to be wandering the mist, stranger. Stay near the lanterns.",
 			"Hail, stranger. Quietly - the Dvergr don't like noise after dark."
 		};
@@ -61,7 +61,7 @@ namespace VikingVillages
 		{
 			"{0}. Stay close to the lanterns tonight.",
 			"Late to be about, {0}. The seekers love the dark.",
-			"{0}! Quiet now - the little ones are resting."
+			"{0}! Quiet now - the Dvergr are resting."
 		};
 
 		/// <summary>
@@ -106,7 +106,7 @@ namespace VikingVillages
 			"{0} coming - to arms!",
 			"Eyes up - {0}!",
 			"{0} in the mist!",
-			"Guard the little ones - {0}!"
+			"Guard the outpost - {0}!"
 		};
 
 		/// <summary>
@@ -139,7 +139,7 @@ namespace VikingVillages
 			"{0}, guard us!",
 			"By {0}! For the Dvergr!",
 			"{0}, lend us your strength!",
-			"Feel {0}'s blessing, little ones!"
+			"Feel {0}'s blessing, friends!"
 		};
 
 		/// <summary>

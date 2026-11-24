@@ -17,7 +17,7 @@ namespace Kriona.Vikings.Tests
 		[InlineData(20f, true, true, false, false, true)]
 		[InlineData(20f, false, false, false, false, false)]
 		[InlineData(MistSight.Range, true, true, false, false, false)]
-		[InlineData(10f, true, true, false, false, false)]
+		[InlineData(5f, true, true, false, false, false)]
 		[InlineData(20f, true, true, true, false, false)]
 		[InlineData(20f, true, true, false, true, false)]
 		public void BlocksOnlyPastItsRangeInTheDarkMist(float distance, bool viewerInMist, bool targetInMist, bool viewerLit, bool targetLit, bool expected)
