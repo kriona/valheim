@@ -1189,17 +1189,63 @@ namespace VikingVillages
 		/// <returns>False when none was found</returns>
 		public bool RandomOpenSpot(out Vector3 spot)
 		{
+			return(RandomOpenSpot(out spot, null));
+		}
+
+		/// <summary>
+		/// Finds a random spot on open ground in the village's core (see RandomOpenSpot), counting why each point tried
+		/// wasn't open
+		/// </summary>
+		/// <param name="spot">The spot</param>
+		/// <param name="misses">Why points tried weren't open, added to, or null</param>
+		/// <returns>False when none was found</returns>
+		public bool RandomOpenSpot(out Vector3 spot, OpenMisses misses)
+		{
 			bool hasAnchor = Anchor(out Vector3 anchor);
+			if (misses != null)
+			{
+				misses.Anchor = (hasAnchor ? anchor.ToString("F0") : "none");
+				misses.Core = "within " + CoreRadius.ToString("F0") + "m of " + CoreMiddle.ToString("F0");
+			}
 			for (int i = 0; i < SpotTries; i++)
 			{
 				Vector2 offset = Random.insideUnitCircle * CoreRadius;
-				if (OpenSpotAt(CoreMiddle + new Vector3(offset.x, 0f, offset.y), hasAnchor, anchor, out spot))
+				if (OpenSpotAt(CoreMiddle + new Vector3(offset.x, 0f, offset.y), hasAnchor, anchor, out spot, misses))
 				{
 					return(true);
 				}
 			}
 			spot = Vector3.zero;
 			return(false);
+		}
+
+		/// <summary>
+		/// Why points tried for a spot on open ground weren't open (see OpenSpotAt), counted for the log
+		/// </summary>
+		public class OpenMisses
+		{
+			public int InHouse;
+			public int Water;
+			public int Penned;
+			public int OffNavmesh;
+			public int Fire;
+			public int NoWay;
+
+			/// <summary>
+			/// The spot on the village's open ground every viking walks to, which a spot has to have a way to, and where
+			/// the points are picked from
+			/// </summary>
+			public string Anchor = "";
+			public string Core = "";
+
+			/// <summary>
+			/// Describes why the points tried weren't open
+			/// </summary>
+			/// <returns>The description</returns>
+			public string Describe()
+			{
+				return("points picked " + Core + ": " + InHouse + " in a house, " + Water + " in the water, " + Penned + " fenced in, " + OffNavmesh + " off the navmesh, in a house or on a roof where a viking stands, " + Fire + " by a fire, " + NoWay + " with no way to the anchor at " + Anchor);
+			}
 		}
 
 		/// <summary>
@@ -1277,30 +1323,59 @@ namespace VikingVillages
 		/// <param name="hasAnchor">Whether the village has an anchor</param>
 		/// <param name="anchor">The spot on the village's open ground every viking walks to</param>
 		/// <param name="spot">The point on the navmesh</param>
+		/// <param name="misses">Why the point wasn't open, added to, or null</param>
 		/// <returns>True when it's open</returns>
-		private bool OpenSpotAt(Vector3 point, bool hasAnchor, Vector3 anchor, out Vector3 spot)
+		private bool OpenSpotAt(Vector3 point, bool hasAnchor, Vector3 anchor, out Vector3 spot, OpenMisses misses = null)
 		{
 			spot = Vector3.zero;
 			if (InHouse(point, HouseClearance))
 			{
+				if (misses != null)
+				{
+					misses.InHouse++;
+				}
 				return(false);
 			}
 			point.y = ZoneSystem.instance.GetSolidHeight(point);
-			if (point.y < ZoneSystem.instance.m_waterLevel + 0.3f || Enclosed(point))
+			if (point.y < ZoneSystem.instance.m_waterLevel + 0.3f)
 			{
+				if (misses != null)
+				{
+					misses.Water++;
+				}
+				return(false);
+			}
+			if (Enclosed(point))
+			{
+				if (misses != null)
+				{
+					misses.Penned++;
+				}
 				return(false);
 			}
 			if (Pathfinding.instance == null || !NavmeshPoints.FindValidPoint(out Vector3 valid, point, SpotSnap, Pathfinding.AgentType.Humanoid) || InHouse(valid, HouseClearance) || NavmeshRoofs.OnRoof(valid))
 			{
+				if (misses != null)
+				{
+					misses.OffNavmesh++;
+				}
 				return(false);
 			}
 			if (EffectArea.IsPointInsideArea(valid, EffectArea.Type.Burning, FireClearance) != null)
 			{
+				if (misses != null)
+				{
+					misses.Fire++;
+				}
 				return(false);
 			}
 			// A spot with no way to the fire or a doorstep is shut in, like a pen
 			if (hasAnchor && !Pathfinding.instance.HavePath(valid, anchor, Pathfinding.AgentType.Humanoid))
 			{
+				if (misses != null)
+				{
+					misses.NoWay++;
+				}
 				return(false);
 			}
 			spot = valid;

@@ -281,7 +281,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Picks a quest for a village once it has rested long enough since its last and no enemy is near - the first it
 		/// can go on and spare the vikings for, of the next step of its goal, hunting or foraging when its chests are low
-		/// on food and it has found none around it for a while, or it's trapped, cutting trees when it's out of wood,
+		/// on food and it has found none around it for a while, it's trapped, or its chests hold less than a food for each
+		/// of its vikings, cutting trees when it's out of wood,
 		/// selling its treasure to Haldor, and buying a Dverger circlet once a week for a viking still using torches -
 		/// setting out at once by day, or waiting for the morning
 		/// </summary>
@@ -321,7 +322,7 @@ namespace VikingVillages
 			{
 				village.Zdo.Set(LastCircletKey, now);
 			}
-			Plugin.Log.LogInfo("Quest: the village at " + village.Farm.ToString("F0") + " picked " + record.Kind + " for " + record.Item + " with " + string.Join(", ", record.Names) + (CanSetOutNow() ? "" : ", waiting for the morning"));
+			Plugin.Log.LogInfo("Quest: the village at " + village.Farm.ToString("F0") + " picked " + record.Kind + (!string.IsNullOrEmpty(record.Item) ? " for " + record.Item : "") + " with " + string.Join(", ", record.Names) + (CanSetOutNow() ? "" : ", waiting for the morning"));
 			if (CanSetOutNow())
 			{
 				SetOut(village, record);
@@ -354,7 +355,7 @@ namespace VikingVillages
 			bool foodLow = VillageLife.FoodLow(village);
 			bool woodLow = (VillageLife.ChestWoodOf(village) < VillageLife.WoodLow);
 			bool trapped = ((foodLow || woodLow) && IsTrapped(village));
-			if (foodLow && (trapped || VillageLife.FoodGone(village)))
+			if (foodLow && (trapped || VillageLife.FoodGone(village) || VillageLife.FoodScarce(village)))
 			{
 				QuestKind kind = (village.Zdo.GetBool(LastHuntKey) ? QuestKind.Forage : QuestKind.Hunt);
 				Choice food = Possible(book, holdings, kind, "", 0) ?? Possible(book, holdings, ((kind == QuestKind.Hunt) ? QuestKind.Forage : QuestKind.Hunt), "", 0);

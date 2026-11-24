@@ -642,7 +642,7 @@ namespace VikingVillages
 				}
 				else
 				{
-					Plugin.Log.LogWarning("Found no room for a " + extension + " within " + reach.ToString("F1") + "m of the " + stationName + " at " + position.ToString("F1") + " in the village at " + village.Farm.ToString("F0"));
+					Plugin.Log.LogWarning("Found no room for a " + extension + " within " + reach.ToString("F1") + "m of the " + stationName + " at " + position.ToString("F1") + " in the village at " + village.Farm.ToString("F0") + ((layout != null) ? " - " + layout.DescribeMisses() : ""));
 				}
 			}
 			if (layout != null)
@@ -1009,7 +1009,7 @@ namespace VikingVillages
 		/// <returns>False when there was none, or it was too near the fire</returns>
 		private static bool ShelterSpot(Village village, Fireplace fire, ShelterTries tries, out Vector3 spot)
 		{
-			if (!village.RandomOpenSpot(out spot))
+			if (!village.RandomOpenSpot(out spot, tries.Ground))
 			{
 				tries.NoSpot++;
 				return(false);
@@ -1079,6 +1079,11 @@ namespace VikingVillages
 			public readonly Dictionary<string, int> BlockedBy = new Dictionary<string, int>();
 
 			/// <summary>
+			/// Why the points looked at for open ground weren't open, behind NoSpot (see Village.RandomOpenSpot)
+			/// </summary>
+			public readonly Village.OpenMisses Ground = new Village.OpenMisses();
+
+			/// <summary>
 			/// Counts what kept a spot tried from fitting
 			/// </summary>
 			/// <param name="room">What's at the spot</param>
@@ -1123,7 +1128,7 @@ namespace VikingVillages
 				{
 					blockers.Add(entry.Key + " x" + entry.Value);
 				}
-				return(NoSpot + " with no open ground found, " + NearFire + " near the fire, " + Seen + " in a player's sight, " + InHouse + " in a house, " + Steep + " too steep (flattest " + ((Flattest < float.MaxValue) ? Flattest.ToString("F2") + "m" : "none") + "), " + Painted + " on painted ground, " + Cleared + " with something growing or lying there, " + Blocked + " with something that can't be cleared in the way" + ((blockers.Count > 0) ? " (" + string.Join(", ", blockers) + ")" : ""));
+				return(NoSpot + " with no open ground found" + ((NoSpot > 0) ? " (" + Ground.Describe() + ")" : "") + ", " + NearFire + " near the fire, " + Seen + " in a player's sight, " + InHouse + " in a house, " + Steep + " too steep (flattest " + ((Flattest < float.MaxValue) ? Flattest.ToString("F2") + "m" : "none") + "), " + Painted + " on painted ground, " + Cleared + " with something growing or lying there, " + Blocked + " with something that can't be cleared in the way" + ((blockers.Count > 0) ? " (" + string.Join(", ", blockers) + ")" : ""));
 			}
 		}
 
@@ -1286,7 +1291,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Places each of some crafting stations against a wall in the first house of a village's core with room for it,
-		/// spreading them across different houses while there are enough
+		/// spreading them across different houses while there are enough - writing to the log why each house tried had
+		/// no room for a station none had room for
 		/// </summary>
 		/// <param name="core">The indexes of the village's core houses</param>
 		/// <param name="layouts">Each house's layout, or null</param>
@@ -1299,14 +1305,30 @@ namespace VikingVillages
 				// Houses without a station come first, so each station gets a house of its own when it can
 				List<int> order = new List<int>(core);
 				order.Sort((int a, int b) => (used.Contains(a) ? 1 : 0).CompareTo(used.Contains(b) ? 1 : 0));
+				List<string> misses = new List<string>();
 				foreach (int i in order)
 				{
-					if (layouts[i] != null && layouts[i].PlaceAgainstWall(station))
+					if (layouts[i] == null)
+					{
+						misses.Add("house " + i + " of the village, which couldn't be laid out");
+						continue;
+					}
+					if (layouts[i].PlaceAgainstWall(station))
 					{
 						missing.Remove(station);
 						used.Add(i);
+						misses.Clear();
 						break;
 					}
+					misses.Add(layouts[i].DescribeMisses());
+				}
+				if (core.Count == 0)
+				{
+					misses.Add("the village, which has no core houses");
+				}
+				foreach (string miss in misses)
+				{
+					Plugin.Log.LogWarning("Station room: no room for a " + station + " in " + miss);
 				}
 			}
 		}
@@ -1511,6 +1533,51 @@ namespace VikingVillages
 			private readonly List<List<Vector2Int>> stationFronts = new List<List<Vector2Int>>();
 
 			/// <summary>
+			/// The spots tried for the last piece placed against a wall or near a point, and why each that didn't fit
+			/// didn't - its cells already taken, something already standing in its way, or the house left too hard to
+			/// get around - for the log (see DescribeMisses)
+			/// </summary>
+			private int missTried;
+			private int missTaken;
+			private int missBlocked;
+			private int missCramped;
+			private bool missNoSize;
+
+			/// <summary>
+			/// Describes why the last piece placed against a wall or near a point didn't fit in the house, for the log
+			/// </summary>
+			/// <returns>The description</returns>
+			public string DescribeMisses()
+			{
+				int free = 0;
+				for (int column = 0; column < grid.Columns; column++)
+				{
+					for (int row = 0; row < grid.Rows; row++)
+					{
+						free += ((grid.Cells[column, row] == FloorGrid.Free) ? 1 : 0);
+					}
+				}
+				string floor = "the house at " + House.Center.ToString("F0") + " (" + grid.Columns + "x" + grid.Rows + " cells, " + free + " free, " + Placed.Count + " pieces laid out)";
+				if (missNoSize)
+				{
+					return(floor + ": the piece's size couldn't be measured");
+				}
+				return(floor + ": " + missTried + " spots tried - " + missTaken + " on cells already taken, " + missBlocked + " with something already standing in the way, " + missCramped + " leaving the house too hard to get around");
+			}
+
+			/// <summary>
+			/// Starts counting why the spots tried for a piece don't fit (see DescribeMisses)
+			/// </summary>
+			private void ResetMisses()
+			{
+				missTried = 0;
+				missTaken = 0;
+				missBlocked = 0;
+				missCramped = 0;
+				missNoSize = false;
+			}
+
+			/// <summary>
 			/// Measures a house - its floor, which way its walls run and how far they are, and what already stands on
 			/// each cell of its floor
 			/// </summary>
@@ -1668,8 +1735,10 @@ namespace VikingVillages
 			/// <returns>False when it doesn't fit anywhere</returns>
 			public bool PlaceAgainstWall(string prefabName)
 			{
+				ResetMisses();
 				if (!Footprint(prefabName, out Bounds size))
 				{
+					missNoSize = true;
 					return(false);
 				}
 				int start = Random.Range(0, 4);
@@ -1749,8 +1818,10 @@ namespace VikingVillages
 			/// <returns>False when it doesn't fit anywhere in reach</returns>
 			public bool PlaceNear(string prefabName, Vector3 point, float reach)
 			{
+				ResetMisses();
 				if (reach <= 0f || !Footprint(prefabName, out Bounds size))
 				{
+					missNoSize = (reach > 0f);
 					return(false);
 				}
 				int width = CellSpan(size.size.x);
@@ -1937,14 +2008,17 @@ namespace VikingVillages
 			/// <returns>True when it was placed</returns>
 			private bool TryTake(string prefabName, Bounds size, Quaternion rotation, List<Vector2Int> taken)
 			{
+				missTried++;
 				if (!grid.AreFree(taken))
 				{
+					missTaken++;
 					return(false);
 				}
 				Vector3 position = Origin(size, rotation, taken);
 				PieceBox(size, position, rotation, out Vector3 boxCenter, out Vector3 half);
 				if (Physics.CheckBox(boxCenter, half, rotation, pieceMask, QueryTriggerInteraction.Ignore))
 				{
+					missBlocked++;
 					return(false);
 				}
 				grid.Take(taken);
@@ -1959,6 +2033,7 @@ namespace VikingVillages
 				pieces.AddRange(stationFronts);
 				if (!grid.Roomy(pieces))
 				{
+					missCramped++;
 					Remove(Placed.Count - 1);
 					return(false);
 				}

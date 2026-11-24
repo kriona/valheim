@@ -81,6 +81,39 @@ namespace VikingVillages
 		/// <returns>True when they do</returns>
 		internal static bool FoodLow(Village village)
 		{
+			return(!FoodEnough(ChestFoodOf(village), village.Vikings().Count));
+		}
+
+		/// <summary>
+		/// Checks whether a village's chests hold so little food that it sends vikings out on a quest for more, rather
+		/// than only foraging and hunting around it (see FoodScarceFor)
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>True when they do</returns>
+		internal static bool FoodScarce(Village village)
+		{
+			return(FoodScarceFor(ChestFoodOf(village), village.Vikings().Count));
+		}
+
+		/// <summary>
+		/// Checks whether there's so little food that a village sends vikings out for more - less than a food for each of
+		/// its vikings
+		/// </summary>
+		/// <param name="food">How much food the chests hold</param>
+		/// <param name="vikings">How many vikings the village has loaded</param>
+		/// <returns>True when there is</returns>
+		internal static bool FoodScarceFor(int food, int vikings)
+		{
+			return(food < Mathf.Max(1, vikings));
+		}
+
+		/// <summary>
+		/// Counts the food in a village's chests
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>How many foods</returns>
+		private static int ChestFoodOf(Village village)
+		{
 			int food = 0;
 			foreach (Container chest in VillageChests(village))
 			{
@@ -89,7 +122,7 @@ namespace VikingVillages
 					food += (VikingFood.IsFood(item) ? item.m_stack : 0);
 				}
 			}
-			return(!FoodEnough(food, village.Vikings().Count));
+			return(food);
 		}
 
 		/// <summary>
@@ -468,7 +501,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the job putting away what the viking brought home from a quest, which goes on through dusk and night
+		/// Finds the job putting away what the viking brought home from a quest, which goes on through dusk and night -
+		/// cooking the raw food it brought first by day, when a cooking station has room for it, since this is picked
+		/// ahead of the cooking work it would otherwise leave the raw food for
 		/// </summary>
 		/// <returns>The job, or null when it carries none home</returns>
 		private Job FindQuestLootWork()
@@ -483,7 +518,15 @@ namespace VikingVillages
 				zdo.Set(QuestLootKey, false);
 				return(null);
 			}
-			return((Time.time >= dumpAgainAt) ? new LootJob(this, null, true) : null);
+			if (!IsNight() && !IsDusk() && FindCookStation(true) != null)
+			{
+				Job cook = FindCookWork();
+				if (cook != null)
+				{
+					return(cook);
+				}
+			}
+			return((Time.time >= dumpAgainAt) ? new LootJob(this, null, true, false, false) : null);
 		}
 
 		/// <summary>

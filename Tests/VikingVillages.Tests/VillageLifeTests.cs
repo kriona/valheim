@@ -644,6 +644,21 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that food counts as scarce with less than a food for each viking, so the village sends vikings out for
+		/// more, and that a village with no vikings loaded counts as one
+		/// </summary>
+		[Theory]
+		[InlineData(7, 8, true)]
+		[InlineData(8, 8, false)]
+		[InlineData(20, 8, false)]
+		[InlineData(0, 0, true)]
+		[InlineData(1, 0, false)]
+		public void FoodScarceBelowOneEach(int food, int vikings, bool expected)
+		{
+			Assert.Equal(expected, VillageLife.FoodScarceFor(food, vikings));
+		}
+
+		/// <summary>
 		/// Checks that there's food enough to go around with three foods for every viking, and not with fewer, and that a
 		/// village with no vikings loaded still needs three
 		/// </summary>

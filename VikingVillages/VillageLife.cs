@@ -693,6 +693,12 @@ namespace VikingVillages
 		private const float HuntWeight = 15f;
 
 		/// <summary>
+		/// How many times as likely foraging and hunting are while the village's chests hold too little food for its
+		/// vikings to keep their foods up (see FoodLow)
+		/// </summary>
+		private const float FoodShortBoost = 4f;
+
+		/// <summary>
 		/// How near a cooking station a viking cooks at it, and how near the station it sets out to cook at the others it
 		/// cooks at too have to be, as at the same fire, in meters
 		/// </summary>
@@ -4521,9 +4527,18 @@ namespace VikingVillages
 			}
 			LogJobTick();
 			UpdateJobPower();
+			bool firstTick = (job != tickedJob);
+			tickedJob = job;
 			if (job.Tick(dt))
 			{
+				string kind = JobName(job);
+				string ended = job.Describe();
 				StopJob(true);
+				if (Churning(firstTick, kind, ended))
+				{
+					job = new IdleJob(this, ChurnPause);
+					job.Begin();
+				}
 			}
 			if (Time.time >= nextRestCheck)
 			{
@@ -4531,6 +4546,46 @@ namespace VikingVillages
 				body.Rest.Check(job != null && job.Sitting());
 				ReadyBestArrows();
 				UpdateOuting(false);
+			}
+			return(true);
+		}
+
+		/// <summary>
+		/// The job the viking last carried on, so a job that ends on its first update is told apart, and how many jobs in a
+		/// row have ended on their first update
+		/// </summary>
+		private Job tickedJob;
+		private int instantEnds;
+
+		/// <summary>
+		/// How many jobs in a row ending on their first update count as the viking picking a job it can't do over and
+		/// over, and how long it stands about then before picking again, in seconds
+		/// </summary>
+		private const int ChurnLimit = 20;
+		private const float ChurnPause = 10f;
+
+		/// <summary>
+		/// Counts a job ending, and checks whether the viking keeps picking jobs that end as soon as they start - a job
+		/// whose choice and whose own checks don't agree, picked again every update - writing it to the log with the last
+		/// of them, so it stands about for ChurnPause instead of picking again at once
+		/// </summary>
+		/// <param name="firstTick">Whether the job ended on its first update</param>
+		/// <param name="kind">The kind of job, for the totals</param>
+		/// <param name="ended">What the job said it was doing</param>
+		/// <returns>True when it keeps doing so</returns>
+		private bool Churning(bool firstTick, string kind, string ended)
+		{
+			instantEnds = (firstTick ? instantEnds + 1 : 0);
+			if (instantEnds < ChurnLimit)
+			{
+				return(false);
+			}
+			instantEnds = 0;
+			TestLog.Count("Troubles", "jobs ending as they start");
+			TestLog.Count("Jobs ending as they start, by job", kind);
+			if (TestLog.On || Player.m_debugMode)
+			{
+				Plugin.Log.LogWarning("Churn: " + LogName() + " started and ended " + ChurnLimit + " jobs in a row at once, the last " + ended + " - standing about for " + ChurnPause.ToString("F0") + "s");
 			}
 			return(true);
 		}
@@ -4899,9 +4954,11 @@ namespace VikingVillages
 			float talk = ((partner != null) ? TalkWeight : 0f);
 			float pet = ((boar != null) ? PetWeight : 0f);
 			float stock = ((store != null) ? StockWeight : 0f);
-			float gather = (forage ? ForageWeight : 0f);
+			// While the chests hold too little food for the village to keep its foods up, getting more comes up far more often
+			float need = (FoodLow(village) ? FoodShortBoost : 1f);
+			float gather = (forage ? ForageWeight * need : 0f);
 			float rest = (refresh ? RefreshWeight : 0f);
-			float hunting = (hunt ? HuntWeight : 0f);
+			float hunting = (hunt ? HuntWeight * need : 0f);
 			float stroll = (raining ? 0f : StrollWeight);
 			float roll = Random.value * (talk + pet + stock + gather + rest + hunting + stroll + IdleWeight);
 			if (roll < talk)
@@ -7411,7 +7468,7 @@ namespace VikingVillages
 				return(null);
 			}
 			UpdateOuting(!village.Contains(best.transform.position));
-			return(new LootJob(this, best, true));
+			return(new LootJob(this, best, true, true));
 		}
 
 		/// <summary>
@@ -14281,6 +14338,8 @@ namespace VikingVillages
 		private class LootJob : Job
 		{
 			private readonly bool afterFight;
+			private readonly bool takeOutside;
+			private readonly bool cookFirst;
 			private ZNetView loot;
 			private ZDOID lootId;
 			private Container chest;
@@ -14295,11 +14354,19 @@ namespace VikingVillages
 			/// <param name="owner">The viking's life</param>
 			/// <param name="target">The loot to pick up, or null to put away what it carries</param>
 			/// <param name="fight">True for clearing up after a fight, which goes on through dusk and night</param>
-			public LootJob(VillageLife owner, ZNetView target, bool fight) : base(owner)
+			/// <param name="outside">True when the loot was picked as something the chests hold enough of to carry out of
+			/// the village, as what an enemy dropped is, so it's still wanted once the viking gets to it, whether or not
+			/// it may leave the village then</param>
+			/// <param name="cook">True to leave raw food it carries for a cooking station with room by day (see
+			/// FindWork), false when no cooking work could be had for it, so the job doesn't end only to be picked
+			/// again</param>
+			public LootJob(VillageLife owner, ZNetView target, bool fight, bool outside = false, bool cook = true) : base(owner)
 			{
 				loot = target;
 				lootId = ((target != null) ? target.GetZDO().m_uid : ZDOID.None);
 				afterFight = fight;
+				takeOutside = outside;
+				cookFirst = cook;
 			}
 
 			/// <summary>
@@ -14321,7 +14388,7 @@ namespace VikingVillages
 				}
 				// Raw meat it picked up goes straight to a cooking station with room by day, and the rest is put away
 				// along with what it cooked (see FindWork)
-				if (!dumping && !IsNight() && !IsDusk() && life.FindCookStation(true) != null)
+				if (cookFirst && !dumping && !IsNight() && !IsDusk() && life.FindCookStation(true) != null)
 				{
 					return(true);
 				}
@@ -14386,7 +14453,7 @@ namespace VikingVillages
 				{
 					nextRoomCheck = Time.time + RoomCheckInterval;
 					ItemDrop.ItemData item = loot.GetComponent<ItemDrop>().m_itemData;
-					if (life.CarryRoom(item, CarryLoot) <= 0 || !WantsLoot(item, life.UsableChests(), life.MayLeave()))
+					if (life.CarryRoom(item, CarryLoot) <= 0 || !WantsLoot(item, life.UsableChests(), takeOutside || life.MayLeave()))
 					{
 						Release();
 						loot = null;
