@@ -1912,6 +1912,8 @@ namespace Kriona.Vikings
 				Vector3 landing = home + Vector3.up * 0.5f;
 				humanoid.m_body.position = landing;
 				transform.position = landing;
+				// From where it lands, so the move home isn't taken for a fall
+				humanoid.m_maxAirAltitude = landing.y;
 				return(true);
 			}
 			ai.MoveTo(dt, home, 0f, true);

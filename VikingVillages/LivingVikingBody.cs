@@ -338,6 +338,69 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Checks whether the viking takes fall damage the way a player does
+		/// </summary>
+		/// <returns>True when it does</returns>
+		public virtual bool TakesFallDamage()
+		{
+			return(true);
+		}
+
+		/// <summary>
+		/// Keeps the height the viking falls from at where it stands while another client owns it, since the game only
+		/// follows it on the client that owns it - so a viking handed back to this client doesn't land from where it was
+		/// when this client last had it
+		/// </summary>
+		/// <param name="fixedDeltaTime">Seconds since the last physics update</param>
+		public override void CustomFixedUpdate(float fixedDeltaTime)
+		{
+			base.CustomFixedUpdate(fixedDeltaTime);
+			if (m_nview != null && m_nview.IsValid() && !m_nview.IsOwner())
+			{
+				m_maxAirAltitude = transform.position.y;
+			}
+		}
+
+		/// <summary>
+		/// Gets how far the viking has fallen as it touches the ground, measured the way the game measures a player's fall
+		/// (see Character.UpdateGroundContact), before the game sets the height it fell from back to where it stands
+		/// </summary>
+		/// <returns>The height, in meters, or 0 when it isn't touching the ground or takes no fall damage</returns>
+		public float LandingHeight()
+		{
+			if (!m_groundContact || !TakesFallDamage())
+			{
+				return(0f);
+			}
+			return(Mathf.Max(0f, m_maxAirAltitude - transform.position.y));
+		}
+
+		/// <summary>
+		/// Hurts the viking for a fall the way the game hurts a player - by the fall's height, less what its effects take
+		/// off it, like a feather cape's (see Character.UpdateGroundContact) - through its armor (see VikingArmorPatch)
+		/// </summary>
+		/// <param name="height">How far it fell, in meters</param>
+		public void Land(float height)
+		{
+			float damage = LivingVikingBodyRules.FallDamage(height);
+			if (damage <= 0f)
+			{
+				return;
+			}
+			m_seman.ModifyFallDamage(damage, ref damage);
+			if (damage <= 0f)
+			{
+				return;
+			}
+			HitData hit = new HitData();
+			hit.m_damage.m_damage = damage;
+			hit.m_point = m_lastGroundPoint;
+			hit.m_dir = m_lastGroundNormal;
+			hit.m_hitType = HitData.HitType.Fall;
+			Damage(hit);
+		}
+
+		/// <summary>
 		/// Gives the viking the weather's effects once the game has healed it, adds the extra healing resting and being
 		/// rested give to what the game healed, or takes back what being wet or cold slows it by, and heals it by its
 		/// food, by as much as each does a player - a creature heals without reading its status effects, so the extra
@@ -560,7 +623,7 @@ namespace VikingVillages
 
 	/// <summary>
 	/// What a living viking's body works out without its body - when its gear changes start and are done, how much its
-	/// rest changes what the game heals it by, and how its weight shows
+	/// rest changes what the game heals it by, how much a fall hurts it and how its weight shows
 	/// </summary>
 	internal static class LivingVikingBodyRules
 	{
@@ -617,6 +680,27 @@ namespace VikingVillages
 		internal static float RegenDelta(float healed, float multiplier)
 		{
 			return((healed > 0f) ? healed * (multiplier - 1f) : 0f);
+		}
+
+		/// <summary>
+		/// How far past Character.c_MinFallHeight a fall's damage rises to Character.c_MaxFallDamage, in meters - the
+		/// game's own number for a player (see Character.UpdateGroundContact)
+		/// </summary>
+		private const float FallSpread = 16f;
+
+		/// <summary>
+		/// Works out how much a fall hurts the viking, the same as a player - nothing up to Character.c_MinFallHeight,
+		/// rising evenly to Character.c_MaxFallDamage at FallSpread meters past it
+		/// </summary>
+		/// <param name="height">How far it fell, in meters</param>
+		/// <returns>The damage, before what its effects take off it</returns>
+		internal static float FallDamage(float height)
+		{
+			if (height <= Character.c_MinFallHeight)
+			{
+				return(0f);
+			}
+			return(Mathf.Clamp01((height - Character.c_MinFallHeight) / FallSpread) * Character.c_MaxFallDamage);
 		}
 
 		/// <summary>

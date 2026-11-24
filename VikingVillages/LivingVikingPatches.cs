@@ -433,8 +433,10 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Stops a living viking short of the lava and the boiling sea when a move would take it there from safe ground -
-	/// one the navmesh doesn't steer, as when its AI moves it straight at something (see DangerousGround)
+	/// Stops a living viking short of the lava and the boiling sea when a move would take it there from safe ground, and
+	/// turns it aside from a ledge it would be hurt falling from, or stops it when every way off is one - a move the
+	/// navmesh doesn't steer, as when its AI moves it straight at something or away from a danger (see DangerousGround
+	/// and Ledges)
 	/// </summary>
 	/// <remarks>
 	/// It runs after VikingSteerPatch, so it looks at the move as it's bent
@@ -443,22 +445,61 @@ namespace VikingVillages
 	public static class VikingDangerStepPatch
 	{
 		/// <summary>
-		/// Stops the viking in place, still turning it the way it meant to go, when its step ahead is dangerous
+		/// Turns the viking's move aside from a ledge, or stops it in place, still turning it the way it meant to go,
+		/// when its step ahead is dangerous
 		/// </summary>
 		/// <param name="__instance">The AI moving</param>
-		/// <param name="dir">The way it's moving</param>
+		/// <param name="dir">The way it's moving, turned here</param>
 		/// <returns>False to skip the move</returns>
 		[HarmonyPriority(Priority.Low)]
-		private static bool Prefix(BaseAI __instance, Vector3 dir)
+		private static bool Prefix(BaseAI __instance, ref Vector3 dir)
 		{
 			Character character = __instance.m_character;
-			if (!VikingCore.IsLivingViking(character) || !DangerousGround.StepsIntoDanger(character, dir))
+			if (!VikingCore.IsLivingViking(character))
 			{
 				return(true);
+			}
+			if (!DangerousGround.StepsIntoDanger(character, dir))
+			{
+				if (!(character is LivingVikingBody body) || Ledges.SafeWay(body, dir, out dir))
+				{
+					return(true);
+				}
 			}
 			__instance.LookTowards(dir.normalized);
 			__instance.StopMoving();
 			return(false);
+		}
+	}
+
+	/// <summary>
+	/// Hurts a living viking that falls, the way the game hurts a player as it touches the ground - which the game does
+	/// only for a player (see LivingVikingBody.Land)
+	/// </summary>
+	[HarmonyPatch(typeof(Character), nameof(Character.UpdateGroundContact))]
+	public static class VikingFallDamagePatch
+	{
+		/// <summary>
+		/// Notes how far the viking fell, before the game sets the height it fell from back to where it stands
+		/// </summary>
+		/// <param name="__instance">The character</param>
+		/// <param name="__state">How far it fell, in meters, or 0</param>
+		private static void Prefix(Character __instance, out float __state)
+		{
+			__state = ((__instance is LivingVikingBody body) ? body.LandingHeight() : 0f);
+		}
+
+		/// <summary>
+		/// Hurts the viking for the fall, once the game has noted the ground it landed on
+		/// </summary>
+		/// <param name="__instance">The character</param>
+		/// <param name="__state">How far it fell, in meters, or 0</param>
+		private static void Postfix(Character __instance, float __state)
+		{
+			if (__state > 0f && __instance is LivingVikingBody body)
+			{
+				body.Land(__state);
+			}
 		}
 	}
 }

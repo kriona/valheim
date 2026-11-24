@@ -4,7 +4,7 @@ namespace VikingVillages.Tests
 {
 	/// <summary>
 	/// Tests when a living viking's gear changes start and are done, how much its rest changes what the game heals it
-	/// by, and how its weight shows
+	/// by, how much a fall hurts it and how its weight shows
 	/// </summary>
 	public class LivingVikingBodyRulesTests
 	{
@@ -199,6 +199,25 @@ namespace VikingVillages.Tests
 		public void ShowsWeight(int weight, bool flash, string expected)
 		{
 			Assert.Equal(expected, LivingVikingBodyRules.FormatWeight(weight, 300, flash));
+		}
+
+		/// <summary>
+		/// Checks that a fall hurts the same as a player's - nothing up to 4 meters, rising evenly to 100 at 20 meters
+		/// and no more past it
+		/// </summary>
+		/// <param name="height">How far the viking fell, in meters</param>
+		/// <param name="expected">The damage</param>
+		[Theory]
+		[InlineData(0f, 0f)]
+		[InlineData(3f, 0f)]
+		[InlineData(4f, 0f)]
+		[InlineData(8f, 25f)]
+		[InlineData(12f, 50f)]
+		[InlineData(20f, 100f)]
+		[InlineData(50f, 100f)]
+		public void HurtsByFallHeight(float height, float expected)
+		{
+			Assert.Equal(expected, LivingVikingBodyRules.FallDamage(height), 3);
 		}
 	}
 }

@@ -13,6 +13,15 @@ namespace VikingVillages
 		private DvergrLife life;
 
 		/// <summary>
+		/// Keeps the viking from taking fall damage, the same as the dvergr it lives with
+		/// </summary>
+		/// <returns>False</returns>
+		public override bool TakesFallDamage()
+		{
+			return(false);
+		}
+
+		/// <summary>
 		/// Puts the viking's name and the key to talk to it ahead of the game's hover text, when the local player isn't
 		/// its enemy
 		/// </summary>
