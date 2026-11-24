@@ -10,8 +10,9 @@ namespace VikingVillages
 	/// </summary>
 	/// <remarks>
 	/// Where they go is worked out before the ground is reshaped, on the village's ground with its paths marked, and
-	/// they're put up once it has been, standing on the ground as it ends up. Each is marked as the mod's own, so it
-	/// breaks into nothing
+	/// they're put up once it has been, standing on the ground as it ends up. Each is one of the village's own pieces,
+	/// like those it was generated with - it breaks into what it's built of, and the vikings build it back, as long as
+	/// it stands within the village
 	/// </remarks>
 	internal static class VillageWisps
 	{
@@ -166,23 +167,21 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Puts a village's wisp lights up where they go, on the ground as it ends up - flattening the fountain's first
-		/// when it needs it
+		/// when it needs it - and notes those within the village among its pieces, for its vikings to build back. Its
+		/// pieces are usually noted after this, along with the rest, and are only noted here when they were noted before
 		/// </summary>
 		/// <param name="plan">Where they go</param>
-		/// <param name="farm">Where the farm's generator stands, for the log</param>
+		/// <param name="farm">Where the farm's generator stands</param>
 		public static void Build(Plan plan, Vector3 farm)
 		{
-			int torches = 0;
+			List<PieceRecord> placed = new List<PieceRecord>();
 			foreach (Vector3 spot in plan.Torches)
 			{
 				Vector3 at = spot;
 				at.y = ZoneSystem.instance.GetGroundHeight(spot);
-				if (Place(TorchPrefab, at))
-				{
-					torches++;
-				}
+				Place(TorchPrefab, at, placed);
 			}
-			bool fountain = false;
+			int torches = placed.Count;
 			if (plan.HasFountain)
 			{
 				Vector3 at = plan.Fountain;
@@ -194,33 +193,39 @@ namespace VikingVillages
 				{
 					at.y = ZoneSystem.instance.GetGroundHeight(at);
 				}
-				fountain = Place(FountainPrefab, at);
+				Place(FountainPrefab, at, placed);
 			}
-			Plugin.Log.LogInfo("Put up " + torches + " wisp torches" + (fountain ? " and a wisp fountain" : "") + " in the village at " + farm.ToString("F0"));
+			Village village = Village.ForFarm(farm);
+			if (village != null)
+			{
+				VillageRecords.Add(village, placed.FindAll((PieceRecord piece) => village.OwnsPiece(piece.Position)));
+			}
+			Plugin.Log.LogInfo("Put up " + torches + " wisp torches" + ((placed.Count > torches) ? " and a wisp fountain" : "") + " in the village at " + farm.ToString("F0"));
 		}
 
 		/// <summary>
-		/// Puts a piece up, turned any way, as the mod's own
+		/// Puts a piece up, turned any way, as one no player built
 		/// </summary>
 		/// <param name="prefabName">The piece's prefab</param>
 		/// <param name="at">Where it stands</param>
-		/// <returns>False when the game has no such piece</returns>
-		private static bool Place(string prefabName, Vector3 at)
+		/// <param name="placed">The pieces put up, added to</param>
+		private static void Place(string prefabName, Vector3 at, List<PieceRecord> placed)
 		{
 			GameObject prefab = ZNetScene.instance.GetPrefab(prefabName);
 			if (prefab == null)
 			{
 				Plugin.Log.LogWarning("Couldn't find the " + prefabName + " prefab for a village's wisp lights");
-				return(false);
+				return;
 			}
-			GameObject instance = Object.Instantiate(prefab, at, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
-			VillageRecords.MarkBuilt(instance);
+			Quaternion rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+			GameObject instance = Object.Instantiate(prefab, at, rotation);
 			WearNTear wear = instance.GetComponent<WearNTear>();
 			if (wear != null)
 			{
 				wear.OnPlaced();
 			}
-			return(true);
+			int hash = prefabName.GetStableHashCode();
+			placed.Add(new PieceRecord { Prefab = hash, Position = at, Rotation = rotation, Wood = VillageRecords.WoodCost(hash) });
 		}
 
 		/// <summary>
