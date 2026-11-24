@@ -365,8 +365,13 @@ The Plains
 - They talk about the quest for a game day after they're back, and about the trip itself for 12 game hours - hunting, foraging and cutting trees are too ordinary to talk about, though the trip can be. Other villages within 3 km hear of a quest worth talking about coming home
 - Disband the village while they're out and they go on to the village the rest of its Vikings went to once they're done. Start a village at its bonfire again and they still go on there first, then turn around for home
 
-## Testing
+## Console Commands
 
-- `kri_vv_testlog quest` shows everything behind the quests of the village you're in, and the roads to quests it knows
-- `kri_vv_testlog quest <kind> [item]` and `kri_vv_travel <kind>` start a quest of a kind at once - `MineCopper`, `ChopTrees FineWood` and so on
-- `kri_vv_testlog quest due` brings the village's quest home now, once its Vikings have left
+The quest command, which needs `devcommands` - every other command is in [COMMANDS.md](COMMANDS.md):
+
+- `kri_vv_quest` - standing in a village, shows everything behind its quests - its goal and the next thing it does toward it, the quest it's on, what each Viking on it takes, works with and brings home, whether its food and wood are running out, its treasure, whether it's trapped, the roads to quests it knows and when its last quest came back
+- `kri_vv_quest <kind> [item]` - starts a quest of that kind at once, whatever the village wants, however long since its last and whatever the time of day - as long as its biome isn't too easy for the quest, it has the stations and coins the quest needs and it can spare the Vikings. Only the player whose game runs the village can start its quests - in single player, always you
+  - The kinds are `Hunt`, `Forage`, `ChopTrees`, `MineCopper`, `MineTin`, `MineSilver`, `RaidCrypts`, `RaidBurialChambers`, `HuntGhosts`, `HuntTrolls`, `HuntGoblins`, `KillEikthyr`, `FindBees`, `SellTreasure` and `BuyCirclet`, in any case - and a kind that isn't one lists them
+  - `item` is what it's for, by its prefab name in any case, and the quest is after 20 of it - `kri_vv_quest ChopTrees FineWood` or `kri_vv_quest Hunt DeerHide`, say. With none, it goes for the first thing the quest brings back that the village can go for. An item the quest doesn't bring back lists the ones it does
+  - The first time for a quest, the village asks the server for the road, and the quest starts on its own as soon as the server answers, saying so in the console and at the top left of the screen - or is given up on after 30 seconds
+- `kri_vv_quest due` - brings the village's quest home now, once its Vikings have left - only in single player or for the host, whose game keeps them

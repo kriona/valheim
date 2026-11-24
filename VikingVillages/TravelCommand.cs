@@ -7,7 +7,7 @@ namespace VikingVillages
 	/// <summary>
 	/// The kri_vv_travel console command, for testing the vikings' travels - sending the living viking the player looks
 	/// at, or a number of the vikings of the village they're in, to a village by name or one picked at random, in the
-	/// world or straight off it, or starting the village's quest of a kind at once
+	/// world or straight off it
 	/// </summary>
 	/// <remarks>
 	/// The vikings sent leave their village as a group, on the road the server plans for them (see TravelPlanner), the
@@ -28,24 +28,7 @@ namespace VikingVillages
 		/// </summary>
 		public static void Register()
 		{
-			new Terminal.ConsoleCommand(Command, "<village name|quest kind|random> [count] [sim] - sends the viking you look at, or [count] vikings of the village you're in (1 by default), to a village by name or at random, in the world or straight off it with sim - or starts the village's quest of a kind at once", Run, isCheat: true, optionsFetcher: Options);
-		}
-
-		/// <summary>
-		/// Lists what the command can be given, for the console to complete
-		/// </summary>
-		/// <returns>The options</returns>
-		private static List<string> Options()
-		{
-			List<string> options = new List<string> { RandomWord };
-			foreach (QuestKind kind in System.Enum.GetValues(typeof(QuestKind)))
-			{
-				if (kind != QuestKind.None)
-				{
-					options.Add(kind.ToString());
-				}
-			}
-			return(options);
+			new Terminal.ConsoleCommand(Command, "<village name|random> [count] [sim] - sends the viking you look at, or [count] vikings of the village you're in (1 by default), to a village by name or at random, in the world or straight off it with sim", Run, isCheat: true, optionsFetcher: () => new List<string> { RandomWord });
 		}
 
 		/// <summary>
@@ -76,20 +59,10 @@ namespace VikingVillages
 			string target = string.Join(" ", words).Trim();
 			if (target.Length == 0)
 			{
-				args.Context.AddString("Usage: " + Command + " <village name|quest kind|random> [count] [sim]");
+				args.Context.AddString("Usage: " + Command + " <village name|random> [count] [sim]");
 				return;
 			}
 			Village village = Village.Find(player.transform.position);
-			if (System.Enum.TryParse(target, true, out QuestKind kind) && kind != QuestKind.None)
-			{
-				if (village == null || !village.IsOwner())
-				{
-					args.Context.AddString("Stand in a village this client runs to start its quest");
-					return;
-				}
-				args.Context.AddString(VillageQuests.Force(village, kind, ""));
-				return;
-			}
 			List<Humanoid> vikings = Pick(player, village, count);
 			if (vikings.Count == 0)
 			{

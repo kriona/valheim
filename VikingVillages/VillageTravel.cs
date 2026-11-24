@@ -1402,7 +1402,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Makes the vikings out on a quest due back now, on the server, for the kri_vv_testlog command
+		/// Makes the vikings out on a quest due back now, on the server, for the kri_vv_quest command
 		/// </summary>
 		/// <param name="questId">The quest's ID</param>
 		/// <returns>How many vikings are due back</returns>

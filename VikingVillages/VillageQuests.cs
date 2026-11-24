@@ -340,7 +340,7 @@ namespace VikingVillages
 		private const int WoodWanted = 50;
 
 		/// <summary>
-		/// How many of its item a quest started with the kri_vv_testlog command is after
+		/// How many of its item a quest started with the kri_vv_quest command is after
 		/// </summary>
 		private const int ForcedAmount = 20;
 
@@ -937,7 +937,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Describes everything behind a village's quests, for the kri_vv_testlog command - its goal and the next step
+		/// Describes everything behind a village's quests, for the kri_vv_quest command - its goal and the next step
 		/// toward it, the quest it's on and what each viking does on it, what would set off its other quests, and the
 		/// roads to quests it knows
 		/// </summary>
@@ -1017,16 +1017,18 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Starts a quest of a kind for a village at once, for the kri_vv_testlog command - whatever the village wants,
-		/// however long since its last and whatever the time of day - for the item given, or else the first a quest of
-		/// that kind brings back that it's allowed to go for
+		/// Starts a quest of a kind for a village at once, for the kri_vv_quest command - whatever the village wants,
+		/// however long since its last and whatever the time of day - for the item given, by its prefab name in any case,
+		/// or else the first a quest of that kind brings back that it's allowed to go for
 		/// </summary>
 		/// <param name="village">The village, run by this client</param>
 		/// <param name="kind">The quest</param>
 		/// <param name="item">What it's for, or "" for the first it can go for</param>
+		/// <param name="roadAsked">Set to true when it waits for the server to plan the road, to be tried again</param>
 		/// <returns>What happened</returns>
-		public static string Force(Village village, QuestKind kind, string item)
+		public static string Force(Village village, QuestKind kind, string item, out bool roadAsked)
 		{
+			roadAsked = false;
 			ResourceBook book = ResourceBookGame.Get();
 			if (book == null || !village.IsOwner())
 			{
@@ -1034,10 +1036,21 @@ namespace VikingVillages
 			}
 			if (Read(village) != null)
 			{
-				return("The village is already on a quest - kri_vv_testlog quest due brings it home");
+				return("The village is already on a quest - kri_vv_quest due brings it home");
+			}
+			List<string> routeItems = RouteItems(book, kind);
+			if (item.Length > 0)
+			{
+				string named = routeItems.Find((string candidate) => candidate.Length > 0 && string.Equals(candidate, item, System.StringComparison.OrdinalIgnoreCase));
+				if (named == null)
+				{
+					List<string> brought = routeItems.FindAll((string candidate) => candidate.Length > 0);
+					return(kind + " doesn't bring back " + item + ((brought.Count > 0) ? " - it can go for " + string.Join(", ", brought) : " - it isn't for any item in particular"));
+				}
+				item = named;
 			}
 			VillageHoldings holdings = VillageLife.HoldingsOf(village);
-			List<string> items = ((item.Length > 0) ? new List<string> { item } : RouteItems(book, kind));
+			List<string> items = ((item.Length > 0) ? new List<string> { item } : routeItems);
 			// An item the quest brings back is tried before going for nothing in particular
 			items.Sort((string a, string b) => (a.Length == 0).CompareTo(b.Length == 0));
 			Choice choice = null;
@@ -1055,7 +1068,8 @@ namespace VikingVillages
 			}
 			if (RouteSeconds(village, choice.Kind, choice.Item) < 0f)
 			{
-				return("Asked the server for the road to " + kind + " - run the command again in a moment");
+				roadAsked = true;
+				return("Asked the server for the road to " + kind);
 			}
 			QuestRecord record = Plan(village, choice.Kind, choice.Item, choice.Amount, choice.Source);
 			if (record == null)
@@ -1068,7 +1082,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Brings a village's quest home now, for the kri_vv_testlog command - on the server, which keeps its vikings
+		/// Brings a village's quest home now, for the kri_vv_quest command - on the server, which keeps its vikings
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <returns>What happened</returns>
