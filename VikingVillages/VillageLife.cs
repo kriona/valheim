@@ -1092,6 +1092,12 @@ namespace VikingVillages
 		private const float GreetFaceTime = 2f;
 
 		/// <summary>
+		/// How long a viking stands facing a player who talked to it, in seconds - longer than for a greeting, so it
+		/// doesn't walk off while they read what it says
+		/// </summary>
+		private const float TalkFaceTime = GreetFaceTime + 2f;
+
+		/// <summary>
 		/// How far a badly hurt viking hanging back keeps from an enemy that shoots or throws, in meters - about as far as
 		/// a greydwarf throws
 		/// </summary>
@@ -2154,9 +2160,9 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Answers a player talking to the viking, on its owner - in a fight it's busy and asleep it's sleepy, it greets
-		/// a player it has never met as a stranger with a wave and remembers them, and chats with one it knows - now and
-		/// then about the village on the other side of its village's portal (see VillagePortalSpeech) - or tells them its
-		/// news of them (see VikingNewsStore), turning to them either way
+		/// a player it has never met as a stranger with a wave and remembers them, and chats with one it knows (see
+		/// VillageAnswer) or tells them its news of them (see VikingNewsStore), turning to them for TalkFaceTime seconds
+		/// either way, and noting the talk once it has said its piece (see VikingIdentity.Answered)
 		/// </summary>
 		/// <param name="sender">The client that sent it</param>
 		/// <param name="playerId">The player's ZDO</param>
@@ -2187,13 +2193,29 @@ namespace VikingVillages
 			if (VikingSpeech.Knows(humanoid, player.GetPlayerID()))
 			{
 				string news = VikingNewsStore.Tell(humanoid, player, NewsBiome());
-				string answer = (news ?? (active ? (QuestAnswer(player) ?? VillagePortalSpeech.Chat(village, player.GetPlayerName()) ?? VikingSpeech.Answer(player, IsNight(), VillageNames.Get(village))) : RoadAnswer(player)));
+				string answer = (news ?? (active ? VillageAnswer(player) : RoadAnswer(player)));
 				VikingSpeech.Say(humanoid, answer, VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 				greeting = player;
-				greetUntil = Time.time + GreetFaceTime;
+				greetUntil = Time.time + TalkFaceTime;
+				VikingIdentity.Answered(nview, player.GetPlayerID(), true);
 				return;
 			}
-			Greet(player);
+			Greet(player, TalkFaceTime, true);
+		}
+
+		/// <summary>
+		/// Picks what a viking at home says when a player it knows talks to it - now and then about a quest of its
+		/// village's (see QuestAnswer), the village on the other side of its village's portal (see VillagePortalSpeech),
+		/// being old friends or how the player is doing (see VikingFriendSpeech), or a runestone of the biome it stands in
+		/// (see VikingLoreSpeech)
+		/// </summary>
+		/// <param name="player">The player</param>
+		/// <returns>The line</returns>
+		private string VillageAnswer(Player player)
+		{
+			string name = player.GetPlayerName();
+			bool friends = VikingIdentity.OldFriends(nview, player.GetPlayerID());
+			return(QuestAnswer(player) ?? VillagePortalSpeech.Chat(village, name) ?? VikingFriendSpeech.Chat(friends, name) ?? VikingLoreSpeech.Chat(transform.position, name) ?? VikingSpeech.Answer(player, IsNight(), VillageNames.Get(village)));
 		}
 
 		/// <summary>
@@ -2225,27 +2247,33 @@ namespace VikingVillages
 			{
 				return(false);
 			}
-			Greet(player);
+			Greet(player, GreetFaceTime, false);
 			return(true);
 		}
 
 		/// <summary>
-		/// Greets a player - turning to them with a wave and a word, by name for a player it knows and as a stranger
-		/// otherwise - and remembers them. A player it knows may hear its news of them in place of the word (see
-		/// VikingNewsStore)
+		/// Greets a player - turning to them with a wave and a word, by name for a player it knows, now and then as an old
+		/// friend at home (see VikingFriendSpeech), and as a stranger otherwise - and remembers them, noting the talk once
+		/// it has said its piece (see VikingIdentity.Answered). A player it knows may hear its news of them in place of
+		/// the word (see VikingNewsStore)
 		/// </summary>
 		/// <param name="player">The player</param>
-		private void Greet(Player player)
+		/// <param name="faceTime">How long it faces them, in seconds</param>
+		/// <param name="talked">Whether the player talked to it, rather than it seeing them arrive</param>
+		private void Greet(Player player, float faceTime, bool talked)
 		{
-			bool known = VikingSpeech.Knows(humanoid, player.GetPlayerID());
+			long playerId = player.GetPlayerID();
+			bool known = VikingSpeech.Knows(humanoid, playerId);
 			greeting = player;
-			greetUntil = Time.time + GreetFaceTime;
+			greetUntil = Time.time + faceTime;
 			VikingPoses.Wave(humanoid);
 			string news = (known ? VikingNewsStore.Tell(humanoid, player, NewsBiome()) : null);
+			string friend = ((known && active) ? VikingFriendSpeech.Greeting(VikingIdentity.OldFriends(nview, playerId), player.GetPlayerName()) : null);
 			// One away from any village greets them the way a traveler does, or a lost one asks where it is
-			string line = (active ? VikingSpeech.Greeting(player, IsNight(), known, VikingNames.Get(humanoid), VillageNames.Get(village)) : VikingRoadSpeech.Greeting(player, IsNight(), known, VikingNames.Get(humanoid), road == Road.Confused));
+			string line = friend ?? (active ? VikingSpeech.Greeting(player, IsNight(), known, VikingNames.Get(humanoid), VillageNames.Get(village)) : VikingRoadSpeech.Greeting(player, IsNight(), known, VikingNames.Get(humanoid), road == Road.Confused));
 			VikingSpeech.Say(humanoid, news ?? line, VikingSpeech.TalkTime, VikingSpeech.TalkCull);
-			VikingSpeech.Meet(humanoid, player.GetPlayerID());
+			VikingSpeech.Meet(humanoid, playerId);
+			VikingIdentity.Answered(nview, playerId, talked);
 		}
 
 		/// <summary>
@@ -2643,8 +2671,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Has the viking greet a player arriving - one within GreetRange it can see, who hadn't been near any viking on
 		/// this client for GreetAwayTime seconds - so only the first viking to see them greets them (see Greet). A
-		/// viking resting at night doesn't. Turns it to the player it greeted or was talked to by for GreetFaceTime
-		/// seconds
+		/// viking resting at night doesn't. Turns it to the player it greeted for GreetFaceTime seconds, or was talked to
+		/// by for TalkFaceTime
 		/// </summary>
 		/// <returns>True while it stands facing the player it greeted, so the AI's own update is skipped</returns>
 		private bool UpdateGreeting()
@@ -2686,7 +2714,7 @@ namespace VikingVillages
 				{
 					continue;
 				}
-				Greet(player);
+				Greet(player, GreetFaceTime, false);
 				return(true);
 			}
 			return(false);

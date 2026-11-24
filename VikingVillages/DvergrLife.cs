@@ -19,13 +19,14 @@ namespace VikingVillages
 
 		/// <summary>
 		/// How the viking greets a player arriving - within GreetRange, after they've been away from it for
-		/// GreetAwayTime seconds, looking every GreetCheckInterval seconds - and how long it faces a player it greeted or
-		/// answered, in seconds
+		/// GreetAwayTime seconds, looking every GreetCheckInterval seconds - and how long it faces a player it greeted, and
+		/// one who talked to it, in seconds - longer for a talk, so it doesn't walk off while they read what it says
 		/// </summary>
 		private const float GreetRange = 10f;
 		private const float GreetAwayTime = 180f;
 		private const float GreetCheckInterval = 1f;
 		private const float GreetFaceTime = 2f;
+		private const float TalkFaceTime = GreetFaceTime + 2f;
 
 		/// <summary>
 		/// The least time between two answers to a player talking to it, in seconds
@@ -137,8 +138,10 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Answers a player talking to the viking, on its owner - in a fight it's busy, it greets a player it has never
-		/// met as a stranger and remembers them, and chats with one it knows or tells them its news of them (see
-		/// VikingNewsStore), turning to them either way
+		/// met as a stranger and remembers them, and chats with one it knows - now and then about being old friends or how
+		/// the player is doing (see VikingFriendSpeech), or a runestone of the biome it stands in (see VikingLoreSpeech) -
+		/// or tells them its news of them (see VikingNewsStore), turning to them for TalkFaceTime seconds either way, and
+		/// noting the talk once it has said its piece (see VikingIdentity.Answered)
 		/// </summary>
 		/// <param name="sender">The client that sent it</param>
 		/// <param name="playerId">The player's ZDO</param>
@@ -161,31 +164,41 @@ namespace VikingVillages
 				return;
 			}
 			playerLastNear[player.GetZDOID()] = Time.time;
-			if (VikingSpeech.Knows(body, player.GetPlayerID()))
+			long id = player.GetPlayerID();
+			if (VikingSpeech.Knows(body, id))
 			{
+				string name = player.GetPlayerName();
 				string news = VikingNewsStore.Tell(body, player, NewsBiome());
-				VikingSpeech.Say(body, news ?? DvergrSpeech.Answer(player, EnvMan.IsNight()), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
-				Face(player, GreetFaceTime);
+				string chat = VikingFriendSpeech.Chat(VikingIdentity.OldFriends(nview, id), name) ?? VikingLoreSpeech.Chat(transform.position, name);
+				VikingSpeech.Say(body, news ?? chat ?? DvergrSpeech.Answer(player, EnvMan.IsNight()), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+				Face(player, TalkFaceTime);
+				VikingIdentity.Answered(nview, id, true);
 				return;
 			}
-			Greet(player);
+			Greet(player, TalkFaceTime, true);
 		}
 
 		/// <summary>
-		/// Greets a player - turning to them with a wave and a word, by name for a player it knows and as a stranger
-		/// otherwise - and remembers them. A player it knows may hear its news of them in place of the word (see
-		/// VikingNewsStore)
+		/// Greets a player - turning to them with a wave and a word, by name for a player it knows, now and then as an old
+		/// friend (see VikingFriendSpeech), and as a stranger otherwise - and remembers them, noting the talk once it has
+		/// said its piece (see VikingIdentity.Answered). A player it knows may hear its news of them in place of the word
+		/// (see VikingNewsStore)
 		/// </summary>
 		/// <param name="player">The player</param>
-		private void Greet(Player player)
+		/// <param name="faceTime">How long it faces them, in seconds</param>
+		/// <param name="talked">Whether the player talked to it, rather than it seeing them arrive</param>
+		private void Greet(Player player, float faceTime, bool talked)
 		{
-			bool known = VikingSpeech.Knows(body, player.GetPlayerID());
-			Face(player, GreetFaceTime);
+			long id = player.GetPlayerID();
+			bool known = VikingSpeech.Knows(body, id);
+			Face(player, faceTime);
 			VikingPoses.Wave(body);
 			string news = (known ? VikingNewsStore.Tell(body, player, NewsBiome()) : null);
-			string line = DvergrSpeech.Greeting(player, EnvMan.IsNight(), known, VikingNames.Get(body));
+			string friend = (known ? VikingFriendSpeech.Greeting(VikingIdentity.OldFriends(nview, id), player.GetPlayerName()) : null);
+			string line = friend ?? DvergrSpeech.Greeting(player, EnvMan.IsNight(), known, VikingNames.Get(body));
 			VikingSpeech.Say(body, news ?? line, VikingSpeech.TalkTime, VikingSpeech.TalkCull);
-			VikingSpeech.Meet(body, player.GetPlayerID());
+			VikingSpeech.Meet(body, id);
+			VikingIdentity.Answered(nview, id, talked);
 		}
 
 		/// <summary>
@@ -319,7 +332,7 @@ namespace VikingVillages
 				playerLastNear[id] = Time.time;
 				if (away)
 				{
-					Greet(player);
+					Greet(player, GreetFaceTime, false);
 					return;
 				}
 			}

@@ -152,8 +152,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Has a living or dvergr viking tell a player the latest news about them, in its kind's words, on the viking's
-		/// owner, noting that it talked to them now either way - so it only ever brings up news from after it last talked
-		/// to them
+		/// owner - only news from after it last talked to them, which the caller notes once it has said its piece either
+		/// way (see VikingIdentity.Answered)
 		/// </summary>
 		/// <param name="viking">The viking, owned by this client</param>
 		/// <param name="player">The player it's talking to, who it already knows</param>
@@ -170,7 +170,6 @@ namespace VikingVillages
 			long playerId = player.GetPlayerID();
 			long now = NetTime.Now();
 			long since = VikingIdentity.LastTalk(zdo, playerId);
-			VikingIdentity.Talked(zdo, playerId, now);
 			VikingNews.Event latest = news.NewsFor(playerId, id, since, now, MaxAge());
 			if (latest == null || Random.value >= TellChance)
 			{

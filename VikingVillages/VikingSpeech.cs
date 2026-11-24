@@ -1300,7 +1300,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Notes that a viking knows a player, forgetting the one it met longest ago once it knows KnownMax - and that it
-		/// talked to them now, so it only tells them news from after they met (see VikingIdentity)
+		/// met and talked to them now, so it only tells them news from after they met (see VikingIdentity)
 		/// </summary>
 		/// <param name="viking">The viking, owned by this client</param>
 		/// <param name="playerId">The player's ID</param>
@@ -1317,7 +1317,9 @@ namespace VikingVillages
 				return;
 			}
 			known.Add(playerId);
-			VikingIdentity.Talked(zdo, playerId, NetTime.Now());
+			long now = NetTime.Now();
+			VikingIdentity.Talked(zdo, playerId, now);
+			VikingIdentity.Met(zdo, playerId, now);
 			if (known.Count > KnownMax)
 			{
 				known.RemoveAt(0);
