@@ -18,7 +18,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The command's name
 		/// </summary>
-		private const string Command = "kri_vv_spawnvillage";
+		internal const string Command = "kri_vv_spawnvillage";
 
 		/// <summary>
 		/// The start of the names of the game's farm locations
@@ -310,7 +310,7 @@ namespace VikingVillages
 		/// Lists the names of the game's farm locations, for the console to complete
 		/// </summary>
 		/// <returns>The names</returns>
-		private static List<string> Farms()
+		internal static List<string> Farms()
 		{
 			List<string> names = new List<string>();
 			foreach (ZoneSystem.ZoneLocation location in FarmLocations())
