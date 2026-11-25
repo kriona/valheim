@@ -280,12 +280,27 @@ namespace VikingVillages
 			TravelJourney.Place place = entry.Journey.At(entry.Elapsed(now, ticksPerSecond), entry.From);
 			if (place.Stage >= entry.Journey.Stages.Count)
 			{
-				return("out of the world, there and waiting to be brought in");
+				return("out of the world, " + Doing(entry, place));
+			}
+			return("out of the world, " + Doing(entry, place) + " at about " + place.Position.ToString("F0"));
+		}
+
+		/// <summary>
+		/// Says what a group the server keeps out of the world is doing at a place on its trip - and for a quest, whether
+		/// it's on its way there, at work or on its way home
+		/// </summary>
+		/// <param name="entry">The group, with a journey</param>
+		/// <param name="place">Where it is on its journey</param>
+		/// <returns>The phrase, like "on the way home by sea" or "at work"</returns>
+		internal static string Doing(TravelEntry entry, TravelJourney.Place place)
+		{
+			if (place.Stage >= entry.Journey.Stages.Count)
+			{
+				return("there and waiting to be brought in");
 			}
 			TravelJourney.Stage stage = entry.Journey.Stages[place.Stage];
 			string way = (entry.OnQuest ? (stage.Homeward ? "on the way home " : "on the way there ") : "");
-			string doing = ((stage.Road == null) ? "at work" : way + Leg(place.Leg));
-			return("out of the world, " + doing + " at about " + place.Position.ToString("F0"));
+			return((stage.Road == null) ? "at work" : way + Leg(place.Leg));
 		}
 
 		/// <summary>

@@ -175,6 +175,7 @@ namespace VikingVillages
 			ZRoutedRpc.instance.Register<Vector3, string, long>(QuestDueRpc, OnQuestDue);
 			TravelPlanner.Register();
 			VillageArrivals.Register();
+			TravelMapPins.Register();
 			nextRoadCheck = 0f;
 			replanning.Clear();
 			record = null;
@@ -1432,11 +1433,26 @@ namespace VikingVillages
 					arrivals.Add(VillageArrivals.FromEntry(entry, VillageArrivals.Where(entry, now, tick)));
 				}
 			}
+			foreach (List<ZDO> members in RoadGroups((ZDO zdo) => Utils.DistanceXZ(zdo.GetVec3(DestinationKey, Vector3.zero), farm) <= FarmMatch))
+			{
+				arrivals.Add(InWorld(members, now));
+			}
+			return(arrivals);
+		}
+
+		/// <summary>
+		/// Groups the vikings walking the road in the world that the server's last full look through the world found, by
+		/// the group each set out in
+		/// </summary>
+		/// <param name="keep">Which of them to take</param>
+		/// <returns>The groups' vikings</returns>
+		private static List<List<ZDO>> RoadGroups(System.Func<ZDO, bool> keep)
+		{
 			Dictionary<string, List<ZDO>> groups = new Dictionary<string, List<ZDO>>();
 			foreach (ZDOID id in onRoad)
 			{
 				ZDO zdo = ((ZDOMan.instance != null) ? ZDOMan.instance.GetZDO(id) : null);
-				if (zdo == null || !OnRoad(zdo) || Utils.DistanceXZ(zdo.GetVec3(DestinationKey, Vector3.zero), farm) > FarmMatch)
+				if (zdo == null || !OnRoad(zdo) || !keep(zdo))
 				{
 					continue;
 				}
@@ -1452,11 +1468,51 @@ namespace VikingVillages
 				}
 				members.Add(zdo);
 			}
-			foreach (List<ZDO> members in groups.Values)
+			return(new List<List<ZDO>>(groups.Values));
+		}
+
+		/// <summary>
+		/// Lists where every group on the road or out on a quest is now, on the server, each with who they are and what
+		/// they're doing, for the debug pins on the map (see TravelMapPins) - those it keeps out of the world, where they
+		/// are along their trip, and those walking the road in the world that its last full look through the world found,
+		/// where the first of them stands. Nothing on a client, which keeps none
+		/// </summary>
+		/// <returns>The groups' spots</returns>
+		internal static List<TravelMapPins.Spot> MapSpots()
+		{
+			List<TravelMapPins.Spot> spots = new List<TravelMapPins.Spot>();
+			if (ZNet.instance == null || !ZNet.instance.IsServer() || record == null)
 			{
-				arrivals.Add(InWorld(members, now));
+				return(spots);
 			}
-			return(arrivals);
+			long now = NetTime.Now();
+			double tick = NetTime.Ticks(1f);
+			foreach (TravelEntry entry in queue)
+			{
+				Vector3 position = entry.From;
+				string doing = ((entry.Due == long.MaxValue) ? "looking for a village to go to" : "out of the world");
+				if (entry.Journey != null && entry.Journey.Stages.Count > 0 && entry.Due != long.MaxValue)
+				{
+					TravelJourney.Place place = entry.Journey.At(entry.Elapsed(now, tick), entry.From);
+					position = place.Position;
+					doing = VillageArrivals.Doing(entry, place);
+				}
+				spots.Add(new TravelMapPins.Spot { Position = position, Label = TravelMapPins.Label(VillageArrivals.FromEntry(entry, doing)) });
+			}
+			foreach (List<ZDO> members in RoadGroups((ZDO zdo) => true))
+			{
+				VillageArrivals.Arrival arrival = new VillageArrivals.Arrival { Count = members.Count, What = VillageArrivals.OnTheRoad(members[0].GetString(FromNameKey, "")), Where = "in the world" };
+				foreach (ZDO zdo in members)
+				{
+					string name = VikingNames.Get(zdo);
+					if (name.Length > 0)
+					{
+						arrival.Names.Add(name);
+					}
+				}
+				spots.Add(new TravelMapPins.Spot { Position = members[0].GetPosition(), Label = TravelMapPins.Label(arrival) });
+			}
+			return(spots);
 		}
 
 		/// <summary>

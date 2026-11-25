@@ -76,6 +76,7 @@ namespace VikingVillages
 			VillageSpawnCommand.Update();
 			QuestCommand.Update();
 			VillageTravel.Update();
+			TravelMapPins.Update();
 			VillageDisband.Update();
 			VillageLivestock.Update();
 			VillageLife.UpdateNaming();
