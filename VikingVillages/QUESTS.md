@@ -146,9 +146,10 @@ As much ore as they can carry, unless their pickaxes wear out first - about 245 
 
 ### Sunken Crypts
 
-Iron scrap from the muddy scrap piles, as much as they can carry - about 24 each, weighing 10 - and what 1 crypt chest, 3 draugr, half a draugr elite and 1 blob for each of them drop, at least 1 chest, 3 draugr, 1 draugr elite and 1 blob - every one of them fought (see [Fights](#fights)). The iron scrap the chests hold is left out, since their pickaxes get it. The numbers are for 3 Vikings, with 3 chests, 9 draugr, 2 draugr elites and 3 blobs - more go with more pickaxes, and bring home a share more each.
+Iron scrap from the muddy scrap piles, as much as they can carry - about 24 each, weighing 10 - and what 1 crypt chest, 3 draugr, half a draugr elite and 1 blob for each of them drop, at least 1 chest, 3 draugr, 1 draugr elite and 1 blob - every one of them fought (see [Fights](#fights)). The iron scrap the chests hold is left out, since their pickaxes get it. Each of them picks 2 yellow mushrooms there too, each raising their farming skill as picking one raises yours. The numbers are for 3 Vikings, with 3 chests, 9 draugr, 2 draugr elites and 3 blobs - more go with more pickaxes, and bring home a share more each.
 
 - Iron scrap - about 24 each
+- Yellow mushrooms - 2 each
 - Coins - 52
 - Ancient bark - 33
 - Poison arrows - 16
@@ -170,13 +171,14 @@ Iron scrap from the muddy scrap piles, as much as they can carry - about 24 each
 
 ### Burial Chambers
 
-What 2 chests, 4 skeletons, a rancid remains and half a ghost for each of them drop, at least 2 chests, 4 skeletons, a rancid remains and a ghost, and a surtling core stand each - every one of the dead fought (see [Fights](#fights)). The numbers are for 2 Vikings, with 4 chests, 8 skeletons, 2 rancid remains, a ghost and 2 surtling core stands - a third Viking brings half as much again.
+What 2 chests, 4 skeletons, a rancid remains and half a ghost for each of them drop, at least 2 chests, 4 skeletons, a rancid remains and a ghost, and a surtling core stand each - every one of the dead fought (see [Fights](#fights)) - and 2 yellow mushrooms each, each raising their farming skill as picking one raises yours. The numbers are for 2 Vikings, with 4 chests, 8 skeletons, 2 rancid remains, a ghost, 2 surtling core stands and 4 yellow mushrooms - a third Viking brings half as much again.
 
 - Coins - 44
 - Flinthead arrows - 16
 - Bone fragments - 14
 - Feathers - 12
 - Amber - 4.4
+- Yellow mushrooms - 4
 - Rubies - 3.3
 - Ectoplasm - 3
 - Surtling cores - 2

@@ -4528,11 +4528,17 @@ namespace VikingVillages
 			if (Time.time >= nextWorkCheck)
 			{
 				Job work = null;
-				// Done food burns before long, so it's taken off ahead of loot, even partway through putting loot away
+				// Done food burns before long, so it's taken off ahead of loot, even partway through putting loot away - and
+				// by a viking at most other work, which only takes it off and goes back to its work
 				if ((job is LootJob || job is IdleJob || job is StrollJob || job is PetJob) && !IsNight())
 				{
 					nextWorkCheck = Time.time + WorkCheckInterval;
 					work = FindTendWork(true);
+				}
+				else if (TakesOffDoneFood())
+				{
+					nextWorkCheck = Time.time + WorkCheckInterval;
+					work = FindTendWork(true, true);
 				}
 				// What an enemy it killed dropped is picked up first, wherever it lies
 				if (work == null && PicksUpKillLoot())
@@ -4951,6 +4957,12 @@ namespace VikingVillages
 			}
 			if (IsNight())
 			{
+				// Food left cooking into the night is taken off once it's done, by the next viking up and about
+				Job tend = FindTendWork(true, true);
+				if (tend != null)
+				{
+					return(tend);
+				}
 				// A viking whose torches won't see it through the dark crafts one first - the watch, one to last its shift
 				Job torch = FindNightTorchWork();
 				if (torch != null)
@@ -8138,15 +8150,28 @@ namespace VikingVillages
 		/// Finds work tending food already on a cooking station, so it's taken off before it burns
 		/// </summary>
 		/// <param name="doneOnly">True to only tend done food, which burns next</param>
+		/// <param name="takeOffOnly">True to only take off the done food, rather than cook on after (see
+		/// CookJob)</param>
 		/// <returns>The job, or null when no station needs tending</returns>
-		private Job FindTendWork(bool doneOnly = false)
+		private Job FindTendWork(bool doneOnly = false, bool takeOffOnly = false)
 		{
 			CookingStation station = FindTendStation(VillageCooking.Stations(village, transform.position), doneOnly);
 			if (station != null && ClaimObject(station.GetComponent<ZNetView>()))
 			{
-				return(new CookJob(this, station));
+				return(new CookJob(this, station, takeOffOnly));
 			}
 			return(null);
+		}
+
+		/// <summary>
+		/// Checks whether the viking leaves its job a moment to take done food off a cooking station before it burns -
+		/// resting or gathering by the fire, talking, repairing, building back, stocking the chests with wood, or keeping
+		/// guard through a raid, all of which it picks up again after
+		/// </summary>
+		/// <returns>True when it does</returns>
+		private bool TakesOffDoneFood()
+		{
+			return(job is GatherJob || job is TalkJob || job is RepairJob || job is RebuildJob || job is StockJob || job is GuardJob);
 		}
 
 		/// <summary>
@@ -9824,8 +9849,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks what the viking does through a raid on its village - keeping watch at night when it's the watch, eating,
-		/// or resting by the fire, while it's wounded, or else keeping guard
+		/// Picks what the viking does through a raid on its village - keeping watch at night when it's the watch, taking
+		/// done food off a cooking station, eating, or resting by the fire, while it's wounded, or else keeping guard
 		/// </summary>
 		/// <returns>The job</returns>
 		private Job RaidJob()
@@ -9833,6 +9858,12 @@ namespace VikingVillages
 			if (IsNight() && IsWatch())
 			{
 				return(new WatchJob(this));
+			}
+			// The stations stand over the fire the village keeps guard around, so done food is taken off before it burns
+			Job tend = FindTendWork(true, true);
+			if (tend != null)
+			{
+				return(tend);
 			}
 			if (Wounded())
 			{
@@ -13069,7 +13100,7 @@ namespace VikingVillages
 		/// Cooking at the village's cooking stations - at the one it set out for and the others at the same fire no other
 		/// viking is at, so it cooks all it can at once - putting the raw food it carries on, fetching more from the
 		/// village's chests while they have room, waiting by them while it cooks, and taking off what's done, coal
-		/// included, to put away
+		/// included, to put away - or only taking off what's done, for a viking pulled off other work
 		/// </summary>
 		private class CookJob : Job
 		{
@@ -13087,14 +13118,22 @@ namespace VikingVillages
 			private string doing = "starting";
 
 			/// <summary>
+			/// Whether it only takes off done food before it burns, and leaves cooking more to others - for a viking pulled
+			/// off other work, or keeping guard through a raid
+			/// </summary>
+			private readonly bool takeOffOnly;
+
+			/// <summary>
 			/// Makes the job, with the station already claimed
 			/// </summary>
 			/// <param name="owner">The viking's life</param>
 			/// <param name="cooker">The cooking station</param>
-			public CookJob(VillageLife owner, CookingStation cooker) : base(owner)
+			/// <param name="takeOff">True to only take off done food (see takeOffOnly)</param>
+			public CookJob(VillageLife owner, CookingStation cooker, bool takeOff = false) : base(owner)
 			{
 				stations.Add(cooker);
 				nextRenew = Time.time + ClaimRenew;
+				takeOffOnly = takeOff;
 			}
 
 			/// <summary>
@@ -13148,6 +13187,10 @@ namespace VikingVillages
 					return(Fetch(dt));
 				}
 				CookingStation done = stations.Find((CookingStation cooker) => cooker.HaveDoneItem());
+				if (takeOffOnly && done == null)
+				{
+					return(true);
+				}
 				int room = 0;
 				CookingStation roomy = null;
 				foreach (CookingStation cooker in stations)
