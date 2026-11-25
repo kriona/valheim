@@ -271,7 +271,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Works out the vikings mining or cutting for a quest's item - as much as they can carry home between them, or as
 		/// much as they get done in the time they have, each tool swinging until that's done or it wears out - and notes
-		/// each one's tool, its wear and its hits
+		/// each one's tool, its wear and its hits. Cutting trees brings back the rest of what the trees drop too (see
+		/// AddTreeLoot)
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="record">The quest, its plans filled in</param>
@@ -314,7 +315,114 @@ namespace VikingVillages
 				plan.Hits = result.Hits[t];
 			}
 			QuestSim.Add(found, record.Item, Scale(record.Item, result.Units));
+			AddTreeLoot(source.ToolTarget, record, result.Units, found);
 			return(result.Seconds);
+		}
+
+		/// <summary>
+		/// Adds the rest of what the trees a quest cuts down drop besides its item - their resin, seeds, feathers and the
+		/// like, from the standing tree and every log it falls into (see TreeDrops) - rolling the whole tree's drops once
+		/// for each tree it takes to cut that much of its item, and scaled by the world's resource rate. The item itself is
+		/// left to the cutting, and a rock adds nothing
+		/// </summary>
+		/// <param name="target">The tree's prefab name</param>
+		/// <param name="record">The quest</param>
+		/// <param name="units">How many of its item the vikings cut</param>
+		/// <param name="found">What they bring back, added to</param>
+		private static void AddTreeLoot(string target, QuestRecord record, int units, Dictionary<string, int> found)
+		{
+			GameObject prefab = ((target != null && ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(target) : null);
+			List<DropTable> tables = ((prefab != null) ? TreeDrops(prefab) : new List<DropTable>());
+			float perTree = 0f;
+			foreach (DropTable table in tables)
+			{
+				perTree += AverageDrops(table, record.Item);
+			}
+			int trees = TreesFor(units, perTree);
+			if (trees <= 0)
+			{
+				return;
+			}
+			List<LootTable> loot = tables.ConvertAll((DropTable table) => FromDropTable(table));
+			System.Random rng = new System.Random((record.Id + "/trees").GetHashCode());
+			Dictionary<string, int> rolled = new Dictionary<string, int>();
+			for (int i = 0; i < trees; i++)
+			{
+				foreach (LootTable table in loot)
+				{
+					QuestSim.Roll(table, rng, rolled);
+				}
+			}
+			rolled.Remove(record.Item);
+			foreach (KeyValuePair<string, int> entry in rolled)
+			{
+				QuestSim.Add(found, entry.Key, Scale(entry.Key, entry.Value));
+			}
+		}
+
+		/// <summary>
+		/// Works out how many trees it takes to cut so much of an item - at least one once any is cut
+		/// </summary>
+		/// <param name="units">How many of the item were cut</param>
+		/// <param name="perTree">How many of it a whole tree gives, on average</param>
+		/// <returns>How many trees, or 0 when none was cut or a tree gives none of it</returns>
+		internal static int TreesFor(int units, float perTree)
+		{
+			if (units <= 0 || perTree <= 0f)
+			{
+				return(0);
+			}
+			return(Mathf.Max(1, Mathf.RoundToInt(units / perTree)));
+		}
+
+		/// <summary>
+		/// Lists the drop tables of a whole tree as it's cut down to nothing, the way the game drops them - the standing
+		/// tree's as it falls (see TreeBase), its log's as that breaks, and each smaller log's that one splits into, in
+		/// turn (see TreeLog.Destroy)
+		/// </summary>
+		/// <param name="prefab">The standing tree's prefab</param>
+		/// <returns>The tables, one for each piece, none when it isn't a tree</returns>
+		private static List<DropTable> TreeDrops(GameObject prefab)
+		{
+			List<DropTable> tables = new List<DropTable>();
+			TreeBase tree = prefab.GetComponent<TreeBase>();
+			if (tree == null)
+			{
+				return(tables);
+			}
+			tables.Add(tree.m_dropWhenDestroyed);
+			AddLogDrops(tree.m_logPrefab, tables, 0);
+			return(tables);
+		}
+
+		/// <summary>
+		/// How many times a log can split into smaller logs before the rest are left out, in case a log's smaller log
+		/// splits into itself
+		/// </summary>
+		private const int MaxLogSplits = 4;
+
+		/// <summary>
+		/// Adds a log's drop table, and those of the smaller logs it splits into, one for each spot one appears at
+		/// </summary>
+		/// <param name="logPrefab">The log's prefab, or null</param>
+		/// <param name="tables">The tables, added to</param>
+		/// <param name="splits">How many times the logs above it have split</param>
+		private static void AddLogDrops(GameObject logPrefab, List<DropTable> tables, int splits)
+		{
+			TreeLog log = ((logPrefab != null) ? logPrefab.GetComponent<TreeLog>() : null);
+			if (log == null || splits > MaxLogSplits)
+			{
+				return;
+			}
+			tables.Add(log.m_dropWhenDestroyed);
+			if (log.m_subLogPrefab == null || log.m_subLogPoints == null)
+			{
+				return;
+			}
+			foreach (Transform point in log.m_subLogPoints)
+			{
+				AddLogDrops(log.m_subLogPrefab, tables, splits + 1);
+			}
 		}
 
 		/// <summary>

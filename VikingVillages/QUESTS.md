@@ -131,9 +131,10 @@ For what the village wants - raspberries, mushrooms or dandelions in the Meadows
 
 ### Cutting Trees
 
-As much of the wood they went for as they can carry, or as they cut in time to be home before night, unless their axes wear out first. A Viking carries about 300 less their gear, food and potions and their axe - room for about 120 wood, fine wood, core wood or ancient bark each, all of them weighing 2.
+As much of the wood they went for as they can carry, or as they cut in time to be home before night, unless their axes wear out first. A Viking carries about 300 less their gear, food and potions and their axe - room for about 120 wood, fine wood, core wood or ancient bark each, all of them weighing 2. They bring home everything else the trees they fell drop too - from the standing tree as it falls and every log it breaks into, like resin, feathers and seeds - for as many trees as it takes to give the wood they cut.
 
 - Wood, fine wood, core wood or ancient bark - about 120 each
+- Everything else the trees drop, for that many trees
 
 ### Mining
 
