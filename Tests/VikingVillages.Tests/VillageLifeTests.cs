@@ -750,5 +750,33 @@ namespace VikingVillages.Tests
 			Assert.Equal(VillageLife.PickaxesWanted, VillageLife.ToolsWanted(ToolKind.Pickaxe, ResourceBook.AshLands));
 			Assert.Equal(0, VillageLife.ToolsWanted(ToolKind.None, ResourceBook.Plains));
 		}
+
+		/// <summary>
+		/// Checks how much more of something its vikings don't use a village keeps - up to its two stacks less what it
+		/// holds, and none once it holds that many, as with the deer hides hunts brought home only to have them dropped
+		/// </summary>
+		[Theory]
+		[InlineData(0, 2, 50, 100)]
+		[InlineData(60, 2, 50, 40)]
+		[InlineData(100, 2, 50, 0)]
+		[InlineData(150, 2, 50, 0)]
+		[InlineData(0, 2, 1, 2)]
+		public void KeepRoomIsWhatTheStacksHaveLeft(int held, int stacksKept, int maxStack, int expected)
+		{
+			Assert.Equal(expected, VillageLife.KeepRoomFor(held, stacksKept, maxStack));
+		}
+
+		/// <summary>
+		/// Checks that the village keeps one stack of each trophy, as many axes and pickaxes as it wants, and two stacks
+		/// of anything else its vikings don't use
+		/// </summary>
+		[Fact]
+		public void KeepsOneStackOfATrophy()
+		{
+			Assert.Equal(1, VillageLife.StacksKeptFor(true, false, false));
+			Assert.Equal(VillageLife.PickaxesWanted, VillageLife.StacksKeptFor(false, true, false));
+			Assert.Equal(VillageLife.AxesWanted, VillageLife.StacksKeptFor(false, false, true));
+			Assert.Equal(2, VillageLife.StacksKeptFor(false, false, false));
+		}
 	}
 }

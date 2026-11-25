@@ -565,9 +565,10 @@ namespace VikingVillages
 
 		/// <summary>
 		/// The most stacks of an item the vikings don't use - anything but wood and food - they keep in the village's
-		/// chests, one to a chest at most
+		/// chests, one to a chest at most, and of each trophy, which only piles up
 		/// </summary>
 		private const int VillageStacksMax = 2;
+		private const int TrophyStacks = 1;
 
 		/// <summary>
 		/// On an item a viking dropped outside the village because the chests hold enough of it, that no viking stores

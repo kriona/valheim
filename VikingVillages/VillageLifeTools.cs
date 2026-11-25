@@ -55,18 +55,75 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets how many stacks of an item the village's chests keep of something the vikings don't use themselves - as
-		/// many axes and pickaxes as the village keeps, each its own stack, and VillageStacksMax of anything else
+		/// Gets how many stacks of an item the village's chests keep of something the vikings don't use themselves (see
+		/// StacksKeptFor)
 		/// </summary>
 		/// <param name="item">The item</param>
 		/// <returns>How many stacks</returns>
 		private static int KeptStacks(ItemDrop.ItemData item)
 		{
-			if (IsPickaxe(item))
+			bool trophy = (item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trophy);
+			return(StacksKeptFor(trophy, !trophy && IsPickaxe(item), !trophy && IsAxe(item)));
+		}
+
+		/// <summary>
+		/// Works out how many stacks the village's chests keep of something the vikings don't use themselves - TrophyStacks
+		/// of a trophy, as many axes and pickaxes as the village keeps, each its own stack, and VillageStacksMax of
+		/// anything else
+		/// </summary>
+		/// <param name="trophy">Whether it's a trophy</param>
+		/// <param name="pickaxe">Whether it's a pickaxe</param>
+		/// <param name="axe">Whether it's an axe</param>
+		/// <returns>How many stacks</returns>
+		internal static int StacksKeptFor(bool trophy, bool pickaxe, bool axe)
+		{
+			if (trophy)
+			{
+				return(TrophyStacks);
+			}
+			if (pickaxe)
 			{
 				return(PickaxesWanted);
 			}
-			return(IsAxe(item) ? AxesWanted : VillageStacksMax);
+			return(axe ? AxesWanted : VillageStacksMax);
+		}
+
+		/// <summary>
+		/// Works out how many more of an item a village keeps - all the wood and food it's brought, and of anything else,
+		/// as much as fills the stacks of it the village keeps (see KeptStacks), less what its chests hold already, the
+		/// rest of which its vikings would carry out and drop
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="prefabName">The item's prefab name</param>
+		/// <returns>How many more, or int.MaxValue for wood, food or an item that isn't known</returns>
+		internal static int KeepRoom(Village village, string prefabName)
+		{
+			ItemDrop.ItemData item = ItemOf(prefabName);
+			if (item == null || KindOf(item) != StoreKind.Other)
+			{
+				return(int.MaxValue);
+			}
+			int held = 0;
+			foreach (Container chest in VillageChests(village))
+			{
+				foreach (ItemDrop.ItemData stored in chest.GetInventory().GetAllItems())
+				{
+					held += ((stored.m_shared.m_name == item.m_shared.m_name) ? stored.m_stack : 0);
+				}
+			}
+			return(KeepRoomFor(held, KeptStacks(item), item.m_shared.m_maxStackSize));
+		}
+
+		/// <summary>
+		/// Works out how many more of something the vikings don't use a village keeps, from what its chests hold
+		/// </summary>
+		/// <param name="held">How many its chests hold</param>
+		/// <param name="stacksKept">How many stacks of it the village keeps</param>
+		/// <param name="maxStack">How many make a full stack</param>
+		/// <returns>How many more, never less than none</returns>
+		internal static int KeepRoomFor(int held, int stacksKept, int maxStack)
+		{
+			return(Mathf.Max(0, stacksKept * Mathf.Max(1, maxStack) - held));
 		}
 
 		/// <summary>

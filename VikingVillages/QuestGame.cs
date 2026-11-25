@@ -97,9 +97,48 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Why a quest doesn't go when nothing it would bring home is wanted (see Prepare)
+		/// </summary>
+		public const string NothingWanted = "nothing it would bring home is wanted";
+
+		/// <summary>
+		/// Leaves behind what a quest finds that its village wouldn't keep - past the stacks it keeps of something its
+		/// vikings don't use (see VillageLife.KeepRoom) - so they don't carry it home only to drop it outside the village
+		/// again, never leaving behind the item the quest is for
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="record">The quest</param>
+		/// <param name="found">What it finds, by prefab name, cut down to what the village keeps</param>
+		private static void LeaveUnwanted(Village village, QuestRecord record, Dictionary<string, int> found)
+		{
+			foreach (string item in new List<string>(found.Keys))
+			{
+				if (item == record.Item)
+				{
+					continue;
+				}
+				int room = VillageLife.KeepRoom(village, item);
+				if (found[item] <= room)
+				{
+					continue;
+				}
+				TestLog.Count("Left behind on quests", item, found[item] - room);
+				if (room <= 0)
+				{
+					found.Remove(item);
+				}
+				else
+				{
+					found[item] = room;
+				}
+			}
+		}
+
+		/// <summary>
 		/// Works out a quest as it sets out - for one that takes a tool, how much of its item the vikings can carry home
 		/// between them and how long their tools take to get it, wearing each tool; and what else it brings back (see
-		/// QuestLoot) - then shares what it finds out among the vikings by their room, works out a fight with the creatures
+		/// QuestLoot), leaving behind what the village wouldn't keep (see LeaveUnwanted), and not going at all when
+		/// nothing it would bring home is wanted - then shares what it finds out among the vikings by their room, works out a fight with the creatures
 		/// the quest kills, if any, and the harm it does each viking (see QuestFightGame), and when it's due back
 		/// </summary>
 		/// <param name="village">The village</param>
@@ -108,14 +147,17 @@ namespace VikingVillages
 		/// <param name="there">How long the trip there takes, in seconds</param>
 		/// <param name="back">How long the trip back takes, in seconds</param>
 		/// <param name="roadBiome">The biome the road goes to, by VikingGear's order, or -1 when it isn't known</param>
-		/// <returns>False when one of its vikings isn't loaded here</returns>
-		public static bool Prepare(Village village, QuestRecord record, ResourceSource source, float there, float back, int roadBiome)
+		/// <param name="why">Set to why it doesn't go, or "" when it does</param>
+		/// <returns>False when one of its vikings isn't loaded here, or nothing it would bring home is wanted</returns>
+		public static bool Prepare(Village village, QuestRecord record, ResourceSource source, float there, float back, int roadBiome, out string why)
 		{
+			why = "";
 			List<Humanoid> members = Members(village, record);
 			ResourceBook book = ResourceBookGame.Get();
 			QuestRule rule = ((book != null) ? book.RuleOf(record.Kind) : null);
 			if (members == null || rule == null)
 			{
+				why = "its vikings aren't all here";
 				return(false);
 			}
 			int biome = VillageCooking.VillageBiome(village);
@@ -148,6 +190,14 @@ namespace VikingVillages
 				most = Mathf.Max(QuestRules.ForagePicksLeast, (byNight ? QuestRules.ForagePicksBeforeNight(toNight, there, back) : QuestRules.ForagePicksMost));
 			}
 			int taken = QuestLoot.Roll(village, record, members, spaces, most, found, roadBiome);
+			LeaveUnwanted(village, record, found);
+			// A quest that would bring home nothing the village wants isn't needed - but for a trade, worked out from what
+			// its vikings take along
+			if (found.Count == 0 && record.Kind != QuestKind.SellTreasure && record.Kind != QuestKind.BuyCirclet)
+			{
+				why = NothingWanted;
+				return(false);
+			}
 			if (rule.Offering.Length > 0 && rule.OfferingCount > 0 && record.Plans.Count > 0)
 			{
 				// The first of them takes along what the quest uses up there, from the village's chests

@@ -688,11 +688,17 @@ namespace VikingVillages
 			travel = ((travel >= 0f) ? travel : QuestRules.DefaultTravel);
 			back = ((back >= 0f) ? back : travel);
 			ResourceSource source = QuestGame.SourceFor(ResourceBookGame.Get(), record.Kind, record.Item);
-			if (!QuestGame.Prepare(village, record, source, travel, back, RouteBiome(village, record.Kind, record.Item)))
+			if (!QuestGame.Prepare(village, record, source, travel, back, RouteBiome(village, record.Kind, record.Item), out string why))
 			{
-				Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " was given up on, as its vikings aren't all here");
+				Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " was given up on, as " + why);
 				TestLog.Count("Quests", record.Kind + " given up on");
 				Write(village, null);
+				// A quest that isn't needed counts as the last, so the village rests before picking one again rather than
+				// picking it again at once
+				if (why == QuestGame.NothingWanted)
+				{
+					village.Zdo.Set(LastQuestKey, NetTime.Now());
+				}
 				return;
 			}
 			Write(village, record);
