@@ -9257,7 +9257,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Walks the viking toward a spot, through the doors in its way - running when it asks to, when it's away from
-		/// home, or when it's climbing a slope
+		/// home or on a trip to another village, or when it's climbing a slope
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="target">The spot</param>
@@ -9266,7 +9266,8 @@ namespace VikingVillages
 		/// <returns>True once it's there, or when it gave up, which sets moveFailed</returns>
 		private bool Go(float dt, Vector3 target, float reach, bool run)
 		{
-			run = (run || AwayFromHome() || RunsInRain() || (viking != null && viking.Climbing()));
+			bool onTrip = (road == Road.Travelling || road == Road.Waiting);
+			run = (run || onTrip || AwayFromHome() || RunsInRain() || (viking != null && viking.Climbing()));
 			bool viaDoor = VikingDoors.Steer(humanoid, target, out Vector3 waypoint, out bool direct);
 			mover = (direct ? "straight through a door" : (viaDoor ? "path to a door" : "path")) + " for " + ((job != null) ? job.GetType().Name : "village life");
 			if (direct)
