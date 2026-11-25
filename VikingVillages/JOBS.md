@@ -263,7 +263,7 @@ They wake 1-61 seconds after dawn - most within about 16 - and half of them stre
 
 ## Day Work
 
-By day, a Viking does the first of these they can, in this order - but for picking up kill loot and putting away what a quest brought home, which come before any job, day or night.
+By day, a Viking does the first of these they can, in this order - but for lightening the load, picking up kill loot and putting away what a quest brought home, which come before any job, day or night.
 
 ### Leave on a Quest
 
@@ -334,6 +334,10 @@ For 45 seconds after an enemy they fought dies, a Viking who isn't below three q
 ### Put Away What a Quest Brought Home
 
 Back from a quest, they put away what they found, the food and potions they didn't use and the tool they took, before anything else - even at night. By day, raw meat goes to a lit cooking station with room first. A Dverger circlet they brought home for themselves, they wear.
+
+### Lighten the Load
+
+Carrying more than they can, with something to spare, they lighten their load before anything else, day or night - before gathering at the fire, keeping watch or going to bed, and before keeping guard in a raid. What they can spare is anything they carry for the village, or of their own that they don't keep - they always keep the gear they wear, their best melee weapon and bow, the arrows for it, their shield, torches and a Dverger circlet. They put the heaviest of it in the nearest chest with room within 20 meters - only as much as takes them back under what they can carry - or with no chest, drop it where they stand, until they're no longer slowed. In a fight they drop it on the spot - see [Drop What Slows Them](#drop-what-slows-them).
 
 ### Take Up Better Gear
 
