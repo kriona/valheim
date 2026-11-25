@@ -39,11 +39,6 @@ namespace VikingVillages
 		private static float share = 1f;
 
 		/// <summary>
-		/// The weather's own fog density at the last update, before it was thinned
-		/// </summary>
-		private static float weatherDensity;
-
-		/// <summary>
 		/// Thins the fog the game has just set by how near the camera is to a village's burning fire - call it once the
 		/// game has set the fog for the update
 		/// </summary>
@@ -58,23 +53,10 @@ namespace VikingVillages
 			Camera camera = Utils.GetMainCamera();
 			float target = ((camera != null) ? Target(camera.transform.position, fires) : 1f);
 			share = Mathf.MoveTowards(share, target, FadeRate * dt);
-			weatherDensity = RenderSettings.fogDensity;
 			if (share < 1f)
 			{
 				RenderSettings.fogDensity *= share;
 			}
-		}
-
-		/// <summary>
-		/// Describes the fog for the debug hover text of a village's fire - the weather, its fog's density, and how much
-		/// of it the village fires leave
-		/// </summary>
-		/// <returns>The line, ending in a line break</returns>
-		public static string Describe()
-		{
-			EnvSetup environment = ((EnvMan.instance != null) ? EnvMan.instance.GetCurrentEnvironment() : null);
-			string weather = ((environment != null) ? environment.m_name : "unknown weather");
-			return("Fog: " + weather + ", density " + weatherDensity.ToString("0.0000") + ", " + Mathf.RoundToInt(share * 100f) + "% of it left, " + fires.Count + " burning village fires loaded\n");
 		}
 
 		/// <summary>

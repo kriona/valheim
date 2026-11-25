@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 using Kriona.Vikings;
 using UnityEngine;
 
@@ -21,6 +22,19 @@ namespace VikingVillages
 		/// Seconds a village's summary is kept before it's worked out again
 		/// </summary>
 		private const float RefreshInterval = 1f;
+
+		/// <summary>
+		/// The gray the summary shows in, and the darker gray of each line's header, like "Pieces:", so it stands apart
+		/// from what the line says
+		/// </summary>
+		private const string TextColor = "#C0C0C0";
+		private const string HeaderColor = "#8C8C8C";
+
+		/// <summary>
+		/// A line's header - a label at its start, indented or not, of letters and the like but no comma, ending in a
+		/// colon before a space or the line's end
+		/// </summary>
+		private static readonly Regex HeaderPattern = new Regex("^([ \\t]*)([A-Za-z][A-Za-z0-9 '()/-]*:)(?= |$)", RegexOptions.Multiline);
 
 		/// <summary>
 		/// Each village's summary and when it was worked out, by its generator's ZDO
@@ -48,7 +62,7 @@ namespace VikingVillages
 		/// Describes a village's state, from its last summary when that's recent
 		/// </summary>
 		/// <param name="village">The village</param>
-		/// <returns>The summary, in gray</returns>
+		/// <returns>The summary, in gray, with its headers in a darker gray</returns>
 		public static string Summary(Village village)
 		{
 			ZDOID id = village.Zdo.m_uid;
@@ -56,9 +70,19 @@ namespace VikingVillages
 			{
 				return(kept.Value);
 			}
-			string summary = "<color=#C0C0C0>" + Describe(village).TrimEnd('\n') + "</color>";
+			string summary = "<color=" + TextColor + ">" + GrayHeaders(Describe(village).TrimEnd('\n')) + "</color>";
 			summaries[id] = new KeyValuePair<float, string>(Time.time, summary);
 			return(summary);
+		}
+
+		/// <summary>
+		/// Shows each line's header in HeaderColor (see HeaderPattern)
+		/// </summary>
+		/// <param name="text">The lines</param>
+		/// <returns>The lines, their headers wrapped in color tags</returns>
+		internal static string GrayHeaders(string text)
+		{
+			return(HeaderPattern.Replace(text, "$1<color=" + HeaderColor + ">$2</color>"));
 		}
 
 		/// <summary>
@@ -100,7 +124,6 @@ namespace VikingVillages
 				int stations = VillageCooking.Stations(village, fire.transform.position).Count;
 				text.Append("Fire: " + Utils.GetPrefabName(fire.gameObject) + ", fuel " + fuel.ToString("F1") + "/" + fire.m_maxFuel.ToString("F0") + ((stations > 0) ? ", " + stations + " cooking stations" : "") + (fire.IsBurning() ? "" : ", not burning") + "\n");
 			}
-			text.Append(VillageFog.Describe());
 			int records = VillageRecords.Count(village);
 			if (records < 0)
 			{
