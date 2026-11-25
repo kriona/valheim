@@ -778,5 +778,36 @@ namespace VikingVillages.Tests
 			Assert.Equal(VillageLife.AxesWanted, VillageLife.StacksKeptFor(false, false, true));
 			Assert.Equal(2, VillageLife.StacksKeptFor(false, false, false));
 		}
+
+		/// <summary>
+		/// Checks that a viking jumps fences and low walls, but not roofs or beams, which it would end up stuck on top of
+		/// </summary>
+		[Theory]
+		[InlineData("wood_fence", true)]
+		[InlineData("stone_wall_1x1", true)]
+		[InlineData("wood_roof_45", false)]
+		[InlineData("wood_roof_top_45", false)]
+		[InlineData("wood_wall_roof_45", false)]
+		[InlineData("wood_beam_45", false)]
+		public void JumpsFencesButNotRoofs(string name, bool expected)
+		{
+			Assert.Equal(expected, VillageLife.HoppableName(name));
+		}
+
+		/// <summary>
+		/// Checks that a viking counts as stuck on top of something only well above the next point of its path and close
+		/// to it, as on the roof of the house at Black Forest's workbench, 4m above its path's next point, and not when
+		/// it's level with it, or the point is far off
+		/// </summary>
+		[Theory]
+		[InlineData(1481.6f, 39.6f, 52.3f, 1483.1f, 35.5f, 52.8f, true)]
+		[InlineData(1447.1f, 40.0f, 71.0f, 1445.3f, 37.5f, 71.2f, true)]
+		[InlineData(1430.7f, 36.0f, 81.8f, 1430.7f, 36.4f, 81.3f, false)]
+		[InlineData(1447.1f, 40.0f, 71.0f, 1441.0f, 37.5f, 71.0f, false)]
+		[InlineData(0f, 1f, 0f, 0f, 0f, 0f, false)]
+		public void StrandedOnlyWellAboveAndNearItsPath(float atX, float atY, float atZ, float nextX, float nextY, float nextZ, bool expected)
+		{
+			Assert.Equal(expected, VillageLife.Stranded(new Vector3(atX, atY, atZ), new Vector3(nextX, nextY, nextZ)));
+		}
 	}
 }

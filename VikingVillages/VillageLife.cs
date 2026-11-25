@@ -3417,8 +3417,9 @@ namespace VikingVillages
 		/// <summary>
 		/// Notes how the viking moved this AI update, after its AI and village life have both had their say, so its
 		/// twitching - stopping and starting, or turning one way then the other, over and over - shows in its debug
-		/// hover text and, with debug mode on, is written to the log with what it was doing - and notes which forsaken
-		/// powers it's under, for other clients' vikings to tell
+		/// hover text and, with debug mode on, is written to the log with what it was doing, and a viking twitching on
+		/// top of something it's stuck on climbs down (see ClimbDown) - and notes which forsaken powers it's under, for
+		/// other clients' vikings to tell
 		/// </summary>
 		public void AfterAI()
 		{
@@ -3454,11 +3455,69 @@ namespace VikingVillages
 			}
 			mover = "game AI";
 			CountTwitches(out int starts, out int reversals);
-			if ((starts >= TwitchStarts || reversals >= TwitchReversals) && Player.m_debugMode && Time.time >= nextTwitchLog)
+			if (starts < TwitchStarts && reversals < TwitchReversals)
+			{
+				return;
+			}
+			if (Player.m_debugMode && Time.time >= nextTwitchLog)
 			{
 				nextTwitchLog = Time.time + TwitchLogInterval;
 				Plugin.Log.LogInfo(TwitchReport(starts, reversals));
 			}
+			if (ClimbDown())
+			{
+				moveSamples.Clear();
+			}
+		}
+
+		/// <summary>
+		/// How far above the next point of its path a twitching viking has to stand to count as stuck on top of
+		/// something, and how near that point has to be, seen from above, for it to climb down to it, in meters
+		/// </summary>
+		private const float StrandHeight = 1.5f;
+		private const float StrandReach = 3f;
+
+		/// <summary>
+		/// Climbs a twitching viking down from on top of something it's stuck on - a roof, or furniture it got onto - to
+		/// the next point of its path, when that's well below it and close by, rather than leaving it turning back and
+		/// forth at the edge, unable to step down to the way it's going
+		/// </summary>
+		/// <returns>True when it climbed down</returns>
+		private bool ClimbDown()
+		{
+			if (ai == null || ai.m_path == null || ai.m_path.Count == 0 || attachPoint != null || !humanoid.IsOnGround())
+			{
+				return(false);
+			}
+			Vector3 next = ai.m_path[0];
+			if (!Stranded(transform.position, next))
+			{
+				return(false);
+			}
+			Vector3 down = next + Vector3.up * 0.1f;
+			TestLog.Count("Troubles", "climbed down from on top of something");
+			if (TestLog.On || Player.m_debugMode)
+			{
+				Plugin.Log.LogInfo("Climb: " + TestLog.Name(humanoid, "F1") + " was stuck " + (transform.position.y - next.y).ToString("F1") + "m above its path, so it climbs down to " + down.ToString("F1"));
+			}
+			transform.position = down;
+			humanoid.m_body.position = down;
+			humanoid.m_body.linearVelocity = Vector3.zero;
+			return(true);
+		}
+
+		/// <summary>
+		/// Checks whether a viking stands stuck above the next point of its path - at least StrandHeight above it, and
+		/// within StrandReach of it seen from above
+		/// </summary>
+		/// <param name="at">Where it stands</param>
+		/// <param name="next">The next point of its path</param>
+		/// <returns>True when it does</returns>
+		internal static bool Stranded(Vector3 at, Vector3 next)
+		{
+			float dx = at.x - next.x;
+			float dz = at.z - next.z;
+			return(at.y - next.y >= StrandHeight && dx * dx + dz * dz <= StrandReach * StrandReach);
 		}
 
 		/// <summary>
@@ -10389,6 +10448,43 @@ namespace VikingVillages
 		private float penHopSince;
 
 		/// <summary>
+		/// Checks whether something in the viking's way is a building piece it jumps when there's no way around it - like
+		/// a fence or a low wall, but never a crafting station or its extension, a chest, bed, chair, fire or other
+		/// furniture, or a roof or beam, any of which would only leave it stuck on top
+		/// </summary>
+		/// <param name="collider">What's in its way</param>
+		/// <returns>True when it jumps it</returns>
+		private static bool Hoppable(Collider collider)
+		{
+			WearNTear piece = collider.GetComponentInParent<WearNTear>();
+			if (piece == null)
+			{
+				return(false);
+			}
+			if (piece.GetComponentInChildren<Container>() != null || piece.GetComponentInChildren<CraftingStation>() != null || piece.GetComponentInChildren<StationExtension>() != null || piece.GetComponentInChildren<Bed>() != null || piece.GetComponentInChildren<Chair>() != null || piece.GetComponentInChildren<Fireplace>() != null)
+			{
+				return(false);
+			}
+			Piece info = piece.GetComponent<Piece>();
+			if (info != null && (info.m_category == Piece.PieceCategory.Furniture || info.m_category == Piece.PieceCategory.Crafting))
+			{
+				return(false);
+			}
+			return(HoppableName(Utils.GetPrefabName(piece.gameObject)));
+		}
+
+		/// <summary>
+		/// Checks whether a building piece's name leaves it one the viking jumps - anything but a roof or a beam, which
+		/// slope or stand up off the ground for it to end up stuck on
+		/// </summary>
+		/// <param name="name">The piece's prefab name</param>
+		/// <returns>True when it does</returns>
+		internal static bool HoppableName(string name)
+		{
+			return(!name.Contains("roof") && !name.Contains("beam"));
+		}
+
+		/// <summary>
 		/// Climbs the viking over a pen's fence it's shut in by, once it has tried to jump out more than PenHopTries times
 		/// within PenHopWindow - putting it down on the far side, where its jump would land - rather than leaving it
 		/// shut in, jumping and falling back, for as long as the fence is too high for it
@@ -10454,7 +10550,7 @@ namespace VikingVillages
 			EnsureHopMask();
 			Vector3 feet = transform.position;
 			// Only a building piece like a fence is jumped - a rock is walked around, never climbed onto
-			bool low = (Physics.Raycast(feet + Vector3.up * 0.4f, direction, out RaycastHit obstacle, HopReach, hopMask, QueryTriggerInteraction.Ignore) && obstacle.collider.GetComponentInParent<WearNTear>() != null);
+			bool low = (Physics.Raycast(feet + Vector3.up * 0.4f, direction, out RaycastHit obstacle, HopReach, hopMask, QueryTriggerInteraction.Ignore) && Hoppable(obstacle.collider));
 			bool high = Physics.Raycast(feet + Vector3.up * HopHeight, direction, HopReach + 0.5f, hopMask, QueryTriggerInteraction.Ignore);
 			if (!low || high)
 			{
