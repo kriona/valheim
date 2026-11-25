@@ -10343,8 +10343,63 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// How many times a viking shut in a pen tries to jump out within PenHopWindow seconds before it climbs over
+		/// instead - a pen whose ground inside lies lower than its fence's foot outside can have a fence too high to jump
+		/// </summary>
+		private const int PenHopTries = 3;
+		private const float PenHopWindow = 60f;
+
+		/// <summary>
+		/// The viking's jumps out of a pen since when, for ClimbOutOfPen
+		/// </summary>
+		private int penHops;
+		private float penHopSince;
+
+		/// <summary>
+		/// Climbs the viking over a pen's fence it's shut in by, once it has tried to jump out more than PenHopTries times
+		/// within PenHopWindow - putting it down on the far side, where its jump would land - rather than leaving it
+		/// shut in, jumping and falling back, for as long as the fence is too high for it
+		/// </summary>
+		/// <param name="feet">Where it stands</param>
+		/// <param name="landing">Where its jump would land, past the fence, on the ground</param>
+		/// <param name="obstacle">The fence in its way</param>
+		/// <returns>True when it climbed over</returns>
+		private bool ClimbOutOfPen(Vector3 feet, Vector3 landing, RaycastHit obstacle)
+		{
+			if (!Village.FencedIn(feet) || Village.FencedIn(landing))
+			{
+				penHops = 0;
+				return(false);
+			}
+			if (Time.time - penHopSince > PenHopWindow)
+			{
+				penHopSince = Time.time;
+				penHops = 0;
+			}
+			penHops++;
+			if (penHops <= PenHopTries)
+			{
+				return(false);
+			}
+			penHops = 0;
+			Vector3 over = landing + Vector3.up * 0.1f;
+			transform.position = over;
+			humanoid.m_body.position = over;
+			humanoid.m_body.linearVelocity = Vector3.zero;
+			ai.StopMoving();
+			TestLog.Count("Troubles", "climbed out of a pen");
+			if (TestLog.On || Player.m_debugMode)
+			{
+				WearNTear piece = obstacle.collider.GetComponentInParent<WearNTear>();
+				Plugin.Log.LogInfo("Climb: " + TestLog.Name(humanoid, "F1") + " couldn't jump the " + ((piece != null) ? Utils.GetPrefabName(piece.gameObject) : "fence") + " at " + obstacle.point.ToString("F1") + " out of a pen, so it climbs over to " + over.ToString("F1"));
+			}
+			return(true);
+		}
+
+		/// <summary>
 		/// Starts the viking's jump over something low right in front of it on its way to a spot, like a fence, when
-		/// there's no way around it - backing up and running at it, then jumping with its own jump (see UpdateHop)
+		/// there's no way around it - backing up and running at it, then jumping with its own jump (see UpdateHop) - or
+		/// climbs out of a pen it can't jump out of (see ClimbOutOfPen)
 		/// </summary>
 		/// <param name="toward">Where it's going</param>
 		/// <param name="fighting">True when it's going over a pen's fence to an enemy, which it jumps into the pen for,
@@ -10378,6 +10433,10 @@ namespace VikingVillages
 			if (!fighting && !GoesIntoPens() && !Village.FencedIn(feet) && Village.FencedIn(landing))
 			{
 				return(false);
+			}
+			if (ClimbOutOfPen(feet, landing, obstacle))
+			{
+				return(true);
 			}
 			// How high the fence's top stands, found from above just inside its face
 			Vector3 probe = obstacle.point + direction * 0.1f;

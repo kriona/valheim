@@ -97,13 +97,19 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks one of a set of lines
+		/// Picks one of a set of lines at random, leaving out those about the dead walking that aren't true of the world
+		/// (see VikingSpeech.Says), keeping "{village}" in it, which is filled in with the village the word came from
 		/// </summary>
 		/// <param name="lines">The lines</param>
-		/// <returns>The line</returns>
+		/// <returns>The line, or "" when there are none</returns>
 		private static string Pick(string[] lines)
 		{
-			return(VikingSpeech.Pick(lines, ""));
+			List<string> spoken = new List<string>(lines).FindAll((string line) => VikingSpeech.Says(line));
+			if (spoken.Count == 0)
+			{
+				spoken = new List<string>(lines);
+			}
+			return((spoken.Count > 0) ? spoken[UnityEngine.Random.Range(0, spoken.Count)] : "");
 		}
 
 		/// <summary>

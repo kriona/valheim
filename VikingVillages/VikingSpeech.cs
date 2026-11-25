@@ -1490,7 +1490,7 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="line">The line, or the talk's first line</param>
 		/// <returns>True when they say it</returns>
-		private static bool Says(string line)
+		internal static bool Says(string line)
 		{
 			return(!ZombieLines.TryGetValue(line, out System.Func<bool> holds) || holds());
 		}
@@ -1512,13 +1512,17 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="lines">The lines, with "{village}" where the village's name goes</param>
 		/// <param name="village">The village's name, or ""</param>
-		/// <returns>One of them</returns>
+		/// <returns>One of them, or "" when there's none it can say</returns>
 		internal static string Pick(string[] lines, string village)
 		{
 			List<string> spoken = new List<string>(lines).FindAll((string line) => Says(line) && (village.Length > 0 || !line.Contains(VillageToken)));
 			if (spoken.Count == 0)
 			{
 				spoken = new List<string>(lines).FindAll((string line) => !line.Contains(VillageToken));
+			}
+			if (spoken.Count == 0)
+			{
+				return("");
 			}
 			return(WithVillage(spoken[Random.Range(0, spoken.Count)], village));
 		}

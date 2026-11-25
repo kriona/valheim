@@ -433,8 +433,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Describes what the viking is doing, for the log - its job, what it's fighting, and whether it's fleeing,
-		/// walking back, in a raid or out at night
+		/// Describes what the viking is doing, for the log - its job, what it's fighting, the bed or seat it's on and
+		/// where it's held there, and whether it's fleeing, walking back, in a raid or out at night
 		/// </summary>
 		/// <returns>The description</returns>
 		private string LogDoing()
@@ -445,6 +445,12 @@ namespace VikingVillages
 			if (target != null)
 			{
 				text.Append(", fighting " + TestLog.Name(target));
+			}
+			if (attachPoint != null)
+			{
+				Piece seat = attachPoint.GetComponentInParent<Piece>();
+				string what = ((seat != null) ? Utils.GetPrefabName(seat.gameObject) + " at " + seat.transform.position.ToString("F1") : "something");
+				text.Append(", " + (inBed ? "in bed on " : "seated on ") + what + ", held at " + attachPoint.position.ToString("F1"));
 			}
 			if (fleeing)
 			{

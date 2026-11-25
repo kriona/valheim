@@ -851,12 +851,24 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out how far outside the village a point is - past the edge of the zone nearest it (see Zones)
+		/// How high a point has to be to count as out of the world - in a dungeon, which the game puts far above where
+		/// its entrance stands - and so never in or near a village below it, in meters, the same as the game judges a
+		/// player out of every raid's area (see RandEventSystem.IsInsideRandomEventArea)
+		/// </summary>
+		internal const float OutOfWorldHeight = 3000f;
+
+		/// <summary>
+		/// Works out how far outside the village a point is - past the edge of the zone nearest it (see Zones), seen from
+		/// above, or as far as can be for a point out of the world above it, like in a dungeon (see OutOfWorldHeight)
 		/// </summary>
 		/// <param name="point">The point</param>
 		/// <returns>The distance past its edge, or 0 inside it</returns>
 		public float DistanceOutside(Vector3 point)
 		{
+			if (point.y > OutOfWorldHeight)
+			{
+				return(float.MaxValue);
+			}
 			float nearest = float.MaxValue;
 			foreach (Zone zone in Zones)
 			{

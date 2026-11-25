@@ -240,5 +240,19 @@ namespace VikingVillages.Tests
 			Assert.True(village.InHouse(new Vector3(34f, 0f, -2f), 1f));
 			Assert.False(village.InHouse(new Vector3(15f, 0f, 0f), 1f));
 		}
+
+		/// <summary>
+		/// Checks that a point in a dungeon right above the village - far up out of the world - counts as nowhere near
+		/// it, as the yellow mushrooms in a crypt above a Black Forest village did, while one on the ground there is in it
+		/// </summary>
+		[Fact]
+		public void DungeonAboveIsNotInTheVillage()
+		{
+			List<Village.Zone> zones = new List<Village.Zone> { new Village.Zone { Center = Vector3.zero, Radius = 30f } };
+			Village village = MakeVillage(zones, Vector3.zero, 30f);
+			Assert.True(village.Contains(new Vector3(5f, 40f, 5f)));
+			Assert.False(village.Contains(new Vector3(5f, 5042f, 5f)));
+			Assert.Equal(float.MaxValue, village.DistanceOutside(new Vector3(5f, 5042f, 5f)));
+		}
 	}
 }
