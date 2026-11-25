@@ -269,9 +269,32 @@ namespace VikingVillages
 		/// <returns>The values</returns>
 		private static byte[] Snapshot(ZDO viking)
 		{
+			ZDOExtraData.GetData(viking.m_uid, out FastIterableKeyValues<int, float> floats, out FastIterableKeyValues<int, Vector3> vec3s, out FastIterableKeyValues<int, Quaternion> quats, out FastIterableKeyValues<int, int> ints, out FastIterableKeyValues<int, long> longs, out FastIterableKeyValues<int, string> strings, out FastIterableKeyValues<int, byte[]> bytes, out ZDOConnection _);
 			VikingValues values = new VikingValues();
-			ZDOExtraData.GetData(viking.m_uid, out values.Floats, out values.Vec3s, out values.Quats, out values.Ints, out values.Longs, out values.Strings, out values.Bytes, out ZDOConnection _);
+			values.Floats = ToList(floats);
+			values.Vec3s = ToList(vec3s);
+			values.Quats = ToList(quats);
+			values.Ints = ToList(ints);
+			values.Longs = ToList(longs);
+			values.Strings = ToList(strings);
+			values.Bytes = ToList(bytes);
 			return(Encode(values, Skipped()));
+		}
+
+		/// <summary>
+		/// Copies a ZDO's values of one type, as the game hands them out, into a list
+		/// </summary>
+		/// <typeparam name="T">The type of value</typeparam>
+		/// <param name="values">The values</param>
+		/// <returns>The list</returns>
+		internal static List<KeyValuePair<int, T>> ToList<T>(FastIterableKeyValues<int, T> values)
+		{
+			List<KeyValuePair<int, T>> list = new List<KeyValuePair<int, T>>(values.Count);
+			for (int i = 0; i < values.Count; i++)
+			{
+				list.Add(values[i]);
+			}
+			return(list);
 		}
 
 		/// <summary>

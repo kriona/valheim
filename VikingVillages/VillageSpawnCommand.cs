@@ -330,7 +330,7 @@ namespace VikingVillages
 		/// <returns>The name</returns>
 		private static string Name(ZoneSystem.ZoneLocation location)
 		{
-			return(!string.IsNullOrEmpty(location.m_prefabName) ? location.m_prefabName : location.m_prefab.Name);
+			return(!string.IsNullOrEmpty(location.m_prefabName) ? location.m_prefabName : location.m_prefab.name);
 		}
 	}
 }

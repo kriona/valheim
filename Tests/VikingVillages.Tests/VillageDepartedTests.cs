@@ -159,5 +159,18 @@ namespace VikingVillages.Tests
 			byte[] bytes = VillageDeparted.EncodeKept(new List<byte[]> { new byte[] { 1, 2, 3, 4 } });
 			Assert.Null(VillageDeparted.DecodeKept(bytes[..(bytes.Length - 1)]));
 		}
+
+		/// <summary>
+		/// Checks that a ZDO's values are copied as the game hands them out, only as many as it counts - the arrays it
+		/// keeps them in can be longer - and that a ZDO with none of a type gives an empty list
+		/// </summary>
+		[Fact]
+		public void CopiesTheValuesTheGameCounts()
+		{
+			FastIterableKeyValues<int, long> values = new FastIterableKeyValues<int, long>(new int[] { 5, 7, 9 }, new long[] { 50L, 70L, 90L }, 2);
+			List<KeyValuePair<int, long>> list = VillageDeparted.ToList(values);
+			Assert.Equal(new List<KeyValuePair<int, long>> { new KeyValuePair<int, long>(5, 50L), new KeyValuePair<int, long>(7, 70L) }, list);
+			Assert.Empty(VillageDeparted.ToList(new FastIterableKeyValues<int, string>()));
+		}
 	}
 }
