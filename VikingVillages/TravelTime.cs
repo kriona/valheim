@@ -7,10 +7,16 @@ namespace VikingVillages
 	internal static class TravelTime
 	{
 		/// <summary>
-		/// How fast a viking covers ground on the road, running over hills, around trees and through rivers, in meters a
-		/// second
+		/// How fast a viking covers ground on the road, running over hills, around trees and through shallow water, in
+		/// meters a second
 		/// </summary>
 		public const float Speed = 5f;
+
+		/// <summary>
+		/// How fast a viking swims across a river or lake on the road, in meters a second - a character's swim speed
+		/// (see Character.m_swimSpeed)
+		/// </summary>
+		public const float SwimSpeed = 2f;
 
 		/// <summary>
 		/// The boats vikings cross the sea in - by the first biome, by VikingGear's order, each is the best boat of - how

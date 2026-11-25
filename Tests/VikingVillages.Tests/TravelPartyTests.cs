@@ -42,15 +42,26 @@ namespace VikingVillages.Tests
 		}
 
 		[Fact]
+		public void PartySwimsAsFarAsItsWeakestSwimmer()
+		{
+			TravelParty party = new TravelParty();
+			party.AddSwimmer(80f, true);
+			party.AddSwimmer(45f, false);
+			party.AddSwimmer(120f, false);
+			Assert.Equal(45f, party.SwimMeters);
+		}
+
+		[Fact]
 		public void PartySurvivesBeingWrittenAndRead()
 		{
-			TravelParty party = new TravelParty { Easiest = 1, Hardest = 5, Unteleportable = true };
+			TravelParty party = new TravelParty { Easiest = 1, Hardest = 5, Unteleportable = true, SwimMeters = 62.5f };
 			ZPackage pkg = new ZPackage();
 			party.Write(pkg);
 			TravelParty read = TravelParty.Read(new ZPackage(pkg.GetArray()));
 			Assert.Equal(1, read.Easiest);
 			Assert.Equal(5, read.Hardest);
 			Assert.True(read.Unteleportable);
+			Assert.Equal(62.5f, read.SwimMeters);
 		}
 
 		[Fact]

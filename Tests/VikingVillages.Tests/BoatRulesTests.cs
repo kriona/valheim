@@ -69,6 +69,14 @@ namespace VikingVillages.Tests
 			Assert.Equal(7.5f, BoatRules.SwimSeconds(0f, 0f, 2f), 3);
 		}
 
+		[Fact]
+		public void SwimDistanceIsSwimTimeAtSwimSpeed()
+		{
+			// 15 seconds at 2 meters a second
+			Assert.Equal(30f, BoatRules.SwimMeters(0f, 0f, 1f, 2f), 3);
+			Assert.Equal(125f / 2f * 2.5f, BoatRules.SwimMeters(50f, 1f, 1f, 2.5f), 3);
+		}
+
 		[Theory]
 		[InlineData(100f, 5f)]
 		[InlineData(110f, 6f)]

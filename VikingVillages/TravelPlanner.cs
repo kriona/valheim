@@ -62,6 +62,12 @@ namespace VikingVillages
 		private const float AshlandsSeaDepth = 1.5f;
 
 		/// <summary>
+		/// How deep water has to be for a viking to swim in it rather than wade, in meters - the depth a character starts
+		/// to swim at (see Character.InLiquidSwimDepth, with its m_swimDepth of 2)
+		/// </summary>
+		private const float SwimDepth = 1.6f;
+
+		/// <summary>
 		/// The sea's level when the zone system isn't there to say, in meters
 		/// </summary>
 		private const float DefaultWaterLevel = 30f;
@@ -249,7 +255,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out what a viking brings to its party - its biome, and whether it carries something a portal won't take
+		/// Works out what a viking brings to its party - its biome, whether it carries something a portal won't take, and
+		/// how far it swims before it would start to drown, by its food and Swim skill as it is now, the same as when it's
+		/// wrecked at sea (see VillageLife.StartSwim)
 		/// </summary>
 		/// <param name="party">The party, added to</param>
 		/// <param name="viking">The viking</param>
@@ -258,6 +266,9 @@ namespace VikingVillages
 		{
 			VikingCore core = viking.GetComponent<VikingCore>();
 			party.Add(((core != null) ? core.BiomeIndex() : 0), Unteleportable(viking.GetInventory()), first);
+			LivingVikingBody body = viking as LivingVikingBody;
+			float food = ((body != null && body.Food != null) ? body.Food.FoodStamina() : 0f);
+			party.AddSwimmer(BoatRules.SwimMeters(food, viking.GetSkillFactor(Skills.SkillType.Swim), Game.m_moveStaminaRate, viking.m_swimSpeed), first);
 		}
 
 		/// <summary>
@@ -573,7 +584,7 @@ namespace VikingVillages
 			}
 			List<Vector3> targets = search.Candidates.ConvertAll((Candidate candidate) => candidate.Position);
 			int boat = search.Party.Hardest;
-			search.Route = new TravelRoute(search.From, search.Party.Easiest, TravelTime.BoatSpeed(boat), BoatFireproof(boat), targets, Sample, UsablePortals(search.Party));
+			search.Route = new TravelRoute(search.From, search.Party.Easiest, TravelTime.BoatSpeed(boat), BoatFireproof(boat), search.Party.SwimMeters, targets, Sample, UsablePortals(search.Party));
 		}
 
 		/// <summary>
@@ -687,8 +698,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Reads a square of the world's map from its plan - the sea is crossed by boat, the Ashlands' deep water too, the
-		/// Ashlands' lava and the water past WorldEdge can't be crossed at all, and the sea out where the Ashlands' water
-		/// boils burns a boat not made for it (see Ship.TakeAshlandsDamage)
+		/// Ashlands' lava and the water past WorldEdge can't be crossed at all, the sea out where the Ashlands' water
+		/// boils burns a boat not made for it (see Ship.TakeAshlandsDamage), and a river or lake too deep to wade is swum
 		/// </summary>
 		/// <param name="x">The point's x</param>
 		/// <param name="z">The point's z</param>
@@ -701,10 +712,14 @@ namespace VikingVillages
 			}
 			Heightmap.Biome biome = WorldGenerator.instance.GetBiome(x, z);
 			TravelRoute.Cell cell = new TravelRoute.Cell { Open = true, Sea = (biome == Heightmap.Biome.Ocean), Biome = VikingGear.IndexOf(biome) };
+			float water = ((ZoneSystem.instance != null) ? ZoneSystem.instance.m_waterLevel : DefaultWaterLevel);
+			if (!cell.Sea && biome != Heightmap.Biome.AshLands)
+			{
+				cell.Water = (WorldGenerator.instance.GetBiomeHeight(biome, x, z, out Color _) < water - SwimDepth);
+			}
 			if (biome == Heightmap.Biome.AshLands)
 			{
 				float height = WorldGenerator.instance.GetBiomeHeight(biome, x, z, out Color mask);
-				float water = ((ZoneSystem.instance != null) ? ZoneSystem.instance.m_waterLevel : DefaultWaterLevel);
 				if (height < water - AshlandsSeaDepth)
 				{
 					cell.Sea = true;

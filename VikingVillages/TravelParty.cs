@@ -2,8 +2,8 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// What a group of vikings setting out together can do on the road - the easiest biome among them, which the road
-	/// keeps to and the village they go to is no harder than, the hardest, whose best boat they all sail in, and whether
-	/// any of them carries something a portal won't take, like ore
+	/// keeps to and the village they go to is no harder than, the hardest, whose best boat they all sail in, whether
+	/// any of them carries something a portal won't take, like ore, and how far the weakest swimmer among them swims
 	/// </summary>
 	internal class TravelParty
 	{
@@ -17,6 +17,23 @@ namespace VikingVillages
 		/// Whether any of them carries something a portal won't take (see ItemDrop.ItemData.SharedData.m_teleportable)
 		/// </summary>
 		public bool Unteleportable;
+
+		/// <summary>
+		/// How far the weakest swimmer among them swims before its stamina runs out, in meters (see BoatRules.SwimMeters),
+		/// or 0 when it isn't known, which lets the road swim across one square of water at a time (see
+		/// TravelRoute.SwimSquares)
+		/// </summary>
+		public float SwimMeters;
+
+		/// <summary>
+		/// Notes how far a viking of the party swims - the first one noted setting it, and each after only shortening it
+		/// </summary>
+		/// <param name="meters">How far it swims, in meters</param>
+		/// <param name="first">Whether it's the first one noted</param>
+		public void AddSwimmer(float meters, bool first)
+		{
+			SwimMeters = (first ? meters : System.Math.Min(SwimMeters, meters));
+		}
 
 		/// <summary>
 		/// Makes a party of vikings all of one biome, carrying nothing a portal won't take
@@ -44,10 +61,10 @@ namespace VikingVillages
 		/// <summary>
 		/// Describes the party for the log
 		/// </summary>
-		/// <returns>The description, like "biomes 1-3, by karve, carrying ore"</returns>
+		/// <returns>The description, like "biomes 1-3, by karve, swimming 50m, carrying what no portal takes"</returns>
 		public string Describe()
 		{
-			return("biomes " + Easiest + ((Hardest != Easiest) ? "-" + Hardest : "") + ", by " + TravelTime.BoatName(Hardest) + (Unteleportable ? ", carrying what no portal takes" : ""));
+			return("biomes " + Easiest + ((Hardest != Easiest) ? "-" + Hardest : "") + ", by " + TravelTime.BoatName(Hardest) + ((SwimMeters > 0f) ? ", swimming " + SwimMeters.ToString("F0") + "m" : "") + (Unteleportable ? ", carrying what no portal takes" : ""));
 		}
 
 		/// <summary>
@@ -59,6 +76,7 @@ namespace VikingVillages
 			pkg.Write(Easiest);
 			pkg.Write(Hardest);
 			pkg.Write(Unteleportable);
+			pkg.Write(SwimMeters);
 		}
 
 		/// <summary>
@@ -72,6 +90,7 @@ namespace VikingVillages
 			party.Easiest = pkg.ReadInt();
 			party.Hardest = pkg.ReadInt();
 			party.Unteleportable = pkg.ReadBool();
+			party.SwimMeters = pkg.ReadSingle();
 			return(party);
 		}
 	}

@@ -5,30 +5,33 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// Plans a viking's road over the world's map to whichever of a list of places it can get to soonest - on foot
-	/// over land and rivers, by boat across the sea and through the portals it may use, never through lava, past the
-	/// edge of the world or across a sea that would burn its boat - keeping out of biomes harder than its own where it
-	/// can
+	/// over land, swimming across rivers and lakes no wider than it can swim, by boat across the sea and through the
+	/// portals it may use, never through lava, past the edge of the world or across a sea that would burn its boat -
+	/// keeping out of biomes harder than its own where it can
 	/// </summary>
 	/// <remarks>
 	/// The map is a grid of CellSize squares, each sampled once from the world's plan, so a road can be planned over
 	/// ground no player has been near. The quickest road out from the start is followed until it reaches a village
 	/// (Dijkstra's search), so the first village reached is the soonest there, not the nearest in a straight line. A step
-	/// costs the time it takes - on foot at TravelTime.Speed, longer for each biome a square is harder than the viking's
-	/// own (see HarderCost), across the sea at its boat's speed, and from a portal's square to its other end's in
-	/// TravelTime.PortalSeconds. It runs a little at a time (see Step), so a long search doesn't hold up the game
+	/// costs the time it takes - on foot at TravelTime.Speed, swimming at TravelTime.SwimSpeed, longer for each biome a
+	/// square is harder than the viking's own (see HarderCost), across the sea at its boat's speed, and from a portal's
+	/// square to its other end's in TravelTime.PortalSeconds. The search goes by square and how many squares of water in
+	/// a row the road has swum to get there, so a road never swims more of them in a row than the viking can (see
+	/// SwimSquares). It runs a little at a time (see Step), so a long search doesn't hold up the game
 	/// </remarks>
 	internal class TravelRoute
 	{
 		/// <summary>
 		/// What a square of the map holds - whether a viking can cross it, whether it's sea, crossed by boat, whether that
-		/// sea boils and burns a boat not made for it (see Ship.m_ashlandsReady), and how hard its biome is, by
-		/// VikingGear's order
+		/// sea boils and burns a boat not made for it (see Ship.m_ashlandsReady), whether it's a river or lake too deep to
+		/// wade, swum across on foot, and how hard its biome is, by VikingGear's order
 		/// </summary>
 		internal struct Cell
 		{
 			public bool Open;
 			public bool Sea;
 			public bool Burning;
+			public bool Water;
 			public int Biome;
 		}
 
@@ -76,13 +79,13 @@ namespace VikingVillages
 		private static readonly int[] StepZ = { 0, 0, 1, -1, 1, -1, 1, -1 };
 
 		/// <summary>
-		/// A square reached, with the quickest time of the road to it, the square it was reached from and whether it's
-		/// done with
+		/// A square reached with a number of squares of water in a row swum to get there, with the quickest time of the
+		/// road to it, the square and swim it was reached from and whether it's done with
 		/// </summary>
 		private class Node
 		{
 			public float Cost;
-			public long From;
+			public (long Cell, int Swum) From;
 			public bool Closed;
 
 			/// <summary>
@@ -105,6 +108,11 @@ namespace VikingVillages
 		private readonly bool fireproof;
 
 		/// <summary>
+		/// The most squares of water in a row the road may swim across (see SwimSquares)
+		/// </summary>
+		private readonly int swimSquares;
+
+		/// <summary>
 		/// The portals the viking may use, and the squares each can be stepped into from, by the square
 		/// </summary>
 		private readonly List<Portal> portals;
@@ -118,11 +126,11 @@ namespace VikingVillages
 		private readonly List<Vector3> targets;
 
 		/// <summary>
-		/// The squares sampled, the squares reached, the squares to look at next by time, and the squares a village can be
-		/// reached from, with which village
+		/// The squares sampled, the squares reached by how much water was swum to get there, the squares to look at next
+		/// by time, the squares a village can be reached from, with which village, and the square the road starts in
 		/// </summary>
 		private readonly Dictionary<long, Cell> cells = new Dictionary<long, Cell>();
-		private readonly Dictionary<long, Node> nodes = new Dictionary<long, Node>();
+		private readonly Dictionary<(long Cell, int Swum), Node> nodes = new Dictionary<(long Cell, int Swum), Node>();
 		private readonly CostHeap open = new CostHeap();
 		private readonly Dictionary<long, int> goals = new Dictionary<long, int>();
 		private readonly long startKey;
@@ -149,7 +157,7 @@ namespace VikingVillages
 		/// <param name="boat">How fast its boat goes, in meters a second</param>
 		/// <param name="villages">Where each village stands</param>
 		/// <param name="map">Reads a square of the map at a point's x and z</param>
-		public TravelRoute(Vector3 from, int own, float boat, List<Vector3> villages, System.Func<float, float, Cell> map) : this(from, own, boat, false, villages, map, null)
+		public TravelRoute(Vector3 from, int own, float boat, List<Vector3> villages, System.Func<float, float, Cell> map) : this(from, own, boat, false, 0f, villages, map, null)
 		{
 		}
 
@@ -160,15 +168,17 @@ namespace VikingVillages
 		/// <param name="own">The biome it keeps to, by VikingGear's order</param>
 		/// <param name="boat">How fast its boat goes, in meters a second</param>
 		/// <param name="boatFireproof">Whether its boat holds up in a sea that burns</param>
+		/// <param name="swimMeters">How far it swims, in meters, or 0 when it isn't known (see SwimSquares)</param>
 		/// <param name="places">Where each place stands</param>
 		/// <param name="map">Reads a square of the map at a point's x and z</param>
 		/// <param name="usable">The portals it may use, one way each, or null for none</param>
-		public TravelRoute(Vector3 from, int own, float boat, bool boatFireproof, List<Vector3> places, System.Func<float, float, Cell> map, List<Portal> usable)
+		public TravelRoute(Vector3 from, int own, float boat, bool boatFireproof, float swimMeters, List<Vector3> places, System.Func<float, float, Cell> map, List<Portal> usable)
 		{
 			start = from;
 			biome = own;
 			boatSpeed = Mathf.Max(0.1f, boat);
 			fireproof = boatFireproof;
+			swimSquares = SwimSquares(swimMeters);
 			targets = places;
 			sample = map;
 			portals = (usable ?? new List<Portal>());
@@ -189,12 +199,23 @@ namespace VikingVillages
 			{
 				AddGoal(i);
 			}
-			nodes[startKey] = new Node { Cost = 0f, From = startKey };
-			open.Push(0f, startKey);
+			nodes[(startKey, 0)] = new Node { Cost = 0f, From = (startKey, 0) };
+			open.Push(0f, (startKey, 0));
 			if (goals.Count == 0)
 			{
 				Done = true;
 			}
+		}
+
+		/// <summary>
+		/// Works out how many squares of water in a row a viking may swim across on its road - as many as it swims across
+		/// before its stamina runs out, but always at least one, so a river never cuts a viking off from a village
+		/// </summary>
+		/// <param name="swimMeters">How far it swims, in meters, or 0 when it isn't known</param>
+		/// <returns>How many squares</returns>
+		internal static int SwimSquares(float swimMeters)
+		{
+			return(Mathf.Max(1, Mathf.FloorToInt(swimMeters / CellSize)));
 		}
 
 		/// <summary>
@@ -241,31 +262,33 @@ namespace VikingVillages
 					Done = true;
 					break;
 				}
-				open.Pop(out float cost, out long key);
-				Node node = nodes[key];
+				open.Pop(out float cost, out (long Cell, int Swum) state);
+				Node node = nodes[state];
 				if (node.Closed || cost > node.Cost)
 				{
 					continue;
 				}
 				node.Closed = true;
-				if (goals.TryGetValue(key, out int goal))
+				if (goals.TryGetValue(state.Cell, out int goal))
 				{
-					Finish(key, goal);
+					Finish(state, goal);
 					break;
 				}
-				Expand(key, node);
+				Expand(state, node);
 			}
 			return(Done);
 		}
 
 		/// <summary>
 		/// Reaches out from a square to each neighbor that can be crossed - stepping diagonally only past two neighbors
-		/// that can, so the road doesn't cut a corner of lava or the edge of the world
+		/// that can, so the road doesn't cut a corner of lava or the edge of the world, and into water only while the
+		/// squares of it swum in a row stay within swimSquares
 		/// </summary>
-		/// <param name="key">The square</param>
+		/// <param name="state">The square, and how many squares of water in a row were swum to get there</param>
 		/// <param name="node">What's known of it</param>
-		private void Expand(long key, Node node)
+		private void Expand((long Cell, int Swum) state, Node node)
 		{
+			long key = state.Cell;
 			int x = KeyX(key);
 			int z = KeyZ(key);
 			float here = PerMeter(CellAt(x, z));
@@ -283,8 +306,13 @@ namespace VikingVillages
 				{
 					continue;
 				}
+				int swum = (CellAt(nx, nz).Water ? state.Swum + 1 : 0);
+				if (swum > swimSquares)
+				{
+					continue;
+				}
 				float step = (diagonal ? CellSize * 1.41421356f : CellSize) * (here + PerMeter(CellAt(nx, nz))) / 2f;
-				Reach(next, node.Cost + step, key, -1);
+				Reach((next, swum), node.Cost + step, state, -1);
 			}
 			if (!portalsAt.TryGetValue(key, out List<int> jumps))
 			{
@@ -295,19 +323,19 @@ namespace VikingVillages
 				long exit = Key(Index(portals[portal].Exit.x), Index(portals[portal].Exit.z));
 				if (exit != key)
 				{
-					Reach(exit, node.Cost + TravelTime.PortalSeconds, key, portal);
+					Reach((exit, 0), node.Cost + TravelTime.PortalSeconds, state, portal);
 				}
 			}
 		}
 
 		/// <summary>
-		/// Notes a road to a square when it's quicker than any found to it so far
+		/// Notes a road to a square when it's quicker than any found to it so far with as much water swum in a row
 		/// </summary>
-		/// <param name="next">The square's key</param>
+		/// <param name="next">The square's key, and how many squares of water in a row were swum to get there</param>
 		/// <param name="cost">The time of the road to it</param>
-		/// <param name="from">The square it's reached from</param>
+		/// <param name="from">The square it's reached from, and the water swum to get there</param>
 		/// <param name="portal">The portal it's reached through, or -1</param>
-		private void Reach(long next, float cost, long from, int portal)
+		private void Reach((long Cell, int Swum) next, float cost, (long Cell, int Swum) from, int portal)
 		{
 			if (nodes.TryGetValue(next, out Node known) && (known.Closed || known.Cost <= cost))
 			{
@@ -341,8 +369,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out how long a meter of a square takes - by boat across the sea, and on foot over land, longer for each
-		/// biome it's harder than the viking's own
+		/// Works out how long a meter of a square takes - by boat across the sea, on foot over land and swimming across a
+		/// river or lake, longer for each biome it's harder than the viking's own
 		/// </summary>
 		/// <param name="cell">The square</param>
 		/// <returns>The seconds a meter takes</returns>
@@ -352,33 +380,34 @@ namespace VikingVillages
 			{
 				return(1f / boatSpeed);
 			}
-			return((1f + HarderCost * Mathf.Max(0, cell.Biome - biome)) / TravelTime.Speed);
+			return((1f + HarderCost * Mathf.Max(0, cell.Biome - biome)) / (cell.Water ? TravelTime.SwimSpeed : TravelTime.Speed));
 		}
 
 		/// <summary>
 		/// Ends the search at a square a village is reached from - laying the road out from the start to the village
 		/// </summary>
-		/// <param name="key">The square</param>
+		/// <param name="state">The square, and how many squares of water in a row were swum to get there</param>
 		/// <param name="goal">The village's index</param>
-		private void Finish(long key, int goal)
+		private void Finish((long Cell, int Swum) state, int goal)
 		{
 			Done = true;
 			Found = goal;
-			List<long> path = new List<long>();
-			for (long at = key; ; at = nodes[at].From)
+			List<(long Cell, int Swum)> states = new List<(long Cell, int Swum)>();
+			for ((long Cell, int Swum) at = state; ; at = nodes[at].From)
 			{
-				path.Add(at);
-				if (at == startKey)
+				states.Add(at);
+				if (at.Cell == startKey && at.Swum == 0)
 				{
 					break;
 				}
 			}
-			path.Reverse();
+			states.Reverse();
+			List<long> path = states.ConvertAll(((long Cell, int Swum) at) => at.Cell);
 			List<Vector3> points = new List<Vector3> { start };
 			List<TravelLeg> legs = new List<TravelLeg> { TravelLeg.Foot };
 			for (int i = 1; i < path.Count; i++)
 			{
-				int portal = nodes[path[i]].Portal;
+				int portal = nodes[states[i]].Portal;
 				if (portal < 0)
 				{
 					points.Add(Middle(KeyX(path[i]), KeyZ(path[i])));
@@ -479,7 +508,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Checks whether a straight line crosses only squares that can be crossed the same way, on foot or by sea, and
-		/// take no longer than a limit
+		/// take no longer than a limit - and on foot, no water, so a straightened road never swims more than the road it
+		/// skips
 		/// </summary>
 		/// <param name="from">Where it starts</param>
 		/// <param name="to">Where it ends</param>
@@ -496,7 +526,7 @@ namespace VikingVillages
 				int z = Index(point.z);
 				long key = Key(x, z);
 				Cell cell = CellAt(x, z);
-				if (!Crossable(key, x, z) || (cell.Sea != sea && !goals.ContainsKey(key)) || PerMeter(cell) > limit)
+				if (!Crossable(key, x, z) || (cell.Sea != sea && !goals.ContainsKey(key)) || (!sea && cell.Water) || PerMeter(cell) > limit)
 				{
 					return(false);
 				}
@@ -603,7 +633,7 @@ namespace VikingVillages
 		private class CostHeap
 		{
 			private readonly List<float> costs = new List<float>();
-			private readonly List<long> keys = new List<long>();
+			private readonly List<(long Cell, int Swum)> keys = new List<(long Cell, int Swum)>();
 
 			/// <summary>
 			/// How many squares it holds
@@ -620,8 +650,8 @@ namespace VikingVillages
 			/// Adds a square
 			/// </summary>
 			/// <param name="cost">The time of the road to it</param>
-			/// <param name="key">The square's key</param>
-			public void Push(float cost, long key)
+			/// <param name="key">The square's key, and how many squares of water in a row were swum to get there</param>
+			public void Push(float cost, (long Cell, int Swum) key)
 			{
 				costs.Add(cost);
 				keys.Add(key);
@@ -642,8 +672,8 @@ namespace VikingVillages
 			/// Takes out the quickest square
 			/// </summary>
 			/// <param name="cost">The time of the road to it</param>
-			/// <param name="key">The square's key</param>
-			public void Pop(out float cost, out long key)
+			/// <param name="key">The square's key, and how many squares of water in a row were swum to get there</param>
+			public void Pop(out float cost, out (long Cell, int Swum) key)
 			{
 				cost = costs[0];
 				key = keys[0];
@@ -684,7 +714,7 @@ namespace VikingVillages
 				float cost = costs[a];
 				costs[a] = costs[b];
 				costs[b] = cost;
-				long key = keys[a];
+				(long Cell, int Swum) key = keys[a];
 				keys[a] = keys[b];
 				keys[b] = key;
 			}

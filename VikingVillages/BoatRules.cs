@@ -122,6 +122,19 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Works out how far a viking swims before its stamina runs out (see SwimSeconds)
+		/// </summary>
+		/// <param name="foodStamina">The stamina its food gives</param>
+		/// <param name="skillFactor">Its Swim skill, from 0 to 1</param>
+		/// <param name="staminaRate">The world's rate of stamina use (see Game.m_moveStaminaRate)</param>
+		/// <param name="swimSpeed">How fast it swims, in meters a second</param>
+		/// <returns>How far, in meters</returns>
+		internal static float SwimMeters(float foodStamina, float skillFactor, float staminaRate, float swimSpeed)
+		{
+			return(SwimSeconds(foodStamina, skillFactor, staminaRate) * Mathf.Max(0f, swimSpeed));
+		}
+
+		/// <summary>
 		/// Works out how much a viking drowning loses each second
 		/// </summary>
 		/// <param name="maxHealth">Its max health</param>

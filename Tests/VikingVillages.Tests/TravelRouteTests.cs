@@ -212,7 +212,7 @@ namespace VikingVillages.Tests
 		/// <returns>The finished search</returns>
 		private static TravelRoute RunWith(Vector3 from, bool fireproof, List<Vector3> places, System.Func<float, float, TravelRoute.Cell> map, List<TravelRoute.Portal> portals)
 		{
-			TravelRoute route = new TravelRoute(from, 0, Raft, fireproof, places, map, portals);
+			TravelRoute route = new TravelRoute(from, 0, Raft, fireproof, 0f, places, map, portals);
 			int steps = 0;
 			while (!route.Step(1000))
 			{
@@ -313,6 +313,98 @@ namespace VikingVillages.Tests
 			TravelRoute route = RunWith(new Vector3(100f, 0f, 0f), true, new List<Vector3> { new Vector3(600f, 0f, 0f) }, BurningStrait, null);
 			Assert.Equal(0, route.Found);
 			Assert.Contains(TravelLeg.Sea, route.Road.Legs);
+		}
+
+		/// <summary>
+		/// Runs a search to the end for a viking that swims a distance
+		/// </summary>
+		/// <param name="swimMeters">How far it swims, in meters</param>
+		/// <param name="map">The map</param>
+		/// <returns>The finished search</returns>
+		private static TravelRoute RunSwimming(float swimMeters, System.Func<float, float, TravelRoute.Cell> map)
+		{
+			TravelRoute route = new TravelRoute(new Vector3(100f, 0f, 16f), 0, Raft, false, swimMeters, new List<Vector3> { new Vector3(600f, 0f, 16f) }, map, null);
+			int steps = 0;
+			while (!route.Step(1000))
+			{
+				steps++;
+				Assert.True(steps < 2000, "The search never ended");
+			}
+			return(route);
+		}
+
+		/// <summary>
+		/// Reads a map with a lake from x 320 to a far edge, south of a z, and nothing past 3000 m from the middle
+		/// </summary>
+		/// <param name="x">The point's x</param>
+		/// <param name="z">The point's z</param>
+		/// <param name="far">The lake's far edge along x</param>
+		/// <param name="end">Where the lake ends to the north</param>
+		/// <returns>The square</returns>
+		private static TravelRoute.Cell Lake(float x, float z, float far, float end)
+		{
+			return(new TravelRoute.Cell { Open = (x * x + z * z < 3000f * 3000f), Water = (x >= 320f && x < far && z < end), Biome = 0 });
+		}
+
+		/// <summary>
+		/// Checks whether a point of a road is in a lake
+		/// </summary>
+		/// <param name="point">The point</param>
+		/// <param name="far">The lake's far edge along x</param>
+		/// <param name="end">Where the lake ends to the north</param>
+		/// <returns>True when it is</returns>
+		private static bool InLake(Vector3 point, float far, float end)
+		{
+			return(point.x >= 320f && point.x < far && point.z < end);
+		}
+
+		[Theory]
+		[InlineData(0f, 1)]
+		[InlineData(31f, 1)]
+		[InlineData(64f, 2)]
+		[InlineData(100f, 3)]
+		public void VikingsSwimAsManySquaresAsTheirSwimCovers(float meters, int expected)
+		{
+			Assert.Equal(expected, TravelRoute.SwimSquares(meters));
+		}
+
+		[Fact]
+		public void ARiverIsSwumAcrossWhenThereIsNoWayAround()
+		{
+			TravelRoute route = RunSwimming(0f, (float x, float z) => Lake(x, z, 352f, 100000f));
+			Assert.Equal(0, route.Found);
+			Assert.Contains(route.Road.Points, (Vector3 point) => InLake(point, 352f, 100000f));
+		}
+
+		[Fact]
+		public void ALakeWiderThanTheVikingSwimsIsWalkedAround()
+		{
+			TravelRoute route = RunSwimming(40f, (float x, float z) => Lake(x, z, 416f, 200f));
+			Assert.Equal(0, route.Found);
+			Assert.DoesNotContain(route.Road.Points, (Vector3 point) => InLake(point, 416f, 200f));
+		}
+
+		[Fact]
+		public void ALakeWiderThanTheVikingSwimsWithNoWayAroundCantBeCrossed()
+		{
+			Assert.Equal(-1, RunSwimming(40f, (float x, float z) => Lake(x, z, 416f, 100000f)).Found);
+		}
+
+		[Fact]
+		public void AStrongSwimmerSwimsAcrossAWideLake()
+		{
+			TravelRoute route = RunSwimming(100f, (float x, float z) => Lake(x, z, 416f, 100000f));
+			Assert.Equal(0, route.Found);
+			Assert.Contains(route.Road.Points, (Vector3 point) => InLake(point, 416f, 100000f));
+		}
+
+		[Fact]
+		public void SwimmingTakesLongerThanRunning()
+		{
+			// A lake right across the road that ends a little way north, so walking around beats swimming straight across
+			TravelRoute route = RunSwimming(1000f, (float x, float z) => Lake(x, z, 416f, 96f));
+			Assert.Equal(0, route.Found);
+			Assert.DoesNotContain(route.Road.Points, (Vector3 point) => InLake(point, 416f, 96f));
 		}
 	}
 }
