@@ -9,6 +9,7 @@
 - A creature that leaves you alone until provoked, like the Dvergr, gets a red ! after its name once it's been provoked, or beside its arrow while its label shows nothing
 - A creature whose name runs to more than one line, like a Viking Villages Viking's with its job under it in debug mode, has its level and distance after the first line
 - A creature whose speech bubble already names it, like a talking Viking Villages Viking or a trader, has its label leave the name out, so it isn't shown twice
+- Markers that overlap are drawn nearest on top, with a talking creature's marker over the rest, and the game's own names, health bars and alert icons and the hammer's build menu are drawn over the markers
 
 ## 1.11.0
 - Support portals, with the All Portals switch, off by default, and the Portal Color setting, default #B08EFF (lavendar). Still not changing the mod name

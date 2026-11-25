@@ -162,8 +162,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Where a village's name sorts - above CreatureMarker's markers (450), level with the game's health bars it sorts
+		/// over them (455), and below the vikings' speech (see SpeechLayer)
+		/// </summary>
+		private const int SortingOrder = 455;
+
+		/// <summary>
 		/// Makes a label for a village's name in the health bars' root, styled like their creatures' names in the
-		/// village name's size and color - for the name over its fire, and at the top of the screen (see VillageNameHud)
+		/// village name's size and color, in a canvas of its own sorted over other mods' markers (see SortingOrder) - for
+		/// the name over its fire, and at the top of the screen (see VillageNameHud)
 		/// </summary>
 		/// <param name="hud">The game's health bars</param>
 		/// <param name="objectName">The label's object's name</param>
@@ -184,6 +191,9 @@ namespace VikingVillages
 			label.alignment = TextAlignmentOptions.Center;
 			label.textWrappingMode = TextWrappingModes.NoWrap;
 			label.raycastTarget = false;
+			Canvas canvas = go.AddComponent<Canvas>();
+			canvas.overrideSorting = true;
+			canvas.sortingOrder = SortingOrder;
 			return(label);
 		}
 	}

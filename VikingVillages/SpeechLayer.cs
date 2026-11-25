@@ -9,8 +9,8 @@ namespace VikingVillages
 	internal static class SpeechLayer
 	{
 		/// <summary>
-		/// Above CreatureMarker's markers (450) and below the top left messages (500), the inventory and every other
-		/// screen opened over the game
+		/// Above CreatureMarker's markers (450) and the game's health bars it sorts over them (455), and below the top
+		/// left messages (500), the inventory and every other screen opened over the game
 		/// </summary>
 		private const int SortingOrder = 460;
 

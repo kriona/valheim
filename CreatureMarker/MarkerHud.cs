@@ -13,7 +13,10 @@ namespace CreatureMarker
 	/// </summary>
 	/// <remarks>
 	/// The markers live in a canvas of their own under the enemy HUD root, so they hide along with the health bars,
-	/// but sort above the HUD canvas so an arrow pinned to the screen edge isn't hidden behind the minimap
+	/// but sort above the HUD canvas so an arrow pinned to the screen edge isn't hidden behind the minimap. The enemy
+	/// HUD root is given a canvas sorted just above the markers', so the game's own names, health bars and alert icons
+	/// draw over them, and so is the hammer's build menu. Markers drawn over each other go by how far their creatures
+	/// are from the camera, the nearest on top, with a talking creature's counted as nearest of all
 	/// </remarks>
 	public class MarkerHud
 	{
@@ -22,6 +25,16 @@ namespace CreatureMarker
 		/// every other screen opened over the game
 		/// </summary>
 		private const int SortingOrder = 450;
+
+		/// <summary>
+		/// The enemy HUD's, just above the markers' and below Viking Villages' speech (460)
+		/// </summary>
+		private const int GameHudSortingOrder = 455;
+
+		/// <summary>
+		/// The hammer's build menu's, above the markers' and Viking Villages' speech, and below the top left messages
+		/// </summary>
+		private const int BuildMenuSortingOrder = 470;
 		private const float HeadOffset = 0.4f;
 		private const float EdgeMargin = 40f;
 		private const float BobSpeed = 5f;
@@ -144,6 +157,31 @@ namespace CreatureMarker
 		private readonly Vector3[] corners = new Vector3[4];
 
 		/// <summary>
+		/// The markers shown this frame and how near each counts for drawing over the others (see LayerKey), and the
+		/// markers in the order they were last drawn in, farthest first
+		/// </summary>
+		private readonly List<Marker> shown = new List<Marker>();
+		private readonly List<float> shownKeys = new List<float>();
+		private readonly List<int> order = new List<int>();
+		private readonly List<Marker> drawn = new List<Marker>();
+
+		/// <summary>
+		/// Whether a marker has moved to another parent since the markers were last put in order, which puts it last
+		/// </summary>
+		private bool reparented;
+
+		/// <summary>
+		/// The canvas given to the enemy HUD root, or null when the root had one of its own
+		/// </summary>
+		private Canvas gameHudCanvas;
+
+		/// <summary>
+		/// The HUD whose build menu was sorted above the markers, and the canvases and raycasters given to it
+		/// </summary>
+		private Hud raisedHud;
+		private readonly List<Component> buildMenuParts = new List<Component>();
+
+		/// <summary>
 		/// Shows an arrow for each marked creature, fish and bird when Show On Screen is on and hides the spare ones,
 		/// showing none while the large map or the loading screen is shown since they would be drawn over it
 		/// </summary>
@@ -163,9 +201,17 @@ namespace CreatureMarker
 				root = enemyHud.m_hudRoot;
 				markers.Clear();
 				masks.Clear();
+				drawn.Clear();
+				RaiseGameHud();
 				layer = CreateLayer();
 			}
+			if (Hud.instance != null && Hud.instance != raisedHud)
+			{
+				RaiseBuildMenu(Hud.instance);
+			}
 			int used = 0;
+			shown.Clear();
+			shownKeys.Clear();
 			bool largeMap = (Minimap.instance != null && Minimap.instance.m_mode == Minimap.MapMode.Large);
 			if (CreatureConfig.ShowOnScreen && !largeMap && !IsLoadingScreenShown())
 			{
@@ -205,6 +251,7 @@ namespace CreatureMarker
 						marker.arrow.transform.SetParent(parent, false);
 						marker.label.transform.SetParent(parent, false);
 						marker.alarm.transform.SetParent(parent, false);
+						reparented = true;
 					}
 					float distanceSquared = Vector3.SqrMagnitude(target.position - playerPosition);
 					Vector3 scale = ((distanceSquared > farDistanceSquared) ? farScale : Vector3.one);
@@ -219,6 +266,8 @@ namespace CreatureMarker
 					GameObject chatText = (target.chatText ? target.source as GameObject : null);
 					float gameHudHeight = (target.chatText ? GetHeightAbove(chatText) : GetGameHudHeight(enemyHud, target.source));
 					Rect? dialog = GetDialogRect(target.source);
+					shown.Add(marker);
+					shownKeys.Add(LayerKey(Vector3.SqrMagnitude(target.position - camera.transform.position), dialog.HasValue));
 					bool higher = (target.position.y > playerPosition.y + HigherMargin);
 					Vector2 pointing;
 					bool onScreen;
@@ -269,6 +318,7 @@ namespace CreatureMarker
 					}
 				}
 			}
+			PutInOrder();
 			for (int i = used; i < markers.Count; i++)
 			{
 				markers[i].source = null;
@@ -336,6 +386,7 @@ namespace CreatureMarker
 						marker.arrow.transform.SetParent(layer, false);
 						marker.label.transform.SetParent(layer, false);
 						marker.alarm.transform.SetParent(layer, false);
+						reparented = true;
 					}
 				}
 				Object.Destroy(mask.gameObject);
@@ -343,6 +394,111 @@ namespace CreatureMarker
 			}
 			masksGone.Clear();
 			masksShaped.Clear();
+		}
+
+		/// <summary>
+		/// Draws the markers shown this frame over each other by how near their creatures are (see LayerKey), the
+		/// farthest first, moving them only when the order has changed, since moving them has the canvas sort them again
+		/// </summary>
+		/// <remarks>
+		/// Markers seen through a portal are put in order within the portal's mask, which draws under the rest
+		/// </remarks>
+		private void PutInOrder()
+		{
+			DrawOrder(shownKeys, order);
+			bool same = (!reparented && order.Count == drawn.Count);
+			for (int i = 0; same && i < order.Count; i++)
+			{
+				same = (drawn[i] == shown[order[i]]);
+			}
+			if (same)
+			{
+				return;
+			}
+			reparented = false;
+			drawn.Clear();
+			foreach (int index in order)
+			{
+				Marker marker = shown[index];
+				marker.arrow.transform.SetAsLastSibling();
+				marker.label.transform.SetAsLastSibling();
+				marker.alarm.transform.SetAsLastSibling();
+				drawn.Add(marker);
+			}
+		}
+
+		/// <summary>
+		/// Works out how near a marker counts for drawing over the others - its creature's distance from the camera
+		/// squared, or nearer than anything while the creature is talking, so its marker stays with its speech bubble
+		/// </summary>
+		/// <param name="distanceSquared">The creature's distance from the camera, squared</param>
+		/// <param name="talking">Whether the creature has a speech bubble showing</param>
+		/// <returns>The key, lower for nearer</returns>
+		internal static float LayerKey(float distanceSquared, bool talking)
+		{
+			return(talking ? -1f : distanceSquared);
+		}
+
+		/// <summary>
+		/// Lists the order markers are drawn in, the farthest first so the nearest are drawn over it - markers as near
+		/// as each other keep the order they're listed in, so they don't swap places from frame to frame
+		/// </summary>
+		/// <param name="keys">How near each marker counts (see LayerKey)</param>
+		/// <param name="order">Set to the markers' indexes in the order they're drawn in</param>
+		internal static void DrawOrder(List<float> keys, List<int> order)
+		{
+			order.Clear();
+			for (int i = 0; i < keys.Count; i++)
+			{
+				order.Add(i);
+			}
+			order.Sort((int a, int b) =>
+			{
+				int byKey = keys[b].CompareTo(keys[a]);
+				return((byKey != 0) ? byKey : a.CompareTo(b));
+			});
+		}
+
+		/// <summary>
+		/// Sorts the enemy HUD root above the markers' canvas, giving it a canvas of its own, so the game's names, health
+		/// bars and alert icons draw over the markers
+		/// </summary>
+		private void RaiseGameHud()
+		{
+			gameHudCanvas = null;
+			Canvas canvas = root.GetComponent<Canvas>();
+			if (canvas == null)
+			{
+				canvas = root.AddComponent<Canvas>();
+				gameHudCanvas = canvas;
+			}
+			canvas.overrideSorting = true;
+			canvas.sortingOrder = GameHudSortingOrder;
+		}
+
+		/// <summary>
+		/// Sorts the hammer's build menu - the piece list and the selected piece's requirements - above the markers,
+		/// giving each window a canvas of its own and a raycaster, without which its buttons would take no clicks. A
+		/// window that has a canvas of its own already is left alone
+		/// </summary>
+		/// <param name="hud">The game's HUD</param>
+		private void RaiseBuildMenu(Hud hud)
+		{
+			// The previous HUD's parts were destroyed along with it
+			buildMenuParts.Clear();
+			raisedHud = hud;
+			foreach (GameObject window in new GameObject[] { hud.m_buildHud, hud.m_pieceSelectionWindow })
+			{
+				if (window == null || window.GetComponent<Canvas>() != null)
+				{
+					continue;
+				}
+				Canvas canvas = window.AddComponent<Canvas>();
+				canvas.overrideSorting = true;
+				canvas.sortingOrder = BuildMenuSortingOrder;
+				buildMenuParts.Add(canvas);
+				buildMenuParts.Add(window.AddComponent<GraphicRaycaster>());
+			}
 		}
 
 		/// <summary>
@@ -359,7 +515,8 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Removes the markers' canvas along with the markers, the generated sprite and the star sprite asset
+		/// Removes the markers' canvas along with the markers, the canvases given to the enemy HUD root and the build
+		/// menu, the generated sprite and the star sprite asset
 		/// </summary>
 		public void Destroy()
 		{
@@ -368,8 +525,24 @@ namespace CreatureMarker
 			{
 				Object.Destroy(layer.gameObject);
 			}
+			if (gameHudCanvas != null)
+			{
+				Object.Destroy(gameHudCanvas);
+				gameHudCanvas = null;
+			}
+			// Each raycaster goes before its canvas, which it needs, so the canvas can be removed
+			for (int i = buildMenuParts.Count - 1; i >= 0; i--)
+			{
+				if (buildMenuParts[i] != null)
+				{
+					Object.DestroyImmediate(buildMenuParts[i]);
+				}
+			}
+			buildMenuParts.Clear();
+			raisedHud = null;
 			markers.Clear();
 			masks.Clear();
+			drawn.Clear();
 			if (sprite != null)
 			{
 				Object.Destroy(sprite.texture);

@@ -12,6 +12,7 @@ Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans, o
 - Marks tombstones, labeled with whose they are, so you can find your way back to your things after dying
 - Marks map pings in the game's ping color, and shouts like a player's "I have arrived!" when they join in yellow, while the game shows them, however far away they are. When one is off-screen, the game's text moves behind its arrow at the screen edge
 - Optional name, level and distance label on each marker, leaving out the name and level while the game shows its own above the creature, and the name while the creature's speech bubble names it, like a trader's or a talking Viking Villages Viking's
+- Overlapping markers are drawn nearest on top, with a talking creature's over the rest, and under the game's own names, health bars and alert icons and the hammer's build menu
 - A matching colored dot on the minimap and the large map for each marked creature
 - Choose which creatures are marked - passive ones, hostile ones, or creature by creature, with separate switches for fish, birds and leviathans and a lowest level for creatures and fish
 - Includes creatures added by other mods
