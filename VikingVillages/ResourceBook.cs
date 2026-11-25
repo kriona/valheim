@@ -321,12 +321,14 @@ namespace VikingVillages
 			Mines("SilverOre", QuestKind.MineSilver, Mountain, "silvervein");
 			Mines("IronScrap", QuestKind.RaidCrypts, Swamp, "mudpile2");
 			Brings("WitheredBone", QuestKind.RaidCrypts, Swamp);
+			Brings("MushroomYellow", QuestKind.RaidCrypts, Swamp);
 			Brings("SurtlingCore", QuestKind.RaidBurialChambers, BlackForest);
 			Brings("BoneFragments", QuestKind.RaidBurialChambers, BlackForest);
 			Brings("Amber", QuestKind.RaidBurialChambers, BlackForest);
 			Brings("AmberPearl", QuestKind.RaidBurialChambers, BlackForest);
 			Brings("Ruby", QuestKind.RaidBurialChambers, BlackForest);
 			Brings(Coins, QuestKind.RaidBurialChambers, BlackForest);
+			Brings("MushroomYellow", QuestKind.RaidBurialChambers, BlackForest);
 			Brings("TrollHide", QuestKind.HuntTrolls, BlackForest);
 			Brings("BlackMetalScrap", QuestKind.HuntGoblins, Plains);
 			Brings(Circlet, QuestKind.BuyCirclet, Swamp);

@@ -616,6 +616,12 @@ namespace VikingVillages
 				// Each plant picked raises Farming by one, the way picking does for a player (see Pickable.Interact)
 				outcome.Skills.Add(new KeyValuePair<int, float>((int)Skills.SkillType.Farming, QuestRules.ForagePicks(record.ActiveSeconds)));
 			}
+			// So does each plant picked besides foraging, like a burial chamber's yellow mushrooms
+			int plants = QuestLoot.PlantsPicked(record.Kind, record.Members.Count, record.Members.IndexOf(member));
+			if (plants > 0)
+			{
+				outcome.Skills.Add(new KeyValuePair<int, float>((int)Skills.SkillType.Farming, plants));
+			}
 			return(outcome);
 		}
 

@@ -104,8 +104,8 @@ The living Vikings go about their lives in their village, and drop everything to
   | Cut trees | Meadows | 1, 2 from the Plains, up to 3 with more axes | An axe that cuts the tree, and daylight to be home before night | Wood, fine wood, core wood or ancient bark, by what they need - as much as they cut in time to be home before night falls |
   | Mine copper or tin | Black Forest | 2, up to 4 with more pickaxes | A pickaxe, a smelter and a kiln | The ore |
   | Mine silver | Mountains | 3, up to 5 with more pickaxes | A pickaxe that breaks silver, a smelter and a kiln | Silver ore |
-  | Raid sunken crypts | Swamp | 3, up to 5 with more pickaxes | A pickaxe, a torch or circlet, a smelter and a kiln | Iron scrap, and what the crypt's chests, draugr, draugr elites and blobs drop |
-  | Raid burial chambers | Black Forest | 2, up to 3 | A torch or circlet | What the chambers' chests, skeletons, rancid remains and ghosts drop, and their surtling cores |
+  | Raid sunken crypts | Swamp | 3, up to 5 with more pickaxes | A pickaxe, a torch or circlet, a smelter and a kiln | Iron scrap, what the crypt's chests, draugr, draugr elites and blobs drop, and the yellow mushrooms growing there, 2 for each Viking, each raising the Farming skill of whoever picks it |
+  | Raid burial chambers | Black Forest | 2, up to 3 | A torch or circlet | What the chambers' chests, skeletons, rancid remains and ghosts drop, their surtling cores, and the yellow mushrooms growing there, 2 for each Viking, each raising the Farming skill of whoever picks it |
   | Hunt ghosts | Black Forest | 2, up to 3 | A torch or circlet, and Zombie Apocalypse, for lining weapons with silver | Ectoplasm, and what the chambers' skeletons and rancid remains drop |
   | Raid frost caves | Mountains | 3 | A torch or circlet | Red jute, crystals, obsidian, wolf fangs, and what the caves' chests, ulvs, cultists and bats drop |
   | Hunt trolls | Black Forest | 3 | A torch or circlet | Troll hide and coins |

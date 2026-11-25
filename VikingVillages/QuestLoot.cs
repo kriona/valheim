@@ -127,6 +127,17 @@ namespace VikingVillages
 		internal static readonly string[] BossTrophies = { "TrophyEikthyr", "TrophyTheElder", "TrophyBonemass", "TrophyDragonQueen", "TrophyGoblinKing", "TrophySeekerQueen", "TrophyFader" };
 
 		/// <summary>
+		/// The yellow mushroom growing in burial chambers and sunken crypts, which a raid on either picks
+		/// </summary>
+		private const string YellowMushroom = "Pickable_Mushroom_yellow";
+
+		/// <summary>
+		/// The plants a quest picks besides foraging, each of which raises the Farming skill of the viking that picks it,
+		/// the way a pick raises a viking's Farming in its village (see VillageLife.PickForage)
+		/// </summary>
+		private static readonly string[] PickedPlants = { YellowMushroom };
+
+		/// <summary>
 		/// What a wild beehive gives when it's found - queen bees and honey
 		/// </summary>
 		private static readonly LootTable WildHive = new LootTable
@@ -150,9 +161,9 @@ namespace VikingVillages
 			switch (kind)
 			{
 				case QuestKind.RaidCrypts:
-					return(new List<LootSource> { new LootSource("TreasureChest_sunkencrypt", 1f, 1, false), new LootSource("Draugr", 3f, 3, true), new LootSource("Draugr_Elite", 0.5f, 1, true), new LootSource("Blob", 1f, 1, true) });
+					return(new List<LootSource> { new LootSource("TreasureChest_sunkencrypt", 1f, 1, false), new LootSource("Draugr", 3f, 3, true), new LootSource("Draugr_Elite", 0.5f, 1, true), new LootSource("Blob", 1f, 1, true), new LootSource(YellowMushroom, 2f, 2, false) });
 				case QuestKind.RaidBurialChambers:
-					return(new List<LootSource> { new LootSource("TreasureChest_forestcrypt", 2f, 2, false), new LootSource("Skeleton", 4f, 4, true), new LootSource("Skeleton_Poison", 1f, 1, true), new LootSource("Ghost", 0.5f, 1, true), new LootSource("Pickable_SurtlingCoreStand", 1f, 1, false) });
+					return(new List<LootSource> { new LootSource("TreasureChest_forestcrypt", 2f, 2, false), new LootSource("Skeleton", 4f, 4, true), new LootSource("Skeleton_Poison", 1f, 1, true), new LootSource("Ghost", 0.5f, 1, true), new LootSource("Pickable_SurtlingCoreStand", 1f, 1, false), new LootSource(YellowMushroom, 2f, 2, false) });
 				case QuestKind.RaidFrostCaves:
 					return(new List<LootSource> { new LootSource("TreasureChest_mountaincave", 1f, 1, false), new LootSource("Pickable_MountainCaveCrystal", 1f, 1, false), new LootSource("Ulv", 3f, 3, true), new LootSource("Fenring_Cultist", 1f, 1, true), new LootSource("Bat", 2f, 2, true) });
 				case QuestKind.HuntTrolls:
@@ -166,6 +177,33 @@ namespace VikingVillages
 				default:
 					return(new List<LootSource>());
 			}
+		}
+
+		/// <summary>
+		/// Works out how many plants one of a quest's vikings picks besides foraging (see PickedPlants) - each plant's
+		/// count shared out among them, the first of them picking one more of what doesn't share out evenly
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <param name="vikings">How many went</param>
+		/// <param name="index">The viking's place among them, from 0</param>
+		/// <returns>How many it picks</returns>
+		internal static int PlantsPicked(QuestKind kind, int vikings, int index)
+		{
+			if (vikings <= 0 || index < 0 || index >= vikings)
+			{
+				return(0);
+			}
+			int picked = 0;
+			foreach (LootSource source in Sources(kind))
+			{
+				if (System.Array.IndexOf(PickedPlants, source.Prefab) < 0)
+				{
+					continue;
+				}
+				int count = source.CountFor(vikings);
+				picked += count / vikings + ((index < count % vikings) ? 1 : 0);
+			}
+			return(picked);
 		}
 
 		/// <summary>

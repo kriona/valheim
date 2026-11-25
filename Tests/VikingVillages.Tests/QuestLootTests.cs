@@ -101,6 +101,47 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that burial chamber and sunken crypt raids pick the yellow mushrooms growing there, rather than killing
+		/// them
+		/// </summary>
+		[Fact]
+		public void RaidsPickYellowMushrooms()
+		{
+			Assert.Contains(QuestLoot.Sources(QuestKind.RaidBurialChambers), (QuestLoot.LootSource source) => source.Prefab == "Pickable_Mushroom_yellow" && !source.Kill);
+			Assert.Contains(QuestLoot.Sources(QuestKind.RaidCrypts), (QuestLoot.LootSource source) => source.Prefab == "Pickable_Mushroom_yellow" && !source.Kill);
+		}
+
+		/// <summary>
+		/// Checks that each viking on a burial chamber or sunken crypt raid picks 2 yellow mushrooms, however many go,
+		/// for its Farming skill
+		/// </summary>
+		/// <param name="vikings">How many went</param>
+		[Theory]
+		[InlineData(1)]
+		[InlineData(2)]
+		[InlineData(3)]
+		public void EachRaiderPicksTwoMushrooms(int vikings)
+		{
+			for (int i = 0; i < vikings; i++)
+			{
+				Assert.Equal(2, QuestLoot.PlantsPicked(QuestKind.RaidBurialChambers, vikings, i));
+				Assert.Equal(2, QuestLoot.PlantsPicked(QuestKind.RaidCrypts, vikings, i));
+			}
+		}
+
+		/// <summary>
+		/// Checks that a quest with no plants to pick besides foraging, or a viking who isn't on the quest, picks none
+		/// </summary>
+		[Fact]
+		public void PicksNoneWithoutPlantsOrAPlace()
+		{
+			Assert.Equal(0, QuestLoot.PlantsPicked(QuestKind.HuntTrolls, 3, 0));
+			Assert.Equal(0, QuestLoot.PlantsPicked(QuestKind.Forage, 2, 0));
+			Assert.Equal(0, QuestLoot.PlantsPicked(QuestKind.RaidBurialChambers, 2, -1));
+			Assert.Equal(0, QuestLoot.PlantsPicked(QuestKind.RaidBurialChambers, 0, 0));
+		}
+
+		/// <summary>
 		/// Counts how many of a prey a hunter takes in its time, the way a hunt does
 		/// </summary>
 		/// <param name="prey">The prey's prefab name</param>
