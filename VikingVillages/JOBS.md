@@ -4,6 +4,73 @@ Everything a living Viking does in their village, with the numbers it goes by. T
 
 Times of day are shares of the game's day, as the game counts it: 0.25 is dawn, about 6 in the morning, 0.5 noon and 0.75 nightfall, about 6 in the evening. Dusk is from 0.71, about 5 in the afternoon, until night. Seconds are real seconds - at the default day of 30 real minutes, each real minute is 48 game minutes.
 
+## Every Job
+
+The jobs in the order this file describes them - see [How a Job Is Picked](#how-a-job-is-picked) for the order a Viking picks them in.
+
+| Job | When | What they do |
+| --- | --- | --- |
+| [Run out of flames](#run-out-of-flames) | Always | Run clear of a fire's flames |
+| [Step away from poison](#step-away-from-poison) | Always | With Zombie Apocalypse, keep 3 m from poison clouds and corpses that might leave one |
+| [Keep clear of roots](#keep-clear-of-roots) | Always | Back away from hostile roots, calling an archer to shoot them |
+| [Put themselves out](#put-themselves-out) | Always | Run into water when on fire |
+| [Drop what slows them](#drop-what-slows-them) | Always | Drop what they can't carry when they have to fight or run |
+| [Run home](#run-home) | Always | Run to the village's core when losing a fight or in danger outside |
+| [Fight](#fight) | Always | Go after threats and help fellows who are attacked |
+| [Wait for the dead](#wait-for-the-dead) | Always | Stand ready by a corpse about to rise |
+| [Get off a roof](#get-off-a-roof) | Always | Walk down to the ground |
+| [Get out of a pen](#get-out-of-a-pen) | Always | Leave a pen they have no work in |
+| [Get out of the water](#get-out-of-the-water) | Always | Walk to dry ground |
+| [Walk back](#walk-back) | Always | Return when more than 75 m past the village's edge |
+| [Mourn the dead](#mourn-the-dead) | Day or night | Grieve by a fallen Viking of their village, then put away their gear |
+| [Keep guard](#keep-guard) | During a raid | Stand around the fire, facing out, with their weapon drawn |
+| [Lighten the load](#lighten-the-load) | Day or night | Put away or drop what they can't carry |
+| [Pick up kill loot](#pick-up-kill-loot) | Day or night | Pick up what an enemy they fought dropped |
+| [Put away what a quest brought home](#put-away-what-a-quest-brought-home) | Day or night | Store what a quest brought back |
+| [Keep watch](#keep-watch) | Night | Patrol the village with a torch and wake it to danger |
+| [Sleep](#sleep) | Night | Go to bed, a chair or their house's floor |
+| [Torches](#torches) | Dusk and night | Hold a torch, and craft one when short |
+| [Teach a forsaken power](#teach-a-forsaken-power) | Dusk | Use a power beside a Viking who doesn't know it |
+| [Gather at the fire](#gather-at-the-fire) | Dusk | Stand or sit in a ring around the fire |
+| [Leave on a quest](#leave-on-a-quest) | Day | Pack food, potions and a tool, then head out |
+| [Eat](#eat) | Day | Eat from the chests when hurt |
+| [Rest by the fire](#rest-by-the-fire) | Day | Sit by the fire when hurt until rested |
+| [Keep their foods up](#keep-their-foods-up) | Day | Eat while there's food to spare |
+| [Keep warm](#keep-warm) | Day | Sit by a fire or go inside in freezing weather |
+| [Cook](#cook) | Day | Cook raw meat at the cooking stations |
+| [Cook a meal](#cook-a-meal) | Day | Make a meal at the cauldron |
+| [Put away loot](#put-away-loot) | Day | Put what they carry in the chests |
+| [Pick up loot](#pick-up-loot) | Day | Gather items lying around the village |
+| [Take up better gear](#take-up-better-gear) | Day | Put on better gear from the chests |
+| [Fill their quiver](#fill-their-quiver) | Day | Take arrows from the chests |
+| [Repair the village](#repair-the-village) | Day | Fix damaged pieces |
+| [Clear snow](#clear-snow) | Day | In the Deep North, knock heavy snow off pieces and the ground |
+| [Repair their gear](#repair-their-gear) | Day | Fix worn gear at the workbench or forge |
+| [Rebuild the fire](#rebuild-the-fire) | Day | Build back the village's fire |
+| [Take down a sitting log](#take-down-a-sitting-log) | Day | Take down the logs by an old fire for their wood |
+| [Cut trees](#cut-trees) | Day | Fell brush trees when the village is out of wood |
+| [Rebuild the village](#rebuild-the-village) | Day | Build back destroyed pieces |
+| [Stack the fire](#stack-the-fire) | Day | Put wood on the fire |
+| [Craft arrows](#craft-arrows) | Day | Make the best arrows the village can |
+| [Craft a torch](#craft-a-torch) | Day | Make a torch when theirs is missing or worn |
+| [Craft a second weapon](#craft-a-second-weapon) | Day | Make a crude bow, or an axe or club |
+| [Craft better gear](#craft-better-gear) | Day | Make a weapon, shield or armor better than their own |
+| [Upgrade their gear](#upgrade-their-gear) | Day | Raise a piece of their gear one quality |
+| [Work toward the goal](#work-toward-the-goal) | Day | Fuel and fill smelters, and craft materials for the village's goal |
+| [Stock tools](#stock-tools) | Day | Make axes and pickaxes for the chests |
+| [Line a weapon with silver](#line-a-weapon-with-silver) | Day | With Zombie Apocalypse, line a weapon with silver |
+| [Silver arrows](#silver-arrows) | Day | With Zombie Apocalypse, take or craft silver arrows |
+| [Make paths](#make-paths) | Day | Hoe paths to new buildings, bridging water |
+| [Build a beehive](#build-a-beehive) | Day | Build a hive with a queen bee |
+| [Talk](#talk) | Day, rolled | Chat with another Viking |
+| [Pet a boar](#pet-a-boar) | Day, rolled | Pet one of the village's livestock |
+| [Stock the chests with wood](#stock-the-chests-with-wood) | Day, rolled | Gather wood from the ground into the chests |
+| [Forage](#forage) | Day, rolled | Pick honey, berries, mushrooms and flint |
+| [Hunt](#hunt) | Day, rolled | Hunt prey near the village, from the Plains on in parties |
+| [Get rested again](#get-rested-again) | Day, rolled | Sit by the fire until rested |
+| [Stroll](#stroll) | Day, rolled | Walk to an open spot in the village |
+| [Stand about](#stand-about) | Day, rolled | Stand and look around |
+
 ## How a Job Is Picked
 
 A Viking does one job at a time, and picks the next once it's done. What they pick goes in this order, the first that fits:
@@ -537,6 +604,10 @@ From the Plains on, prey that isn't only for archers - the earlier biomes' too -
 4. Only the leader picks up the drops, the others going back to their day
 
 The party breaks up below 3 before the fight, or when the prey gets away, and with the leader gone, another leads.
+
+### Get Rested Again
+
+Not rested, before 0.6 of the day, with no rain at all - the Swamp's own included - and a gathering fire in the village, they sit in its warmth the way they [rest by the fire](#rest-by-the-fire), a free seat first, until they're rested. Rain catching them out in the open, or dusk, ends it, and with nowhere warm to sit, or not resting after a minute sitting, they give up for a minute.
 
 ### Stroll
 
