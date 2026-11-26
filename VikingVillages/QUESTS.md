@@ -113,7 +113,7 @@ A hunt for an item the village's next gear needs, like deer hide, takes only the
 
 ### Foraging
 
-Foraging goes after what the village wants, in the biome it grows in, and picks only that. Foraging for food, it goes to the hardest biome no harder than the village's where food grows, and picks only what's food - leaving dandelions and thistle. Each forager picks 4-12 plants - as many as they're home before night for - 1-2 of its fruit each, each plant raising their farming skill as picking one raises yours. The numbers are for one forager picking 12 plants, a full day's foraging.
+Foraging goes after what the village wants, in the biome it grows in, and picks only that. Foraging for food, it goes to the hardest biome no harder than the village's where food grows, and picks only what's food - leaving dandelions and thistle, unless the village's cauldron needs thistle for a meal its level allows and the chests are short of it, like sausages, when they pick that too, as often as each of the food plants. Each forager picks 4-12 plants - as many as they're home before night for - 1-2 of its fruit each, each plant raising their farming skill as picking one raises yours. The numbers are for one forager picking 12 plants, a full day's foraging.
 
 For food:
 
@@ -123,6 +123,7 @@ For food:
 - Black Forest, Swamp or Mountains village - in the Black Forest
   - Blueberries - 9
   - Yellow mushrooms - 9
+  - With the cauldron short of thistle - 6 each of blueberries, yellow mushrooms and thistle
 - Plains village or harder - in the Plains
   - Cloudberries - 18
 

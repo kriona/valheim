@@ -72,7 +72,7 @@ namespace VikingVillages
 		};
 
 		/// <summary>
-		/// The forage that's no food, which foraging for food leaves where it grows
+		/// The forage that's no food, which foraging for food leaves where it grows unless the village's cauldron needs it
 		/// </summary>
 		private static readonly string[] NotFood = { "Dandelion", "Thistle" };
 
@@ -343,12 +343,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Lists the plants foraging in a biome picks - the one it's for, or going for food, those that are food
+		/// Lists the plants foraging in a biome picks - the one it's for, or going for food, those that are food and
+		/// those the village's cauldron needs for its meals, like thistle for sausages
 		/// </summary>
 		/// <param name="biome">The biome, by VikingGear's order</param>
 		/// <param name="item">What it's for, or "" for food</param>
+		/// <param name="cauldronWants">Checks whether the village's cauldron needs a plant that's no food, or null for
+		/// none it does (see VillageLife.CauldronWants)</param>
 		/// <returns>The prefab names, none when nothing there gives it</returns>
-		internal static List<string> PlantsFor(int biome, string item)
+		internal static List<string> PlantsFor(int biome, string item, System.Func<string, bool> cauldronWants = null)
 		{
 			List<string> plants = new List<string>();
 			if (biome < 0 || biome >= Forage.Length)
@@ -357,7 +360,8 @@ namespace VikingVillages
 			}
 			foreach (string plant in Forage[biome])
 			{
-				bool wanted = ((item.Length > 0) ? (plant == item) : (System.Array.IndexOf(NotFood, plant) < 0));
+				bool food = (System.Array.IndexOf(NotFood, plant) < 0 || (cauldronWants != null && cauldronWants(plant)));
+				bool wanted = ((item.Length > 0) ? (plant == item) : food);
 				if (wanted)
 				{
 					plants.Add(plant);
@@ -563,7 +567,7 @@ namespace VikingVillages
 				}
 				else
 				{
-					RollForage(PlantsFor(biome, record.Item), members, skill, most, rng, rolled);
+					RollForage(PlantsFor(biome, record.Item, (string plant) => VillageLife.CauldronWants(village, plant)), members, skill, most, rng, rolled);
 				}
 			}
 			else if (record.Kind == QuestKind.FindBees)

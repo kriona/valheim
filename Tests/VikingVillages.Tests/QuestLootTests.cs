@@ -258,6 +258,15 @@ namespace VikingVillages.Tests
 			Assert.Equal(new List<string> { "Blueberries", "MushroomYellow" }, QuestLoot.PlantsFor(ResourceBook.BlackForest, ""));
 		}
 
+		[Fact]
+		public void ForagingForFoodBringsWhatTheCauldronNeeds()
+		{
+			Assert.Equal(new List<string> { "Blueberries", "Thistle", "MushroomYellow" }, QuestLoot.PlantsFor(ResourceBook.BlackForest, "", (string plant) => plant == "Thistle"));
+			Assert.Equal(new List<string> { "Raspberry", "Mushroom" }, QuestLoot.PlantsFor(ResourceBook.Meadows, "", (string plant) => plant == "Thistle"));
+			// Foraging for something else still picks only that
+			Assert.Equal(new List<string> { "Blueberries" }, QuestLoot.PlantsFor(ResourceBook.BlackForest, "Blueberries", (string plant) => plant == "Thistle"));
+		}
+
 		[Theory]
 		[InlineData("Raspberry", ResourceBook.Plains, ResourceBook.Meadows)]
 		[InlineData("Thistle", ResourceBook.Mountain, ResourceBook.BlackForest)]

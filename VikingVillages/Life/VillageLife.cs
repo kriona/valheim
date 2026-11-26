@@ -18376,6 +18376,52 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Checks whether a village's cauldron needs something for its meals - one of the meals its level allows takes
+		/// it, and the chests hold fewer than MealKeep of that meal and less of it than the meal takes - like thistle for
+		/// sausages, which foraging for food brings home then (see QuestLoot.PlantsFor)
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="item">The item's prefab name</param>
+		/// <returns>True when it does, false with no cauldron loaded</returns>
+		internal static bool CauldronWants(Village village, string item)
+		{
+			if (ObjectDB.instance == null || ZNetScene.instance == null || !VillageCooking.IsCauldronIngredient(item))
+			{
+				return(false);
+			}
+			int level = -1;
+			foreach (KeyValuePair<ZDO, ZNetView> instance in ZNetScene.instance.m_instances)
+			{
+				CraftingStation station = ((instance.Key.GetPrefab() == VillageCooking.CauldronHash && instance.Value != null && village.OwnsPiece(instance.Value.transform.position)) ? instance.Value.GetComponent<CraftingStation>() : null);
+				if (station != null)
+				{
+					level = Mathf.Max(level, station.GetLevel());
+				}
+			}
+			if (level < 0)
+			{
+				return(false);
+			}
+			List<Container> chests = VillageChests(village);
+			int stored = Stored(item, chests);
+			foreach (Recipe recipe in ObjectDB.instance.m_recipes)
+			{
+				if (!IsMeal(recipe) || recipe.m_minStationLevel > level || Stored(recipe.m_item.gameObject.name, chests) >= MealKeep)
+				{
+					continue;
+				}
+				foreach (Piece.Requirement requirement in recipe.m_resources)
+				{
+					if (requirement.m_resItem != null && requirement.m_resItem.gameObject.name == item && stored < CraftAmount(requirement, 1))
+					{
+						return(true);
+					}
+				}
+			}
+			return(false);
+		}
+
+		/// <summary>
 		/// How often a viking works out again how much raw food the village's chests hold back for meals, in seconds
 		/// </summary>
 		private const float MealReserveInterval = 10f;
