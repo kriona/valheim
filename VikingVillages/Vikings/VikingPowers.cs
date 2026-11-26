@@ -19,9 +19,9 @@ namespace VikingVillages
 	internal class VikingPowers
 	{
 		/// <summary>
-		/// The forsaken powers by status effect name, in the order their bosses are beaten - each the power a viking of
-		/// the next biome along knows, so a Black Forest viking knows Eikthyr's and a Plains viking every power up to
-		/// Moder's (see VikingGear.Biomes)
+		/// The forsaken powers by status effect name, in the order their bosses are beaten - each the power of the boss
+		/// of the biome at the same place in VikingGear.Biomes, so a Meadows viking knows Eikthyr's, a Plains viking every
+		/// power up to Yagluth's, and an Ashlands or Deep North viking every one
 		/// </summary>
 		internal static readonly string[] Names = { "GP_Eikthyr", "GP_TheElder", "GP_Bonemass", "GP_Moder", "GP_Yagluth", "GP_Queen", "GP_Fader" };
 		internal const int Eikthyr = 0;
@@ -182,27 +182,16 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out the powers a viking of a biome knows from the start - those of every biome up to its own, where the
-		/// Meadows have none
+		/// Works out the powers a viking of a biome knows from the start - the power of its own biome's boss and of every
+		/// biome's before it, Eikthyr's in the Meadows, and every power from the Ashlands on, the Deep North having no
+		/// boss of its own
 		/// </summary>
 		/// <param name="biome">The biome's index in VikingGear.Biomes</param>
 		/// <returns>The powers, one bit for each in the order of Names</returns>
 		internal static int BiomeMask(int biome)
 		{
-			int count = Mathf.Clamp(biome, 0, Names.Length);
+			int count = Mathf.Clamp(biome + 1, 0, Names.Length);
 			return((1 << count) - 1);
-		}
-
-		/// <summary>
-		/// Works out the powers a viking knows from the start - its biome's and those before (see BiomeMask), and for a
-		/// dvergr viking the Queen's too, which the dvergr they work for have taught them
-		/// </summary>
-		/// <param name="biome">The biome's index in VikingGear.Biomes</param>
-		/// <param name="dvergr">Whether it's a dvergr viking</param>
-		/// <returns>The powers, one bit for each in the order of Names</returns>
-		internal static int StartMask(int biome, bool dvergr)
-		{
-			return(BiomeMask(biome) | (dvergr ? 1 << Queen : 0));
 		}
 
 		/// <summary>
@@ -228,7 +217,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets the powers the viking knows - those it knows from the start (see StartMask), and any it has learned
+		/// Gets the powers the viking knows - those it knows from the start (see BiomeMask), and any it has learned
 		/// </summary>
 		/// <returns>The powers, one bit for each in the order of Names</returns>
 		public int Known()
@@ -239,7 +228,7 @@ namespace VikingVillages
 			{
 				return(0);
 			}
-			return(zdo.GetInt(LearnedKey) | StartMask(own.BiomeIndex(), VikingCore.IsDvergrViking(viking)));
+			return(zdo.GetInt(LearnedKey) | BiomeMask(own.BiomeIndex()));
 		}
 
 		/// <summary>

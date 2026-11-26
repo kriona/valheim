@@ -47,9 +47,9 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// The prey living vikings hunt in each biome, and which of it a viking takes on - prey of its own biome, the
-	/// biomes before it, and the one right after, by the biome its gear comes from (see VikingCore.BiomeIndex), so a
-	/// Meadows viking hunts in the Black Forest but not the Swamp
+	/// The prey living vikings hunt in each biome, and which of it a viking takes on - prey of its own biome and the
+	/// biomes before it, by the biome its gear comes from (see VikingCore.BiomeIndex), so a Black Forest viking hunts
+	/// greylings but not the Swamp's leeches and draugr
 	/// </summary>
 	/// <remarks>
 	/// The young of a herd, like a lox calf or a wolf cub, aren't hunted. The Swamp's prey is the leech, which an archer
@@ -58,11 +58,6 @@ namespace VikingVillages
 	/// </remarks>
 	internal static class HuntPrey
 	{
-		/// <summary>
-		/// How many biomes past its own a viking hunts the prey of
-		/// </summary>
-		internal const int BiomesAhead = 1;
-
 		/// <summary>
 		/// The monster a hunter fights on the way rather than running from, by prefab name
 		/// </summary>
@@ -111,15 +106,14 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a viking hunts prey of a biome - one of its own biome or before it, or up to BiomesAhead past
-		/// it
+		/// Checks whether a viking hunts prey of a biome - one of its own biome or before it
 		/// </summary>
 		/// <param name="preyBiome">The index of the prey's biome (see VikingGear.IndexOf)</param>
 		/// <param name="vikingBiome">The index of the biome the viking's gear comes from</param>
 		/// <returns>True when it does</returns>
 		internal static bool InReach(int preyBiome, int vikingBiome)
 		{
-			return(preyBiome <= vikingBiome + BiomesAhead);
+			return(preyBiome <= vikingBiome);
 		}
 
 		/// <summary>

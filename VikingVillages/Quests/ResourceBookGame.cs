@@ -5,7 +5,7 @@ namespace VikingVillages
 	/// <summary>
 	/// Fills a village's resource book (see ResourceBook) from the game once its items and prefabs are loaded - every
 	/// recipe the vikings can craft from, every smelter's conversions, the pickaxes and axes with their tiers, the tool
-	/// tier each rock and tree a quest goes for needs, and what Haldor asks for a Dverger circlet
+	/// tier each rock and tree a quest goes for needs, and what Haldor asks for each thing the vikings buy from him
 	/// </summary>
 	internal static class ResourceBookGame
 	{
@@ -54,7 +54,7 @@ namespace VikingVillages
 			made.AddQuests();
 			AddTools(made);
 			ReadToolTiers(made);
-			ReadCircletPrice(made);
+			ReadPrices(made);
 			Plugin.Log.LogInfo("Resource book: " + made.Sources.Count + " items, " + made.Tools.Count + " tools");
 			return(made);
 		}
@@ -208,27 +208,45 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Reads what the trader who sells the Dverger circlet - Haldor - asks for one into the quest to buy one
+		/// Reads what the trader who sells each thing a quest buys - Haldor - asks for it into that quest's rule, finding
+		/// an item by its prefab and the pockets by the key he sells them under (see ResourceBook.Bought)
 		/// </summary>
 		/// <param name="made">The book</param>
-		private static void ReadCircletPrice(ResourceBook made)
+		private static void ReadPrices(ResourceBook made)
 		{
-			QuestRule rule = made.RuleOf(QuestKind.BuyCirclet);
-			if (rule == null)
+			foreach (QuestKind kind in ResourceBook.Purchases)
 			{
-				return;
-			}
-			foreach (GameObject prefab in ZNetScene.instance.m_prefabs)
-			{
-				Trader trader = ((prefab != null) ? prefab.GetComponent<Trader>() : null);
-				Trader.TradeItem item = ((trader != null) ? trader.m_items.Find((Trader.TradeItem candidate) => candidate.m_prefab != null && candidate.m_prefab.gameObject.name == ResourceBook.Circlet) : null);
+				QuestRule rule = made.RuleOf(kind);
+				string bought = ResourceBook.Bought(kind);
+				Trader.TradeItem item = ((rule != null) ? FindTradeItem(bought) : null);
 				if (item != null)
 				{
 					rule.Coins = item.m_price;
-					return;
+				}
+				else if (rule != null)
+				{
+					Plugin.Log.LogWarning("Resource book: no trader sells " + bought);
 				}
 			}
-			Plugin.Log.LogWarning("Resource book: no trader sells " + ResourceBook.Circlet);
+		}
+
+		/// <summary>
+		/// Finds the trade of any trader that sells an item, by its prefab name, or a key (Trader.TradeItem.m_buyKey)
+		/// </summary>
+		/// <param name="bought">The item's prefab name or the key</param>
+		/// <returns>The trade, or null when no trader has it</returns>
+		private static Trader.TradeItem FindTradeItem(string bought)
+		{
+			foreach (GameObject prefab in ZNetScene.instance.m_prefabs)
+			{
+				Trader trader = ((prefab != null) ? prefab.GetComponent<Trader>() : null);
+				Trader.TradeItem item = ((trader != null) ? trader.m_items.Find((Trader.TradeItem candidate) => (candidate.m_prefab != null && candidate.m_prefab.gameObject.name == bought) || candidate.m_buyKey == bought) : null);
+				if (item != null)
+				{
+					return(item);
+				}
+			}
+			return(null);
 		}
 	}
 }

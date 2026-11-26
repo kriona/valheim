@@ -59,8 +59,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Hunting by day - going out for the nearest prey within HuntReach of the village, from its biome's prey and
-		/// those before it and right after it (see HuntPrey) - a boar, neck or greyling for a viking of the Meadows, and
-		/// for an archer a deer too - or only prey and birds that drop something it's short of to craft with (see
+		/// those before it (see HuntPrey) - a boar or neck for a viking of the Meadows, and for an archer a deer too,
+		/// with greylings from the Black Forest on - or only prey and birds that drop something it's short of to craft with (see
 		/// GatherFor), fighting it and the greylings it meets, and gathering what drops from the kill and from the
 		/// zombie it rises as, to cook or put away back home
 		/// </summary>

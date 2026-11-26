@@ -150,6 +150,9 @@ namespace VikingVillages
 				case QuestKind.RaidFrostCaves:
 					return("mountaincave");
 				case QuestKind.BuyCirclet:
+				case QuestKind.BuyBelt:
+				case QuestKind.BuyWiderPockets:
+				case QuestKind.BuyDeeperPockets:
 					return("vendor_blackforest");
 				case QuestKind.KillEikthyr:
 					return("eikthyrnir");
@@ -176,6 +179,9 @@ namespace VikingVillages
 				case QuestKind.HuntGhosts:
 				case QuestKind.HuntTrolls:
 				case QuestKind.BuyCirclet:
+				case QuestKind.BuyBelt:
+				case QuestKind.BuyWiderPockets:
+				case QuestKind.BuyDeeperPockets:
 					return(ResourceBook.BlackForest);
 				case QuestKind.SellTreasure:
 					// The hardest biome with a trader the village can sell to, when the world has none of their camps

@@ -539,7 +539,7 @@ namespace VikingVillages
 		/// else 0</returns>
 		public static int Roll(Village village, QuestRecord record, List<Humanoid> members, List<CarrySpace> spaces, int most, Dictionary<string, int> found, int roadBiome)
 		{
-			if (record.Kind == QuestKind.SellTreasure || record.Kind == QuestKind.BuyCirclet)
+			if (ResourceBook.IsTrade(record.Kind))
 			{
 				PlanSpending(village, record);
 				return(0);
@@ -785,7 +785,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Has the first of a quest trading with Haldor take along what it spends - every piece of treasure in the
-		/// village's chests to sell, and to buy a circlet, the coins too
+		/// village's chests to sell, and to buy something, the coins too
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="record">The quest, its plans made</param>
@@ -802,7 +802,7 @@ namespace VikingVillages
 				{
 					string name = ((item.m_dropPrefab != null && !VikingItems.IsCarried(item)) ? item.m_dropPrefab.name : null);
 					bool treasure = (name != null && System.Array.IndexOf(ResourceBook.Treasure, name) >= 0);
-					bool coins = (name == ResourceBook.Coins && record.Kind == QuestKind.BuyCirclet);
+					bool coins = (name == ResourceBook.Coins && ResourceBook.IsPurchase(record.Kind));
 					if (treasure || coins)
 					{
 						QuestSim.Add(spend, name, item.m_stack);
@@ -814,13 +814,13 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out what a viking trading with Haldor brings home for what it took along - coins for the treasure sold,
-		/// and buying a circlet, the circlet and the coins left over once it's paid for, or nothing at all when what it
-		/// took won't pay for it
+		/// and buying something, what it bought (see ResourceBook.Bought) and the coins left over once it's paid for, or
+		/// nothing at all when what it took won't pay for it
 		/// </summary>
 		/// <param name="kind">The quest</param>
 		/// <param name="coins">The coins it took along</param>
 		/// <param name="treasureValue">What the treasure it took along sells for</param>
-		/// <param name="price">What a circlet costs</param>
+		/// <param name="price">What the quest buys costs</param>
 		/// <param name="spends">Set to whether it spends what it took along</param>
 		/// <returns>What it brings home, each item and how many</returns>
 		internal static List<KeyValuePair<string, int>> Trade(QuestKind kind, int coins, int treasureValue, int price, out bool spends)
@@ -837,12 +837,12 @@ namespace VikingVillages
 				}
 				return(loot);
 			}
-			if (kind != QuestKind.BuyCirclet || purse < price)
+			if (!ResourceBook.IsPurchase(kind) || purse < price)
 			{
 				return(loot);
 			}
 			spends = true;
-			loot.Add(new KeyValuePair<string, int>(ResourceBook.Circlet, 1));
+			loot.Add(new KeyValuePair<string, int>(ResourceBook.Bought(kind), 1));
 			if (purse > price)
 			{
 				loot.Add(new KeyValuePair<string, int>(ResourceBook.Coins, purse - price));

@@ -19,17 +19,17 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that a Meadows viking hunts the Meadows' and the Black Forest's prey, but not the Swamp's or anything
-		/// after
+		/// Checks that a Black Forest viking hunts the Meadows' and the Black Forest's prey, but not the Swamp's or
+		/// anything after
 		/// </summary>
 		[Fact]
-		public void MeadowsVikingHuntsOneBiomeAhead()
+		public void VikingHuntsNoBiomeAhead()
 		{
-			int meadows = Index(Heightmap.Biome.Meadows);
-			Assert.True(HuntPrey.InReach(Index(Heightmap.Biome.Meadows), meadows));
-			Assert.True(HuntPrey.InReach(Index(Heightmap.Biome.BlackForest), meadows));
-			Assert.False(HuntPrey.InReach(Index(Heightmap.Biome.Swamp), meadows));
-			Assert.False(HuntPrey.InReach(Index(Heightmap.Biome.Mountain), meadows));
+			int forest = Index(Heightmap.Biome.BlackForest);
+			Assert.True(HuntPrey.InReach(Index(Heightmap.Biome.Meadows), forest));
+			Assert.True(HuntPrey.InReach(Index(Heightmap.Biome.BlackForest), forest));
+			Assert.False(HuntPrey.InReach(Index(Heightmap.Biome.Swamp), forest));
+			Assert.False(HuntPrey.InReach(Index(Heightmap.Biome.Mountain), forest));
 		}
 
 		/// <summary>
@@ -46,15 +46,16 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that a Meadows viking hunts boar and greylings, a Meadows archer deer too, and neither goes after
-		/// wolves or lox
+		/// Checks that a Meadows viking hunts boar, a Meadows archer deer too, and neither goes after the Black Forest's
+		/// greylings, wolves or lox
 		/// </summary>
 		[Fact]
 		public void MeadowsHuntersKeepToTheirPrey()
 		{
 			int meadows = Index(Heightmap.Biome.Meadows);
 			Assert.True(HuntPrey.Hunts("Boar", false, meadows));
-			Assert.True(HuntPrey.Hunts("Greyling", false, meadows));
+			Assert.False(HuntPrey.Hunts("Greyling", false, meadows));
+			Assert.True(HuntPrey.Hunts("Greyling", false, Index(Heightmap.Biome.BlackForest)));
 			Assert.False(HuntPrey.Hunts("Deer", false, meadows));
 			Assert.True(HuntPrey.Hunts("Deer", true, meadows));
 			Assert.False(HuntPrey.Hunts("Wolf", true, meadows));
@@ -62,14 +63,15 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that a Mountains viking hunts lox from the Plains, one biome ahead, but not hares from the Mistlands
+		/// Checks that a Mountains viking hunts wolves, but not lox from the Plains, while a Plains viking does
 		/// </summary>
 		[Fact]
-		public void MountainsVikingHuntsLoxNotHares()
+		public void MountainsVikingHuntsWolvesNotLox()
 		{
 			int mountains = Index(Heightmap.Biome.Mountain);
-			Assert.True(HuntPrey.Hunts("Lox", false, mountains));
-			Assert.False(HuntPrey.Hunts("Hare", false, mountains));
+			Assert.True(HuntPrey.Hunts("Wolf", false, mountains));
+			Assert.False(HuntPrey.Hunts("Lox", false, mountains));
+			Assert.True(HuntPrey.Hunts("Lox", false, Index(Heightmap.Biome.Plains)));
 		}
 
 		/// <summary>
@@ -89,13 +91,13 @@ namespace VikingVillages.Tests
 
 		/// <summary>
 		/// Checks that a Swamp viking hunts a plain draugr, only one alone - another draugr near it rules the hunt out -
-		/// while a Meadows viking, two biomes before it, doesn't
+		/// while a Black Forest viking doesn't
 		/// </summary>
 		[Fact]
 		public void SwampVikingHuntsLoneDraugr()
 		{
 			Assert.True(HuntPrey.Hunts("Draugr", false, Index(Heightmap.Biome.Swamp)));
-			Assert.False(HuntPrey.Hunts("Draugr", true, Index(Heightmap.Biome.Meadows)));
+			Assert.False(HuntPrey.Hunts("Draugr", true, Index(Heightmap.Biome.BlackForest)));
 			Assert.False(HuntPrey.IsHarmless("Draugr"));
 			Assert.False(HuntPrey.Ignores("Draugr", "Draugr"));
 		}
@@ -133,16 +135,16 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that leeches are dangerous Swamp prey only archers hunt - so a Black Forest archer goes after one, and
-		/// a Meadows archer or a Black Forest viking without a bow doesn't
+		/// Checks that leeches are dangerous Swamp prey only archers hunt - so a Swamp archer goes after one, and a Black
+		/// Forest archer or a Swamp viking without a bow doesn't
 		/// </summary>
 		[Fact]
-		public void LeechesAreForArchersFromTheBlackForest()
+		public void LeechesAreForArchersFromTheSwamp()
 		{
 			Assert.False(HuntPrey.IsHarmless("Leech"));
-			Assert.True(HuntPrey.Hunts("Leech", true, Index(Heightmap.Biome.BlackForest)));
-			Assert.False(HuntPrey.Hunts("Leech", false, Index(Heightmap.Biome.BlackForest)));
-			Assert.False(HuntPrey.Hunts("Leech", true, Index(Heightmap.Biome.Meadows)));
+			Assert.True(HuntPrey.Hunts("Leech", true, Index(Heightmap.Biome.Swamp)));
+			Assert.False(HuntPrey.Hunts("Leech", false, Index(Heightmap.Biome.Swamp)));
+			Assert.False(HuntPrey.Hunts("Leech", true, Index(Heightmap.Biome.BlackForest)));
 		}
 
 		/// <summary>

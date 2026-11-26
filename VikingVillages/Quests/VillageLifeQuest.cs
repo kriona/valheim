@@ -716,8 +716,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Plays out how a quest went for the viking - what it ate, drank and spent goes from what it carried for the
-		/// quest, its tool is worn to what it has left, what it found is carried to put away, its health is set and its
-		/// skills rise
+		/// quest, its tool is worn to what it has left, what it found is carried to put away, the pockets it bought from
+		/// Haldor are sewn in, its health is set and its skills rise
 		/// </summary>
 		/// <param name="outcome">How it went</param>
 		private void PlayOut(QuestOutcome outcome)
@@ -748,9 +748,19 @@ namespace VikingVillages
 			}
 			foreach (KeyValuePair<string, int> found in outcome.Loot)
 			{
-				// A circlet bought for one still using torches is theirs to wear, in place of a torch
+				// Pockets bought from Haldor were sewn into its own clothes there, a row more in its inventory
+				if (found.Key == ResourceBook.WiderPockets || found.Key == ResourceBook.DeeperPockets)
+				{
+					bool sewn = (viking != null && viking.TakePockets(outcome.Kind));
+					TestLog.Count("Brought home from quests", found.Key + (sewn ? "" : ", but it already had them"));
+					continue;
+				}
+				// A circlet bought for one still using torches is theirs to wear, in place of a torch, and a strength belt
+				// bought for one without is theirs to put on (see VillageLife.UpdatePutOn), or to carry in the Mistlands,
+				// where its wisp light takes the belt's slot
 				int count = found.Value;
-				if (found.Key == ResourceBook.Circlet && OwnTool(ResourceBook.Circlet) == null && inventory.AddItem(ResourceBook.Circlet, 1, 1, 0, 0L, "", false) != null)
+				bool own = (found.Key == ResourceBook.Circlet || found.Key == ResourceBook.Belt);
+				if (own && OwnTool(found.Key) == null && inventory.AddItem(found.Key, 1, 1, 0, 0L, "", false) != null)
 				{
 					count--;
 					TestLog.Count("Brought home from quests", found.Key);

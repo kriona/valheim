@@ -10,16 +10,17 @@ namespace VikingVillages.Tests
 	public class VikingPowersTests
 	{
 		/// <summary>
-		/// Checks that a viking knows the powers of every biome up to its own - none in the Meadows, Eikthyr's in the
-		/// Black Forest, up to Moder's in the Plains and all of them in the Deep North
+		/// Checks that a viking knows the power of its own biome's boss and every biome's before it - Eikthyr's in the
+		/// Meadows, up to Yagluth's in the Plains, and all of them from the Ashlands on
 		/// </summary>
 		/// <param name="biome">The biome's index in VikingGear.Biomes</param>
 		/// <param name="expected">The powers it knows, one bit for each</param>
 		[Theory]
-		[InlineData(0, 0)]
-		[InlineData(1, 0b1)]
-		[InlineData(2, 0b11)]
-		[InlineData(4, 0b1111)]
+		[InlineData(0, 0b1)]
+		[InlineData(1, 0b11)]
+		[InlineData(2, 0b111)]
+		[InlineData(4, 0b11111)]
+		[InlineData(6, 0b1111111)]
 		[InlineData(7, 0b1111111)]
 		[InlineData(-1, 0)]
 		[InlineData(12, 0b1111111)]
@@ -29,30 +30,45 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that each biome's power in the gear tables is the one the biome's mask adds, so a viking of a biome
-		/// always knows its own biome's power
+		/// Checks that each biome adds the power of its own boss - Eikthyr's in the Meadows through Fader's in the
+		/// Ashlands - and the Deep North, with no boss, adds none
 		/// </summary>
 		[Fact]
-		public void BiomeMaskAddsTheBiomesOwnPower()
+		public void BiomeMaskAddsTheBiomesOwnBossPower()
 		{
-			for (int biome = 1; biome < VikingGear.Biomes.Length; biome++)
+			string[] bosses = { "GP_Eikthyr", "GP_TheElder", "GP_Bonemass", "GP_Moder", "GP_Yagluth", "GP_Queen", "GP_Fader" };
+			for (int biome = 0; biome < bosses.Length; biome++)
 			{
 				int added = VikingPowers.BiomeMask(biome) & ~VikingPowers.BiomeMask(biome - 1);
-				Assert.Equal(VikingGear.Biomes[biome].Power, VikingPowers.Names[VikingPowers.Highest(added)]);
+				Assert.Equal(bosses[biome], VikingPowers.Names[VikingPowers.Highest(added)]);
+			}
+			int deepNorth = VikingGear.IndexOf(Heightmap.Biome.DeepNorth);
+			Assert.Equal(VikingPowers.BiomeMask(deepNorth - 1), VikingPowers.BiomeMask(deepNorth));
+		}
+
+		/// <summary>
+		/// Checks that a zombie viking's power, from the gear tables, is the hardest power a living viking of the same
+		/// biome knows, so both go by the same progression
+		/// </summary>
+		[Fact]
+		public void ZombieVikingsUseTheirBiomesHardestPower()
+		{
+			for (int biome = 0; biome < VikingGear.Biomes.Length; biome++)
+			{
+				Assert.Equal(VikingPowers.Names[VikingPowers.Highest(VikingPowers.BiomeMask(biome))], VikingGear.Biomes[biome].Power);
 			}
 		}
 
 		/// <summary>
-		/// Checks that a dvergr viking of the Mistlands knows the Queen's power along with every power up to Yagluth's,
-		/// and a living viking of the Mistlands doesn't
+		/// Checks that a viking of the Mistlands, where the dvergr hire theirs, knows the Queen's power along with every
+		/// power before it, and not Fader's
 		/// </summary>
 		[Fact]
-		public void DvergrVikingsKnowTheQueensPower()
+		public void MistlandsVikingsKnowTheQueensPower()
 		{
 			int mistlands = VikingGear.IndexOf(Heightmap.Biome.Mistlands);
-			Assert.Equal(VikingPowers.BiomeMask(mistlands), VikingPowers.StartMask(mistlands, false));
-			Assert.Equal(VikingPowers.BiomeMask(mistlands) | (1 << VikingPowers.Queen), VikingPowers.StartMask(mistlands, true));
-			Assert.Equal(0, VikingPowers.BiomeMask(mistlands) & (1 << VikingPowers.Queen));
+			Assert.NotEqual(0, VikingPowers.BiomeMask(mistlands) & (1 << VikingPowers.Queen));
+			Assert.Equal(0, VikingPowers.BiomeMask(mistlands) & (1 << (VikingPowers.Queen + 1)));
 		}
 
 		/// <summary>

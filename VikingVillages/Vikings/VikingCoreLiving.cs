@@ -68,6 +68,36 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
+		/// Gets how many rows the viking's inventory has - more with the pockets Haldor sells (see VikingUpgrades)
+		/// </summary>
+		/// <returns>The rows, or the game's usual number before its data is read</returns>
+		public int InventoryRows()
+		{
+			return((GetData() != null) ? data.Height : VikingUpgrades.PlainRows);
+		}
+
+		/// <summary>
+		/// Gives the viking the pockets a quest bought from Haldor, a row more in its inventory, when it can take them -
+		/// wider pockets with none yet, deeper ones with wider ones (see VikingUpgrades.CanTakePockets) - saving its rows
+		/// with its data, where every client and a zombie viking risen from it read them
+		/// </summary>
+		/// <param name="kind">The quest, to buy wider or deeper pockets</param>
+		/// <returns>True when it took them</returns>
+		public bool TakePockets(QuestKind kind)
+		{
+			if (GetData() == null || !VikingUpgrades.CanTakePockets(kind, data.Height))
+			{
+				return(false);
+			}
+			data.Height++;
+			nview.GetZDO().Set(DataKey, data.ToBytes());
+			Inventory inventory = humanoid.GetInventory();
+			inventory.m_height = data.Height;
+			inventory.Changed();
+			return(true);
+		}
+
+		/// <summary>
 		/// Gives the living viking its life in its village, or a dvergr viking its life with the dvergr
 		/// </summary>
 		partial void AddParts()
@@ -103,6 +133,8 @@ namespace Kriona.Vikings
 			{
 				VikingGear.SetModel(rolled, model);
 			}
+			// The harder its biome, the likelier it has bought Haldor's wider and deeper pockets, a row more each
+			rolled.Height = VikingUpgrades.LivingRows(index, Random.value);
 			// A living viking has kept its armor and weapon in repair, all of it from its own biome, and its village's
 			// archer has a bow
 			Arms arms = VikingGear.LivingArms(index, nview.GetZDO().GetBool(ArcherKey), Random.value);
@@ -116,6 +148,17 @@ namespace Kriona.Vikings
 			if (VikingGear.LivingWisp(index))
 			{
 				VikingGear.AddWisp(gear);
+			}
+			// And the likelier it has a strength belt, which goes in the same slot as a wisp light - so a viking of the
+			// Mistlands keeps its belt in its pack, and wears it for a quest that leaves the mist (see
+			// VikingUpgrades.QuestCarryBonus)
+			if (VikingUpgrades.LivingBelt(index, Random.value))
+			{
+				ItemDrop.ItemData belt = gear.AddItem(VikingUpgrades.BeltPrefab, 1, 1, 0, 0L, "", false);
+				if (belt != null && !VikingGear.LivingWisp(index))
+				{
+					belt.m_equipped = true;
+				}
 			}
 			// It's named for whether it's a woman or a man - model 1 is a woman's - before its looks are saved, since some
 			// names come with looks of their own

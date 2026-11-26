@@ -3,6 +3,7 @@
 ## Docs
 - `README.md` is a short tour of each feature for people deciding whether to install it, each linking to its section of `LOGIC.md`, which holds every detail - its Viking AI section has what each biome changes
 - Each job, in the order a Viking picks them and with its numbers, is in `JOBS.md`, and the quests are in `QUESTS.md`
+- Every rule that changes with a Viking's or village's biome - what they start with, their odds and numbers, what the village is built and stocked with, and which quests it goes on - is in `PROGRESSION.md`, both for each biome and in a table per feature, so a new or changed biome rule goes there too, in both places
 - Every line a Viking says, and when, is in `DIALOG.md`, so a new or changed line goes there too - and a line never has Vikings rowing or at the oars, since every boat in the game sails
 - A change to what the Vikings do goes in `LOGIC.md` or `JOBS.md`, and in the README only when it adds a feature or changes one the README mentions
 

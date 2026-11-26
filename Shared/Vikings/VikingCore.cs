@@ -551,6 +551,9 @@ namespace Kriona.Vikings
 		/// </remarks>
 		private void Load()
 		{
+			// Read again, since another client may have changed it while it owned the viking - like the rows a living
+			// viking's inventory has, which its saved inventory needs to fit in
+			data = null;
 			if (GetData() == null)
 			{
 				Generate();

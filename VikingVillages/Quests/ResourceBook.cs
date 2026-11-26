@@ -23,7 +23,10 @@ namespace VikingVillages
 		KillEikthyr,
 		FindBees,
 		HuntGhosts,
-		RaidFrostCaves
+		RaidFrostCaves,
+		BuyBelt,
+		BuyWiderPockets,
+		BuyDeeperPockets
 	}
 
 	/// <summary>
@@ -162,7 +165,7 @@ namespace VikingVillages
 	/// </summary>
 	/// <remarks>
 	/// The quest rules and the items each quest brings back are written here (see AddQuests). The recipes, smelters,
-	/// tool tiers and the price of a Dverger circlet come from the game once it has loaded them (see ResourceBookGame),
+	/// tool tiers and the prices of what's bought from Haldor come from the game once it has loaded them (see ResourceBookGame),
 	/// so a book made in a test has only what the test adds
 	/// </remarks>
 	internal class ResourceBook
@@ -190,6 +193,72 @@ namespace VikingVillages
 		public const string Circlet = "HelmetDverger";
 		public const string Coins = "Coins";
 		public static readonly string[] Treasure = { "Amber", "AmberPearl", "Ruby", "SilverNecklace" };
+
+		/// <summary>
+		/// What the quests to Haldor buy besides the circlet - the strength belt by its prefab name, and the wider and
+		/// deeper pockets, which aren't items, by the keys Haldor sells them under (Trader.TradeItem.m_buyKey)
+		/// </summary>
+		public const string Belt = VikingUpgrades.BeltPrefab;
+		public const string WiderPockets = "invslot1";
+		public const string DeeperPockets = "invslot2";
+
+		/// <summary>
+		/// The quests that buy something from Haldor, in the order a village picks them
+		/// </summary>
+		public static readonly QuestKind[] Purchases = { QuestKind.BuyCirclet, QuestKind.BuyBelt, QuestKind.BuyWiderPockets, QuestKind.BuyDeeperPockets };
+
+		/// <summary>
+		/// Gets what a quest to Haldor buys - an item's prefab name or the key of the pockets (see WiderPockets)
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <returns>What it buys, or null for a quest that buys nothing</returns>
+		public static string Bought(QuestKind kind)
+		{
+			switch (kind)
+			{
+				case QuestKind.BuyCirclet:
+					return(Circlet);
+				case QuestKind.BuyBelt:
+					return(Belt);
+				case QuestKind.BuyWiderPockets:
+					return(WiderPockets);
+				case QuestKind.BuyDeeperPockets:
+					return(DeeperPockets);
+				default:
+					return(null);
+			}
+		}
+
+		/// <summary>
+		/// Checks whether a quest buys something from Haldor
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <returns>True when it does</returns>
+		public static bool IsPurchase(QuestKind kind)
+		{
+			return(Bought(kind) != null);
+		}
+
+		/// <summary>
+		/// Checks whether a quest trades with Haldor - selling treasure, or buying something
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <returns>True when it does</returns>
+		public static bool IsTrade(QuestKind kind)
+		{
+			return(kind == QuestKind.SellTreasure || IsPurchase(kind));
+		}
+
+		/// <summary>
+		/// Gets what a quest to Haldor brings home as items - the item it buys, and nothing for pockets, which are sewn
+		/// into the buyer's clothes there
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <returns>The item's prefab name, or null</returns>
+		public static string BoughtItem(QuestKind kind)
+		{
+			return((kind == QuestKind.BuyWiderPockets || kind == QuestKind.BuyDeeperPockets) ? null : Bought(kind));
+		}
 
 		/// <summary>
 		/// The fewest beehives a village has before it no longer goes looking for bees - as many as it builds
@@ -270,7 +339,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Adds the quests' rules and the items each brings back - the tool tier of each item's tool left at 0 for the
-		/// game's to be read in from its ToolTarget (see ResourceBookGame), and the circlet's price at 0 for Haldor's
+		/// game's to be read in from its ToolTarget (see ResourceBookGame), and the price of each purchase at 0 for Haldor's
 		/// </summary>
 		public void AddQuests()
 		{
@@ -289,7 +358,10 @@ namespace VikingVillages
 			Rule(QuestKind.HuntTrolls, BlackForest, 3, 3, 3, true, new string[0]);
 			Rule(QuestKind.HuntGoblins, Plains, 3, 3, 5, false, new[] { BlastFurnace, Kiln });
 			Rule(QuestKind.SellTreasure, Meadows, 2, 2, 2, false, new string[0]);
-			Rule(QuestKind.BuyCirclet, Swamp, 2, 2, 2, false, new string[0]);
+			Rule(QuestKind.BuyCirclet, BlackForest, 2, 2, 2, false, new string[0]);
+			Rule(QuestKind.BuyBelt, BlackForest, 2, 2, 2, false, new string[0]);
+			Rule(QuestKind.BuyWiderPockets, Mountain, 2, 2, 2, false, new string[0]);
+			Rule(QuestKind.BuyDeeperPockets, Mistlands, 2, 2, 2, false, new string[0]);
 			// Eikthyr's altar takes 2 deer trophies to summon him, as the game's offeraltar_deer has it
 			QuestRule eikthyr = Rule(QuestKind.KillEikthyr, Meadows, 2, 2, 2, false, new string[0]);
 			eikthyr.Offering = "TrophyDeer";
@@ -331,7 +403,8 @@ namespace VikingVillages
 			Brings("MushroomYellow", QuestKind.RaidBurialChambers, BlackForest);
 			Brings("TrollHide", QuestKind.HuntTrolls, BlackForest);
 			Brings("BlackMetalScrap", QuestKind.HuntGoblins, Plains);
-			Brings(Circlet, QuestKind.BuyCirclet, Swamp);
+			Brings(Circlet, QuestKind.BuyCirclet, BlackForest);
+			Brings(Belt, QuestKind.BuyBelt, BlackForest);
 			Brings("HardAntler", QuestKind.KillEikthyr, Meadows);
 			Brings("QueenBee", QuestKind.FindBees, Meadows);
 			Brings("Honey", QuestKind.FindBees, Meadows);

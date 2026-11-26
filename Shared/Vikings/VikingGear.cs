@@ -85,7 +85,8 @@ namespace Kriona.Vikings
 		public float MeleeScale = 1f;
 
 		/// <summary>
-		/// The forsaken power a viking of the biome can use, or null
+		/// The forsaken power a zombie viking of the biome can use - its own boss's, like Eikthyr's in the Meadows, and
+		/// in the Deep North, which has no boss, Fader's - or null
 		/// </summary>
 		public string Power;
 	}
@@ -152,7 +153,7 @@ namespace Kriona.Vikings
 				Ammo = new[] { "ArrowWood", "ArrowFlint", "ArrowFire" },
 				Shields = new[] { "ShieldWood" },
 				Armor = new[] { new ArmorSet("ArmorRagsChest", "ArmorRagsLegs", null, null), new ArmorSet("ArmorLeatherChest", "ArmorLeatherLegs", "HelmetLeather", "CapeDeerHide") },
-				Health = 50f, SkillMin = VikingCore.SkillFloor, SkillMax = 12f, CoinsMin = 0, CoinsMax = 10, Remains = null, Unarmed = 25f, MeleeScale = 1.4f, Power = null
+				Health = 50f, SkillMin = VikingCore.SkillFloor, SkillMax = 12f, CoinsMin = 0, CoinsMax = 10, Remains = null, Unarmed = 25f, MeleeScale = 1.4f, Power = "GP_Eikthyr"
 			},
 			new BiomeGear
 			{
@@ -161,7 +162,7 @@ namespace Kriona.Vikings
 				Ammo = new[] { "ArrowBronze" },
 				Shields = new[] { "ShieldBronzeBuckler" },
 				Armor = new[] { new ArmorSet("ArmorTrollLeatherChest", "ArmorTrollLeatherLegs", "HelmetTrollLeather", "CapeTrollHide"), new ArmorSet("ArmorBerserkerChest", "ArmorBerserkerLegs", "HelmetBerserkerHood", null), new ArmorSet("ArmorBronzeChest", "ArmorBronzeLegs", "HelmetBronze", null) },
-				Health = 120f, SkillMin = 13f, SkillMax = 25f, CoinsMin = 10, CoinsMax = 30, Remains = null, Unarmed = 45f, MeleeScale = 1.7f, Power = "GP_Eikthyr"
+				Health = 120f, SkillMin = 13f, SkillMax = 25f, CoinsMin = 10, CoinsMax = 30, Remains = null, Unarmed = 45f, MeleeScale = 1.7f, Power = "GP_TheElder"
 			},
 			new BiomeGear
 			{
@@ -170,7 +171,7 @@ namespace Kriona.Vikings
 				Ammo = new[] { "ArrowIron", "ArrowPoison" },
 				Shields = new[] { "ShieldBanded", "ShieldRoots", "ShieldIronBuckler" },
 				Armor = new[] { new ArmorSet("ArmorRootChest", "ArmorRootLegs", "HelmetRoot", null), new ArmorSet("ArmorIronChest", "ArmorIronLegs", "HelmetIron", null) },
-				Health = 200f, SkillMin = 26f, SkillMax = 37f, CoinsMin = 30, CoinsMax = 40, Unarmed = 75f, MeleeScale = 1.8f, Power = "GP_TheElder"
+				Health = 200f, SkillMin = 26f, SkillMax = 37f, CoinsMin = 30, CoinsMax = 40, Unarmed = 75f, MeleeScale = 1.8f, Power = "GP_Bonemass"
 			},
 			new BiomeGear
 			{
@@ -180,7 +181,7 @@ namespace Kriona.Vikings
 				Shields = new[] { "ShieldSilver" },
 				Armor = new[] { new ArmorSet("ArmorFenringChest", "ArmorFenringLegs", "HelmetFenring", null) },
 				Cape = "CapeWolf",
-				Health = 300f, SkillMin = 38f, SkillMax = 50f, CoinsMin = 40, CoinsMax = 70, Unarmed = 95f, MeleeScale = 1.75f, Power = "GP_Bonemass"
+				Health = 300f, SkillMin = 38f, SkillMax = 50f, CoinsMin = 40, CoinsMax = 70, Unarmed = 95f, MeleeScale = 1.75f, Power = "GP_Moder"
 			},
 			new BiomeGear
 			{
@@ -190,7 +191,7 @@ namespace Kriona.Vikings
 				Shields = new[] { "ShieldBlackmetal" },
 				Armor = new[] { new ArmorSet("ArmorLoxChest", "ArmorLoxLegs", "HelmetLox", "CapeLox"), new ArmorSet("ArmorBerserkerUndeadChest", "ArmorBerserkerUndeadLegs", "HelmetBerserkerUndead", null), new ArmorSet("ArmorPaddedCuirass", "ArmorPaddedGreaves", "HelmetPadded", "CapeLinen") },
 				Cape = "CapeLox",
-				Health = 450f, SkillMin = 50f, SkillMax = 62f, CoinsMin = 70, CoinsMax = 100, Unarmed = 110f, MeleeScale = 1.25f, Power = "GP_Moder"
+				Health = 450f, SkillMin = 50f, SkillMax = 62f, CoinsMin = 70, CoinsMax = 100, Unarmed = 110f, MeleeScale = 1.25f, Power = "GP_Yagluth"
 			},
 			new BiomeGear
 			{
@@ -200,7 +201,7 @@ namespace Kriona.Vikings
 				Shields = new[] { "ShieldCarapace", "ShieldCarapaceBuckler" },
 				Armor = new[] { new ArmorSet("ArmorCarapaceChest", "ArmorCarapaceLegs", "HelmetCarapace", "CapeFeather") },
 				Cape = "CapeFeather",
-				Health = 650f, SkillMin = 63f, SkillMax = 75f, CoinsMin = 100, CoinsMax = 140, Unarmed = 125f, Power = "GP_Yagluth"
+				Health = 650f, SkillMin = 63f, SkillMax = 75f, CoinsMin = 100, CoinsMax = 140, Unarmed = 125f, Power = "GP_Queen"
 			},
 			new BiomeGear
 			{
@@ -210,7 +211,7 @@ namespace Kriona.Vikings
 				Shields = new[] { "ShieldFlametal" },
 				Armor = new[] { new ArmorSet("ArmorAshlandsMediumChest", "ArmorAshlandsMediumlegs", "HelmetAshlandsMediumHood", "CapeAsksvin"), new ArmorSet("ArmorFlametalChest", "ArmorFlametalLegs", "HelmetFlametal", "CapeAsh") },
 				Cape = "CapeAsksvin",
-				Health = 900f, SkillMin = 76f, SkillMax = 87f, CoinsMin = 140, CoinsMax = 200, Unarmed = 145f, Power = "GP_Queen"
+				Health = 900f, SkillMin = 76f, SkillMax = 87f, CoinsMin = 140, CoinsMax = 200, Unarmed = 145f, Power = "GP_Fader"
 			},
 			new BiomeGear
 			{

@@ -1,6 +1,6 @@
 # Viking Villages - How It Works
 
-Everything Viking Villages does, in full. The [README](README.md) has the short version. [JOBS.md](JOBS.md) lists every job a living Viking does in the order they pick them, with the numbers each goes by, [QUESTS.md](QUESTS.md) covers the quests, [DIALOG.md](DIALOG.md) every line the Vikings say, [NAMES.md](NAMES.md) the names they and their villages go by, and [COMMANDS.md](COMMANDS.md) the console commands.
+Everything Viking Villages does, in full. The [README](README.md) has the short version. [JOBS.md](JOBS.md) lists every job a living Viking does in the order they pick them, with the numbers each goes by, [QUESTS.md](QUESTS.md) covers the quests, [DIALOG.md](DIALOG.md) every line the Vikings say, [NAMES.md](NAMES.md) the names they and their villages go by, [PROGRESSION.md](PROGRESSION.md) everything that changes with a Viking's or village's biome, side by side, and [COMMANDS.md](COMMANDS.md) the console commands.
 
 - [Villages](#villages)
 - [Living Vikings](#living-vikings)
@@ -20,7 +20,7 @@ Everything Viking Villages does, in full. The [README](README.md) has the short 
 - Every village has at least 3 houses in its core, or 4 for a farm in or within 150 meters of any biome harder than the Meadows, like the Black Forest - a farm generated with fewer, counting its farmhouses and the empty houses close by them, gets more farmhouses inside its fence, or just outside it when there's no room inside
 - No village stands over the world's start, where you first arrive - a farm the game would put within 68 meters of the start's edge, close enough for its village to reach it, is left out of the world, which then has one fewer farm, and a village a portal leads to is never put there either
 - Two villages whose farms are within 100 meters of each other are joined by a path between their nearest farmhouses
-- A village counts as the hardest biome within 50 meters of its farm's middle - from the Meadows through the Black Forest, the Swamp, the Mountains, the Plains, the Mistlands and the Ashlands to the Deep North - so a Meadows village by the Black Forest has the Black Forest's Vikings
+- A village counts as the hardest biome within 50 meters of its farm's middle - from the Meadows through the Black Forest, the Swamp, the Mountains, the Plains, the Mistlands and the Ashlands to the Deep North - so a Meadows village by the Black Forest has the Black Forest's Vikings, cooking stations, tools and quests. Its station upgrades, starter food and pickaxes, shore boat, raised ground, grausten bridges, wisp lights and portal home go by the biome at its farm's very middle instead (see [PROGRESSION.md](PROGRESSION.md#which-biome-counts))
 
 ### Houses, Core and Outposts
 
@@ -143,7 +143,7 @@ Everything Viking Villages does, in full. The [README](README.md) has the short 
 
 ### Who They Are
 
-- A living Viking is a Viking of their village's biome - their health and skills rolled from their biome's range - from 50 health and skills of 0-12 in the Meadows to 1200 health and skills of 88-100 in the Deep North, each skill rolled on its own - and their gear all their biome's own (a piece their biome has none of, like a bow, still comes from the nearest biome below that has one), and from the Mountains on they always wear their set's helmet
+- A living Viking is a Viking of their village's biome - their skills rolled from their biome's range, from 1-12 in the Meadows to 88-100 in the Deep North, each skill rolled on its own, their health what their food gives them, never below their biome's least (see [Eating](#eating)), and their melee hits scaled by their biome (see [PROGRESSION.md](PROGRESSION.md)) - and their gear all their biome's own (a piece their biome has none of, like a bow, still comes from the nearest biome below that has one), and from the Mountains on they always wear their set's helmet
 - They don't groan like the draugr
 - Spawn one with the console command `spawn Viking` - near a village they join it, and out in the wild they're lost for a little while before setting out for the nearest village (see [Vikings With No Village](#vikings-with-no-village))
 
@@ -170,6 +170,8 @@ Everything Viking Villages does, in full. The [README](README.md) has the short 
 - Each living Viking starts with a torch of their own, which burns down while they hold it, the same as yours - about a night's worth - and is gone once it burns out (see [Torches and Circlets](#torches-and-circlets))
 - Some Vikings start with a Dverger circlet in place of a torch, more of them the harder their biome: none in the Meadows, 10% in the Black Forest, 30% in the Swamp, 50% in the Mountains, 70% in the Plains and every one from the Mistlands on
 - A Viking of the Mistlands starts with a wisp light worn on their belt, which floats beside them and pushes back the mist the way yours does
+- Some Vikings start with a strength belt (Megingjord), more of them the harder their biome: none in the Meadows, 20% in the Black Forest, 40% in the Swamp, 60% in the Mountains, 80% in the Plains and every one from the Mistlands on. It goes in the same slot as a wisp light, so a Mistlands Viking keeps theirs in their pack and puts it on for a quest outside the Mistlands, carrying home 150 more
+- Some start with Haldor's wider pockets, a 5th row in their inventory - 20% in the Mountains, 40% in the Plains, 60% in the Mistlands, 80% in the Ashlands and every one in the Deep North - and some with his deeper pockets as well, a 6th row - 20% in the Mistlands, 40% in the Ashlands and 60% in the Deep North. Deeper pockets only come with wider ones. A village buys any of these from Haldor for a Viking without them (see [Quests](#quests))
 - What a Viking wears does for them what it does for you - a strength belt (Megingjord) raises how much they carry, gear that raises a skill raises theirs, gear that adds armor or speeds healing does the same for them, and gear that changes speed, resistances, stagger, fall damage, jumping, noise or attack damage works as it does on any creature. With nothing in their utility slot, they put on a belt or other utility item that does something when worn, from loot they pick up or a chest, the way they take up better armor - each keeps to the one they wear, so a spare goes in a chest for another Viking
 - What they carry - wood and loot - is in their inventory. A Viking who rises as a zombie keeps it, along with their armor, weapon and shield, and drops the wood and loot when their zombie dies, while a Viking who stays dead drops them where they fall
 
@@ -193,7 +195,8 @@ Everything Viking Villages does, in full. The [README](README.md) has the short 
 ### Their Inventory
 
 - Look at a living Viking and press I to open their inventory beside yours - yours on the left, under your character card, and theirs on the right, under a card of their own with their name and a Skills button that shows their skills, with no crafting panel. Their armor and weight show in tabs on the left of their inventory, the way yours show on the right of yours, and both of you get a health tab between them - your health and theirs, now and at most, marked with the heart a tamed animal shows as you pet it - and their status effects show under it the way yours show on your HUD - each one's icon, name and time left, including resting, rested, wet, cold and poisoned - with yours shown the same way under your inventory. The window goes back to its usual layout once it closes
-- What they wear - equipped, or sheathed on their back - is marked the way your equipped items are, and their weight shows with the most they can carry, 300. Move things between them by dragging, or ctrl-click to hand something over or take it, and right-click something they wear to have them take it off, or something they don't to have them put it on, whether or not it's better than theirs - armor or a utility item where it goes, arrows as the ones they shoot, and a weapon or shield in their hands the way you'd hold one, which they put on their back once their inventory is closed and there's no danger. Either takes them as long as it takes you, playing your equipping animation, with the piece marked as queued meanwhile - and a one-handed weapon and a shield go on or come off together, the way your R key draws or sheathes both hands at once. A chest's take-all and place-stacks buttons aren't there
+- Their inventory has 4 rows like yours, a 5th with wider pockets and a 6th with deeper pockets as well (see [Gear](#gear))
+- What they wear - equipped, or sheathed on their back - is marked the way your equipped items are, and their weight shows with the most they can carry, 300, or 450 with a strength belt on. Move things between them by dragging, or ctrl-click to hand something over or take it, and right-click something they wear to have them take it off, or something they don't to have them put it on, whether or not it's better than theirs - armor or a utility item where it goes, arrows as the ones they shoot, and a weapon or shield in their hands the way you'd hold one, which they put on their back once their inventory is closed and there's no danger. Either takes them as long as it takes you, playing your equipping animation, with the piece marked as queued meanwhile - and a one-handed weapon and a shield go on or come off together, the way your R key draws or sheathes both hands at once. A chest's take-all and place-stacks buttons aren't there
 - On their own they always switch to the best gear they have: armor for an empty slot or better than what they wear, a better shield or a better weapon of their kind sitting in their inventory unused - like a piece you took off them, gave them, or had them swap for something worse - they put on after 10 seconds, taking the same time, once their inventory is closed. A pickaxe is only ever a tool to them, kept for mining - they never take one up as a weapon or fight with one
 - While it's open they stop and stand facing you and leave their gear as it is - they don't put anything on, draw or sheathe their weapon, or pull out a torch - until you close it with I or the game's own keys, or it closes as a chest's does when they're called away to a fight and get too far from you. Whatever you take that they were wearing, they take off
 
@@ -355,7 +358,7 @@ How living Vikings see, fight, get around and look after themselves. What they d
 
 - When you use a forsaken power, the living Vikings, Dvergr Vikings and Dvergr within 10 meters of you who aren't angry at you get it too, the same as other players near you do, and it does for them what it does for any creature. One of them who's awake thanks you for it, or one or two when there are more. Each Viking who gets it learns it, if they didn't know it already
 - A power that reaches you from another player or a Viking says who activated it - "Astrid activates the power of the Elder" - in place of the power's own message, which for Eikthyr's would tell you that you activated it. A Viking who doesn't know you yet is "A Viking"
-- They have forsaken powers of their own. A Viking knows the power of their biome and of every biome before it - none in the Meadows, Eikthyr's in the Black Forest, up to Moder's in the Plains, and all of them in the Deep North - and learns any other power they get, from you or from another Viking. They can only use one they know, and use it the way you do: it reaches you and the other players they aren't angry at, and the Dvergr, Dvergr Vikings and living Vikings within 10 meters who aren't angry at players - and afterwards they can't use any power until the power's own cooldown is over, 20 minutes for the game's, the night you sleep through not counting, as it doesn't for yours. They say which power they're using as they use it. When more than one would do, they take the first of these they know:
+- They have forsaken powers of their own. A Viking knows the power of their own biome's boss and of every biome's before it - Eikthyr's in the Meadows, up to the Elder's in the Black Forest, up to Yagluth's in the Plains, and all of them from the Ashlands on, since the Deep North has no boss - and learns any other power they get, from you or from another Viking. They can only use one they know, and use it the way you do: it reaches you and the other players they aren't angry at, and the Dvergr, Dvergr Vikings and living Vikings within 10 meters who aren't angry at players - and afterwards they can't use any power until the power's own cooldown is over, 20 minutes for the game's, the night you sleep through not counting, as it doesn't for yours. They say which power they're using as they use it. When more than one would do, they take the first of these they know:
   - In a fight, never against a single enemy or only the Meadows' creatures - greylings, boars, necks, deer and Meadows zombie Vikings - counting the enemies within 20 meters: the Queen's against enemies whose attacks poison, Fader's against fire, Moder's against frost, then Yagluth's, Bonemass's or the Elder's against 3 or more enemies, and the Elder's when they're below half their health
   - As they start foraging, which raises their Farming skill, Yagluth's
   - As their job first takes them out of the village - foraging, hunting, getting wood or loot, cutting trees and the like - Eikthyr's
@@ -370,24 +373,25 @@ A Viking is of their village's biome (see [Farms](#farms)), which sets their hea
 
 #### Meadows
 
-- 50 health and skills of 0-12, and no forsaken power of their own
+- Skills of 1-12, at least 50 health, and Eikthyr's power, which they use as their job takes them out of the village
+- No strength belts or pockets
 - The Viking with the bow also carries a melee weapon, and the rest carry one weapon of any kind
 - No Dverger circlets - every Viking lights their way with torches
-- They hunt boar and necks, and an archer deer too - never out onto the ground of a harder biome, so a Meadows Viking doesn't go after a greyling on the Black Forest's ground (see [Hunting](#hunting))
+- They hunt boar and necks, and an archer deer too - never greylings, the Black Forest's prey, and never out onto the ground of a harder biome (see [Hunting](#hunting))
 - A Meadows village never goes mining, and its workbench is level 2
 
 #### Black Forest
 
-- They know Eikthyr's power, and use it as their job takes them out of the village
+- They know the Elder's power as well as Eikthyr's
 - A third of the Vikings start with only a bow and arrows, a third with only a melee weapon and a third with both
-- 10% start with a Dverger circlet
+- 10% start with a Dverger circlet and 20% with a strength belt, and the village can go on a quest to buy each from Haldor once a week
 - Greylings are prey, and a single greyling never sends a Viking out of the village home - they fight it where they are
 - The village keeps 4 pickaxes and an axe that cuts fine wood in storage, and gets a cauldron by its fire. A farm in or within 150 meters of the Black Forest or a harder biome is built bigger
 
 #### Swamp
 
 - A fifth of the Vikings start with only a bow and arrows, a fifth with only a melee weapon and the rest with both
-- 30% start with a Dverger circlet, and the village can go on a quest to buy one from a trader once a week
+- 30% start with a Dverger circlet and 40% with a strength belt
 - A leech is never a threat until it hurts you or a Viking, however near it lies, so they don't wade into the Swamp's water after one. Only an archer hunts leeches, shooting from the bank, and other leeches nearby don't put them off. A plain draugr is prey - never an elite or an archer - and its entrails go into sausages
 - The Swamp's own rain, which hardly ever lets up, doesn't keep them in: in it they stroll, pet the boars, talk outside and walk rather than hurry, the same as on a dry day - though they still rest under a roof when hurt and don't go out to the fire to get rested again, since they'd only get wet, and a storm in the Swamp keeps them in as it does anywhere
 - The village's ground is raised out of the swamp water it stands in (see [Ground, Paths and Bridges](#ground-paths-and-bridges)), and its cooking stations are iron
@@ -397,12 +401,12 @@ A Viking is of their village's biome (see [Farms](#farms)), which sets their hea
 - Every Viking starts with both a melee weapon and a bow or crossbow, always wears their set's helmet and a cape, and every cape of the Mountains resists frost
 - In freezing weather, a Viking whose gear doesn't resist frost leaves their work to warm up by the fire (see [Weather](#weather)) - and the night watch keeps watch from the fire's warmth rather than patrolling. In freezing weather, a drop into deep water is only safe when their gear resists frost
 - Keeping the frost off comes first when they take up gear: while nothing else they wear resists frost, they take up armor that does whatever its armor, and never swap a piece that does for one that doesn't
-- 50% start with a Dverger circlet
+- 50% start with a Dverger circlet, 60% with a strength belt and 20% with wider pockets, and the village can go on a quest to buy wider pockets from Haldor once a week
 - Wolves are prey, and drakes for an archer, but a wolf only with no other monster within 50 meters of it, its own pack included
 
 #### Plains
 
-- 70% start with a Dverger circlet
+- 70% start with a Dverger circlet, 80% with a strength belt and 40% with wider pockets
 - Prey that isn't only for archers - lox, wolves, moose and the like - is hunted as a party of 3-4, never alone (see [Hunting](#hunting)), and a lox only with no other monster within 50 meters of it, since angering one of a herd could have the whole herd on them. Hunting quests send 3-5
 - A Viking a deathsquito comes after meets its dive. One with a shield takes up a one-handed weapon beside it, raises the shield as the deathsquito comes within 8 meters and holds it, then strikes back as soon as the sting is spent. One with a two-handed weapon stands their ground as it dives and times their swing to land just after it comes within reach, from how fast it's coming and how long that weapon's swing takes to land, which they learn from their own swings. One with neither fights it the usual way - an archer shoots it
 - The village's ground is raised out of any water it stands in, and dry ground by the sea is never lowered into it
@@ -411,6 +415,7 @@ A Viking is of their village's biome (see [Farms](#farms)), which sets their hea
 
 - In the Mistlands' mist, a Viking sees only 10 meters, as the Dvergr do - unless they or what they're looking at are within reach of a wisp light, a wisp torch or one of the Dvergr's demisters - though they still hear you coming as far off as always
 - Every Viking starts with a Dverger circlet, and a wisp light worn on their belt, which floats beside them and pushes back the mist the way yours does
+- Every Viking starts with a strength belt too, which they keep in their pack since the wisp light takes its slot, and put on for a quest outside the Mistlands. 60% start with wider pockets and 20% with deeper pockets as well, and the village can go on a quest to buy deeper pockets from Haldor once a week
 - Their village is lit with wisp torches and a wisp fountain (see [Lights Against the Mist](#lights-against-the-mist)), since its fire doesn't push back the mist
 - Hares are prey. The Dvergr hire some Vikings here (see [Dvergr Vikings](#dvergr-vikings))
 
@@ -418,13 +423,15 @@ A Viking is of their village's biome (see [Farms](#farms)), which sets their hea
 
 - They keep off the Ashlands' lava and out of the boiling sea around the Ashlands, always - even in a fight, or on fire with nowhere else to put it out. Their paths go around both with a meter to spare, they stop short rather than step onto either, they leave alone an enemy standing over lava, and one knocked in gets straight back out. A bridge, floor or rock over the lava is safe ground to them, as it is to you
 - A Viking on fire never runs into the boiling sea to put themselves out, and a drop into it is never safe
+- Every Viking wears a strength belt, 80% start with wider pockets and 40% with deeper pockets as well
 - On the road they never cross the lava, and never sail the boiling sea in a boat it would burn, which only the drakkar holds up in (see [Vikings With No Village](#vikings-with-no-village))
 - Asksvin are prey, and voltures for an archer
 - The village's paths go around the lava and the boiling sea, crossing on grausten bridges, its bonfire and portal never stand on them, and it has a portal home to an easier village (see [Portals Home](#portals-home))
 
 #### Deep North
 
-- 1200 health and skills of 88-100, and every forsaken power
+- Skills of 88-100, at least 325 health, and every forsaken power, as in the Ashlands
+- Every Viking wears a strength belt and has wider pockets, and 60% have deeper pockets as well
 - Every cape of the Deep North resists frost, so freezing weather doesn't drive them to the fire the way it does a Viking without one (see [Mountains](#mountains)), and they never carry Dyrnwyn
 - They knock the heavy snow off the village's pieces and clear the deep snow on its ground (see [Clear Snow](JOBS.md#clear-snow))
 - Moose and seals are prey, a moose only with no other monster within 50 meters of it
@@ -471,7 +478,7 @@ By day the Vikings keep their village going. [JOBS.md](JOBS.md) has every job in
 
 ### Hunting
 
-- They hunt. Now and then the village's archer goes out after prey up to 60 meters past the village's edge, fighting greylings along the way - or, when the village has no archer, any Viking goes, after the prey that doesn't take an archer. Each biome has its own prey, and a Viking hunts that of the biome their gear comes from, every biome before it, and the one right after it - so a Meadows Viking hunts greylings but not leeches - but only on ground no harder than their own biome, so a Meadows Viking never goes out onto the Black Forest's ground or the Plains', and lets go of prey that runs onto it:
+- They hunt. Now and then the village's archer goes out after prey up to 60 meters past the village's edge, fighting greylings along the way - or, when the village has no archer, any Viking goes, after the prey that doesn't take an archer. Each biome has its own prey, and a Viking hunts that of the biome their gear comes from and every biome before it - so a Black Forest Viking hunts greylings but not the Swamp's leeches and draugr - but only on ground no harder than their own biome, so a Meadows Viking never goes out onto the Black Forest's ground or the Plains', and lets go of prey that runs onto it:
 
   | Biome | Prey | Only for an archer |
   |---|---|---|
@@ -519,7 +526,7 @@ By day the Vikings keep their village going. [JOBS.md](JOBS.md) has every job in
 
 ## Quests
 
-What they can't get at home, they go out on a quest for, out of your sight - when the next thing their goal needs is something like ore to mine or a crypt to raid, and their biome isn't easier than the quest's: a Meadows village never goes mining. They also go hunting or foraging, taking turns, when their chests are low on food - fewer than three foods for each Viking - and they've found no food around the village for half a day - picked none, and gone for no prey that drops any - or the chests hold less than one food for each Viking, when food comes before their goal, so the wounded have something to heal on; cutting trees when they're out of wood and find none to gather; to the nearest trader they can sell to - Hildir from the Meadows on, Haldor from the Black Forest on and the Bog Witch from the Swamp on - to sell their amber, pearls, rubies and silver necklaces once they're worth 100 coins; and, from the Swamp on, once a week to buy a Dverger circlet for a Viking still using torches when the village's coins and treasure will pay for it, the one who needs it going and wearing it home. A village that can't be left goes hunting, foraging or cutting trees as soon as it runs low. Every detail of each quest is in [QUESTS.md](QUESTS.md).
+What they can't get at home, they go out on a quest for, out of your sight - when the next thing their goal needs is something like ore to mine or a crypt to raid, and their biome isn't easier than the quest's: a Meadows village never goes mining. They also go hunting or foraging, taking turns, when their chests are low on food - fewer than three foods for each Viking - and they've found no food around the village for half a day - picked none, and gone for no prey that drops any - or the chests hold less than one food for each Viking, when food comes before their goal, so the wounded have something to heal on; cutting trees when they're out of wood and find none to gather; to the nearest trader they can sell to - Hildir from the Meadows on, Haldor from the Black Forest on and the Bog Witch from the Swamp on - to sell their amber, pearls, rubies and silver necklaces once they're worth 100 coins; and to Haldor, each at most once a week, when the village's coins and treasure will pay for it - from the Black Forest on to buy a Dverger circlet for a Viking still using torches and a strength belt for one without, from the Mountains on wider pockets for one without, and from the Mistlands on deeper pockets for one with wider pockets only - the one who needs it going, and wearing it home or having the pockets sewn in there. A village that can't be left goes hunting, foraging or cutting trees as soon as it runs low. Every detail of each quest is in [QUESTS.md](QUESTS.md).
 
 | Quest | Biome from | Vikings | Takes | Brings back |
 | --- | --- | --- | --- | --- |
@@ -537,7 +544,10 @@ What they can't get at home, they go out on a quest for, out of your sight - whe
 | Kill Eikthyr | Meadows | 2 | 2 deer trophies, left on his altar to summon him - hunted for first when the village has fewer | Hard antlers, but never his trophy - no boss's trophy comes home from a quest - and never counts as you having killed him |
 | Find bees | Meadows | 1 | Fewer than 6 beehives in the village | Queen bees and honey |
 | Sell treasure | Meadows | 2 | | Coins, from whichever trader they reach soonest - Hildir, Haldor from the Black Forest on, the Bog Witch from the Swamp on |
-| Buy a circlet | Swamp | 2 | Coins and treasure enough | A Dverger circlet, and the coins left over |
+| Buy a circlet | Black Forest | 2 | Coins and treasure enough | A Dverger circlet, and the coins left over |
+| Buy a strength belt | Black Forest | 2 | Coins and treasure enough | A strength belt, and the coins left over |
+| Buy wider pockets | Mountains | 2 | Coins and treasure enough | A 5th row in the inventory of the one who needed it, and the coins left over |
+| Buy deeper pockets | Mistlands | 2 | Coins and treasure enough | A 6th row in the inventory of the one who needed it, and the coins left over |
 
 - A quest takes as many Vikings as it needs - more for one that takes a pickaxe or axe while the village has more of them - as long as 2 stay home, and the healthiest go, those with the tool first. One village has one quest out at a time, and rests a quarter of a day after one comes back before sending another. Picked late in the day, the Vikings wait for the next morning and set out as they wake
 - Those going take the tools they need from the chests, one of them says roughly when they'll be back - "in a couple of hours", "tomorrow", "in a couple of days" - and they run out of the village and are gone, or go from wherever they are when they haven't got out in a minute and a half. While they're gone the village counts them as its own, so no one comes in their place
@@ -614,7 +624,7 @@ Some Vikings have taken work with the Dvergr in the Mistlands. A Dvergr Viking i
 - Like living Vikings, they have the Mistlands' gear, fully repaired, with a Dverger circlet they light at night and a wisp light against the mist, and a name of their own - they're plain Viking to you until they know you. Their skills rise as they use them, and they see no farther in the mist than living Vikings, but for the wisp light they carry
 - They have words of their own, about working for the Dvergr and how they came to be hired - greeting you as you arrive and when you talk to them, calling out the enemies they go after, shouting for help when they're badly hurt, and passing on your news the way living Vikings do, sharing only the living Vikings' lines about the Mistlands, about old friends and how you're doing, and about the runestones where they stand and of someone with their name (see [DIALOG.md](DIALOG.md)). They stand facing you for 4 seconds when you talk to them, and remember when they met you and how many times you've talked, the way living Vikings do
 - You can talk to them, but can't name them or open their inventory
-- They know the forsaken powers up to Yagluth's and the Queen's too, learn the ones they're given, and use them in fights and when badly hurt (see [Forsaken Powers](#forsaken-powers))
+- They know the forsaken powers up to the Queen's, as Mistlands Vikings, learn the ones they're given, and use them in fights and when badly hurt (see [Forsaken Powers](#forsaken-powers))
 - When they die they drop 100-140 coins and 0-2 entrails, multiplied by their stars, and each piece of their gear has a chance to drop (see [Configuration](README.md#configuration))
 
 ## With Zombie Apocalypse

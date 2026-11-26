@@ -22,7 +22,7 @@ This page gives a short tour of each feature. Every detail of how it works is in
 
 ## Living Vikings
 
-- Each is a Viking of their village's biome - from 50 health and the Meadows' rags and flint up to 1200 health and the Deep North's best gear - and their skills rise as they use them, the way yours do (see [Who They Are](LOGIC.md#who-they-are), [Skills](LOGIC.md#skills) and [Gear](LOGIC.md#gear))
+- Each is a Viking of their village's biome - from the Meadows' rags and flint up to the Deep North's best gear, the harder the biome the likelier a strength belt and Haldor's wider and deeper pockets - and their skills rise as they use them, the way yours do (see [Who They Are](LOGIC.md#who-they-are), [Skills](LOGIC.md#skills), [Gear](LOGIC.md#gear) and [PROGRESSION.md](PROGRESSION.md))
 - They have Norse names of their own, each village has a leader, and you can rename them (see [Names](LOGIC.md#names))
 - They greet you as you arrive, talk to you and each other, remember you, and become old friends over time (see [Meeting and Talking](LOGIC.md#meeting-and-talking) and [DIALOG.md](DIALOG.md))
 - Open a Viking's inventory to hand them gear, take it back, and see their skills, health and status effects (see [Their Inventory](LOGIC.md#their-inventory))
@@ -48,7 +48,7 @@ This page gives a short tour of each feature. Every detail of how it works is in
 - They cook what they hunt, and make meals at the cauldron (see [Cooking](LOGIC.md#cooking))
 - They stalk and hunt prey, forage and keep bees (see [Hunting](LOGIC.md#hunting) and [Foraging and Bees](LOGIC.md#foraging-and-bees))
 - They craft arrows, torches, tools, weapons and armor, repair and upgrade their gear, and smelt ore toward the next piece of gear the village needs (see [Crafting and Gear](LOGIC.md#crafting-and-gear) and [The Village's Goal](LOGIC.md#the-villages-goal))
-- What they can't get at home, they go out on quests for, out of sight - hunting, mining, raiding crypts and caves, killing Eikthyr and trading - coming home hurt, or sometimes not at all (see [Quests](LOGIC.md#quests) and [QUESTS.md](QUESTS.md))
+- What they can't get at home, they go out on quests for, out of sight - hunting, mining, raiding crypts and caves, killing Eikthyr and trading with Haldor for circlets, strength belts and pockets - coming home hurt, or sometimes not at all (see [Quests](LOGIC.md#quests) and [QUESTS.md](QUESTS.md))
 
 ## Growing a Village
 

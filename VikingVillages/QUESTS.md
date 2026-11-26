@@ -13,7 +13,11 @@ It picks the first of these that it can go on:
 3. Hunting or foraging, taking turns, when the chests hold fewer than three foods for each Viking - leaving out the food in chests out of reach (see [JOBS.md](JOBS.md#get-food)) - and no food's been found around the village for half a day - no food or honey picked, and no prey gone for that drops meat or food, so hunting greylings for resin or picking flint doesn't count - or as soon as it runs low when the village can't be left
 4. Cutting trees for 50 wood when it's out of wood and finds none to gather - or as soon as it runs low when the village can't be left
 5. Selling treasure to the nearest trader once its amber, pearls, rubies and silver necklaces are worth 100 coins
-6. Buying a Dverger circlet, from the Swamp on, at most once every 7 game days, when a Viking still uses torches and the coins and treasure will pay for it
+6. Buying from Haldor, each at most once every 7 game days, when the coins and treasure will pay for it - in this order:
+   1. A Dverger circlet, from the Black Forest on, when a Viking still uses torches
+   2. A strength belt (Megingjord), from the Black Forest on, when a Viking has none of their own and the chests hold no spare one
+   3. Wider pockets, from the Mountains on, when a Viking has none
+   4. Deeper pockets, from the Mistlands on, when a Viking has wider pockets but no deeper ones
 
 A village can only go on a quest when its biome isn't easier than the quest's or the item's, it has the stations the quest needs, and it can spare the Vikings with 2 left at home. The healthiest go, those with the quest's tool first - and on a quest that fights, the strongest before them, those of the hardest biome by the gear they came with, so a Viking from a harder biome than the village's goes before the rest.
 
@@ -38,7 +42,10 @@ Vikings is how many go - the second number from the Plains on - and up to how ma
 | Kill Eikthyr | Meadows | 2 | 2 deer trophies, which they leave on his altar to summon him - hunted for first when the village has fewer | Eikthyr's altar | 5 min, or as long as the fight takes when that's longer | 4 h | A fight - see [Fights](#fights) | See [Eikthyr](#eikthyr) |
 | Find bees | Meadows | 1 | Fewer than 6 beehives in the village | Ground of the Meadows | 10 min | 8 h | 15% | See [Bees](#bees) |
 | Sell treasure | Meadows | 2 | | Whichever trader they get to soonest of those the village can sell to - Hildir from the Meadows on, Haldor from the Black Forest on and the Bog Witch from the Swamp on | 2 min | 1 h 36 min | 5% | See [Traders](#traders) |
-| Buy a circlet | Swamp | 2 | Coins and treasure enough | Haldor | 2 min | 1 h 36 min | 5% | See [Traders](#traders) |
+| Buy a circlet | Black Forest | 2 | Coins and treasure enough | Haldor | 2 min | 1 h 36 min | 5% | See [Traders](#traders) |
+| Buy a strength belt | Black Forest | 2 | Coins and treasure enough | Haldor | 2 min | 1 h 36 min | 5% | See [Traders](#traders) |
+| Buy wider pockets | Mountains | 2 | Coins and treasure enough | Haldor | 2 min | 1 h 36 min | 5% | See [Traders](#traders) |
+| Buy deeper pockets | Mistlands | 2 | Coins and treasure enough | Haldor | 2 min | 1 h 36 min | 5% | See [Traders](#traders) |
 
 ## What They Bring Back
 
@@ -133,7 +140,7 @@ For what the village wants - raspberries, mushrooms or dandelions in the Meadows
 
 ### Cutting Trees
 
-As much of the wood they went for as they can carry, or as they cut in time to be home before night, unless their axes wear out first. A Viking carries about 300 less their gear, food and potions and their axe - room for about 120 wood, fine wood, core wood or ancient bark each, all of them weighing 2. They bring home everything else the trees they fell drop too - from the standing tree as it falls and every log it breaks into, like resin, feathers and seeds - for as many trees as it takes to give the wood they cut.
+As much of the wood they went for as they can carry, or as they cut in time to be home before night, unless their axes wear out first. A Viking carries about 300 less their gear, food and potions and their axe - room for about 120 wood, fine wood, core wood or ancient bark each, all of them weighing 2 - and 150 more with a strength belt, which a Mistlands Viking, who wears a wisp light in its slot at home, puts on for any quest outside the Mistlands. They bring home everything else the trees they fell drop too - from the standing tree as it falls and every log it breaks into, like resin, feathers and seeds - for as many trees as it takes to give the wood they cut.
 
 - Wood, fine wood, core wood or ancient bark - about 120 each
 - Everything else the trees drop, for that many trees
@@ -255,10 +262,12 @@ A wild hive for each of them. The numbers are for the 1 Viking it takes.
 
 ### Traders
 
-Selling treasure, the first of them takes along the village's amber, amber pearls, rubies and silver necklaces and comes home with what the trader pays for them - every trader pays what it's worth, as they do you. They go to whichever trader's camp they get to soonest of those the village can sell to: Hildir's camp in the Meadows for any village, Haldor in the Black Forest from the Black Forest on, and the Bog Witch's camp in the Swamp from the Swamp on - so a Meadows village only ever sells to Hildir. Those who went name the trader when they talk about it. Buying a circlet, they always go to Haldor, who sells them, taking along the coins and treasure it costs.
+Selling treasure, the first of them takes along the village's amber, amber pearls, rubies and silver necklaces and comes home with what the trader pays for them - every trader pays what it's worth, as they do you. They go to whichever trader's camp they get to soonest of those the village can sell to: Hildir's camp in the Meadows for any village, Haldor in the Black Forest from the Black Forest on, and the Bog Witch's camp in the Swamp from the Swamp on - so a Meadows village only ever sells to Hildir. Those who went name the trader when they talk about it. Buying something, they always go to Haldor, who sells it, the Viking who lacks it going first and taking along every coin and piece of treasure in the chests, and paying what he asks you - 620 coins for a circlet, 950 for a strength belt, 1000 for wider pockets and 2000 for deeper pockets, read from his own price list. Unlike you, they don't need to have beaten Moder before he sells them wider pockets, or the Queen before deeper ones.
 
 - Selling treasure - coins for the treasure, at least 100 worth, since that's when they go
 - Buying a circlet - a Dverger circlet, worn home by the one who needed it, and the coins left over
+- Buying a strength belt - a strength belt, worn home by the one who needed it - carried in their pack in the Mistlands, where their wisp light takes its slot - and the coins left over
+- Buying wider or deeper pockets - a row more in the inventory of the one who needed them, wider pockets the 5th row and deeper pockets the 6th, and the coins left over. Deeper pockets only go on top of wider ones, so a Viking without wider pockets gets those first
 
 ## How Hurt They Come Home
 
@@ -443,7 +452,7 @@ The quest command, which needs `devcommands` - every other command is in [COMMAN
 
 - `kri_vv_quest` - standing in a village, shows everything behind its quests - its goal and the next thing it does toward it, the quest it's on, what each Viking on it takes, works with and brings home, whether its food and wood are running out, its treasure, whether it's trapped, the roads to quests it knows and when its last quest came back
 - `kri_vv_quest <kind> [item]` - starts a quest of that kind at once, whatever the village wants, however long since its last and whatever the time of day - as long as its biome isn't too easy for the quest, it has the stations and coins the quest needs and it can spare the Vikings. Only the player whose game runs the village can start its quests - in single player, always you
-  - The kinds are `Hunt`, `Forage`, `ChopTrees`, `MineCopper`, `MineTin`, `MineSilver`, `RaidCrypts`, `RaidBurialChambers`, `RaidFrostCaves`, `HuntGhosts`, `HuntTrolls`, `HuntGoblins`, `KillEikthyr`, `FindBees`, `SellTreasure` and `BuyCirclet`, in any case - and a kind that isn't one lists them
+  - The kinds are `Hunt`, `Forage`, `ChopTrees`, `MineCopper`, `MineTin`, `MineSilver`, `RaidCrypts`, `RaidBurialChambers`, `RaidFrostCaves`, `HuntGhosts`, `HuntTrolls`, `HuntGoblins`, `KillEikthyr`, `FindBees`, `SellTreasure`, `BuyCirclet`, `BuyBelt`, `BuyWiderPockets` and `BuyDeeperPockets`, in any case - and a kind that isn't one lists them
   - `item` is what it's for, by its prefab name in any case, and the quest is after 20 of it - `kri_vv_quest ChopTrees FineWood` or `kri_vv_quest Hunt DeerHide`, say. With none, it goes for the first thing the quest brings back that the village can go for. An item the quest doesn't bring back lists the ones it does
   - The first time for a quest, the village asks the server for the road, and the quest starts on its own as soon as the server answers, saying so in the console and at the top left of the screen - or is given up on after 30 seconds
 - `kri_vv_quest due` - brings the village's quest home now, once its Vikings have left - only in single player or for the host, whose game keeps them

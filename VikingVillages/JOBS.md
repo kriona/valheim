@@ -609,7 +609,7 @@ They also forage, or hunt, for what crafting is short of - see [Craft Arrows](#c
 
 ### Hunt
 
-An archer, or anyone in a village with no archer, hunts - and short of food, they hunt prey that drops it as day work too (see [Get Food](#get-food)). What counts as prey for them is their biome's, every earlier biome's and the next biome's, standing on ground no harder than their own biome's:
+An archer, or anyone in a village with no archer, hunts - and short of food, they hunt prey that drops it as day work too (see [Get Food](#get-food)). What counts as prey for them is their biome's and every earlier biome's, standing on ground no harder than their own biome's:
 
 | Biome | Prey | Only for archers |
 | --- | --- | --- |

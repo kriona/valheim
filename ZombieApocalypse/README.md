@@ -74,7 +74,7 @@ Zombie Vikings can raid your base:
 
 ## Forsaken Power
 
-Zombie Viking have a chance to use a forsaken power appropriate for their biome the first time it spots an enemy. A tombstone zombie Viking a 50% chance to use your last selected power when a player first comes near. Once a zombie Viking uses its forsaken power, there is a global 30 second cooldown.
+Zombie Viking have a chance to use their biome's boss's forsaken power the first time it spots an enemy - Eikthyr's in the Meadows, the Elder's in the Black Forest and so on up to Fader's in the Ashlands, and Fader's in the Deep North, which has no boss of its own. A tombstone zombie Viking a 50% chance to use your last selected power when a player first comes near. Once a zombie Viking uses its forsaken power, there is a global 30 second cooldown.
 
 ## Dvergr Mages
 

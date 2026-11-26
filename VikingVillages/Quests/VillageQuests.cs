@@ -362,18 +362,26 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// On a village's ZDO, whether its last hunting or foraging quest was a hunt, so they take turns, and when it last
-		/// sent vikings to buy a circlet, in ZNet time ticks
+		/// On a village's ZDO, whether its last hunting or foraging quest was a hunt, so they take turns
 		/// </summary>
 		public static readonly int LastHuntKey = "kriona.VikingVillages.villageLastHunt".GetStableHashCode();
-		public static readonly int LastCircletKey = "kriona.VikingVillages.villageLastCirclet".GetStableHashCode();
+
+		/// <summary>
+		/// Gets the key on a village's ZDO of when it last sent vikings to buy something from Haldor, in ZNet time ticks
+		/// </summary>
+		/// <param name="kind">The quest that buys it</param>
+		/// <returns>The key</returns>
+		private static int LastBoughtKey(QuestKind kind)
+		{
+			return(("kriona.VikingVillages.villageLastBought." + kind).GetStableHashCode());
+		}
 
 		/// <summary>
 		/// What the treasure in a village's chests has to be worth before it's taken to Haldor to sell, in coins, how many
-		/// game days apart the village buys circlets, and how much wood a quest cutting trees is after
+		/// game days apart the village buys each thing from him, and how much wood a quest cutting trees is after
 		/// </summary>
 		public const int SellAt = 100;
-		private const float CircletDays = 7f;
+		private const float BuyDays = 7f;
 		private const int WoodWanted = 50;
 
 		/// <summary>
@@ -397,8 +405,9 @@ namespace VikingVillages
 		/// can go on and spare the vikings for, of hunting or foraging when its chests hold less than a food for each of
 		/// its vikings, the next step of its goal, hunting or foraging when its chests are low on food and it has found
 		/// none around it for a while or it's trapped, cutting trees when it's out of wood,
-		/// selling its treasure to Haldor, and buying a Dverger circlet once a week for a viking still using torches -
-		/// setting out at once by day, or waiting for the morning
+		/// selling its treasure to Haldor, and buying from him, each at most once a week, a Dverger circlet for a viking
+		/// still using torches, a strength belt for one without, or wider or deeper pockets for one without (see
+		/// PurchaseChoice) - setting out at once by day, or waiting for the morning
 		/// </summary>
 		/// <param name="village">The village, run by this client</param>
 		private static void Pick(Village village)
@@ -432,9 +441,9 @@ namespace VikingVillages
 			{
 				village.Zdo.Set(LastHuntKey, choice.Kind == QuestKind.Hunt);
 			}
-			if (choice.Kind == QuestKind.BuyCirclet)
+			if (ResourceBook.IsPurchase(choice.Kind))
 			{
-				village.Zdo.Set(LastCircletKey, now);
+				village.Zdo.Set(LastBoughtKey(choice.Kind), now);
 			}
 			Plugin.Log.LogInfo("Quest: the village at " + village.Farm.ToString("F0") + " picked " + record.Kind + (!string.IsNullOrEmpty(record.Item) ? " for " + record.Item : "") + " with " + string.Join(", ", record.Names) + (CanSetOutNow(village, record) ? "" : ", waiting for the morning"));
 			if (CanSetOutNow(village, record))
@@ -516,7 +525,15 @@ namespace VikingVillages
 					return(sell);
 				}
 			}
-			return(CircletChoice(village, book, holdings));
+			foreach (QuestKind kind in ResourceBook.Purchases)
+			{
+				Choice purchase = PurchaseChoice(village, book, holdings, kind);
+				if (purchase != null)
+				{
+					return(purchase);
+				}
+			}
+			return(null);
 		}
 
 		/// <summary>
@@ -530,35 +547,66 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds a quest to buy a Dverger circlet, for a village of the Swamp or harder that bought none in the last
-		/// CircletDays days, with a viking still using torches, and the coins and treasure to pay for it
+		/// Finds a quest to buy something from Haldor (see ResourceBook.Bought), for a village of the quest's biome or
+		/// harder that hasn't bought it in the last BuyDays days, with a viking that lacks it (see Lacks), and the coins
+		/// and treasure to pay for it - a strength belt only while the village's chests hold no spare one
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="book">Every way to get each item</param>
 		/// <param name="holdings">What the village has</param>
-		/// <returns>The quest, or null when it shouldn't buy one</returns>
-		private static Choice CircletChoice(Village village, ResourceBook book, VillageHoldings holdings)
+		/// <param name="kind">The quest</param>
+		/// <returns>The quest, or null when it shouldn't buy it</returns>
+		private static Choice PurchaseChoice(Village village, ResourceBook book, VillageHoldings holdings, QuestKind kind)
 		{
-			long last = village.Zdo.GetLong(LastCircletKey, 0L);
-			if (holdings.Biome < ResourceBook.Swamp || (last > 0L && NetTime.Now() < last + NetTime.Ticks(EnvMan.instance.m_dayLengthSec * CircletDays)))
+			long last = village.Zdo.GetLong(LastBoughtKey(kind), 0L);
+			if (last > 0L && NetTime.Now() < last + NetTime.Ticks(EnvMan.instance.m_dayLengthSec * BuyDays))
 			{
 				return(null);
 			}
-			if (!village.Vikings().Exists((Character viking) => viking is Humanoid humanoid && !HasCirclet(humanoid)))
+			if (kind == QuestKind.BuyBelt && holdings.Count(ResourceBook.Belt) > 0)
 			{
 				return(null);
 			}
-			return(Possible(book, holdings, QuestKind.BuyCirclet, ResourceBook.Circlet, 1));
+			if (!village.Vikings().Exists((Character viking) => viking is Humanoid humanoid && Lacks(kind, humanoid)))
+			{
+				return(null);
+			}
+			string item = ResourceBook.BoughtItem(kind);
+			return(Possible(book, holdings, kind, (item ?? ""), ((item != null) ? 1 : 0)));
 		}
 
 		/// <summary>
-		/// Checks whether a viking has a Dverger circlet of its own
+		/// Checks whether a viking lacks what a quest to Haldor buys - a Dverger circlet or strength belt of its own, or
+		/// the wider or deeper pockets it could be sewn (see VikingUpgrades.CanTakePockets)
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <param name="humanoid">The viking</param>
+		/// <returns>True when it lacks it, false for a quest that buys nothing</returns>
+		internal static bool Lacks(QuestKind kind, Humanoid humanoid)
+		{
+			switch (kind)
+			{
+				case QuestKind.BuyCirclet:
+				case QuestKind.BuyBelt:
+					return(!HasOwn(humanoid, ResourceBook.Bought(kind)));
+				case QuestKind.BuyWiderPockets:
+				case QuestKind.BuyDeeperPockets:
+					VikingCore core = humanoid.GetComponent<VikingCore>();
+					return(core != null && VikingUpgrades.CanTakePockets(kind, core.InventoryRows()));
+				default:
+					return(false);
+			}
+		}
+
+		/// <summary>
+		/// Checks whether a viking has an item of its own, worn or not, rather than carrying it for its village
 		/// </summary>
 		/// <param name="humanoid">The viking</param>
+		/// <param name="prefab">The item's prefab name</param>
 		/// <returns>True when it has</returns>
-		private static bool HasCirclet(Humanoid humanoid)
+		private static bool HasOwn(Humanoid humanoid, string prefab)
 		{
-			return(humanoid.GetInventory().GetAllItems().Exists((ItemDrop.ItemData item) => item.m_dropPrefab != null && item.m_dropPrefab.name == ResourceBook.Circlet && !VikingItems.IsCarried(item)));
+			return(humanoid.GetInventory().GetAllItems().Exists((ItemDrop.ItemData item) => item.m_dropPrefab != null && item.m_dropPrefab.name == prefab && !VikingItems.IsCarried(item)));
 		}
 
 		/// <summary>
@@ -604,8 +652,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Picks the vikings for a quest - those fit to go, leaving home any whose gear is so far behind the quest's biome
 		/// that it would be expected to lose all its health there (see QuestSim.ExpectedToDie), or on a quest that
-		/// kills creatures, in the fight (see QuestFightGame.ExpectedToDie), for a circlet the one
-		/// still using torches first, then the ones with a tool good enough for it, then on a quest that kills creatures
+		/// kills creatures, in the fight (see QuestFightGame.ExpectedToDie), for something bought from Haldor the one
+		/// that lacks it first (see Lacks), since the first takes the coins and comes home with it, then the ones with a tool good enough for it, then on a quest that kills creatures
 		/// the ones of the hardest biome, then the healthiest - and the tool
 		/// each takes, as many as the village can spare (see QuestRules.GroupSize). A quest that takes a tool needs at
 		/// least one
@@ -662,10 +710,10 @@ namespace VikingVillages
 			bool fights = QuestLoot.Fights(kind);
 			fit.Sort((Humanoid a, Humanoid b) =>
 			{
-				int circlet = ((kind == QuestKind.BuyCirclet) ? HasCirclet(a).CompareTo(HasCirclet(b)) : 0);
-				if (circlet != 0)
+				int lacking = Lacks(kind, b).CompareTo(Lacks(kind, a));
+				if (lacking != 0)
 				{
-					return(circlet);
+					return(lacking);
 				}
 				int tools = CarriesTool(b, source).CompareTo(CarriesTool(a, source));
 				if (tools != 0)

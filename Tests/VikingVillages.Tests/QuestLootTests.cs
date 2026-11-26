@@ -80,6 +80,53 @@ namespace VikingVillages.Tests
 		}
 
 		[Theory]
+		[InlineData((int)QuestKind.BuyBelt, ResourceBook.Belt, 950)]
+		[InlineData((int)QuestKind.BuyWiderPockets, ResourceBook.WiderPockets, 1000)]
+		[InlineData((int)QuestKind.BuyDeeperPockets, ResourceBook.DeeperPockets, 2000)]
+		public void EachPurchaseBringsHomeWhatItBuys(int kind, string bought, int price)
+		{
+			List<KeyValuePair<string, int>> loot = QuestLoot.Trade((QuestKind)kind, price, 50, price, out bool spends);
+			Assert.True(spends);
+			Assert.Contains(new KeyValuePair<string, int>(bought, 1), loot);
+			Assert.Contains(new KeyValuePair<string, int>(ResourceBook.Coins, 50), loot);
+			Assert.Empty(QuestLoot.Trade((QuestKind)kind, price - 1, 0, price, out bool tooDear));
+			Assert.False(tooDear);
+		}
+
+		[Fact]
+		public void PocketsAreBoughtButNotCarriedHome()
+		{
+			Assert.Equal(ResourceBook.Belt, ResourceBook.BoughtItem(QuestKind.BuyBelt));
+			Assert.Equal(ResourceBook.Circlet, ResourceBook.BoughtItem(QuestKind.BuyCirclet));
+			Assert.Null(ResourceBook.BoughtItem(QuestKind.BuyWiderPockets));
+			Assert.Null(ResourceBook.BoughtItem(QuestKind.BuyDeeperPockets));
+			Assert.Null(ResourceBook.Bought(QuestKind.SellTreasure));
+			Assert.True(ResourceBook.IsTrade(QuestKind.SellTreasure));
+			Assert.False(ResourceBook.IsPurchase(QuestKind.SellTreasure));
+			Assert.False(ResourceBook.IsTrade(QuestKind.Hunt));
+		}
+
+		[Fact]
+		public void EachPurchaseStartsInItsOwnBiome()
+		{
+			ResourceBook book = new ResourceBook();
+			book.AddQuests();
+			Assert.Equal(ResourceBook.BlackForest, book.RuleOf(QuestKind.BuyCirclet).MinBiome);
+			Assert.Equal(ResourceBook.BlackForest, book.SourcesOf(ResourceBook.Circlet)[0].MinBiome);
+			Assert.Equal(ResourceBook.BlackForest, book.RuleOf(QuestKind.BuyBelt).MinBiome);
+			Assert.Equal(ResourceBook.Mountain, book.RuleOf(QuestKind.BuyWiderPockets).MinBiome);
+			Assert.Equal(ResourceBook.Mistlands, book.RuleOf(QuestKind.BuyDeeperPockets).MinBiome);
+			foreach (QuestKind kind in ResourceBook.Purchases)
+			{
+				Assert.Equal(2, book.RuleOf(kind).VikingsFor(ResourceBook.DeepNorth));
+				Assert.Equal("vendor_blackforest", QuestTargets.LocationOf(kind));
+				Assert.Equal(ResourceBook.BlackForest, QuestTargets.BiomeOf(kind, "", ResourceBook.DeepNorth));
+				// Haldor's camp is as dangerous as the road there, not the village's biome
+				Assert.Equal(ResourceBook.BlackForest, QuestGame.QuestBiomeOf(kind, "", ResourceBook.DeepNorth, ResourceBook.BlackForest, book.RuleOf(kind).MinBiome));
+			}
+		}
+
+		[Theory]
 		[InlineData(2f, 2, 1, 2)]
 		[InlineData(2f, 2, 3, 6)]
 		[InlineData(0.5f, 1, 1, 1)]

@@ -71,7 +71,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Gets the biome a quest is dangerous by - where it works: the biome a hunt or foraging works in, the trees'
-		/// biome for cutting trees, and the camp's biome of the trader treasure is sold to, or for the rest, which go to a
+		/// biome for cutting trees, and the camp's biome of the trader treasure is sold to or something is bought from -
+		/// Haldor's, in the Black Forest, whatever the quest buys - or for the rest, which go to a
 		/// place of their own biome, the hardest of the quest's and its item's easiest biomes
 		/// </summary>
 		/// <param name="kind">The quest</param>
@@ -90,6 +91,10 @@ namespace VikingVillages
 				case QuestKind.ChopTrees:
 					return(QuestTargets.BiomeOf(kind, item, villageBiome));
 				case QuestKind.SellTreasure:
+				case QuestKind.BuyCirclet:
+				case QuestKind.BuyBelt:
+				case QuestKind.BuyWiderPockets:
+				case QuestKind.BuyDeeperPockets:
 					return((roadBiome >= 0) ? roadBiome : QuestTargets.BiomeOf(kind, item, villageBiome));
 				default:
 					return(ruleBiome);
@@ -172,7 +177,7 @@ namespace VikingVillages
 			for (int i = 0; i < members.Count; i++)
 			{
 				record.Plans.Add(new MemberPlan());
-				spaces.Add(SpaceOf(members[i], ToolItem(record.Tools[i])));
+				spaces.Add(SpaceOf(members[i], ToolItem(record.Tools[i]), record.QuestBiome));
 			}
 			int cartSlots = (cartAllowed ? VillageCarts.Slots() : 0);
 			List<CarrySpace> roomy = ((cartSlots > 0 && members.Count > 0) ? CartRules.Pooled(spaces, cartSlots) : spaces);
@@ -199,7 +204,7 @@ namespace VikingVillages
 			LeaveUnwanted(village, record, found);
 			// A quest that would bring home nothing the village wants isn't needed - but for a trade, worked out from what
 			// its vikings take along
-			if (found.Count == 0 && record.Kind != QuestKind.SellTreasure && record.Kind != QuestKind.BuyCirclet)
+			if (found.Count == 0 && !ResourceBook.IsTrade(record.Kind))
 			{
 				why = NothingWanted;
 				return(false);
@@ -232,7 +237,7 @@ namespace VikingVillages
 			for (int i = 0; i < members.Count; i++)
 			{
 				record.Plans[i].Loot = Ordered(shares[i], record.Item);
-				if ((record.Kind == QuestKind.SellTreasure || record.Kind == QuestKind.BuyCirclet) && record.Plans[i].Spend.Count > 0)
+				if (ResourceBook.IsTrade(record.Kind) && record.Plans[i].Spend.Count > 0)
 				{
 					// What a trade brings home is worked out again as the viking leaves, from what it really took along
 					record.Plans[i].Loot = PlannedTrade(record.Kind, record.Plans[i].Spend);
@@ -479,16 +484,19 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out how much room a viking has to carry things home - under the weight it can carry, less what it already
-		/// carries, the tool it takes from a chest and its food and potions, and its empty slots less theirs
+		/// carries, the tool it takes from a chest and its food and potions, and its empty slots less theirs. A viking
+		/// that wears a wisp light and carries a strength belt wears the belt for a quest outside the Mistlands (see
+		/// VikingUpgrades.QuestCarryBonus)
 		/// </summary>
 		/// <param name="humanoid">The viking</param>
 		/// <param name="tool">The tool it takes from a chest, or null</param>
+		/// <param name="questBiome">The biome the quest goes to, by VikingGear's order</param>
 		/// <returns>Its room</returns>
-		private static CarrySpace SpaceOf(Humanoid humanoid, ItemDrop.ItemData tool)
+		private static CarrySpace SpaceOf(Humanoid humanoid, ItemDrop.ItemData tool, int questBiome)
 		{
 			LivingVikingBody body = humanoid.GetComponent<LivingVikingBody>();
 			Inventory inventory = humanoid.GetInventory();
-			float limit = ((body != null) ? body.GetMaxCarryWeight() : LivingVikingBody.MaxCarryWeight);
+			float limit = ((body != null) ? body.GetMaxCarryWeight() : LivingVikingBody.MaxCarryWeight) + VikingUpgrades.QuestCarryBonus(humanoid, questBiome);
 			float weight = inventory.GetTotalWeight() + SupplyWeight + ((tool != null) ? tool.m_shared.m_weight : 0f);
 			int slots = inventory.m_width * inventory.m_height - inventory.m_inventory.Count - SupplySlots - ((tool != null) ? 1 : 0);
 			return(new CarrySpace { WeightRoom = Mathf.Max(0f, limit - weight), FreeSlots = Mathf.Max(0, slots) });
@@ -771,7 +779,7 @@ namespace VikingVillages
 				outcome.HealthShare = 0f;
 				TestLog.Count("Quests", record.Kind + ": a viking will die on it");
 			}
-			if (record.Kind == QuestKind.SellTreasure || record.Kind == QuestKind.BuyCirclet)
+			if (ResourceBook.IsTrade(record.Kind))
 			{
 				Trade(record.Kind, carried, outcome);
 			}
@@ -835,7 +843,7 @@ namespace VikingVillages
 		/// Works out what a viking trading with Haldor brings home for the coins and treasure it took along (see
 		/// QuestLoot.Trade), spending all it took when it trades
 		/// </summary>
-		/// <param name="kind">The quest - selling treasure or buying a circlet</param>
+		/// <param name="kind">The quest - selling treasure or buying something</param>
 		/// <param name="carried">What it took along</param>
 		/// <param name="outcome">How the quest goes for it, its loot and what it used filled in</param>
 		private static void Trade(QuestKind kind, List<ItemDrop.ItemData> carried, QuestOutcome outcome)
@@ -857,7 +865,7 @@ namespace VikingVillages
 					purse.Add(item);
 				}
 			}
-			outcome.Loot = QuestLoot.Trade(kind, coins, value, CircletPrice(), out bool spends);
+			outcome.Loot = QuestLoot.Trade(kind, coins, value, PriceOf(kind), out bool spends);
 			if (!spends)
 			{
 				return;
@@ -872,7 +880,7 @@ namespace VikingVillages
 		/// Works out what a viking trading with Haldor is planned to bring home for what it's to take along from the
 		/// village's chests (see QuestLoot.Trade), the way Trade works it out as it leaves
 		/// </summary>
-		/// <param name="kind">The quest - selling treasure or buying a circlet</param>
+		/// <param name="kind">The quest - selling treasure or buying something</param>
 		/// <param name="spend">What it's to take along, each item's prefab name and how many</param>
 		/// <returns>What it brings home, each item and how many</returns>
 		private static List<KeyValuePair<string, int>> PlannedTrade(QuestKind kind, List<KeyValuePair<string, int>> spend)
@@ -891,17 +899,18 @@ namespace VikingVillages
 					value += ((data != null) ? entry.Value * data.m_shared.m_value : 0);
 				}
 			}
-			return(QuestLoot.Trade(kind, coins, value, CircletPrice(), out bool _));
+			return(QuestLoot.Trade(kind, coins, value, PriceOf(kind), out bool _));
 		}
 
 		/// <summary>
-		/// Gets what a Dverger circlet costs at Haldor's
+		/// Gets what the thing a quest buys costs at Haldor's (see ResourceBook.Bought)
 		/// </summary>
+		/// <param name="kind">The quest</param>
 		/// <returns>The price in coins, or int.MaxValue when it isn't known</returns>
-		private static int CircletPrice()
+		private static int PriceOf(QuestKind kind)
 		{
 			ResourceBook book = ResourceBookGame.Get();
-			QuestRule rule = ((book != null) ? book.RuleOf(QuestKind.BuyCirclet) : null);
+			QuestRule rule = ((book != null && ResourceBook.IsPurchase(kind)) ? book.RuleOf(kind) : null);
 			return((rule != null) ? rule.Coins : int.MaxValue);
 		}
 
