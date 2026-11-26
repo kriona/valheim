@@ -8182,7 +8182,8 @@ namespace VikingVillages
 			found.Sort((KeyValuePair<float, ZNetView> a, KeyValuePair<float, ZNetView> b) => a.Key.CompareTo(b.Key));
 			// Loot it can't get within reach of is left alone for a while, and the next nearest tried - except in a pen,
 			// which has no way in but over its fence, which the viking jumps. Loot lying up on a pen's fence is told by the
-			// ground it's reached from, which lies in the pen, since its own spot is above the fence
+			// ground it's reached from, which lies in the pen, since its own spot is above the fence, and loot at the far
+			// side of a pen too big to see as fenced in by the way there (see PennedByPaths)
 			int tries = 0;
 			foreach (KeyValuePair<float, ZNetView> entry in found)
 			{
@@ -8191,7 +8192,7 @@ namespace VikingVillages
 				{
 					continue;
 				}
-				if (InPen(entry.Value.GetZDO().m_uid, entry.Value.transform.position) || CanReach(entry.Value.transform.position, out Vector3 stand, out string why, out bool noPath) || (noPath && Village.FencedIn(stand)))
+				if (InPen(entry.Value.GetZDO().m_uid, entry.Value.transform.position) || CanReach(entry.Value.transform.position, out Vector3 stand, out string why, out bool noPath) || (noPath && (Village.FencedIn(stand) || PennedByPaths(stand))))
 				{
 					return(entry.Value);
 				}
@@ -10905,16 +10906,46 @@ namespace VikingVillages
 				return(Village.FencedIn(feet) && !Village.FencedIn(landing));
 			}
 			Vector3 open = village.RallyPoint();
-			if (Pathfinding.instance.HavePath(feet, open, Pathfinding.AgentType.Humanoid))
+			if (WayToOpenGround(feet, open))
 			{
 				return(false);
 			}
-			if (!NavmeshPoints.FindValidPoint(out Vector3 ground, landing, HopLanding, Pathfinding.AgentType.Humanoid) || !Pathfinding.instance.HavePath(ground, open, Pathfinding.AgentType.Humanoid))
+			if (!NavmeshPoints.FindValidPoint(out Vector3 ground, landing, HopLanding, Pathfinding.AgentType.Humanoid) || !WayToOpenGround(ground, open))
 			{
 				return(false);
 			}
 			outside = ground;
 			return(true);
+		}
+
+		/// <summary>
+		/// Checks whether a spot loot is reached from lies in a pen by the way there - in the viking's village, open to the
+		/// sky, with no whole path from it to the village's open ground (see Village.RallyPoint) while there is one from
+		/// the viking - which tells the ground inside a pen too big to see as fenced in from its far side (see
+		/// Village.FencedIn)
+		/// </summary>
+		/// <param name="stand">Where the viking would stand to reach the loot, on the navmesh</param>
+		/// <returns>True when it lies in a pen</returns>
+		private bool PennedByPaths(Vector3 stand)
+		{
+			if (village == null || Pathfinding.instance == null || !village.Contains(stand) || Village.Roofed(stand))
+			{
+				return(false);
+			}
+			Vector3 open = village.RallyPoint();
+			return(WayToOpenGround(transform.position, open) && !WayToOpenGround(stand, open));
+		}
+
+		/// <summary>
+		/// Checks whether there's a whole path from a spot to the village's open ground, which there isn't from inside a
+		/// pen, however big
+		/// </summary>
+		/// <param name="from">The spot</param>
+		/// <param name="open">The spot on the village's open ground (see Village.RallyPoint)</param>
+		/// <returns>True when there is</returns>
+		private static bool WayToOpenGround(Vector3 from, Vector3 open)
+		{
+			return(Pathfinding.instance.HavePath(from, open, Pathfinding.AgentType.Humanoid));
 		}
 
 		/// <summary>

@@ -1563,7 +1563,22 @@ namespace VikingVillages
 			{
 				return(false);
 			}
-			return(!Physics.Raycast(ground + Vector3.up * EnclosureRoofFrom, Vector3.up, EnclosureRoofReach, enclosureMask, QueryTriggerInteraction.Ignore));
+			return(!Roofed(ground));
+		}
+
+		/// <summary>
+		/// Checks whether a spot on the ground has a roof or anything else over it, like the inside of a house, rather
+		/// than lying open to the sky, like a pen
+		/// </summary>
+		/// <param name="ground">The spot, on the ground</param>
+		/// <returns>True when something is overhead</returns>
+		public static bool Roofed(Vector3 ground)
+		{
+			if (enclosureMask == 0)
+			{
+				enclosureMask = LayerMask.GetMask("Default", "static_solid", "Default_small", "piece");
+			}
+			return(Physics.Raycast(ground + Vector3.up * EnclosureRoofFrom, Vector3.up, EnclosureRoofReach, enclosureMask, QueryTriggerInteraction.Ignore));
 		}
 
 		/// <summary>
