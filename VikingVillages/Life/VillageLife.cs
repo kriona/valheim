@@ -7136,7 +7136,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Leaves a chest, loot or piece the viking couldn't get to alone for a while, and notes the failed try at
 		/// anything but a chest for the village, whose vikings all leave it alone for longer once enough of them have
-		/// failed (see VillageGiveUps)
+		/// failed (see VillageGiveUps) - unless the viking stands off its navmesh (see OffItsNavmesh)
 		/// </summary>
 		/// <param name="view">The chest, loot or piece</param>
 		/// <param name="seconds">How long it's left alone</param>
@@ -7176,6 +7176,13 @@ namespace VikingVillages
 			{
 				return;
 			}
+			// A viking stranded where it can't walk from - up on a roof, or anywhere else off its navmesh - fails to get
+			// to everything, so its try says nothing about the thing and only it leaves it alone
+			if (OffItsNavmesh())
+			{
+				TestLog.Count("Tries not counted for the village, the viking off the navmesh", name);
+				return;
+			}
 			float shared = giveUps.Fail(thing, nview.GetZDO().m_uid, Time.time);
 			if (shared <= 0f)
 			{
@@ -7186,6 +7193,25 @@ namespace VikingVillages
 			{
 				Plugin.Log.LogInfo("Given up: the vikings leave " + name + " at " + view.transform.position.ToString("F1") + " alone for " + (shared / 60f).ToString("F0") + " minutes, after " + VillageGiveUps.Tries + " tries by " + VillageGiveUps.Vikings + " or more of them failed to reach it - the last by " + LogName() + " (" + LogJobName() + ")");
 			}
+		}
+
+		/// <summary>
+		/// How near the viking its navmesh has to be for it to count as standing on it, in meters
+		/// </summary>
+		private const float OwnNavmeshReach = 1f;
+
+		/// <summary>
+		/// Checks whether the viking stands off its navmesh - on a roof, or with none within OwnNavmeshReach - where it
+		/// can't walk anywhere from
+		/// </summary>
+		/// <returns>True when it does</returns>
+		private bool OffItsNavmesh()
+		{
+			if (NavmeshRoofs.OnRoof(transform.position))
+			{
+				return(true);
+			}
+			return(Pathfinding.instance != null && !NavmeshPoints.FindValidPoint(out Vector3 _, transform.position, OwnNavmeshReach, Pathfinding.AgentType.Humanoid));
 		}
 
 		/// <summary>
