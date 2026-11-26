@@ -1,6 +1,6 @@
 # Viking Villages - Names
 
-Every name the Vikings and villages of [Viking Villages](README.md) are given. A new Viking gets one of the male or female names, one no other Viking of their village goes by. The leader of each village has one of the leaders' bynames after their name, and other Vikings sometimes have one of the other bynames - see the [README](README.md). A village no player has named gets one of the village names, one no other village in the world goes by.
+Every name the Vikings and villages of [Viking Villages](README.md) are given. A new Viking gets one of the male or female names, one no other Viking of their village goes by. The leader of each village has one of the leaders' bynames after their name, and other Vikings sometimes have one of the other bynames - see the [README](README.md). A village no player has named gets one of the village names, one no other village in the world goes by. The first four Vikings of Arendelle are Elsa, Anna, Kristoff and Olaf.
 
 ## Male Names
 
@@ -10,10 +10,10 @@ Bolli, Bram, Brand, Brodd, Brynjolf, Bui, Dag, Dagfinn, Egil, Eigil, Eilif, Eina
 Erling, Eskil, Eyjolf, Eystein, Eyvind, Finn, Finnbogi, Flosi, Fridleif, Frode, Gamli, Gaut, Geir, Gellir,
 Gest, Gisli, Gizur, Godfred, Gorm, Grettir, Grim, Grimkel, Grimolf, Gudbrand, Gudleif, Gudmund, Gunnar,
 Gunnbjorn, Gunnlaug, Gunnstein, Guthorm, Gyrd, Hafgrim, Haki, Håkon, Halfdan, Hallbjorn, Hallfred, Hallkel,
-Hallvard, Halvar, Harald, Harek, Hauk, Hedin, Helgi, Hemming, Hergils, Herjolf, Hjalmar, Hjalti, Hjorleif,
+Hallvard, Halvar, Hans, Harald, Harek, Hauk, Hedin, Helgi, Hemming, Hergils, Herjolf, Hjalmar, Hjalti, Hjorleif,
 Hogni, Holmstein, Hord, Hoskuld, Hrafn, Hrafnkel, Hrani, Hrapp, Hroald, Hromund, Hrut, Hvitserk, Illugi,
-Ingimar, Ingimund, Ingjald, Ingolf, Ingvar, Isleif, Ivar, Jarl, Jokul, Jostein, Kalf, Kari, Ketil, Ketilbjorn,
-Kjartan, Kjell, Knud, Kodran, Kol, Kolbein, Kolgrim, Kolskegg, Kormak, Lambi, Leif, Ljot, Magnus, Nils, Njal,
+Ingimar, Ingimund, Ingjald, Ingolf, Ingvar, Isleif, Ivar, Jarl, Jökull, Jostein, Kalf, Kari, Ketil, Ketilbjorn,
+Kjartan, Kjell, Knud, Kodran, Kristoff, Kol, Kolbein, Kolgrim, Kolskegg, Kormak, Lambi, Leif, Ljot, Magnus, Nils, Njal,
 Oddbjorn, Ofeig, Ogmund, Olaf, Olvir, Onund, Orlyg, Orm, Orvar, Ospak, Otho, Otkel, Ottar, Ove, Ozur, Ragnar,
 Ragnvald, Rolf, Rorik, Runolf, Saemund, Saxi, Sighvat, Sigmund, Sigtrygg, Sigurd, Sigvald, Sindre, Skapti,
 Skarde, Skarphedin, Skeggi, Skjold, Skuli, Snaebjorn, Snorri, Solvi, Sorli, Soti, Starkad, Steinar, Steinthor,
@@ -24,12 +24,12 @@ Vandrad, Vebjorn, Vermund, Vestein, Vigfus, Viggo, Vigleik
 
 ## Female Names
 
-Agda, Aldis, Alfdis, Alfhild, Alva, Arnbjorg, Arndis, Arnfrid, Arnora, Åsa, Asdis, Aslaug, Asleif, Asny, Asta,
+Agda, Aldis, Alfdis, Alfhild, Alva, Anna, Arnbjorg, Arndis, Arnfrid, Arnora, Åsa, Asdis, Aslaug, Asleif, Asny, Asta,
 Astrid, Asvor, Aud, Audbjorg, Bera, Bergdis, Bergljot, Bergthora, Birna, Bjorg, Bodil, Borghild, Borgny,
-Brünnhilde, Brynja, Dagmar, Dagny, Dagrun, Dalla, Eldbjorg, Eldrid, Embla, Erna, Estrid, Eydis, Eyja,
+Brünnhilde, Brynja, Dagmar, Dagny, Dagrun, Dalla, Eldbjorg, Eldrid, Elsa, Embla, Erna, Estrid, Eydis, Eyja,
 Freydis, Freygerd, Frida, Fridgerd, Geirlaug, Geirrid, Grima, Gro, Gudfinna, Gudlaug, Gudny, Gudrid,
 Gudrun, Gunhild, Gunnbjorg, Gunnvor, Gyda, Gyrid, Halla, Hallbera, Halldis, Hallfrid, Hallgerd, Hallveig,
-Helga, Herborg, Herdis, Hervor, Hilda, Hildigunn, Hjordis, Hlif, Hrafnhild, Hrefna, Inga, Ingibjorg, Ingigerd,
+Helga, Herborg, Herdis, Hervor, Hilda, Hildigunn, Hjordis, Hlif, Hrafnhild, Hrefna, Iduna, Inga, Ingibjorg, Ingigerd,
 Ingileif, Ingrid, Ingunn, Jodis, Jofrid, Jorunn, Kara, Kata, Katla, Kolbrun, Kolfinna, Lagertha, Liv, Maeva,
 Maja, Oda, Oddbjorg, Oddny, Ormhild, Osk, Ragna, Ragnfrid, Ragnheid, Ragnhild, Rannveig, Revna, Runa,
 Saeunn, Signe, Sigrid, Sigrun, Siv, Snaefrid, Solbjorg, Solrun, Solveig, Solvor, Steinunn, Steinvor,
@@ -60,9 +60,9 @@ Tingwall, Tønsberg, Trelleborg, Truso, Uppåkra, Uppsala, Valsgärde, Vedrafjor
 
 ### Others
 
-Bjallabrekka, Bjarnarøy, Bjornstead, Driftgarth, Eirikrheim, Fjelldal, Frostfjord, Frostvik, Gråbergsby,
-Gullstrand, Hagagaror, Hakonarhella, Hrafntún, Hringdalir, Ingolfsfell, Ironfjell, Kongsvik, Lindhavn,
-Maelifellsa, Mogilsa, Ravenfell, Sealskerry, Skalavik, Skaldford, Stormnes, Tømmerby
+Arendelle, Bjallabrekka, Bjarnarøy, Bjornstead, Driftgarth, Eirikrheim, Fjelldal, Frostfjord, Frostvik,
+Gråbergsby, Gullstrand, Hagagaror, Hakonarhella, Hrafntún, Hringdalir, Ingolfsfell, Ironfjell, Kongsvik,
+Lindhavn, Maelifellsa, Mogilsa, Northuldra, Ravenfell, Sealskerry, Skalavik, Skaldford, Southuldra, Stormnes, Tømmerby
 
 ### -by
 

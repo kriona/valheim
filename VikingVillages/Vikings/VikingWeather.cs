@@ -259,13 +259,15 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Checks whether a viking's armor, or anything else on it, resists frost, which keeps the cold off it the way it
-		/// does a player
+		/// does a player - or it's immune to frost (see LivingVikingBody.FrostImmune), which the game's check for a
+		/// player leaves out, since no player is
 		/// </summary>
 		/// <param name="viking">The viking</param>
 		/// <returns>True when it does</returns>
 		private static bool ResistsFrost(Character viking)
 		{
-			return(VikingGear.KeepsOffFrost(viking.GetDamageModifiers().GetModifier(HitData.DamageType.Frost)));
+			HitData.DamageModifier frost = viking.GetDamageModifiers().GetModifier(HitData.DamageType.Frost);
+			return(frost == HitData.DamageModifier.Immune || VikingGear.KeepsOffFrost(frost));
 		}
 
 		/// <summary>

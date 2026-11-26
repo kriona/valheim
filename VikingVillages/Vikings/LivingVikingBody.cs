@@ -92,15 +92,46 @@ namespace VikingVillages
 		private bool equipping;
 
 		/// <summary>
+		/// The viking's own frost modifier from its prefab, the name it was last checked for frost immunity by and
+		/// whether that name makes it immune (see FrostImmune)
+		/// </summary>
+		private HitData.DamageModifier ownFrost;
+		private string frostName;
+		private bool frostImmune;
+
+		/// <summary>
 		/// Starts what the viking eats, its rest, the weather getting to it and its forsaken powers as the body wakes
 		/// </summary>
 		public override void Awake()
 		{
 			base.Awake();
+			ownFrost = m_damageModifiers.m_frost;
 			Food = new VikingFood(this);
 			Rest = new VikingRested(this);
 			Weather = new VikingWeather(this);
 			Powers = new VikingPowers(this);
+		}
+
+		/// <summary>
+		/// Checks whether the viking is immune to frost by its name (see LivingVikingBodyRules.FrostImmune) - frost
+		/// damage, the frost effect a hit gives and the weather's cold and freezing - keeping its own frost modifier Immune
+		/// while it is, since that's the one the game checks before a hit gives it the frost effect
+		/// </summary>
+		/// <returns>True when it is</returns>
+		public bool FrostImmune()
+		{
+			if (m_nview == null || !m_nview.IsValid())
+			{
+				return(false);
+			}
+			VikingNames.ReadRaw(m_nview.GetZDO(), out string name, out string _);
+			if (name != frostName)
+			{
+				frostName = name;
+				frostImmune = LivingVikingBodyRules.FrostImmune(name);
+				m_damageModifiers.m_frost = (frostImmune ? HitData.DamageModifier.Immune : ownFrost);
+			}
+			return(frostImmune);
 		}
 
 		/// <summary>
@@ -742,10 +773,26 @@ namespace VikingVillages
 
 	/// <summary>
 	/// What a living viking's body works out without its body - when its gear changes start and are done, how much its
-	/// rest changes what the game heals it by, how much a fall hurts it and how its weight shows
+	/// rest changes what the game heals it by, how much a fall hurts it, how its weight shows and whose name makes it
+	/// immune to frost
 	/// </summary>
 	internal static class LivingVikingBodyRules
 	{
+		/// <summary>
+		/// The name a viking goes by that makes it immune to frost
+		/// </summary>
+		internal const string FrostImmuneName = "Elsa";
+
+		/// <summary>
+		/// Checks whether a viking's name makes it immune to frost - Elsa, whatever its case and byname
+		/// </summary>
+		/// <param name="name">The viking's name, or null</param>
+		/// <returns>True when it does</returns>
+		internal static bool FrostImmune(string name)
+		{
+			return(string.Equals(VikingLoreSpeech.FirstName(name), FrostImmuneName, System.StringComparison.OrdinalIgnoreCase));
+		}
+
 		/// <summary>
 		/// Queues putting on or taking off a piece of gear, taking its equip time from when the last change queued is
 		/// done, or from now when nothing is queued. A one-handed weapon or shield joins the last change queued when

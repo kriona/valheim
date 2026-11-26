@@ -73,7 +73,8 @@ namespace Kriona.Vikings
 		/// <summary>
 		/// Rolls a new living viking's look, health, skill, power and gear for the biome it's in, or the hardest biome
 		/// within HardBiomeVikingReach of its village's farm when that's harder (see VillageFarmhouses.HardestBiomeNear),
-		/// and names it - or a dvergr viking's for the Mistlands (see GenerateDvergr)
+		/// as a man or a woman to suit a name it was given before it was rolled (see VikingNames.PresetFirst), and names
+		/// it - or a dvergr viking's for the Mistlands (see GenerateDvergr)
 		/// </summary>
 		private partial void Generate()
 		{
@@ -85,6 +86,12 @@ namespace Kriona.Vikings
 			int index = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(transform.position));
 			index = Mathf.Max(index, VillageFarmhouses.HardestBiomeNear(VillageFarm(), VillageFarmhouses.HardBiomeVikingReach));
 			VikingData rolled = VikingGear.RollData(index);
+			// One of its village's first vikings named before it's rolled is a man or a woman to suit the name
+			int model = VikingNames.PresetModel(nview.GetZDO());
+			if (model >= 0 && model != rolled.Model)
+			{
+				VikingGear.SetModel(rolled, model);
+			}
 			// A living viking has kept its armor and weapon in repair, all of it from its own biome, and its village's
 			// archer has a bow
 			Arms arms = VikingGear.LivingArms(index, nview.GetZDO().GetBool(ArcherKey), Random.value);

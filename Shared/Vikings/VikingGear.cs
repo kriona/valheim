@@ -248,11 +248,10 @@ namespace Kriona.Vikings
 			VikingData data = new VikingData();
 			data.Tombstone = false;
 			data.Biome = index;
-			data.Model = Random.Range(0, 2);
 			data.SkinColor = Vector3.Lerp(PaleSkin, DarkSkin, Random.value);
 			data.HairColor = HairColors[Random.Range(0, HairColors.Length)] * Random.Range(0.85f, 1.1f);
 			data.Hair = "Hair" + Random.Range(1, HairStyles + 1);
-			data.Beard = ((data.Model == 0 && Random.value < BeardChance) ? "Beard" + Random.Range(1, BeardStyles + 1) : NoBeard);
+			SetModel(data, Random.Range(0, 2));
 			data.MaxHealth = gear.Health;
 			data.Skill = Random.Range(gear.SkillMin, gear.SkillMax);
 			foreach (Skills.SkillType skill in System.Enum.GetValues(typeof(Skills.SkillType)))
@@ -264,6 +263,17 @@ namespace Kriona.Vikings
 			}
 			data.Power = (string.IsNullOrEmpty(gear.Power) ? 0 : gear.Power.GetStableHashCode());
 			return(data);
+		}
+
+		/// <summary>
+		/// Makes a viking being rolled a man or a woman, rolling a man's beard or taking a woman's away
+		/// </summary>
+		/// <param name="data">Its data, before its gear is rolled</param>
+		/// <param name="model">0 for a man, 1 for a woman</param>
+		public static void SetModel(VikingData data, int model)
+		{
+			data.Model = model;
+			data.Beard = ((model == 0 && Random.value < BeardChance) ? "Beard" + Random.Range(1, BeardStyles + 1) : NoBeard);
 		}
 
 		/// <summary>

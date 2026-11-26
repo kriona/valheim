@@ -45,6 +45,47 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that Arendelle's first four vikings are Elsa, Anna, Kristoff and Olaf, in that order, whatever the
+		/// village's case, and that the vikings after them and other villages' are left to be named as any other
+		/// </summary>
+		[Fact]
+		public void ArendellesFirstVikings()
+		{
+			Assert.Equal("Elsa", VikingNames.FirstVikingName("Arendelle", 0));
+			Assert.Equal("Anna", VikingNames.FirstVikingName("arendelle", 1));
+			Assert.Equal("Kristoff", VikingNames.FirstVikingName(" ARENDELLE ", 2));
+			Assert.Equal("Olaf", VikingNames.FirstVikingName("Arendelle", 3));
+			Assert.Null(VikingNames.FirstVikingName("Arendelle", 4));
+			Assert.Null(VikingNames.FirstVikingName("Arendelle", -1));
+			Assert.Null(VikingNames.FirstVikingName("Northuldra", 0));
+			Assert.Null(VikingNames.FirstVikingName("", 0));
+			Assert.Null(VikingNames.FirstVikingName(null, 0));
+			Assert.Contains("Arendelle", VillageNames.AutoNames);
+			Assert.Contains("Northuldra", VillageNames.AutoNames);
+		}
+
+		/// <summary>
+		/// Checks that every village's first vikings have names of the lists, so each is rolled as a man or a woman to
+		/// suit - Elsa and Anna as women, Kristoff and Olaf as men
+		/// </summary>
+		[Fact]
+		public void FirstVikingsSuitTheirNames()
+		{
+			foreach (KeyValuePair<string, string[]> village in VikingNames.FirstVikings)
+			{
+				foreach (string name in village.Value)
+				{
+					Assert.True(VikingNames.ModelFor(name) >= 0, name + " of " + village.Key + " isn't a man's or a woman's name");
+				}
+			}
+			Assert.Equal(1, VikingNames.ModelFor("Elsa"));
+			Assert.Equal(1, VikingNames.ModelFor("anna"));
+			Assert.Equal(0, VikingNames.ModelFor("Kristoff"));
+			Assert.Equal(0, VikingNames.ModelFor("Olaf"));
+			Assert.Equal(-1, VikingNames.ModelFor("Sven the Reindeer"));
+		}
+
+		/// <summary>
 		/// Checks that NAMES.md lists exactly the names in the code, under the heading for each kind
 		/// </summary>
 		[Fact]

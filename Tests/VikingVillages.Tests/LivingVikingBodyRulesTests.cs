@@ -4,7 +4,7 @@ namespace VikingVillages.Tests
 {
 	/// <summary>
 	/// Tests when a living viking's gear changes start and are done, how much its rest changes what the game heals it
-	/// by, how much a fall hurts it and how its weight shows
+	/// by, how much a fall hurts it, how its weight shows and whose name makes it immune to frost
 	/// </summary>
 	public class LivingVikingBodyRulesTests
 	{
@@ -19,6 +19,25 @@ namespace VikingVillages.Tests
 		private static LivingVikingBody.GearChange PutOn(List<LivingVikingBody.GearChange> changes, float now, ItemDrop.ItemData.ItemType type, float duration)
 		{
 			return(LivingVikingBodyRules.QueueChange(changes, now, type, duration, true, false, false));
+		}
+
+		/// <summary>
+		/// Checks that a viking named Elsa is immune to frost whatever its case and byname, and one whose name only
+		/// starts with it or has none isn't
+		/// </summary>
+		/// <param name="name">The viking's name</param>
+		/// <param name="expected">True when it's immune</param>
+		[Theory]
+		[InlineData("Elsa", true)]
+		[InlineData("elsa the Wise", true)]
+		[InlineData(" Elsa Stormcloak ", true)]
+		[InlineData("Anna", false)]
+		[InlineData("Elsabet", false)]
+		[InlineData("", false)]
+		[InlineData(null, false)]
+		public void ElsaIsFrostImmune(string name, bool expected)
+		{
+			Assert.Equal(expected, LivingVikingBodyRules.FrostImmune(name));
 		}
 
 		/// <summary>

@@ -502,4 +502,25 @@ namespace VikingVillages
 			}
 		}
 	}
+
+	/// <summary>
+	/// Keeps a living viking that's immune to frost immune whatever it wears or has on it (see
+	/// LivingVikingBody.FrostImmune) - the game lets armor or an effect that resists frost take the place of an immunity
+	/// </summary>
+	[HarmonyPatch(typeof(Character), nameof(Character.GetDamageModifiers))]
+	public static class VikingFrostImmunityPatch
+	{
+		/// <summary>
+		/// Makes the viking's frost modifier Immune once its armor and effects are applied
+		/// </summary>
+		/// <param name="__instance">The character</param>
+		/// <param name="__result">Its damage modifiers</param>
+		private static void Postfix(Character __instance, ref HitData.DamageModifiers __result)
+		{
+			if (__instance is LivingVikingBody body && body.FrostImmune())
+			{
+				__result.m_frost = HitData.DamageModifier.Immune;
+			}
+		}
+	}
 }

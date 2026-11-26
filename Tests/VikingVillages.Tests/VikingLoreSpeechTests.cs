@@ -80,6 +80,47 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that every name with Frozen lines is a name a new viking can be given, with at least 3 lines, each
+		/// naming the player
+		/// </summary>
+		[Fact]
+		public void FrozenNamesAreGivenNames()
+		{
+			List<string> given = new List<string>(VikingNames.MaleNames);
+			given.AddRange(VikingNames.FemaleNames);
+			foreach (KeyValuePair<string, string[]> named in VikingFrozenSpeech.Lines)
+			{
+				Assert.True(named.Value.Length >= 3, named.Key + " has fewer than 3 lines");
+				Assert.True(given.Contains(named.Key), named.Key + " isn't a name vikings are given");
+				foreach (string line in named.Value)
+				{
+					Assert.Contains("{0}", line);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Checks that a viking says its Frozen lines by its first name, whatever its case and byname, and not for a name
+		/// it only starts with
+		/// </summary>
+		/// <param name="viking">The viking's name</param>
+		/// <param name="expected">True when it has lines</param>
+		[Theory]
+		[InlineData("Elsa", true)]
+		[InlineData("anna the Wise", true)]
+		[InlineData(" Kristoff Bloodaxe", true)]
+		[InlineData("Olaf", true)]
+		[InlineData("Hans the Red", true)]
+		[InlineData("Iduna", false)]
+		[InlineData("Annabel", false)]
+		[InlineData("", false)]
+		[InlineData(null, false)]
+		public void FrozenLinesGoByFirstName(string viking, bool expected)
+		{
+			Assert.Equal(expected, VikingFrozenSpeech.For(viking, "Astrid", (int count) => 0) != null);
+		}
+
+		/// <summary>
 		/// Checks that a line names someone only as a word of its own, whatever its case, with an "ø" in the name read
 		/// as an "o"
 		/// </summary>
@@ -121,6 +162,10 @@ namespace VikingVillages.Tests
 			foreach (string[] namesakeLines in VikingLoreSpeech.NamesakeLines.Values)
 			{
 				lines.AddRange(namesakeLines);
+			}
+			foreach (string[] frozenLines in VikingFrozenSpeech.Lines.Values)
+			{
+				lines.AddRange(frozenLines);
 			}
 			lines.AddRange(VikingFriendSpeech.FriendGreetings);
 			lines.AddRange(VikingFriendSpeech.FriendChat);

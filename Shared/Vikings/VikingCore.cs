@@ -2822,12 +2822,17 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether any armor or utility item the viking wears keeps the frost off, leaving one piece out
+		/// Checks whether any armor or utility item the viking wears keeps the frost off, leaving one piece out - or the
+		/// viking is immune to frost of itself, so it needs nothing to keep it off
 		/// </summary>
 		/// <param name="except">The piece to leave out, like one it would swap, or null</param>
-		/// <returns>True when one does</returns>
+		/// <returns>True when one does, or it's immune</returns>
 		private bool OthersKeepOffFrost(ItemDrop.ItemData except)
 		{
+			if (humanoid.m_damageModifiers.m_frost == HitData.DamageModifier.Immune)
+			{
+				return(true);
+			}
 			foreach (ItemDrop.ItemData piece in new ItemDrop.ItemData[] { humanoid.m_chestItem, humanoid.m_legItem, humanoid.m_helmetItem, humanoid.m_shoulderItem, humanoid.m_utilityItem })
 			{
 				if (piece != null && piece != except && VikingGear.KeepsOffFrost(piece))

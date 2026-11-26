@@ -1170,7 +1170,8 @@ namespace VikingVillages
 		/// Spawns a living viking of a village at a spot, never starred, calling a house of its core home - the one given,
 		/// or else the one the fewest vikings call home - as the next viking that left a village disbanded where it
 		/// stands when there's one coming back (see VillageDeparted), or else a new one, marked as an archer when the
-		/// village has none
+		/// village has none, and named for its place among the village's first vikings when it's one of those it starts
+		/// with (see VikingNames.FirstVikings)
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="vikings">Its living vikings' ZDOs</param>
@@ -1197,6 +1198,11 @@ namespace VikingVillages
 			if (!returned && !vikings.Exists((ZDO other) => VikingCore.IsArcher(other)))
 			{
 				zdo.Set(VikingCore.ArcherKey, true);
+			}
+			// The vikings a village starts with come in order, and the first of some villages' have names of their own
+			if (!returned && !village.Zdo.GetBool(PopulatedKey))
+			{
+				VikingNames.PresetFirst(zdo, VillageNames.Typed(village), vikings.Count);
 			}
 			VillagePaths.House home = (chosen.HasValue ? chosen.Value : FewestClaimed(village, vikings));
 			village.Adopt(zdo, home);

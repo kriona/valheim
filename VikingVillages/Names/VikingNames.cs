@@ -97,14 +97,15 @@ namespace VikingVillages
 			"Grimolf", "Gudbrand", "Gudleif", "Gudmund", "Gunnbjorn", "Gunnlaug", "Gunnstein", "Guthorm", "Gyrd", "Hafgrim",
 			"Haki", "Hallbjorn", "Hallfred", "Hallkel", "Harek", "Hedin", "Helgi", "Hemming", "Hergils", "Herjolf", "Hjalti",
 			"Hjorleif", "Hogni", "Holmstein", "Hord", "Hoskuld", "Hrafn", "Hrafnkel", "Hrani", "Hrapp", "Hroald", "Hromund",
-			"Hrut", "Hvitserk", "Illugi", "Ingimar", "Ingimund", "Ingjald", "Ingolf", "Ingvar", "Isleif", "Jokul", "Jostein",
+			"Hrut", "Hvitserk", "Illugi", "Ingimar", "Ingimund", "Ingjald", "Ingolf", "Ingvar", "Isleif", "Jökull", "Jostein",
 			"Kalf", "Ketilbjorn", "Kjartan", "Kodran", "Kol", "Kolbein", "Kolgrim", "Kolskegg", "Kormak", "Lambi", "Ljot",
 			"Oddbjorn", "Ofeig", "Ogmund", "Olvir", "Onund", "Orlyg", "Ospak", "Otho", "Otkel", "Ozur", "Rorik", "Runolf",
 			"Saemund", "Saxi", "Sighvat", "Sigmund", "Sigtrygg", "Sigvald", "Skapti", "Skarphedin", "Skeggi", "Skjold",
 			"Skuli", "Snaebjorn", "Solvi", "Sorli", "Soti", "Starkad", "Steinthor", "Sturla", "Styr", "Svart", "Sverre",
 			"Teit", "Thjodolf", "Thorarin", "Thorbjorn", "Thorgeir", "Thorgils", "Thorgrim", "Thorkel", "Thorleif",
 			"Thormod", "Thorodd", "Thorolf", "Thorvard", "Thrain", "Thrand", "Tjorvi", "Tostig", "Ubbe", "Ulfkel",
-			"Ulfljot", "Vagn", "Valbrand", "Valgard", "Vandrad", "Vebjorn", "Vermund", "Vestein", "Vigfus", "Vigleik"
+			"Ulfljot", "Vagn", "Valbrand", "Valgard", "Vandrad", "Vebjorn", "Vermund", "Vestein", "Vigfus", "Vigleik",
+			"Kristoff", "Hans"
 		};
 		internal static readonly string[] FemaleNames =
 		{
@@ -122,7 +123,16 @@ namespace VikingVillages
 			"Jofrid", "Kata", "Katla", "Kolbrun", "Kolfinna", "Oddbjorg", "Oddny", "Ormhild", "Osk", "Ragnfrid", "Ragnheid",
 			"Rannveig", "Saeunn", "Snaefrid", "Solbjorg", "Solrun", "Solvor", "Steinunn", "Steinvor", "Svala", "Svava",
 			"Thjodhild", "Thorbjorg", "Thorgerd", "Thorhild", "Thorkatla", "Thorlaug", "Ulfrun", "Valborg", "Valgerd",
-			"Vilborg", "Yngvild"
+			"Vilborg", "Yngvild", "Elsa", "Anna", "Iduna"
+		};
+
+		/// <summary>
+		/// The names the first vikings of a village are given, in the order they come, by the village's name - each one of
+		/// MaleNames or FemaleNames, so it's rolled as a man or a woman to suit (see PresetModel)
+		/// </summary>
+		internal static readonly Dictionary<string, string[]> FirstVikings = new Dictionary<string, string[]>(System.StringComparer.OrdinalIgnoreCase)
+		{
+			{ "Arendelle", new[] { "Elsa", "Anna", "Kristoff", "Olaf" } }
 		};
 
 		/// <summary>
@@ -343,6 +353,70 @@ namespace VikingVillages
 			}
 			viking.Set(NameKey, picked);
 			viking.Set(AuthorKey, "");
+		}
+
+		/// <summary>
+		/// Gets the name a village's viking is given for the order it comes in, when its village's first vikings have
+		/// names of their own (see FirstVikings)
+		/// </summary>
+		/// <param name="village">The village's name</param>
+		/// <param name="index">How many vikings came to the village before it</param>
+		/// <returns>The name, or null when it's left to GiveName</returns>
+		internal static string FirstVikingName(string village, int index)
+		{
+			if (village == null || !FirstVikings.TryGetValue(village.Trim(), out string[] names) || index < 0 || index >= names.Length)
+			{
+				return(null);
+			}
+			return(names[index]);
+		}
+
+		/// <summary>
+		/// Names a new viking of a village before it's rolled, the name its place among the village's first vikings gives
+		/// it (see FirstVikingName), noted as given by no player - it's rolled as a man or a woman to suit (see
+		/// PresetModel), and GiveName keeps it, adding a byname as it would to any other
+		/// </summary>
+		/// <param name="viking">The viking's ZDO, owned by this client, not rolled yet</param>
+		/// <param name="village">The village's name</param>
+		/// <param name="index">How many vikings came to the village before it</param>
+		public static void PresetFirst(ZDO viking, string village, int index)
+		{
+			string name = FirstVikingName(village, index);
+			if (name == null)
+			{
+				return;
+			}
+			viking.Set(NameKey, name);
+			viking.Set(AuthorKey, "");
+		}
+
+		/// <summary>
+		/// Gets whether a new viking named before it's rolled (see PresetFirst) is to be a man or a woman
+		/// </summary>
+		/// <param name="viking">The viking's ZDO</param>
+		/// <returns>Its model - 0 for a man, 1 for a woman - or -1 when its name doesn't say</returns>
+		public static int PresetModel(ZDO viking)
+		{
+			ReadRaw(viking, out string name, out string author);
+			return((author.Length > 0) ? -1 : ModelFor(WithoutByname(name)));
+		}
+
+		/// <summary>
+		/// Gets whether a name is a man's or a woman's, by which of MaleNames and FemaleNames lists it
+		/// </summary>
+		/// <param name="name">The name, without a byname</param>
+		/// <returns>0 for a man's, 1 for a woman's, or -1 when neither lists it</returns>
+		internal static int ModelFor(string name)
+		{
+			if (System.Array.Exists(FemaleNames, (string female) => string.Equals(female, name, System.StringComparison.OrdinalIgnoreCase)))
+			{
+				return(1);
+			}
+			if (System.Array.Exists(MaleNames, (string male) => string.Equals(male, name, System.StringComparison.OrdinalIgnoreCase)))
+			{
+				return(0);
+			}
+			return(-1);
 		}
 
 		/// <summary>
@@ -626,6 +700,19 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Checks whether a name is a legend's - a god, giant or beast of the myths, a figure of the game's world, a
+		/// legendary weapon, or a boss or trader among the game's creatures - which vikings turn down for themselves and
+		/// their village alike
+		/// </summary>
+		/// <param name="name">The name</param>
+		/// <returns>True when it is</returns>
+		public static bool IsLegend(string name)
+		{
+			LoadNames();
+			return(legendNames.Contains(Plain(name).ToLowerInvariant()));
+		}
+
+		/// <summary>
 		/// Notes that a player has been in the world, so no viking takes their name, in a global key the world keeps
 		/// </summary>
 		/// <param name="player">The player</param>
@@ -699,19 +786,6 @@ namespace VikingVillages
 			HashSet<string> legends = new HashSet<string>();
 			HashSet<string> places = new HashSet<string>();
 			foreach (string legend in Legends)
-		/// <summary>
-		/// Checks whether a name is a legend's - a god, giant or beast of the myths, a figure of the game's world, a
-		/// legendary weapon, or a boss or trader among the game's creatures - which vikings turn down for themselves and
-		/// their village alike
-		/// </summary>
-		/// <param name="name">The name</param>
-		/// <returns>True when it is</returns>
-		public static bool IsLegend(string name)
-		{
-			LoadNames();
-			return(legendNames.Contains(Plain(name).ToLowerInvariant()));
-		}
-
 			{
 				legends.Add(legend.ToLowerInvariant());
 			}

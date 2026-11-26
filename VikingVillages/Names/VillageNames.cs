@@ -62,7 +62,7 @@ namespace VikingVillages
 			"Sigtuna", "Uppsala", "Visby", "Bjallabrekka", "Bjarnarøy", "Bjornstead", "Driftgarth", "Eirikrheim",
 			"Fjelldal", "Frostfjord", "Frostvik", "Gråbergsby", "Gullstrand", "Hagagaror", "Hakonarhella", "Hrafntún",
 			"Hringdalir", "Ingolfsfell", "Ironfjell", "Kongsvik", "Lindhavn", "Maelifellsa", "Mogilsa", "Ravenfell",
-			"Sealskerry", "Skalavik", "Skaldford", "Stormnes", "Tømmerby",
+			"Sealskerry", "Skalavik", "Skaldford", "Stormnes", "Tømmerby", "Arendelle", "Northuldra", "Southuldra",
 			"Birka", "Borre", "Gokstad", "Oseberg", "Tønsberg", "Skiringssal", "Hladir", "Stiklestad", "Hafrsfjord",
 			"Trelleborg", "Fyrkat", "Aggersborg", "Roskilde", "Viborg", "Uppåkra", "Vendel", "Valsgärde", "Skara",
 			"Bjørgvin", "Lindholm", "Sliesthorp", "Truso", "Aldeigjuborg", "Holmgard", "Dyflin", "Vedrafjord", "Hlymrek",

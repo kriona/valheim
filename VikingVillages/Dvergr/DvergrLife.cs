@@ -139,8 +139,9 @@ namespace VikingVillages
 		/// <summary>
 		/// Answers a player talking to the viking, on its owner - in a fight or swimming it's busy, it greets a player it has never
 		/// met as a stranger and remembers them, and chats with one it knows - now and then about being old friends or how
-		/// the player is doing (see VikingFriendSpeech), or a runestone of the biome it stands in or of someone with its
-		/// name (see VikingLoreSpeech) -
+		/// the player is doing (see VikingFriendSpeech), the one of Frozen's folk it's named after (see
+		/// VikingFrozenSpeech), or a runestone of the biome it stands in or of someone with its name (see
+		/// VikingLoreSpeech) -
 		/// or tells them its news of them (see VikingNewsStore), turning to them for TalkFaceTime seconds either way, and
 		/// noting the talk once it has said its piece (see VikingIdentity.Answered)
 		/// </summary>
@@ -175,7 +176,7 @@ namespace VikingVillages
 			{
 				string name = player.GetPlayerName();
 				string news = VikingNewsStore.Tell(body, player, NewsBiome());
-				string chat = VikingFriendSpeech.Chat(VikingIdentity.OldFriends(nview, id), name) ?? VikingLoreSpeech.Chat(transform.position, name, VikingNames.Get(body));
+				string chat = VikingFriendSpeech.Chat(VikingIdentity.OldFriends(nview, id), name) ?? VikingFrozenSpeech.Chat(name, VikingNames.Get(body)) ?? VikingLoreSpeech.Chat(transform.position, name, VikingNames.Get(body));
 				VikingSpeech.Say(body, news ?? chat ?? DvergrSpeech.Answer(player, EnvMan.IsNight()), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 				Face(player, TalkFaceTime);
 				VikingIdentity.Answered(nview, id, true);
