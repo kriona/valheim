@@ -94,6 +94,19 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that the vikings of the hardest biome are the ones the watch is picked from, all of them when they tie,
+		/// and none from an empty list
+		/// </summary>
+		[Fact]
+		public void TheStrongestKeepWatch()
+		{
+			Assert.Equal(new List<int> { 2 }, VillageWatch.Strongest(new List<int> { 0, 1, 3, 1 }));
+			Assert.Equal(new List<int> { 1, 3 }, VillageWatch.Strongest(new List<int> { 2, 4, 0, 4 }));
+			Assert.Equal(new List<int> { 0, 1 }, VillageWatch.Strongest(new List<int> { 0, 0 }));
+			Assert.Empty(VillageWatch.Strongest(new List<int>()));
+		}
+
+		/// <summary>
 		/// Checks that no vikings read back as none
 		/// </summary>
 		[Fact]

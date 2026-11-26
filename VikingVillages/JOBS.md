@@ -305,7 +305,7 @@ By day, a Viking with no torch, or only one worn down to half, crafts one - see 
 
 ### Keep Watch
 
-One Viking at random for every 10 in the village keeps watch each night - one for up to 10 Vikings, two for 11-20, and so on, counting only those loaded. The watch is picked as dusk comes, from those who haven't kept watch that night, and only before nightfall - a village that first loads after nightfall has no watch that night.
+One Viking for every 10 in the village keeps watch each night - one for up to 10 Vikings, two for 11-20, and so on, counting only those loaded. The watch is picked as dusk comes, from those who haven't kept watch that night - the one of the hardest biome, by the gear they came with, at random among equals, so a Viking from a harder biome than the rest keeps watch first, and the one woken at midnight is the strongest of those left - and only before nightfall - a village that first loads after nightfall has no watch that night.
 
 The watch gathers at the fire like everyone else and starts their round as they'd go to bed, 0-60 seconds after nightfall. They walk from the doorstep of each house in the village's core - or 2 meters outside a house with no doors - to the outer edge of the village fire's ring and back around, starting at the nearest, stopping 3-6 seconds at each and looking around every 1.5-3 seconds.
 
@@ -544,7 +544,9 @@ With no work, a Viking picks one of these at random, by weight among those they 
 | Stroll | 40 | It isn't raining |
 | Stand about | 25 | Always |
 
-So with nothing else to do, a Viking talks, strolls or stands about - 25, 40 and 25 in 90. The Swamp's own rain, which hardly lets up, doesn't stop them strolling, petting or talking outside, but it does keep them from getting rested again.
+So with nothing else to do, a Viking talks, strolls or stands about - 25, 40 and 25 in 90.
+
+A Viking from a harder biome than the village's, by the gear they came with, is safer out of the village than the rest, so stocking the chests with wood, foraging and hunting each weigh 3 times as much for them - 45, or 180 short of food. The Swamp's own rain, which hardly lets up, doesn't stop them strolling, petting or talking outside, but it does keep them from getting rested again.
 
 ### Talk
 

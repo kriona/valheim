@@ -526,6 +526,18 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Gets the biome a viking's gear comes from (see VikingCore.BiomeIndex)
+		/// </summary>
+		/// <param name="humanoid">The viking</param>
+		/// <param name="fallback">The biome for one with no VikingCore</param>
+		/// <returns>The biome's index in VikingGear's tables</returns>
+		private static int BiomeOf(Humanoid humanoid, int fallback)
+		{
+			VikingCore core = humanoid.GetComponent<VikingCore>();
+			return((core != null) ? core.BiomeIndex() : fallback);
+		}
+
+		/// <summary>
 		/// Checks whether a village can go on a quest - its biome isn't easier than the quest's or the item's, it has the
 		/// stations the quest takes, and the coins it costs (see ResourceBook.AddQuests)
 		/// </summary>
@@ -557,7 +569,8 @@ namespace VikingVillages
 		/// Picks the vikings for a quest - those fit to go, leaving home any whose gear is so far behind the quest's biome
 		/// that it would be expected to lose all its health there (see QuestSim.ExpectedToDie), or on a quest that
 		/// kills creatures, in the fight (see QuestFightGame.ExpectedToDie), for a circlet the one
-		/// still using torches first, then the ones with a tool good enough for it, then the healthiest - and the tool
+		/// still using torches first, then the ones with a tool good enough for it, then on a quest that kills creatures
+		/// the ones of the hardest biome, then the healthiest - and the tool
 		/// each takes, as many as the village can spare (see QuestRules.GroupSize). A quest that takes a tool needs at
 		/// least one
 		/// </summary>
@@ -609,6 +622,8 @@ namespace VikingVillages
 				}
 				chestTools.Sort((string a, string b) => ToolTier(b).CompareTo(ToolTier(a)));
 			}
+			// A quest that fights takes the strongest first - those of the hardest biome - so the weaker stay home
+			bool fights = QuestLoot.Fights(kind);
 			fit.Sort((Humanoid a, Humanoid b) =>
 			{
 				int circlet = ((kind == QuestKind.BuyCirclet) ? HasCirclet(a).CompareTo(HasCirclet(b)) : 0);
@@ -617,7 +632,12 @@ namespace VikingVillages
 					return(circlet);
 				}
 				int tools = CarriesTool(b, source).CompareTo(CarriesTool(a, source));
-				return((tools != 0) ? tools : b.GetHealthPercentage().CompareTo(a.GetHealthPercentage()));
+				if (tools != 0)
+				{
+					return(tools);
+				}
+				int strength = (fights ? BiomeOf(b, biome).CompareTo(BiomeOf(a, biome)) : 0);
+				return((strength != 0) ? strength : b.GetHealthPercentage().CompareTo(a.GetHealthPercentage()));
 			});
 			int carried = fit.FindAll((Humanoid humanoid) => CarriesTool(humanoid, source)).Count;
 			if (source.Tool != ToolKind.None && carried + chestTools.Count == 0)

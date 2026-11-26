@@ -160,10 +160,44 @@ namespace VikingVillages.Tests
 			Enemy blob = OneAttack(50f, 2f, true);
 			List<Blow> poison = new List<Blow> { new Blow { OverTime = 90f } };
 			List<Blow> direct = new List<Blow> { new Blow { Direct = 90f } };
-			Assert.Equal(90f, QuestFight.HarmFrom(blob, poison, 60f, 3, 0f, 0f), 3);
-			Assert.Equal(90f * 18f, QuestFight.HarmFrom(blob, direct, 60f, 3, 0f, 0f), 3);
+			List<float> third = new List<float> { 1f / 3f };
+			Assert.Equal(90f, QuestFight.HarmFrom(blob, poison, 60f, third, 0f, 0f), 3);
+			Assert.Equal(90f * 18f, QuestFight.HarmFrom(blob, direct, 60f, third, 0f, 0f), 3);
 			// Barely attacking, the poison counts for as much of a dose as lands
-			Assert.Equal(90f * 0.6f * 0.5f, QuestFight.HarmFrom(blob, poison, 1f, 3, 0f, 0f), 3);
+			Assert.Equal(90f * 0.6f * 0.5f, QuestFight.HarmFrom(blob, poison, 1f, third, 0f, 0f), 3);
+		}
+
+		[Fact]
+		public void AlikeVikingsDrawAnEnemysAttacksEvenly()
+		{
+			List<float> draws = QuestFight.Draws(Alike(4, () => Viking(10f, 100f, 5f, 0f, 20f)), 0, 0);
+			Assert.All(draws, (float draw) => Assert.Equal(0.25f, draw, 3));
+		}
+
+		[Fact]
+		public void AStrongerVikingDrawsMoreOfAnEnemysAttacks()
+		{
+			// The first takes 20 of a hit to its 100 health, 5 hits, and the second 10 to its 200, 20 hits - 4 times as many
+			List<Fighter> fighters = new List<Fighter> { Viking(10f, 100f, 0f, 0f, 20f), Viking(10f, 200f, 0f, 0f, 10f) };
+			List<float> draws = QuestFight.Draws(fighters, 0, 0);
+			Assert.Equal(0.2f, draws[0], 3);
+			Assert.Equal(0.8f, draws[1], 3);
+		}
+
+		[Fact]
+		public void StrongAndWeakLoseTheSameShareOfTheirHealth()
+		{
+			FightResult result = FightOne(OneAttack(500f, 5f, false), new List<Fighter> { Viking(10f, 100f, 0f, 0f, 20f), Viking(10f, 200f, 0f, 0f, 10f) });
+			Assert.Equal(result.HarmShares[0], result.HarmShares[1], 2);
+			Assert.True(result.Harms[1] > result.Harms[0]);
+		}
+
+		[Fact]
+		public void AVikingAHitCantHurtDrawsItAll()
+		{
+			List<Fighter> fighters = new List<Fighter> { Viking(10f, 100f, 0f, 0f, 20f), Viking(10f, 100f, 0f, 0f, 0f), Viking(10f, 100f, 0f, 0f, 0f) };
+			List<float> draws = QuestFight.Draws(fighters, 0, 0);
+			Assert.Equal(new List<float> { 0f, 0.5f, 0.5f }, draws);
 		}
 
 		[Fact]

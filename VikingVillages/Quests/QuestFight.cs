@@ -106,8 +106,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Works out a fight - the enemies coming at the vikings pack by pack, in the order given, and the vikings
 		/// bringing down each pack's one at a time while the rest of it keeps attacking. Each enemy's attacks that strike
-		/// all around land on every viking, and the rest are shared out among them evenly, as it turns from one to
-		/// another
+		/// all around land on every viking, and the rest are shared out among them by how well each stands up to them
+		/// (see Draws), the strongest stepping in front of the others
 		/// </summary>
 		/// <param name="kinds">The kinds of enemy</param>
 		/// <param name="foes">The enemies, in the order they come, each by its kind's index</param>
@@ -130,19 +130,80 @@ namespace VikingVillages
 			}
 			List<float> alive = AliveSeconds(foes, killSeconds, pack, out float seconds);
 			result.Seconds = seconds;
-			foreach (Fighter fighter in fighters)
+			// Each fighter's share of each kind's attacks that strike one viking, by the kind and the attack
+			List<List<List<float>>> draws = new List<List<List<float>>>();
+			for (int k = 0; k < kinds.Count; k++)
 			{
+				List<List<float>> byAttack = new List<List<float>>();
+				for (int a = 0; a < kinds[k].Attacks.Count; a++)
+				{
+					byAttack.Add(Draws(fighters, k, a));
+				}
+				draws.Add(byAttack);
+			}
+			for (int f = 0; f < fighters.Count; f++)
+			{
+				Fighter fighter = fighters[f];
 				float harm = 0f;
 				for (int i = 0; i < foes.Count; i++)
 				{
 					int k = foes[i];
 					List<Blow> blows = ((k < fighter.Blows.Count) ? fighter.Blows[k] : new List<Blow>());
-					harm += HarmFrom(kinds[k], blows, alive[i], fighters.Count, fighter.Armor, fighter.BlockPower);
+					List<float> shares = draws[k].ConvertAll((List<float> attack) => attack[f]);
+					harm += HarmFrom(kinds[k], blows, alive[i], shares, fighter.Armor, fighter.BlockPower);
 				}
 				result.Harms.Add(harm);
 				result.HarmShares.Add(Share(harm, fighter.Health));
 			}
 			return(result);
+		}
+
+		/// <summary>
+		/// Works out how an enemy's attack that strikes one viking is shared out among them - by how many of its hits each
+		/// could take, its health over what a hit deals it through its shield and armor (see Taken), so a stronger viking
+		/// draws more of them and every viking loses about the same share of its health. One that a hit can't hurt draws
+		/// them all, shared evenly with any others like it
+		/// </summary>
+		/// <param name="fighters">The vikings</param>
+		/// <param name="kind">The enemy's kind, by its index</param>
+		/// <param name="attack">The attack, by its index among the kind's attacks</param>
+		/// <returns>Each viking's share, in the order of the fighters, adding up to 1</returns>
+		internal static List<float> Draws(List<Fighter> fighters, int kind, int attack)
+		{
+			List<float> toughness = new List<float>();
+			int unhurt = 0;
+			foreach (Fighter fighter in fighters)
+			{
+				Blow blow = ((kind < fighter.Blows.Count && attack < fighter.Blows[kind].Count) ? fighter.Blows[kind][attack] : null);
+				float hit = ((blow != null) ? System.Math.Max(0f, blow.Direct) + System.Math.Max(0f, blow.OverTime) : 0f);
+				float taken = Taken(hit, fighter.Armor, fighter.BlockPower);
+				if (taken <= 0f)
+				{
+					unhurt++;
+					toughness.Add(-1f);
+					continue;
+				}
+				toughness.Add(System.Math.Max(0f, fighter.Health) / taken);
+			}
+			List<float> draws = new List<float>();
+			if (unhurt > 0)
+			{
+				foreach (float tough in toughness)
+				{
+					draws.Add((tough < 0f) ? 1f / unhurt : 0f);
+				}
+				return(draws);
+			}
+			float total = 0f;
+			foreach (float tough in toughness)
+			{
+				total += tough;
+			}
+			foreach (float tough in toughness)
+			{
+				draws.Add((total > 0f) ? tough / total : 1f / fighters.Count);
+			}
+			return(draws);
 		}
 
 		/// <summary>
@@ -177,18 +238,19 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out the harm an enemy does a viking while it attacks - each of its attacks used as often as it can be
-		/// (see Uses), landing EnemyLandShare of the time, on every viking for one that strikes all around and on one of
-		/// them otherwise, through the viking's shield and armor (see Taken), with what it deals over time counted once
-		/// at most
+		/// (see Uses), landing EnemyLandShare of the time, on every viking for one that strikes all around and on the
+		/// viking its share of the time otherwise (see Draws), through the viking's shield and armor (see Taken), with
+		/// what it deals over time counted once at most
 		/// </summary>
 		/// <param name="enemy">The enemy</param>
 		/// <param name="blows">What a hit of each of its attacks deals the viking, in the order of its attacks</param>
 		/// <param name="seconds">How long it attacks, in seconds</param>
-		/// <param name="vikings">How many vikings it turns between</param>
+		/// <param name="shares">The viking's share of each of its attacks that strike one viking, in the order of its
+		/// attacks</param>
 		/// <param name="armor">The viking's armor</param>
 		/// <param name="blockPower">The viking's shield's block power, or 0 without one</param>
 		/// <returns>The harm, in health</returns>
-		internal static float HarmFrom(Enemy enemy, List<Blow> blows, float seconds, int vikings, float armor, float blockPower)
+		internal static float HarmFrom(Enemy enemy, List<Blow> blows, float seconds, List<float> shares, float armor, float blockPower)
 		{
 			List<float> uses = Uses(enemy.Attacks, enemy.MinInterval, seconds);
 			float harm = 0f;
@@ -200,7 +262,8 @@ namespace VikingVillages
 				{
 					continue;
 				}
-				float landed = uses[a] * EnemyLandShare * (enemy.Attacks[a].Area ? 1f : 1f / System.Math.Max(1, vikings));
+				float share = ((a < shares.Count) ? System.Math.Max(0f, shares[a]) : 0f);
+				float landed = uses[a] * EnemyLandShare * (enemy.Attacks[a].Area ? 1f : share);
 				float taken = Taken(hit, armor, blockPower);
 				harm += landed * taken * System.Math.Max(0f, blow.Direct) / hit;
 				harm += System.Math.Min(landed, 1f) * taken * System.Math.Max(0f, blow.OverTime) / hit;

@@ -5,9 +5,9 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Picks each village's night watch - one of its living vikings at random each night for every VikingsPerWatch of
-	/// them, or part of that, who patrol with a torch out instead of sleeping, and wake the others when an enemy comes
-	/// near
+	/// Picks each village's night watch - one of its living vikings each night for every VikingsPerWatch of them, or
+	/// part of that, the strongest first and at random among equals (see TakeStrongest), who patrol with a torch out
+	/// instead of sleeping, and wake the others when an enemy comes near
 	/// </summary>
 	/// <remarks>
 	/// The client that owns a village's generator picks the watch as dusk falls and notes it in the generator's ZDO
@@ -428,7 +428,7 @@ namespace VikingVillages
 				reliefs.Clear();
 				foreach (ZDOID _ in watchers)
 				{
-					ZDOID relief = ((fresh.Count > 0) ? TakeRandom(fresh) : ZDOID.None);
+					ZDOID relief = ((fresh.Count > 0) ? TakeStrongest(fresh) : ZDOID.None);
 					reliefs.Add(relief);
 					if (relief != ZDOID.None)
 					{
@@ -479,7 +479,7 @@ namespace VikingVillages
 			List<Character> free = vikings.FindAll((Character viking) => !watchers.Contains(viking.GetZDOID()) && !watched.Contains(viking.GetZDOID()));
 			while (watchers.Count < wanted && free.Count > 0)
 			{
-				ZDOID added = TakeRandom(free);
+				ZDOID added = TakeStrongest(free);
 				watchers.Add(added);
 				reliefs.Add(ZDOID.None);
 				watched.Add(added);
@@ -554,16 +554,46 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Takes a viking out of a list at random
+		/// Takes the strongest viking out of a list - one of the hardest biome, at random among them (see Strongest) - so
+		/// a viking come from a harder biome than the village's keeps watch before the rest
 		/// </summary>
 		/// <param name="vikings">The vikings, one fewer after</param>
 		/// <returns>The viking's ZDO</returns>
-		private static ZDOID TakeRandom(List<Character> vikings)
+		private static ZDOID TakeStrongest(List<Character> vikings)
 		{
-			int pick = Random.Range(0, vikings.Count);
+			List<int> strongest = Strongest(vikings.ConvertAll((Character viking) =>
+			{
+				VikingCore core = viking.GetComponent<VikingCore>();
+				return((core != null) ? core.BiomeIndex() : 0);
+			}));
+			int pick = strongest[Random.Range(0, strongest.Count)];
 			ZDOID id = vikings[pick].GetZDOID();
 			vikings.RemoveAt(pick);
 			return(id);
+		}
+
+		/// <summary>
+		/// Finds the vikings of the hardest biome among some
+		/// </summary>
+		/// <param name="biomes">Each viking's biome, by its index in VikingGear's tables</param>
+		/// <returns>Their places in the list, none for an empty list</returns>
+		internal static List<int> Strongest(List<int> biomes)
+		{
+			List<int> strongest = new List<int>();
+			int hardest = int.MinValue;
+			for (int i = 0; i < biomes.Count; i++)
+			{
+				if (biomes[i] > hardest)
+				{
+					hardest = biomes[i];
+					strongest.Clear();
+				}
+				if (biomes[i] == hardest)
+				{
+					strongest.Add(i);
+				}
+			}
+			return(strongest);
 		}
 
 		/// <summary>

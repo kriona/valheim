@@ -733,6 +733,12 @@ namespace VikingVillages
 		private const float FoodShortBoost = 4f;
 
 		/// <summary>
+		/// How many times as likely a viking from a harder biome than its village's is to pick gathering wood, foraging
+		/// and hunting, which take it out of the village, where it's safer than the others
+		/// </summary>
+		private const float StrongOutingBoost = 3f;
+
+		/// <summary>
 		/// How near a cooking station a viking cooks at it, and how near the station it sets out to cook at the others it
 		/// cooks at too have to be, as at the same fire, in meters
 		/// </summary>
@@ -4860,6 +4866,16 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Checks whether the viking comes from a harder biome than its village's (see VillageCooking.VillageBiome), so
+		/// its gear makes it safer out of the village than the others
+		/// </summary>
+		/// <returns>True when it does</returns>
+		private bool OutclassesVillage()
+		{
+			return(viking != null && village != null && viking.BiomeIndex() > VillageCooking.VillageBiome(village));
+		}
+
+		/// <summary>
 		/// Checks whether the viking is hurt enough to rest by the fire first
 		/// </summary>
 		/// <returns>True when it's below WoundedShare of its health</returns>
@@ -5245,13 +5261,14 @@ namespace VikingVillages
 			bool hunt = (solo || party);
 			float talk = ((partner != null) ? TalkWeight : 0f);
 			float pet = ((boar != null) ? PetWeight : 0f);
-			float stock = ((store != null) ? StockWeight : 0f);
+			float strong = (OutclassesVillage() ? StrongOutingBoost : 1f);
+			float stock = ((store != null) ? StockWeight * strong : 0f);
 			// While the chests hold too little food for the village to keep its foods up, getting more comes up far more often
 			bool foodLow = FoodLow(village);
 			float need = (foodLow ? FoodShortBoost : 1f);
-			float gather = (forage ? ForageWeight * need : 0f);
+			float gather = (forage ? ForageWeight * need * strong : 0f);
 			float rest = (refresh ? RefreshWeight : 0f);
-			float hunting = (hunt ? HuntWeight * need : 0f);
+			float hunting = (hunt ? HuntWeight * need * strong : 0f);
 			// Short of food with no wild prey about that drops any for the village's hunters, it slaughters one of the
 			// village's livestock, which its pen brings back
 			bool slaughter = (foodLow && mayHunt && !WildFoodNear() && FindPrey(HasBow(humanoid), null, true, false, true) != null);
