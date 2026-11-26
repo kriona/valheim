@@ -10,7 +10,7 @@ It picks the first of these that it can go on:
 
 1. Hunting or foraging, taking turns, when the chests hold less than one food for each Viking - ahead of the goal, so the wounded have something to heal on
 2. The next step of the village's goal, when that step is a quest - ore for bronze or iron, core wood, an antler from Eikthyr, with Zombie Apocalypse ectoplasm for lining a weapon with silver, and so on
-3. Hunting or foraging, taking turns, when the chests hold fewer than three foods for each Viking and nothing's been found around the village for half a day - or as soon as it runs low when the village can't be left
+3. Hunting or foraging, taking turns, when the chests hold fewer than three foods for each Viking and no food's been found around the village for half a day - no food or honey picked, and no prey gone for that drops meat or food, so hunting greylings for resin or picking flint doesn't count - or as soon as it runs low when the village can't be left
 4. Cutting trees for 50 wood when it's out of wood and finds none to gather - or as soon as it runs low when the village can't be left
 5. Selling treasure to the nearest trader once its amber, pearls, rubies and silver necklaces are worth 100 coins
 6. Buying a Dverger circlet, from the Swamp on, at most once every 7 game days, when a Viking still uses torches and the coins and treasure will pay for it

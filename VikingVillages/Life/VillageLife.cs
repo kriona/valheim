@@ -8821,6 +8821,7 @@ namespace VikingVillages
 			if (taken > 0)
 			{
 				TestLog.Count("Gathered", TestLog.ItemName(honey), taken);
+				NoteFoodFound();
 				hive.ResetLevel();
 				hive.m_spawnEffect.Create(hive.m_spawnPoint.position, Quaternion.identity);
 			}
@@ -13904,9 +13905,19 @@ namespace VikingVillages
 				livestock = slaughter;
 				party = hunters;
 				prey = ((hunters != null) ? hunters.Prey : null);
-				if (!slaughter)
+				NoteFood(prey);
+			}
+
+			/// <summary>
+			/// Notes that the viking found food around the village when the wild prey it goes for drops some (see
+			/// VillageLife.NoteFoodFound) - not livestock, or prey that drops none, like a greyling
+			/// </summary>
+			/// <param name="target">The prey, or null</param>
+			private void NoteFood(Character target)
+			{
+				if (!livestock && target != null && QuestLoot.DropsFood(Utils.GetPrefabName(target.gameObject)))
 				{
-					owner.NoteFoodFound();
+					life.NoteFoodFound();
 				}
 			}
 
@@ -14101,6 +14112,7 @@ namespace VikingVillages
 					{
 						return(true);
 					}
+					NoteFood(prey);
 					hunts[life.humanoid] = prey;
 					handedOver = false;
 					snipeShots = 0;
@@ -14190,6 +14202,10 @@ namespace VikingVillages
 				if (!party.Fighting && party.Members.Count < PartyMin)
 				{
 					return(true);
+				}
+				if (prey != target)
+				{
+					NoteFood(target);
 				}
 				prey = target;
 				kill = prey.transform.position;
@@ -14651,7 +14667,6 @@ namespace VikingVillages
 			public ForageJob(VillageLife owner, string onlyItem = null) : base(owner)
 			{
 				only = onlyItem;
-				owner.NoteFoodFound();
 			}
 
 			/// <summary>
@@ -14735,7 +14750,13 @@ namespace VikingVillages
 					{
 						return(false);
 					}
-					picked += life.PickForage(target);
+					int got = life.PickForage(target);
+					// Only food picked counts as food found around the village, not flint, stone or what the cauldron takes
+					if (got > 0 && VikingFood.IsFood(ForageFood(target)))
+					{
+						life.NoteFoodFound();
+					}
+					picked += got;
 					Release();
 					target = null;
 					return(false);

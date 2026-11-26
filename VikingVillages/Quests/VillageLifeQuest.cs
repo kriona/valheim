@@ -40,13 +40,13 @@ namespace VikingVillages
 		private const float FoodGoneDays = 0.5f;
 
 		/// <summary>
-		/// When each village's vikings on this client last found food to forage or prey to hunt, or when that was first
-		/// looked at, by its ZDO, in ZNet time ticks
+		/// When each village's vikings on this client last found food around it - picked food or honey, or went for prey
+		/// that drops some - or when that was first looked at, by its ZDO, in ZNet time ticks
 		/// </summary>
 		private static readonly Dictionary<ZDOID, long> foodFoundAt = new Dictionary<ZDOID, long>();
 
 		/// <summary>
-		/// Notes that the viking found food to forage or prey to hunt around its village
+		/// Notes that the viking found food around its village - picked food or honey, or went for prey that drops some
 		/// </summary>
 		private void NoteFoodFound()
 		{

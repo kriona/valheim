@@ -395,6 +395,16 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Checks whether a creature drops food - something cooked or eaten as food, like meat
+		/// </summary>
+		/// <param name="prefab">The creature's prefab name</param>
+		/// <returns>True when it does</returns>
+		internal static bool DropsFood(string prefab)
+		{
+			return(Drops(prefab, ""));
+		}
+
+		/// <summary>
 		/// Checks whether a creature drops an item, or something cooked or eaten as food
 		/// </summary>
 		/// <param name="prefab">The creature's prefab name</param>
