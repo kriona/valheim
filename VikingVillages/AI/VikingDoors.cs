@@ -241,6 +241,16 @@ namespace VikingVillages
 			/// When it can next open or close a door to get itself unstuck (see Unstick), in Time.time seconds
 			/// </summary>
 			public float UnstickAt;
+
+			/// <summary>
+			/// The door it last crossed and the side it crossed to, how many times it's crossed that door toward that
+			/// side since when, in Time.time seconds, and where it was heading each of those times, for the log
+			/// </summary>
+			public Door LoopDoor;
+			public int LoopSide;
+			public int LoopCount;
+			public float LoopSince;
+			public readonly List<Vector3> LoopTargets = new List<Vector3>();
 		}
 
 		/// <summary>
@@ -267,6 +277,13 @@ namespace VikingVillages
 		/// How long a viking can go without waiting at a door before its wait there starts over, in seconds
 		/// </summary>
 		internal const float WaitGap = 3f;
+
+		/// <summary>
+		/// How many times a viking crosses a door toward the same side within how long, in seconds, before the log notes
+		/// it going back and forth through the door
+		/// </summary>
+		internal const int LoopCrossings = 3;
+		internal const float LoopWindow = 60f;
 
 		/// <summary>
 		/// How far from a stuck viking a door can be for it to open or close it to get itself unstuck, in meters, and how
@@ -452,6 +469,7 @@ namespace VikingVillages
 				state.CrossTo = DoorGeometry.SidePoint(info, state.CrossSide);
 				state.CrossUntil = Time.time + CrossTimeout;
 				crossings[state.CrossDoor] = new KeyValuePair<Character, float>(viking, state.CrossUntil);
+				NoteCrossing(viking, state, info, target);
 				waypoint = state.CrossTo;
 				direct = true;
 				return(true);
@@ -559,7 +577,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Describes what a viking is doing at doors, for the debug hover text - the door its route goes through, and
-		/// whether it's walking to it, crossing it or waiting for it, and what for
+		/// whether it's walking to it, crossing it or waiting for it, and what for, and where its way leads
 		/// </summary>
 		/// <param name="viking">The viking</param>
 		/// <returns>The line, ending in a line break, or nothing when it knows of no door or has none on its way</returns>
@@ -571,7 +589,7 @@ namespace VikingVillages
 			}
 			if (state.CrossDoor != null)
 			{
-				return("Door: crossing " + DoorName(state.CrossDoor) + " to " + state.CrossTo.ToString("F1") + ", " + (state.CrossUntil - Time.time).ToString("F0") + "s left\n");
+				return("Door: crossing " + DoorName(state.CrossDoor) + " to " + state.CrossTo.ToString("F1") + ", " + (state.CrossUntil - Time.time).ToString("F0") + "s left, on its way to " + state.RouteTarget.ToString("F1") + "\n");
 			}
 			if (state.RouteDoor == null)
 			{
@@ -579,9 +597,148 @@ namespace VikingVillages
 			}
 			if (state.Waiting)
 			{
-				return("Door: waiting " + (Time.time - state.WaitSince).ToString("F0") + "/" + WaitMax.ToString("F0") + "s at " + DoorName(state.RouteDoor) + " for " + (state.Blocker ?? "?") + "\n");
+				return("Door: waiting " + (Time.time - state.WaitSince).ToString("F0") + "/" + WaitMax.ToString("F0") + "s at " + DoorName(state.RouteDoor) + " for " + (state.Blocker ?? "?") + ", on its way to " + state.RouteTarget.ToString("F1") + "\n");
 			}
-			return("Door: heading for " + DoorName(state.RouteDoor) + " from side " + state.RouteSide + "\n");
+			return("Door: heading for " + DoorName(state.RouteDoor) + " from side " + state.RouteSide + ", on its way to " + state.RouteTarget.ToString("F1") + "\n");
+		}
+
+		/// <summary>
+		/// Counts a viking's crossing of a door among the crossings it's made of that door toward the same side, and
+		/// notes in the log the LoopCrossings-th within LoopWindow - a viking going back and forth through a door, with
+		/// where it was heading each time, how its target stands toward the rooms around it, what blocks the sight lines
+		/// that tell whether the target is in a room, and the navmesh path from past the door to the target
+		/// </summary>
+		/// <param name="viking">The viking</param>
+		/// <param name="state">The viking's state, with the door it starts crossing</param>
+		/// <param name="info">What's either side of the door</param>
+		/// <param name="target">Where the viking is heading</param>
+		private static void NoteCrossing(Character viking, VikingState state, DoorInfo info, Vector3 target)
+		{
+			bool sameWay = (state.LoopDoor == state.CrossDoor && state.LoopSide == state.CrossSide);
+			state.LoopDoor = state.CrossDoor;
+			state.LoopSide = state.CrossSide;
+			bool loop = DoorGeometry.CountCrossing(ref state.LoopCount, ref state.LoopSince, sameWay, Time.time);
+			if (state.LoopCount == 1)
+			{
+				state.LoopTargets.Clear();
+			}
+			if (state.LoopTargets.Count < LoopCrossings)
+			{
+				state.LoopTargets.Add(target);
+			}
+			if (!loop)
+			{
+				return;
+			}
+			TestLog.Count("Troubles", "back and forth through a door");
+			if (!TestLog.On && !Player.m_debugMode)
+			{
+				return;
+			}
+			bool fromRoom = ((-state.CrossSide > 0) ? info.FrontRoom : info.BackRoom);
+			bool toRoom = ((state.CrossSide > 0) ? info.FrontRoom : info.BackRoom);
+			string way = (fromRoom ? "out of a room" : (toRoom ? "into a room" : "between two open sides"));
+			List<string> targets = new List<string>();
+			foreach (Vector3 each in state.LoopTargets)
+			{
+				targets.Add(each.ToString("F1"));
+			}
+			Vector3 position = viking.transform.position;
+			Plugin.Log.LogInfo("Door: " + DebugName(viking) + " crosses " + DoorName(state.CrossDoor) + " " + way + " for the " + LoopCrossings + "rd time in " + (Time.time - state.LoopSince).ToString("F0") + "s, heading for " + target.ToString("F1") + " (each time: " + string.Join(", ", targets) + ") - the viking and its target " + DescribeRooms(position, target) + "; the target against the rooms' doors: " + DescribeTargetRooms(target) + "; " + DescribePath(state, info, target));
+		}
+
+		/// <summary>
+		/// Describes for the log how a point stands toward each room beside the usable doors within RoomReach of it, the
+		/// way FindRooms tells whether it's in one - how far into the room it is, and whether it can see the point just
+		/// inside the door at each of the SightHeights, naming the piece in the way when it can't
+		/// </summary>
+		/// <param name="point">The point</param>
+		/// <returns>The description, like "the door at (...) side -1: 2.1m in, at 1.0m blocked by bed at (...), at 1.6m
+		/// clear", or that there's no room's door near</returns>
+		private static string DescribeTargetRooms(Vector3 point)
+		{
+			FindDoors(point, DoorRange);
+			List<string> parts = new List<string>();
+			foreach (Door door in nearby)
+			{
+				if (!IsUsable(door))
+				{
+					continue;
+				}
+				DoorInfo info = GetInfo(door);
+				float distance = Utils.DistanceXZ(point, info.Floor);
+				if (distance > RoomReach)
+				{
+					continue;
+				}
+				for (int side = -1; side <= 1; side += 2)
+				{
+					bool room = ((side > 0) ? info.FrontRoom : info.BackRoom);
+					if (!room)
+					{
+						continue;
+					}
+					Vector3 inside = DoorGeometry.SidePoint(info, side);
+					string part = DoorName(door) + " side " + side + ": " + DoorGeometry.Along(info, side, point).ToString("F1") + "m in, " + distance.ToString("F1") + "m from the doorway";
+					foreach (float height in SightHeights)
+					{
+						Collider block = FirstBlock(inside + Vector3.up * height, point + Vector3.up * height, door, out Vector3 hit);
+						part += ", at " + height.ToString("F1") + "m " + ((block == null) ? "clear" : "blocked by " + BlockName(block) + " at " + hit.ToString("F1"));
+					}
+					parts.Add(part);
+				}
+			}
+			return((parts.Count > 0) ? string.Join(" | ", parts) : "no room's door within " + RoomReach.ToString("F0") + "m");
+		}
+
+		/// <summary>
+		/// Describes for the log the navmesh path from the point past a door a viking is crossing to its target - whether
+		/// there's one, and whole, how many corners it has, whether it leads back more than 0.3m into the side the viking
+		/// is leaving, and how far from the target it ends
+		/// </summary>
+		/// <param name="state">The viking's state, with the door it's crossing and the point past it</param>
+		/// <param name="info">What's either side of the door</param>
+		/// <param name="target">Where the viking is heading</param>
+		/// <returns>The description</returns>
+		private static string DescribePath(VikingState state, DoorInfo info, Vector3 target)
+		{
+			if (Pathfinding.instance == null)
+			{
+				return("no pathfinding");
+			}
+			List<Vector3> path = new List<Vector3>();
+			if (!Pathfinding.instance.GetPath(state.CrossTo, target, path, Pathfinding.AgentType.Humanoid) || path.Count == 0)
+			{
+				return("no path from " + state.CrossTo.ToString("F1") + " past the door to the target");
+			}
+			bool whole = Pathfinding.instance.HavePath(state.CrossTo, target, Pathfinding.AgentType.Humanoid);
+			int back = -1;
+			for (int i = 0; i < path.Count; i++)
+			{
+				if (DoorGeometry.Along(info, -state.CrossSide, path[i]) > 0.3f && Mathf.Abs(path[i].y - info.Floor.y) < FloorReach)
+				{
+					back = i;
+					break;
+				}
+			}
+			Vector3 end = path[path.Count - 1];
+			return((whole ? "a whole" : "only part of a") + " path from " + state.CrossTo.ToString("F1") + " past the door to the target, " + path.Count + " corners, " + ((back >= 0) ? "leading back through the doorway at corner " + (back + 1) + ", " + path[back].ToString("F1") : "not leading back through the doorway") + ", ending " + Utils.DistanceXZ(end, target).ToString("F1") + "m from the target at " + end.ToString("F1"));
+		}
+
+		/// <summary>
+		/// Names what a sight line hit for the log - the piece's prefab and where it stands, or the collider's own name
+		/// when it's no piece
+		/// </summary>
+		/// <param name="block">The collider hit</param>
+		/// <returns>The name</returns>
+		private static string BlockName(Collider block)
+		{
+			Piece piece = block.GetComponentInParent<Piece>();
+			if (piece != null)
+			{
+				return(Utils.GetPrefabName(piece.gameObject) + " at " + piece.transform.position.ToString("F1"));
+			}
+			return(block.gameObject.name);
 		}
 
 		/// <summary>
@@ -803,21 +960,39 @@ namespace VikingVillages
 		/// <returns>True when nothing blocks it</returns>
 		private static bool IsClear(Vector3 from, Vector3 to, Door door)
 		{
+			return(FirstBlock(from, to, door, out Vector3 _) == null);
+		}
+
+		/// <summary>
+		/// Finds the nearest building piece other than a door's own across a line
+		/// </summary>
+		/// <param name="from">The start of the line</param>
+		/// <param name="to">The end of the line</param>
+		/// <param name="door">The door whose pieces don't block the line, or null</param>
+		/// <param name="point">Given where the line meets it, or the start of the line when nothing blocks it</param>
+		/// <returns>The piece's collider, or null when nothing blocks the line</returns>
+		private static Collider FirstBlock(Vector3 from, Vector3 to, Door door, out Vector3 point)
+		{
+			point = from;
 			Vector3 line = to - from;
 			float length = line.magnitude;
 			if (length < 0.01f)
 			{
-				return(true);
+				return(null);
 			}
 			int count = Physics.RaycastNonAlloc(from, line / length, hits, length, PieceMask());
+			Collider block = null;
+			float best = float.MaxValue;
 			for (int i = 0; i < count; i++)
 			{
-				if (door == null || !hits[i].collider.transform.IsChildOf(door.transform))
+				if ((door == null || !hits[i].collider.transform.IsChildOf(door.transform)) && hits[i].distance < best)
 				{
-					return(false);
+					block = hits[i].collider;
+					best = hits[i].distance;
+					point = hits[i].point;
 				}
 			}
-			return(true);
+			return(block);
 		}
 
 		/// <summary>
@@ -1376,6 +1551,26 @@ namespace VikingVillages
 			}
 			lastWaited = now;
 			return(now - waitSince >= VikingDoors.WaitMax);
+		}
+
+		/// <summary>
+		/// Counts a viking's crossing of a door among the crossings it's made of that door toward the same side, starting
+		/// the count over at another door or side, or once LoopWindow has passed since it started
+		/// </summary>
+		/// <param name="count">How many crossings are counted, 0 before the first, counted up or started over at 1</param>
+		/// <param name="since">When the count started, in seconds, set to now when it starts over</param>
+		/// <param name="sameWay">Whether this crossing is of the door and toward the side the count is for</param>
+		/// <param name="now">The time, in seconds</param>
+		/// <returns>True when this is the LoopCrossings-th crossing of the count, which the log notes</returns>
+		internal static bool CountCrossing(ref int count, ref float since, bool sameWay, float now)
+		{
+			if (count <= 0 || !sameWay || now - since > VikingDoors.LoopWindow)
+			{
+				count = 0;
+				since = now;
+			}
+			count++;
+			return(count == VikingDoors.LoopCrossings);
 		}
 	}
 }

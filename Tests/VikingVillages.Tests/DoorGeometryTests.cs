@@ -383,5 +383,62 @@ namespace VikingVillages.Tests
 			DoorGeometry.WaitedEnough(ref since, ref last, true, 20f);
 			Assert.True(DoorGeometry.WaitedEnough(ref since, ref last, true, 22f));
 		}
+
+		/// <summary>
+		/// Checks that crossings of the same door toward the same side count up from the first, and that only the 3rd is
+		/// the one the log notes
+		/// </summary>
+		[Fact]
+		public void CountCrossingNotesTheThirdTheSameWay()
+		{
+			int count = 0;
+			float since = 0f;
+			Assert.False(DoorGeometry.CountCrossing(ref count, ref since, false, 10f));
+			Assert.Equal(1, count);
+			Assert.Equal(10f, since);
+			Assert.False(DoorGeometry.CountCrossing(ref count, ref since, true, 18f));
+			Assert.Equal(2, count);
+			Assert.True(DoorGeometry.CountCrossing(ref count, ref since, true, 26f));
+			Assert.Equal(3, count);
+			Assert.False(DoorGeometry.CountCrossing(ref count, ref since, true, 34f));
+			Assert.Equal(4, count);
+			Assert.Equal(10f, since);
+		}
+
+		/// <summary>
+		/// Checks that a crossing of another door, or toward the other side, starts the count over
+		/// </summary>
+		[Fact]
+		public void CountCrossingStartsOverAnotherWay()
+		{
+			int count = 0;
+			float since = 0f;
+			DoorGeometry.CountCrossing(ref count, ref since, false, 10f);
+			DoorGeometry.CountCrossing(ref count, ref since, true, 15f);
+			Assert.False(DoorGeometry.CountCrossing(ref count, ref since, false, 20f));
+			Assert.Equal(1, count);
+			Assert.Equal(20f, since);
+			DoorGeometry.CountCrossing(ref count, ref since, true, 25f);
+			Assert.True(DoorGeometry.CountCrossing(ref count, ref since, true, 30f));
+		}
+
+		/// <summary>
+		/// Checks that the count starts over once more than 60 seconds have passed since it started, but not at exactly
+		/// 60, so a viking going back and forth for good is noted about once a minute
+		/// </summary>
+		[Fact]
+		public void CountCrossingStartsOverAfterTheWindow()
+		{
+			int count = 0;
+			float since = 0f;
+			DoorGeometry.CountCrossing(ref count, ref since, false, 10f);
+			DoorGeometry.CountCrossing(ref count, ref since, true, 40f);
+			Assert.True(DoorGeometry.CountCrossing(ref count, ref since, true, 70f));
+			Assert.False(DoorGeometry.CountCrossing(ref count, ref since, true, 70.5f));
+			Assert.Equal(1, count);
+			Assert.Equal(70.5f, since);
+			DoorGeometry.CountCrossing(ref count, ref since, true, 80f);
+			Assert.True(DoorGeometry.CountCrossing(ref count, ref since, true, 90f));
+		}
 	}
 }
