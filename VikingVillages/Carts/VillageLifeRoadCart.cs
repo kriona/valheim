@@ -56,8 +56,7 @@ namespace VikingVillages
 		private Vector3 lootCartAt;
 
 		/// <summary>
-		/// Walks the viking toward a spot on its road, pulling its cart when it has one (see CartPull) - letting go of a
-		/// cart a player took over
+		/// Walks the viking toward a spot on its road, pulling its cart when it has one (see CartPull)
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="target">The spot</param>
@@ -82,12 +81,6 @@ namespace VikingVillages
 			if (roadCartPull.Failed)
 			{
 				roadCartPull = null;
-				if (CartHitch.PlayerUsing(cart))
-				{
-					Plugin.Log.LogInfo(LogName() + " leaves its cart to a player at " + cart.transform.position.ToString("F0"));
-					RoadCarts.Forget(zdo);
-					return(false);
-				}
 				moveFailed = true;
 				return(true);
 			}
@@ -173,8 +166,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Looks after the viking's cart on the road before it goes on - putting its kept cart back behind it as it comes
 		/// back into the world, leaving behind a cart it's lost track of, and when its cart was destroyed, picking up what
-		/// it dropped, most useful first, and building it back once it carries the wood and nails it takes, putting what
-		/// it picked up back in
+		/// spilled from it, most useful first, and building it back from nothing, putting what it picked up back in
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="zdo">Its ZDO</param>
@@ -201,7 +193,7 @@ namespace VikingVillages
 				}
 				return(false);
 			}
-			// Its cart was destroyed - what it held and what it was built from lie where it broke
+			// Its cart was destroyed - what it held lies where it broke
 			if (!roadCartSeenSet)
 			{
 				RoadCarts.Forget(zdo);
@@ -259,25 +251,13 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Builds a viking's broken cart back once it has picked up what the cart dropped, when it carries the wood and
-		/// nails a cart takes - putting what it picked up back in - or else goes on without it, carrying what it picked up
+		/// Builds a viking's broken cart back from nothing with one swing once it has picked up what spilled from it,
+		/// putting what it picked up back in
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
 		private void RebuildRoadCart(ZDO zdo)
 		{
 			RoadCarts.Forget(zdo);
-			List<KeyValuePair<string, int>> cost = CartCost();
-			Inventory inventory = humanoid.GetInventory();
-			if (cost.Count == 0 || !cost.TrueForAll((KeyValuePair<string, int> needed) => inventory.CountItems(ItemOf(needed.Key)?.m_shared.m_name ?? "") >= needed.Value))
-			{
-				Plugin.Log.LogInfo(LogName() + " couldn't build its broken cart back at " + transform.position.ToString("F0") + ", and goes on carrying what it could");
-				TestLog.Count("Carts", "lost on the road");
-				return;
-			}
-			foreach (KeyValuePair<string, int> needed in cost)
-			{
-				inventory.RemoveItem(ItemOf(needed.Key).m_shared.m_name, needed.Value);
-			}
 			VikingPoses.Swing(humanoid);
 			Vagon cart = RoadCarts.Spawn(humanoid, null);
 			if (cart == null)
@@ -289,29 +269,6 @@ namespace VikingVillages
 			RoadCarts.Take(zdo, cart);
 			TestLog.Count("Carts", "built back on the road");
 			Plugin.Log.LogInfo(LogName() + " built its broken cart back at " + transform.position.ToString("F0"));
-		}
-
-		/// <summary>
-		/// Reads what building a cart takes from the game's own piece
-		/// </summary>
-		/// <returns>Each item and how many, or none when the game has no cart</returns>
-		private static List<KeyValuePair<string, int>> CartCost()
-		{
-			List<KeyValuePair<string, int>> cost = new List<KeyValuePair<string, int>>();
-			GameObject prefab = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(VillageCarts.CartPrefab) : null);
-			Piece piece = ((prefab != null) ? prefab.GetComponent<Piece>() : null);
-			if (piece == null)
-			{
-				return(cost);
-			}
-			foreach (Piece.Requirement requirement in piece.m_resources)
-			{
-				if (requirement != null && requirement.m_resItem != null && requirement.m_amount > 0)
-				{
-					cost.Add(new KeyValuePair<string, int>(requirement.m_resItem.gameObject.name, requirement.m_amount));
-				}
-			}
-			return(cost);
 		}
 
 		/// <summary>
@@ -367,7 +324,7 @@ namespace VikingVillages
 		/// Empties a disbanded village's own chests near its fire - those put up with the village or by its vikings, never
 		/// a player's - as the vikings gather, before they set out: taking what they can carry, most useful first (see
 		/// LootRank), and when the chests hold more than that, getting a cart - the village's own when it has one at
-		/// home, or else building one beside the fire from the chests' wood and nails, one cart each at most - and
+		/// home, or else building one beside the fire from nothing, one cart each at most - and
 		/// carrying the rest to it an armful at a time, up to its full load. A Meadows or Ashlands village's vikings
 		/// take no cart (see CartRules.Allowed)
 		/// </summary>
@@ -419,11 +376,8 @@ namespace VikingVillages
 					Plugin.Log.LogInfo(LogName() + " takes the cart of the disbanded village at " + middle.ToString("F0") + " for what's left in its chests");
 					return(true);
 				}
-				if (TakeCartCost(lootChest))
-				{
-					lootSwing = new HammerWork(this, RebuildSwings);
-					return(true);
-				}
+				lootSwing = new HammerWork(this, RebuildSwings);
+				return(true);
 			}
 			FinishDisbandLoot(zdo);
 			return(false);
@@ -441,7 +395,6 @@ namespace VikingVillages
 			{
 				RoadCarts.Take(zdo, lootCart);
 			}
-			ReturnCraft();
 		}
 
 		/// <summary>
@@ -555,12 +508,11 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Takes up some of an item as an armful in an empty slot, carried for a purpose, whatever it weighs - for its
-		/// cart, or for building one
+		/// Takes up some of an item as an armful in an empty slot, carried for a purpose, whatever it weighs
 		/// </summary>
 		/// <param name="item">The item</param>
 		/// <param name="amount">How many, no more than its stack</param>
-		/// <param name="purpose">CarryCartLoad or CarryCraft</param>
+		/// <param name="purpose">What it's carried for, like CarryCartLoad</param>
 		/// <returns>How many it took, or 0 with no empty slot</returns>
 		private int CarryArmful(ItemDrop.ItemData item, int amount, string purpose)
 		{
@@ -643,7 +595,7 @@ namespace VikingVillages
 				{
 					continue;
 				}
-				if (cart.IsAttached() || CartHitch.PlayerUsing(cart) || VillageCarts.HoldsAnything(cart) || !ClaimWork(zdo.m_uid))
+				if (cart.IsAttached() || VillageCarts.HoldsAnything(cart) || !ClaimWork(zdo.m_uid))
 				{
 					continue;
 				}
@@ -653,62 +605,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Takes what building a cart takes - its wood and nails - from the chest the viking is at, the rest of what it
-		/// still needs from the other chests it empties, as it carries it for crafting
-		/// </summary>
-		/// <param name="chest">The chest it's at, owned by this client</param>
-		/// <returns>True once it carries everything a cart takes</returns>
-		private bool TakeCartCost(Container chest)
-		{
-			List<KeyValuePair<string, int>> cost = CartCost();
-			if (cost.Count == 0)
-			{
-				return(false);
-			}
-			Vector3 middle = chest.transform.position;
-			bool all = true;
-			foreach (KeyValuePair<string, int> needed in cost)
-			{
-				int shortBy = needed.Value - CarriedCraft(needed.Key);
-				foreach (Container source in LoadedChests())
-				{
-					if (shortBy <= 0)
-					{
-						break;
-					}
-					if (source != chest && !DisbandChest(source, middle))
-					{
-						continue;
-					}
-					Inventory store = source.GetInventory();
-					foreach (ItemDrop.ItemData item in store.m_inventory.FindAll((ItemDrop.ItemData stored) => stored.m_dropPrefab != null && stored.m_dropPrefab.name == needed.Key))
-					{
-						if (shortBy <= 0)
-						{
-							break;
-						}
-						if (!source.m_nview.IsOwner())
-						{
-							source.m_nview.ClaimOwnership();
-						}
-						int took = CarryArmful(item, Mathf.Min(shortBy, item.m_stack), CarryCraft);
-						if (took <= 0)
-						{
-							break;
-						}
-						store.RemoveItem(item, took);
-						shortBy -= took;
-					}
-				}
-				all &= (shortBy <= 0);
-			}
-			humanoid.GetInventory().Changed();
-			return(all);
-		}
-
-		/// <summary>
-		/// Builds a cart beside a disbanded village's fire from the wood and nails the viking carries for it, with one
-		/// swing - then loads what it took for it beyond that, and goes on emptying the chests into it
+		/// Builds a cart beside a disbanded village's fire from nothing, with one swing, and goes on emptying the chests
+		/// into it
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="zdo">Its ZDO</param>
@@ -737,17 +635,6 @@ namespace VikingVillages
 			}
 			lootSwing = null;
 			lootCartSpot = false;
-			Inventory inventory = humanoid.GetInventory();
-			foreach (KeyValuePair<string, int> needed in CartCost())
-			{
-				int left = needed.Value;
-				foreach (ItemDrop.ItemData item in inventory.m_inventory.FindAll((ItemDrop.ItemData held) => IsCarriedFor(held, CarryCraft) && held.m_dropPrefab != null && held.m_dropPrefab.name == needed.Key))
-				{
-					int used = Mathf.Min(left, item.m_stack);
-					inventory.RemoveItem(item, used);
-					left -= used;
-				}
-			}
 			lootCart = RoadCarts.Spawn(humanoid, null);
 			HoldHammer(false);
 			if (lootCart == null)

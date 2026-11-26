@@ -41,11 +41,6 @@ namespace VikingVillages
 			Away,
 
 			/// <summary>
-			/// A player is pulling it or has it open, so the vikings leave it be
-			/// </summary>
-			InUse,
-
-			/// <summary>
 			/// It went out on a quest, and comes back with it
 			/// </summary>
 			OnQuest
@@ -296,8 +291,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a village of a biome keeps a cart - not in the Meadows, where it has no bronze for the nails,
-		/// nor in the Ashlands
+		/// Checks whether a village of a biome keeps a cart - not in the Meadows or the Ashlands
 		/// </summary>
 		/// <param name="biome">The village's biome's index (see ResourceBook)</param>
 		/// <returns>True when it does</returns>
@@ -316,12 +310,11 @@ namespace VikingVillages
 		/// <param name="lastSeenLoaded">Whether where the cart was last seen is loaded here, so a cart that isn't known
 		/// there was destroyed</param>
 		/// <param name="loaded">Whether the cart itself is loaded here</param>
-		/// <param name="playerUsing">Whether a player is pulling it or has it open</param>
 		/// <param name="inside">Whether it stands in the village</param>
 		/// <param name="awaySeconds">How long it has been out of reach, in seconds, or 0 when it hasn't</param>
 		/// <param name="daySeconds">How long a game day lasts, in seconds</param>
 		/// <returns>What it's up to</returns>
-		internal static CartState Decide(bool allowed, bool onQuest, bool recorded, bool known, bool lastSeenLoaded, bool loaded, bool playerUsing, bool inside, double awaySeconds, double daySeconds)
+		internal static CartState Decide(bool allowed, bool onQuest, bool recorded, bool known, bool lastSeenLoaded, bool loaded, bool inside, double awaySeconds, double daySeconds)
 		{
 			if (!allowed)
 			{
@@ -338,10 +331,6 @@ namespace VikingVillages
 			if (!known || !loaded)
 			{
 				return((awaySeconds >= daySeconds) ? CartState.Missing : CartState.Away);
-			}
-			if (playerUsing)
-			{
-				return(CartState.InUse);
 			}
 			return(inside ? CartState.Home : CartState.Astray);
 		}

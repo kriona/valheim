@@ -230,6 +230,7 @@ namespace VikingVillages
 			{
 				return(null);
 			}
+			VillageCarts.MarkViking(view.GetZDO());
 			if (village != null)
 			{
 				view.GetZDO().Set(VillageCarts.VillageKey, village.Farm);

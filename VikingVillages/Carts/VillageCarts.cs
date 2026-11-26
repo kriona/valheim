@@ -43,6 +43,12 @@ namespace VikingVillages
 		internal static readonly int UnloadKey = "kriona.VikingVillages.cartUnload".GetStableHashCode();
 
 		/// <summary>
+		/// On a cart, that the vikings put it up - from nothing, like their boats, so it drops nothing it's built from
+		/// when it breaks, and only vikings pull it or reach into it (see VikingCartDropPatch)
+		/// </summary>
+		private static readonly int VikingKey = "kriona.VikingVillages.vikingCart".GetStableHashCode();
+
+		/// <summary>
 		/// On a farm's generator, until when in ZNet time ticks its village's cart is out on a quest, or 0 while it isn't -
 		/// once that's past without it coming home, it's lost, and the vikings build another
 		/// </summary>
@@ -207,6 +213,25 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Notes a cart the vikings put up as theirs (see VikingKey)
+		/// </summary>
+		/// <param name="cart">The cart's ZDO</param>
+		public static void MarkViking(ZDO cart)
+		{
+			cart.Set(VikingKey, true);
+		}
+
+		/// <summary>
+		/// Checks whether the vikings put a cart up (see VikingKey)
+		/// </summary>
+		/// <param name="cart">The cart</param>
+		/// <returns>True when they did</returns>
+		public static bool IsVikingCart(Vagon cart)
+		{
+			return(cart != null && cart.m_nview != null && cart.m_nview.IsValid() && cart.m_nview.GetZDO().GetBool(VikingKey));
+		}
+
+		/// <summary>
 		/// Checks whether a cart belongs to a village
 		/// </summary>
 		/// <param name="cart">The cart's ZDO</param>
@@ -250,7 +275,7 @@ namespace VikingVillages
 					{
 						zdo.Set(UnloadKey, false);
 					}
-					else if ((village.Contains(at) || village.InHouse(at, 0.5f)) && !cart.IsAttached() && !CartHitch.PlayerUsing(cart))
+					else if ((village.Contains(at) || village.InHouse(at, 0.5f)) && !cart.IsAttached())
 					{
 						status.Unload.Add(cart);
 					}
@@ -269,7 +294,7 @@ namespace VikingVillages
 					continue;
 				}
 				// One being pulled, or with things in it still to put away, waits to be taken down
-				if (village.DistanceOutside(cart.transform.position) <= ExtraReach && !cart.IsAttached() && !CartHitch.PlayerUsing(cart) && !HoldsAnything(cart))
+				if (village.DistanceOutside(cart.transform.position) <= ExtraReach && !cart.IsAttached() && !HoldsAnything(cart))
 				{
 					status.Extras.Add(cart);
 				}
@@ -300,7 +325,6 @@ namespace VikingVillages
 			{
 				village.Zdo.Set(AwaySinceKey, 0L);
 			}
-			bool playerUsing = (loaded && CartHitch.PlayerUsing(status.Cart));
 			bool inside = (loaded && (village.Contains(position) || village.InHouse(position, 0.5f)));
 			double day = ((EnvMan.instance != null) ? EnvMan.instance.m_dayLengthSec : 1800.0);
 			long questUntil = village.Zdo.GetLong(OnQuestUntilKey, 0L);
@@ -310,7 +334,7 @@ namespace VikingVillages
 				Plugin.Log.LogInfo("Cart: the cart of the village at " + village.Farm.ToString("F0") + " never came home from its quest");
 				village.Zdo.Set(OnQuestUntilKey, 0L);
 			}
-			status.State = CartRules.Decide(allowed, onQuest, recorded, known != null, lastSeenLoaded, loaded, playerUsing, inside, awaySeconds, day);
+			status.State = CartRules.Decide(allowed, onQuest, recorded, known != null, lastSeenLoaded, loaded, inside, awaySeconds, day);
 			if (status.State == CartRules.CartState.Missing && recorded && owner)
 			{
 				Plugin.Log.LogInfo("Cart: the village at " + village.Farm.ToString("F0") + " has lost its cart, last seen at " + seen.ToString("F0") + " - " + ((known == null) ? "destroyed" : "gone " + (awaySeconds / 60.0).ToString("F0") + " minutes"));
@@ -367,8 +391,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a quest can take the village's cart along - when it keeps one, and the cart stands at home, not
-		/// in use
+		/// Checks whether a quest can take the village's cart along - when it keeps one, and the cart stands at home empty
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <returns>True when it can</returns>
@@ -430,6 +453,7 @@ namespace VikingVillages
 			{
 				return(null);
 			}
+			MarkViking(view.GetZDO());
 			view.GetZDO().Set(VillageKey, village.Farm);
 			view.GetZDO().Set(UnloadKey, true);
 			WearNTear wear = made.GetComponent<WearNTear>();
@@ -529,6 +553,7 @@ namespace VikingVillages
 			{
 				return(null);
 			}
+			MarkViking(view.GetZDO());
 			view.GetZDO().Set(VillageKey, village.Farm);
 			WearNTear wear = made.GetComponent<WearNTear>();
 			if (wear != null)

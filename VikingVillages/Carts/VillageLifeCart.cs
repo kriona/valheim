@@ -91,7 +91,7 @@ namespace VikingVillages
 			ZNetView view = ((cartZdo != null && ZNetScene.instance != null) ? ZNetScene.instance.FindInstance(cartZdo) : null);
 			Vagon cart = ((view != null) ? view.GetComponent<Vagon>() : null);
 			bool home = (cart != null && village != null && (village.Contains(cart.transform.position) || village.InHouse(cart.transform.position, 0.5f)) && !CartHitch.IsHitched(cart, humanoid));
-			if (cart == null || village == null || home || CartHitch.PlayerUsing(cart))
+			if (cart == null || village == null || home)
 			{
 				zdo.Set(QuestCartKey, ZDOID.None);
 				return(null);
@@ -102,7 +102,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Finds cart work for the viking, every CartCheckInterval seconds - putting away what a cart brought home from a
 		/// quest, taking down an old cart of the village's, fetching the village's cart back from outside it, or building
-		/// one when the village has none and has what it takes - each claimed so only one viking does it
+		/// one when the village has none - each claimed so only one viking does it
 		/// </summary>
 		/// <returns>The job, or null when there's none</returns>
 		private Job FindCartWork()
@@ -133,14 +133,9 @@ namespace VikingVillages
 			{
 				return(new CartFetchJob(this, status.Cart));
 			}
-			if (status.State == CartRules.CartState.Missing && VillageCarts.MayBuild(village))
+			if (status.State == CartRules.CartState.Missing && VillageCarts.MayBuild(village) && ClaimWork(CartBuildKey(village)))
 			{
-				ArrowPlan plan = PlanCart(out string missing);
-				bool woodLeft = (plan != null && (Time.time >= noWoodUntil || CarriedWood() >= plan.Wood || FindWoodChest() != null));
-				if (woodLeft && ClaimWork(CartBuildKey(village)))
-				{
-					return(new CartBuildJob(this, plan));
-				}
+				return(new CartBuildJob(this));
 			}
 			return(null);
 		}
@@ -153,65 +148,6 @@ namespace VikingVillages
 		private static string CartBuildKey(Village village)
 		{
 			return("cart " + village.Zdo.m_uid);
-		}
-
-		/// <summary>
-		/// Works out what building a cart takes from the game's own piece - its wood, gathered like any piece's, and the
-		/// rest, like bronze nails, which the viking carries or the village's chests have to hold
-		/// </summary>
-		/// <param name="missing">Set to what the village is short of, or null</param>
-		/// <returns>What it takes, or null when the village is short of something or the game has no cart</returns>
-		private ArrowPlan PlanCart(out string missing)
-		{
-			missing = null;
-			GameObject prefab = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(VillageCarts.CartPrefab) : null);
-			Piece piece = ((prefab != null) ? prefab.GetComponent<Piece>() : null);
-			if (piece == null)
-			{
-				return(null);
-			}
-			ArrowPlan plan = new ArrowPlan { Prefab = VillageCarts.CartPrefab, Batch = 1 };
-			foreach (Piece.Requirement requirement in piece.m_resources)
-			{
-				if (requirement == null || requirement.m_resItem == null || requirement.m_amount <= 0)
-				{
-					continue;
-				}
-				string name = requirement.m_resItem.gameObject.name;
-				if (WoodItems.Contains(name))
-				{
-					plan.Wood += requirement.m_amount;
-					continue;
-				}
-				if (CarriedCraft(name) + ChestCount(name) < requirement.m_amount)
-				{
-					missing = name;
-					return(null);
-				}
-				plan.Others.Add(new KeyValuePair<string, int>(name, requirement.m_amount));
-			}
-			return(plan);
-		}
-
-		/// <summary>
-		/// Counts an item in the village's chests the viking may use, leaving out what's put away for a viking
-		/// </summary>
-		/// <param name="name">The item's prefab name</param>
-		/// <returns>How many</returns>
-		private int ChestCount(string name)
-		{
-			int count = 0;
-			foreach (Container chest in UsableChests())
-			{
-				foreach (ItemDrop.ItemData item in chest.GetInventory().GetAllItems())
-				{
-					if (item.m_dropPrefab != null && item.m_dropPrefab.name == name && !VikingItems.IsCarried(item))
-					{
-						count += item.m_stack;
-					}
-				}
-			}
-			return(count);
 		}
 
 		/// <summary>
@@ -280,7 +216,7 @@ namespace VikingVillages
 			/// <returns>True once it's there with the cart, or it failed (see Failed)</returns>
 			public bool Tick(float dt, Vector3 target, float reach)
 			{
-				if (cart == null || cart.m_nview == null || !cart.m_nview.IsValid() || CartHitch.PlayerUsing(cart))
+				if (cart == null || cart.m_nview == null || !cart.m_nview.IsValid())
 				{
 					Failed = true;
 					return(true);
@@ -446,17 +382,12 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Building the village's cart once it has none - getting what it takes besides wood, like bronze nails, from the
-		/// village's chests, gathering its wood, then swinging a hammer where it's parked beside a house (see
-		/// VillageCarts.FindSpot) and putting it up
+		/// Building the village's cart once it has none - from nothing, like the vikings' boats, with one swing of a
+		/// hammer where it's parked beside a house (see VillageCarts.FindSpot)
 		/// </summary>
 		private class CartBuildJob : Job
 		{
-			private readonly ArrowPlan plan;
 			private readonly HammerWork work;
-			private WoodRun run;
-			private Container chest;
-			private float actAt = -1f;
 			private bool hasSpot;
 			private Vector3 spot;
 			private Quaternion rotation;
@@ -465,10 +396,8 @@ namespace VikingVillages
 			/// Makes the job, with the building already claimed
 			/// </summary>
 			/// <param name="owner">The viking's life</param>
-			/// <param name="cart">What the cart takes</param>
-			public CartBuildJob(VillageLife owner, ArrowPlan cart) : base(owner)
+			public CartBuildJob(VillageLife owner) : base(owner)
 			{
-				plan = cart;
 				work = new HammerWork(owner, RebuildSwings);
 			}
 
@@ -482,39 +411,25 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Gets what the cart takes, then builds it
+			/// Walks to where the cart goes and builds it
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
-			/// <returns>True once it's built, the village has one again, there's no room for it, what it takes is gone, it
-			/// can't get there or it's dusk</returns>
+			/// <returns>True once it's built, the village has one again, there's no room for it, it can't get there or it's
+			/// dusk</returns>
 			public override bool Tick(float dt)
 			{
 				if (IsNight() || IsDusk() || VillageCarts.Of(life.village).State != CartRules.CartState.Missing)
 				{
 					return(true);
 				}
-				// Where it goes is picked first, so nothing is gathered for a cart there's no room for
 				if (!hasSpot && !PickSpot())
 				{
 					return(true);
-				}
-				if (life.MissingCraft(plan, out string ingredient, out int needed))
-				{
-					return(Fetch(dt, ingredient, needed));
-				}
-				if (!life.HaveWood(plan.Wood, ref run, dt, out bool done))
-				{
-					return(done);
 				}
 				if (!work.Tick(dt, spot))
 				{
 					return(life.moveFailed);
 				}
-				if (life.CarriedWood() < plan.Wood || !life.UseCraft(plan))
-				{
-					return(true);
-				}
-				life.UseWood(plan.Wood);
 				VillageCarts.Spawn(life.village, spot, rotation);
 				TestLog.Count("Work done", "carts built");
 				return(true);
@@ -538,76 +453,10 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Walks to the nearest chest holding what the cart takes and takes it - giving up when no chest holds it
-			/// any more
-			/// </summary>
-			/// <param name="dt">Seconds since the AI's last update</param>
-			/// <param name="ingredient">Its prefab name</param>
-			/// <param name="needed">How many more it needs</param>
-			/// <returns>True when it gives up</returns>
-			private bool Fetch(float dt, string ingredient, int needed)
-			{
-				if (chest == null || !life.Usable(chest))
-				{
-					chest = life.ChestWithCraft(ingredient);
-					actAt = -1f;
-					if (chest == null)
-					{
-						return(true);
-					}
-				}
-				if (Utils.DistanceXZ(chest.transform.position, life.transform.position) > ChestReach)
-				{
-					life.Go(dt, chest.transform.position, ChestReach, false);
-					if (life.moveFailed)
-					{
-						life.moveFailed = false;
-						life.Avoid(chest.m_nview);
-						chest = null;
-					}
-					actAt = -1f;
-					return(false);
-				}
-				if (actAt < 0f)
-				{
-					life.Face(chest.transform.position);
-					VikingPoses.Interact(life.humanoid);
-					life.ShowChestOpen(chest);
-					actAt = Time.time + ReachTime;
-					return(false);
-				}
-				if (Time.time < actAt)
-				{
-					return(false);
-				}
-				actAt = -1f;
-				if (life.TakeCraft(chest, ingredient, needed) <= 0)
-				{
-					life.Avoid(chest.m_nview);
-				}
-				chest = null;
-				return(false);
-			}
-
-			/// <summary>
-			/// Checks whether the wood the viking is after lies outside the village
-			/// </summary>
-			/// <returns>True when it does</returns>
-			public override bool Outing()
-			{
-				return(run != null && run.Outing());
-			}
-
-			/// <summary>
-			/// Lets go of the building and the wood it was after, and carries what it took for the cart back to a chest
+			/// Lets go of the building
 			/// </summary>
 			public override void End()
 			{
-				if (run != null)
-				{
-					run.Release();
-				}
-				life.ReturnCraft();
 				life.ReleaseWork(CartBuildKey(life.village));
 			}
 		}
@@ -664,7 +513,7 @@ namespace VikingVillages
 			/// Pulls the cart to where it's parked, then lets go of it there
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
-			/// <returns>True once it's parked, gone, used by a player or out of reach, or for one fetched by day, it's
+			/// <returns>True once it's parked, gone or out of reach, or for one fetched by day, it's
 			/// dusk</returns>
 			public override bool Tick(float dt)
 			{
@@ -746,10 +595,10 @@ namespace VikingVillages
 			/// Walks to the cart and takes out what it can carry
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
-			/// <returns>True once it has taken what it can, or the cart is gone, pulled, open or out of reach</returns>
+			/// <returns>True once it has taken what it can, or the cart is gone, pulled or out of reach</returns>
 			public override bool Tick(float dt)
 			{
-				if (cart == null || cart.m_nview == null || !cart.m_nview.IsValid() || cart.IsAttached() || CartHitch.PlayerUsing(cart))
+				if (cart == null || cart.m_nview == null || !cart.m_nview.IsValid() || cart.IsAttached())
 				{
 					return(true);
 				}
@@ -821,7 +670,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Taking down an old cart of the village's that turned up again after it built another - walking to it and
-		/// swinging a hammer at it, which drops its wood, nails and whatever it held for the vikings to put away
+		/// swinging a hammer at it, which drops nothing but what it held, for the vikings to put away
 		/// </summary>
 		private class CartTakeDownJob : Job
 		{
@@ -854,10 +703,10 @@ namespace VikingVillages
 			/// Walks to the cart, swings at it and takes it down
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
-			/// <returns>True once it's down, gone, used by a player or out of reach, or it's dusk</returns>
+			/// <returns>True once it's down, gone or out of reach, or it's dusk</returns>
 			public override bool Tick(float dt)
 			{
-				if (IsNight() || IsDusk() || cart == null || cart.m_nview == null || !cart.m_nview.IsValid() || CartHitch.PlayerUsing(cart))
+				if (IsNight() || IsDusk() || cart == null || cart.m_nview == null || !cart.m_nview.IsValid())
 				{
 					return(true);
 				}

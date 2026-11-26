@@ -80,47 +80,6 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a player is pulling a cart or has it open - anyone pulling it but a viking on this client
-		/// </summary>
-		/// <param name="cart">The cart</param>
-		/// <returns>True when one is</returns>
-		public static bool PlayerUsing(Vagon cart)
-		{
-			if (cart == null || cart.m_nview == null || !cart.m_nview.IsValid())
-			{
-				return(false);
-			}
-			if (cart.m_container != null && cart.m_container.IsInUse())
-			{
-				return(true);
-			}
-			if (cart.m_attachJoin != null)
-			{
-				return(cart.m_attachedObject != null && cart.m_attachedObject.GetComponent<Player>() != null);
-			}
-			// Hooked up on another client - a player there, or a viking that client runs
-			return(cart.IsAttached() && !cart.m_nview.IsOwner() && !PulledByViking(cart));
-		}
-
-		/// <summary>
-		/// Checks whether a cart hooked up on another client is pulled by a viking there - a viking near enough its
-		/// handle for the game to keep it hooked up
-		/// </summary>
-		/// <param name="cart">The cart</param>
-		/// <returns>True when one is</returns>
-		private static bool PulledByViking(Vagon cart)
-		{
-			foreach (VillageLife life in VillageLife.All)
-			{
-				if (life != null && Vector3.Distance(life.transform.position + cart.m_attachOffset, cart.m_attachPoint.position) < cart.m_detachDistance)
-				{
-					return(true);
-				}
-			}
-			return(false);
-		}
-
-		/// <summary>
 		/// Sets a cart down behind its viking, its handle at the viking's back, standing upright on the ground and still
 		/// </summary>
 		/// <param name="cart">The cart, owned by this client</param>

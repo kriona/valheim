@@ -51,46 +51,40 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void AVillageThatKeepsNoneHasNone()
 		{
-			Assert.Equal(CartRules.CartState.None, CartRules.Decide(false, false, true, true, false, true, false, true, 0, Day));
+			Assert.Equal(CartRules.CartState.None, CartRules.Decide(false, false, true, true, false, true, true, 0, Day));
 		}
 
 		[Fact]
 		public void NoCartNotedIsMissing()
 		{
-			Assert.Equal(CartRules.CartState.Missing, CartRules.Decide(true, false, false, false, false, false, false, false, 0, Day));
+			Assert.Equal(CartRules.CartState.Missing, CartRules.Decide(true, false, false, false, false, false, false, 0, Day));
 		}
 
 		[Fact]
 		public void ACartOutOnAQuestIsntMissing()
 		{
-			Assert.Equal(CartRules.CartState.OnQuest, CartRules.Decide(true, true, false, false, false, false, false, false, 0, Day));
+			Assert.Equal(CartRules.CartState.OnQuest, CartRules.Decide(true, true, false, false, false, false, false, 0, Day));
 		}
 
 		[Fact]
 		public void ACartUnknownWhereItWasLastSeenWasDestroyed()
 		{
-			Assert.Equal(CartRules.CartState.Missing, CartRules.Decide(true, false, true, false, true, false, false, false, 0, Day));
+			Assert.Equal(CartRules.CartState.Missing, CartRules.Decide(true, false, true, false, true, false, false, 0, Day));
 		}
 
 		[Fact]
 		public void ACartOutOfReachIsAwayUntilADayHasPassed()
 		{
-			Assert.Equal(CartRules.CartState.Away, CartRules.Decide(true, false, true, false, false, false, false, false, Day - 1, Day));
-			Assert.Equal(CartRules.CartState.Away, CartRules.Decide(true, false, true, true, false, false, false, false, 10, Day));
-			Assert.Equal(CartRules.CartState.Missing, CartRules.Decide(true, false, true, true, false, false, false, false, Day, Day));
-		}
-
-		[Fact]
-		public void APlayerUsingItKeepsTheVikingsAway()
-		{
-			Assert.Equal(CartRules.CartState.InUse, CartRules.Decide(true, false, true, true, false, true, true, false, 0, Day));
+			Assert.Equal(CartRules.CartState.Away, CartRules.Decide(true, false, true, false, false, false, false, Day - 1, Day));
+			Assert.Equal(CartRules.CartState.Away, CartRules.Decide(true, false, true, true, false, false, false, 10, Day));
+			Assert.Equal(CartRules.CartState.Missing, CartRules.Decide(true, false, true, true, false, false, false, Day, Day));
 		}
 
 		[Fact]
 		public void ALoadedCartIsHomeInsideAndAstrayOutside()
 		{
-			Assert.Equal(CartRules.CartState.Home, CartRules.Decide(true, false, true, true, false, true, false, true, 0, Day));
-			Assert.Equal(CartRules.CartState.Astray, CartRules.Decide(true, false, true, true, false, true, false, false, 0, Day));
+			Assert.Equal(CartRules.CartState.Home, CartRules.Decide(true, false, true, true, false, true, true, 0, Day));
+			Assert.Equal(CartRules.CartState.Astray, CartRules.Decide(true, false, true, true, false, true, false, 0, Day));
 		}
 
 		[Fact]

@@ -22,7 +22,7 @@ namespace VikingVillages
 		/// </summary>
 		public static void Register()
 		{
-			new Terminal.ConsoleCommand(Command, "[" + BreakWord + "|" + AstrayWord + "] - says what the cart of the village you're in is up to. " + BreakWord + " breaks it, dropping what it's made of and holds, so its vikings build another, and " + AstrayWord + " moves it " + AstrayDistance.ToString("F0") + " meters out of the village for them to fetch back", Run, isCheat: true, optionsFetcher: () => new List<string> { BreakWord, AstrayWord });
+			new Terminal.ConsoleCommand(Command, "[" + BreakWord + "|" + AstrayWord + "] - says what the cart of the village you're in is up to. " + BreakWord + " breaks it, spilling what it holds, so its vikings build another, and " + AstrayWord + " moves it " + AstrayDistance.ToString("F0") + " meters out of the village for them to fetch back", Run, isCheat: true, optionsFetcher: () => new List<string> { BreakWord, AstrayWord });
 		}
 
 		/// <summary>

@@ -471,14 +471,14 @@ The village took up a new fire, and one of the sitting logs it built by the old 
 
 ### Look After the Cart
 
-Every village from the Black Forest on keeps a cart, but not in the Ashlands (see [The Cart](LOGIC.md#the-cart) in LOGIC.md). One Viking at a time, each looking every 10 seconds:
+Every village from the Black Forest on keeps a cart, which only Vikings pull or open, but not in the Ashlands (see [The Cart](LOGIC.md#the-cart) in LOGIC.md). One Viking at a time, each looking every 10 seconds:
 
 1. Takes what a cart brought home from a quest out of it, as much as they can carry, reaching in the way you open one, and puts it away in the chests like any loot. With no room to carry anything, they leave the cart alone for a while
-2. Takes down an old cart of the village's that turned up again after it built another, within 40 meters of the village's edge - one swing, dropping its wood, nails and whatever it held for the Vikings to put away
+2. Takes down an old cart of the village's that turned up again after it built another, within 40 meters of the village's edge - one swing, dropping whatever it held for the Vikings to put away, but nothing it's made of
 3. Fetches the village's cart back when it stands outside the village - walking to its handle, hooking it up the way you do and pulling it home to a spot beside a house, nearest where it stood. When it snags on something, its handle left more than 1.6 meters behind, or comes loose, for 3 seconds, it's set down on their way behind them and hooked up again
-4. Builds a cart when the village has none - taking the nails it takes from the chests, gathering its 20 wood like any piece's, then putting it up with one swing beside a house. Not without the 10 bronze nails a cart takes in the chests
+4. Builds a cart when the village has none - from nothing, like their boats, putting it up with one swing beside a house
 
-A cart you're pulling or have open is left alone. Building, fetching and taking one down end at dusk, and a fight unhooks the cart where it stands. A Viking who came home from a quest pulling the cart brings it into the village before anything else, even at night, as part of [putting away what a quest brought home](#put-away-what-a-quest-brought-home).
+Building, fetching and taking one down end at dusk, and a fight unhooks the cart where it stands. A Viking who came home from a quest pulling the cart brings it into the village before anything else, even at night, as part of [putting away what a quest brought home](#put-away-what-a-quest-brought-home).
 
 ### Build More Chests
 
