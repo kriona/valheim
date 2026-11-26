@@ -1,6 +1,6 @@
 ---
 name: kri-vv-triage-testlog
-description: Finds suspected bugs in a Viking Villages test run (BepInEx\VikingVillagesTestLog) and lists them with evidence in scratchpad\ for the user to prune. Then `/kri-vv-triage-testlog fix` (or `fix commit`, a commit per fix) has a subagent per issue fix it, add logging or rule it out. Use for triaging or finding bugs in a test log or last night's run, or fixing a triage file's issues
+description: Finds suspected bugs in a Viking Villages test run (BepInEx\VikingVillagesTestLog) and lists them with evidence in scratchpad\VikingVillages\ for the user to prune. Then `/kri-vv-triage-testlog fix` (or `fix commit`, a commit per fix) has a subagent per issue fix it, add logging or rule it out. Use for triaging or finding bugs in a test log or last night's run, or fixing a triage file's issues
 ---
 
 # Triage a test run
@@ -20,9 +20,9 @@ The user leaves the game running overnight with `kri_vv_testlog start` and wants
 
 ## Triage
 
-What triage writes goes in the repo's `scratchpad\` folder, which git ignores - not the session's own scratchpad directory - so the user can open it and a later session can pick it up
+What triage writes goes in the repo's `scratchpad\VikingVillages\` folder, which git ignores - not the session's own scratchpad directory - so the user can open it and a later session can pick it up. Make the folder when it isn't there yet
 
-1. Get the overview, saving it to the scratchpad folder: `python -P .claude/skills/kri-vv-triage-testlog/scripts/overview.py [name or path] > scratchpad/overview-<run>.txt`. It's more than a command's output shows at once, so Read the file - all of it, as it's built to be read whole. It has how the run started and ended, the build of the mod it ran, each kind of line with its count and its first and last lines, the exceptions, who and where each kind is most about with what they were doing, the jobs and the reasons the lines give, each viking's lives, a row per snapshot with every hitch's game time, the villages and the totals at points through the run, the longest stretches with nothing written, and the last totals
+1. Get the overview, saving it to that folder: `python -P .claude/skills/kri-vv-triage-testlog/scripts/overview.py [name or path] > scratchpad/VikingVillages/overview-<run>.txt`. It's more than a command's output shows at once, so Read the file - all of it, as it's built to be read whole. It has how the run started and ended, the build of the mod it ran, each kind of line with its count and its first and last lines, the exceptions, who and where each kind is most about with what they were doing, the jobs and the reasons the lines give, each viking's lives, a row per snapshot with every hitch's game time, the villages and the totals at points through the run, the longest stretches with nothing written, and the last totals
 2. Read `references/known-patterns.md`, the patterns already looked into that aren't bugs. Leave them out unless the run shows what the entry says would make one a bug after all
 3. See what may be fixed already, in the overview's Build section - the commits to the mod since its DLL was written, which the run may not have had. A commit that adds or rewords a log line settles it: when the run has the new line, the build had the commit. Name a commit that looks like it fixes an issue in that issue, rather than leaving the issue out, since only the next run can tell
 4. Look for what's off. These are the signals worth chasing, roughly from what hurts most:
@@ -39,7 +39,7 @@ What triage writes goes in the repo's `scratchpad\` folder, which git ignores - 
 
 ### The triage file
 
-Write it to `scratchpad\`, named `triage-<run>-<yyyyMMdd-HHmm>.md` (like `triage-Swamp-20261125-1915.md`), always as a new file. Lay it out like this:
+Write it to `scratchpad\VikingVillages\`, named `triage-<run>-<yyyyMMdd-HHmm>.md` (like `triage-Swamp-20261125-1915.md`), always as a new file. Lay it out like this:
 
 ````markdown
 # Triage of Swamp.log
@@ -89,7 +89,7 @@ Give the triage file's full path, each issue's title in a line, most harmful fir
 
 ### Before starting
 
-- Find the triage file - the one the user names, the one written earlier in this conversation, or the newest `triage-*.md` in `scratchpad\`. With none, ask for its path
+- Find the triage file - the one the user names, the one written earlier in this conversation, or the newest `triage-*.md` in `scratchpad\VikingVillages\`. With none, ask for its path
 - Read it again, as the user may have changed it. Work on the issues whose Status is open or missing, leave out those set to skip, and pass each one's Notes on to its investigator
 - Find the run's overview beside it, or make it again as in the Triage part's first step, for the investigators to start from
 - Commit only when the user asked for commits in their own request - `fix commit`, or asking in words. CLAUDE.md says never to commit unless asked, and this skill's steps aren't the user asking. Without that, every change stays in the working tree
