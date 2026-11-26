@@ -879,8 +879,9 @@ namespace VikingVillages
 				GetOffBoard();
 				Plugin.Log.LogInfo(LogName() + " went overboard from " + myBoat.Key + " at " + transform.position.ToString("F0"));
 				TestLog.Count("Boats", "vikings overboard");
-				// The helm calls out first, as the boat comes about
-				nextTreadCall = Time.time + 4f;
+				VikingSpeech.SayFirst(humanoid, VikingRoadSpeech.HitWater(), VikingSpeech.CallTime, VikingSpeech.CallCull);
+				// The helm calls out next, as the boat comes about, and only after that does it call out treading water
+				nextTreadCall = Time.time + VikingSpeech.CallTime + 4f;
 				SetCrossing(zdo, Crossing.Overboard);
 				return(true);
 			}
@@ -1087,6 +1088,7 @@ namespace VikingVillages
 			if (distance < ClimbReach || humanoid.GetStandingOnShip() == myBoat.Ship)
 			{
 				GetAboard(zdo, "climbed back");
+				VikingSpeech.Say(humanoid, VikingRoadSpeech.BackAboard(), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 				return(true);
 			}
 			float left = ((body != null) ? BoatRules.SwimMetersLeft(body.Stamina(), humanoid.GetSkillFactor(Skills.SkillType.Swim), Game.m_moveStaminaRate, humanoid.m_swimSpeed) : float.MaxValue);

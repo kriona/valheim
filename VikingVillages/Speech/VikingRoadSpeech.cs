@@ -302,7 +302,25 @@ namespace VikingVillages
 			"{0}'s in the water! Bring her about!",
 			"Hold on, {0}! We're coming for you!",
 			"Stop the boat! {0} went over!",
-			"Man overboard! Hang on, {0}!"
+			"Viking overboard! Hang on, {0}!"
+		};
+
+		/// <summary>
+		/// What a viking cries out as it goes overboard and hits the water, and what it says as it climbs back aboard
+		/// </summary>
+		internal static readonly string[] HitWaterLines =
+		{
+			"Help! I'm in the water!",
+			"Viking overboard! Don't leave me!",
+			"Whoa! Someone help!",
+			"Gah! It's cold! Help me!"
+		};
+		internal static readonly string[] BackAboardLines =
+		{
+			"Back aboard. Let's not do that again.",
+			"Thanks for coming back for me!",
+			"I owe you a mead for that one.",
+			"Solid deck under me again. Thank the gods."
 		};
 
 		/// <summary>
@@ -645,6 +663,24 @@ namespace VikingVillages
 		public static string Overboard(string name)
 		{
 			return(string.Format(VikingSpeech.Pick(OverboardLines, ""), name));
+		}
+
+		/// <summary>
+		/// Picks what a viking cries out as it goes overboard and hits the water
+		/// </summary>
+		/// <returns>The line</returns>
+		public static string HitWater()
+		{
+			return(VikingSpeech.Pick(HitWaterLines, ""));
+		}
+
+		/// <summary>
+		/// Picks what a viking that went overboard says as it climbs back aboard
+		/// </summary>
+		/// <returns>The line</returns>
+		public static string BackAboard()
+		{
+			return(VikingSpeech.Pick(BackAboardLines, ""));
 		}
 
 		/// <summary>
