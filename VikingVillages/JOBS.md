@@ -156,7 +156,9 @@ Within half a meter of a fire's flames, checked 5 times a second, they get up an
 
 ### Step Away From Poison
 
-With Zombie Apocalypse, a poison cloud, or a zombie's corpse that might leave one, within 3 meters has them run straight away from it - even in a fight - until they're 3 meters clear.
+With Zombie Apocalypse, a poison cloud, or a zombie's corpse that might leave one, within 3 meters has them run straight away from it - even in a fight - until they're 3 meters clear. They keep their job and pick it up again once they're clear, unless they were sitting or lying down.
+
+When their job takes them to a spot within 3 meters of poison, they stop a meter short of where they'd have to step away and wait for it to go - a cloud only lasts moments. After 10 seconds they give up on the spot, the way they give up on one they can't reach, so a watch goes on to its next stop and loot is left alone for a while.
 
 ### Keep Clear of Roots
 

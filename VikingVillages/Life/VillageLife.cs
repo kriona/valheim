@@ -1559,6 +1559,23 @@ namespace VikingVillages
 		private const float PoisonAvoid = 3f;
 
 		/// <summary>
+		/// How far past PoisonAvoid the viking stops on its way to a spot within PoisonAvoid of poison, in meters, how long
+		/// it waits there for the poison to go before giving up on the spot, and how long a break in the wait starts it
+		/// over, in seconds
+		/// </summary>
+		private const float PoisonWaitReach = 1f;
+		private const float PoisonWaitTime = 10f;
+		private const float PoisonWaitBreak = 1f;
+
+		/// <summary>
+		/// Whether the viking is stepping away from poison, and when it started waiting for poison to go from where it's
+		/// walking and last waited, or -1 while it isn't waiting
+		/// </summary>
+		private bool steppingFromPoison;
+		private float poisonWaitSince = -1f;
+		private float poisonWaitLast;
+
+		/// <summary>
 		/// How near a fire's flames the viking's body can get before it runs out, how far clear of them it runs before
 		/// it stops, in meters, and seconds between looks for flames while it isn't running from them
 		/// </summary>
@@ -9988,6 +10005,10 @@ namespace VikingVillages
 		/// <returns>True once it's there, or when it gave up, which sets moveFailed</returns>
 		private bool Go(float dt, Vector3 target, float reach, bool run)
 		{
+			if (WaitForPoison(target, out bool poisonGaveUp))
+			{
+				return(poisonGaveUp);
+			}
 			run = (run || AwayFromHome() || RunsInRain() || (viking != null && viking.Climbing()));
 			bool viaDoor = VikingDoors.Steer(humanoid, target, out Vector3 waypoint, out bool direct);
 			mover = (direct ? "straight through a door" : (viaDoor ? "path to a door" : "path")) + " for " + ((job != null) ? job.GetType().Name : "village life");
@@ -10023,6 +10044,41 @@ namespace VikingVillages
 			bool stuck = CheckStuck(target);
 			AskWayWhenHeldUp(waypoint);
 			return(stuck);
+		}
+
+		/// <summary>
+		/// Holds the viking back from a spot within PoisonAvoid of poison once it's within PoisonWaitReach of where it
+		/// keeps clear of it, standing there until the poison is gone - a cloud lasts moments - and giving up on the spot
+		/// after PoisonWaitTime seconds, the way it gives up on a spot it can't reach, so its job moves on
+		/// </summary>
+		/// <param name="target">Where the viking is walking</param>
+		/// <param name="gaveUp">Set to true when it gives up on the spot, which sets moveFailed</param>
+		/// <returns>True while it holds back, so it doesn't walk on</returns>
+		private bool WaitForPoison(Vector3 target, out bool gaveUp)
+		{
+			gaveUp = false;
+			if (!VillageHazards.NearestPoison(target, PoisonAvoid, out Vector3 poison) || Utils.DistanceXZ(transform.position, poison) > PoisonAvoid + PoisonWaitReach)
+			{
+				poisonWaitSince = -1f;
+				return(false);
+			}
+			mover = "waiting for poison to go for " + ((job != null) ? job.GetType().Name : "village life");
+			ai.StopMoving();
+			ResetStuck();
+			// A wait broken off for longer than PoisonWaitBreak - for a fight, or a job that doesn't walk - starts over
+			if (poisonWaitSince < 0f || Time.time - poisonWaitLast > PoisonWaitBreak)
+			{
+				poisonWaitSince = Time.time;
+			}
+			poisonWaitLast = Time.time;
+			if (Time.time - poisonWaitSince >= PoisonWaitTime)
+			{
+				poisonWaitSince = -1f;
+				moveFailed = true;
+				gaveUp = true;
+				TestLog.Count("Walks given up for poison, by job", ((job != null) ? LogJobName() : "village life"));
+			}
+			return(true);
 		}
 
 		/// <summary>
@@ -10327,13 +10383,15 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Has the viking step away from a poison cloud or a zombie's corpse that might leave one when it's too near,
-		/// running straight away from it, even in a fight
+		/// running straight away from it, even in a fight. It keeps its job, picking it up again once it's clear, unless
+		/// it's sitting, lying or on a seat, which it has to get up from
 		/// </summary>
 		/// <returns>True while it's stepping away, so the AI's own update is skipped</returns>
 		private bool UpdatePoison()
 		{
 			if (!VillageHazards.NearestPoison(transform.position, PoisonAvoid, out Vector3 poison))
 			{
+				steppingFromPoison = false;
 				return(false);
 			}
 			Vector3 away = transform.position - poison;
@@ -10342,7 +10400,15 @@ namespace VikingVillages
 			{
 				away = -transform.forward;
 			}
-			Interrupt("poison");
+			if (attachPoint != null || VikingPoses.SettledDown(humanoid, out bool _))
+			{
+				Interrupt("poison");
+			}
+			if (!steppingFromPoison)
+			{
+				steppingFromPoison = true;
+				TestLog.Count("Stepped away from poison, by job", ((job != null) ? LogJobName() : "none"));
+			}
 			mover = "stepping away from poison";
 			ai.MoveTowards(away.normalized, true);
 			return(true);
