@@ -12,7 +12,8 @@ namespace ZombieApocalypse
 	/// The cloud is a copy of the ooze bomb's, registered as a prefab of its own so every client shows the same smaller
 	/// cloud, with less poison and a shorter life. With no owner it poisons whatever stands in it, though the undead -
 	/// zombies included - shrug poison off. Its particles stop a little before it's removed, so it thins out rather
-	/// than vanishing. Zombie vikings leave no corpse to rot, so they never leave one
+	/// than vanishing. A zombie viking's corpse is marked as a zombie's like any other (see CorpseSetupPatch), so it can
+	/// leave one too
 	/// </remarks>
 	internal static class PoisonCloud
 	{
