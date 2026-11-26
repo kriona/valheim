@@ -66,6 +66,13 @@ namespace VikingVillages
 		private const float BuildSwingGap = 1.1f;
 
 		/// <summary>
+		/// How near the water's edge the builder has to get before it swings, in meters, and the longest it walks there
+		/// before it builds from where it got to, in seconds
+		/// </summary>
+		private const float BuildReach = 1f;
+		private const float BuildWalkMost = 15f;
+
+		/// <summary>
 		/// Where boats are put in the water - how far out from the shore the water is looked for and in what steps, how
 		/// deep it has to be, how far past that the boat goes, and how far apart a group's boats are, in meters
 		/// </summary>
@@ -118,6 +125,11 @@ namespace VikingVillages
 		/// </summary>
 		private readonly List<string> buildCrew = new List<string>();
 		private Vector3 launchSpot;
+
+		/// <summary>
+		/// For the builder, the water's edge on the way out to where the boats go in, which it walks to before it swings
+		/// </summary>
+		private Vector3 buildSpot;
 		private int swings;
 		private float nextSwing;
 
@@ -213,7 +225,7 @@ namespace VikingVillages
 				case Crossing.Gathering:
 					return(Gather(zdo));
 				case Crossing.Building:
-					return(BuildBoats(zdo));
+					return(BuildBoats(dt, zdo));
 				case Crossing.Boarding:
 					return(Board(dt, zdo));
 			}
@@ -284,6 +296,7 @@ namespace VikingVillages
 			}
 			buildCrew.Clear();
 			buildCrew.AddRange(ids);
+			buildSpot = WaterEdge(transform.position, launchSpot);
 			swings = 0;
 			nextSwing = Time.time + 0.5f;
 			SetCrossing(zdo, Crossing.Building);
@@ -374,13 +387,28 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Swings the hammer at the water once, then builds the group's boats - as many as they need, each with its
-		/// share of the group on board and the first of them at the helm
+		/// Walks to the water's edge, as close to where the boats go in as it can stand, then swings the hammer at the
+		/// water once and builds the group's boats - as many as they need, each with its share of the group on board and
+		/// the first of them at the helm. One that can't get to the edge, or hasn't in BuildWalkMost seconds, builds from
+		/// where it got to
 		/// </summary>
+		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="zdo">Its ZDO</param>
 		/// <returns>True, as it takes the update over</returns>
-		private bool BuildBoats(ZDO zdo)
+		private bool BuildBoats(float dt, ZDO zdo)
 		{
+			if (swings == 0 && Utils.DistanceXZ(transform.position, buildSpot) > BuildReach && Time.time - crossingSince < BuildWalkMost)
+			{
+				mover = "walking to the water's edge to build a boat";
+				nextSwing = Mathf.Max(nextSwing, Time.time + 0.3f);
+				if (Go(dt, buildSpot, BuildReach / 2f, true))
+				{
+					// There, or as near as it can get, it builds from where it stands
+					moveFailed = false;
+					buildSpot = transform.position;
+				}
+				return(true);
+			}
 			mover = "building a boat";
 			Face(launchSpot);
 			HoldHammer(true);
