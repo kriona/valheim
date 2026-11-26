@@ -323,6 +323,7 @@ Every Viking but the watch goes to bed at a bedtime of their own, 0-60 seconds a
 
 They take their own bed first, then a bed in their own house, then the nearest - any bed in a house of the village's core, or a bed that brought a Viking anywhere in the village, that no player has claimed and no other Viking holds. The bed they take becomes their own. With no bed, they sit on a free chair in their own house, or lie on its floor at least 2 meters from its doors.
 
+- They lie down from wherever they reach beside the bed - within 0.8 meters of any edge of it, its foot included, with nothing between them - or within 1.5 meters of its middle
 - Held up on the way to a bed, they wait 3 seconds and try again twice, then sleep on the floor
 - A player taking their bed gets them up to find another
 - Pushed more than a meter off their spot on the floor, they go back to it

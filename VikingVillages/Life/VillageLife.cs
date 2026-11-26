@@ -339,6 +339,15 @@ namespace VikingVillages
 		private const float BedRetryWait = 3f;
 
 		/// <summary>
+		/// How near the edge of its bed a viking has to stand, seen from above, to lie down in it from there - its foot
+		/// included, which is too far from the bed's middle when its long sides are blocked - how far above or below the
+		/// bed it can stand, and how high the check that nothing stands between them looks, in meters
+		/// </summary>
+		private const float BedEdgeReach = 0.8f;
+		private const float BedEdgeHeight = 1f;
+		private const float BedEdgeKnee = 0.3f;
+
+		/// <summary>
 		/// How many places in the ring a viking tries before heading for the fire itself, and how far from a place on the
 		/// navmesh the ring's point can be, in meters
 		/// </summary>
@@ -16283,6 +16292,46 @@ namespace VikingVillages
 			}
 
 			/// <summary>
+			/// Checks whether the viking stands beside its bed - within BedEdgeReach of its nearest edge seen from above,
+			/// level with it, and with nothing solid like a wall between them
+			/// </summary>
+			/// <returns>True when it does</returns>
+			private bool BesideBed()
+			{
+				WearNTear piece = bed.GetComponent<WearNTear>();
+				if (piece == null)
+				{
+					return(false);
+				}
+				Vector3 feet = life.transform.position;
+				if (Mathf.Abs(feet.y - bed.transform.position.y) > BedEdgeHeight)
+				{
+					return(false);
+				}
+				Vector3 knee = feet + Vector3.up * BedEdgeKnee;
+				Vector3 edge = NearestPoint(piece, knee);
+				if (Utils.DistanceXZ(edge, feet) > BedEdgeReach)
+				{
+					return(false);
+				}
+				Vector3 toEdge = edge - knee;
+				float distance = toEdge.magnitude;
+				if (distance < 0.01f)
+				{
+					return(true);
+				}
+				EnsureHopMask();
+				foreach (RaycastHit hit in Physics.RaycastAll(knee, toEdge / distance, distance, hopMask, QueryTriggerInteraction.Ignore))
+				{
+					if (hit.collider.GetComponentInParent<Bed>() != bed)
+					{
+						return(false);
+					}
+				}
+				return(true);
+			}
+
+			/// <summary>
 			/// Walks to where it rests and lies or sits down, keeps its bed claimed through the night, and gets up once
 			/// the night is over - sitting on its home's floor only once it's inside, and going back to its spot when
 			/// it's pushed off it
@@ -16331,9 +16380,16 @@ namespace VikingVillages
 							return(true);
 						}
 					}
-					// A bed or chair is lain or sat on from within reach of it, since the piece itself stands in the way
+					// A bed or chair is lain or sat on from within reach of it, since the piece itself stands in the way, and a
+					// bed from beside any edge of it
 					float reach = ((bed != null || chair != null) ? 1.5f : 0.6f);
-					if (!life.Go(dt, spot, reach, false))
+					if (bed != null && BesideBed())
+					{
+						life.ai.StopMoving();
+						life.ResetStuck();
+						life.moveFailed = false;
+					}
+					else if (!life.Go(dt, spot, reach, false))
 					{
 						return(false);
 					}
