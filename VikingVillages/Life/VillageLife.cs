@@ -15800,6 +15800,7 @@ namespace VikingVillages
 				if (life.body.Powers.Use(power, pupil))
 				{
 					usedAt = Time.time;
+					VikingPowers.LogTeaching(life.humanoid, pupil, power);
 					return(false);
 				}
 				// Another viking near using the same power has it wait, while a cooldown that has started since ends it

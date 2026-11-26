@@ -122,5 +122,27 @@ namespace VikingVillages.Tests
 			damage.m_fire = 1f;
 			Assert.Equal(VikingPowers.Elements.Poison | VikingPowers.Elements.Frost | VikingPowers.Elements.Fire, VikingPowers.DamageElements(damage));
 		}
+
+		/// <summary>
+		/// Checks that the log names each power by its boss, without the status effect's prefix or a leading "The"
+		/// </summary>
+		[Fact]
+		public void NamesPowersForTheLog()
+		{
+			Assert.Equal("Eikthyr", VikingPowers.PowerName(VikingPowers.Eikthyr));
+			Assert.Equal("Elder", VikingPowers.PowerName(VikingPowers.Elder));
+			Assert.Equal("Moder", VikingPowers.PowerName(VikingPowers.Moder));
+		}
+
+		/// <summary>
+		/// Checks that a set of powers is listed by name in their order, or as none
+		/// </summary>
+		[Fact]
+		public void ListsPowersForTheLog()
+		{
+			Assert.Equal("none", VikingPowers.Describe(0));
+			Assert.Equal("Eikthyr", VikingPowers.Describe(1 << VikingPowers.Eikthyr));
+			Assert.Equal("Eikthyr, Elder, Moder", VikingPowers.Describe((1 << VikingPowers.Moder) | (1 << VikingPowers.Eikthyr) | (1 << VikingPowers.Elder)));
+		}
 	}
 }

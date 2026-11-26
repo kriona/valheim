@@ -268,8 +268,73 @@ namespace VikingVillages
 			if ((learned & bit) == 0 && (Known() & bit) == 0)
 			{
 				zdo.Set(LearnedKey, learned | bit);
+				TestLog.Count("Powers", "learned");
+				if (TestLog.On || Player.m_debugMode)
+				{
+					Plugin.Log.LogInfo("Power learned: " + TestLog.Name(viking) + " learned " + PowerName(power) + "'s power, and now knows " + Describe(Known()));
+				}
 			}
 			zdo.Set(UnderKey, zdo.GetInt(UnderKey) | bit);
+		}
+
+		/// <summary>
+		/// Notes a viking teaching a power to another, as it uses the power beside them - for the test log's totals, and
+		/// in the log during a test run or in debug mode, with the powers the one taught already knew, warning when they
+		/// knew this one
+		/// </summary>
+		/// <param name="teacher">The viking teaching</param>
+		/// <param name="pupil">The viking taught</param>
+		/// <param name="power">The power, by index in Names</param>
+		public static void LogTeaching(Character teacher, Character pupil, int power)
+		{
+			int knew = KnownBy(pupil);
+			bool already = ((knew & (1 << power)) != 0);
+			TestLog.Count("Powers", "taught");
+			if (already)
+			{
+				TestLog.Count("Troubles", "powers taught to a viking who already knew them");
+			}
+			if (!TestLog.On && !Player.m_debugMode)
+			{
+				return;
+			}
+			string line = "Power taught: " + TestLog.Name(teacher) + " uses " + PowerName(power) + "'s power to teach " + TestLog.Label(pupil) + ", who knew " + Describe(knew);
+			if (already)
+			{
+				Plugin.Log.LogWarning(line + " - this one included");
+			}
+			else
+			{
+				Plugin.Log.LogInfo(line);
+			}
+		}
+
+		/// <summary>
+		/// Gets a power's name for the log - the boss it's from, like Eikthyr or Elder
+		/// </summary>
+		/// <param name="power">The power, by index in Names</param>
+		/// <returns>The name</returns>
+		internal static string PowerName(int power)
+		{
+			return(Names[power].Substring(3).Replace("The", ""));
+		}
+
+		/// <summary>
+		/// Lists the powers in a set by name, for the log, in the order of Names
+		/// </summary>
+		/// <param name="powers">The powers, one bit for each in the order of Names</param>
+		/// <returns>The names separated by commas, or "none"</returns>
+		internal static string Describe(int powers)
+		{
+			List<string> names = new List<string>();
+			for (int i = 0; i < Names.Length; i++)
+			{
+				if ((powers & (1 << i)) != 0)
+				{
+					names.Add(PowerName(i));
+				}
+			}
+			return((names.Count > 0) ? string.Join(", ", names) : "none");
 		}
 
 		/// <summary>
