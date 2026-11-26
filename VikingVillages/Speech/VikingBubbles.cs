@@ -9,7 +9,7 @@ namespace VikingVillages
 	/// Shows what a viking says over its head in the game's own speech bubble, made to fit the line and kept just above
 	/// its health bar as it moves - and while it's off screen, pinned to the screen's edge behind an arrow pointing at
 	/// it, with its name. Its name also shows on screen while its health bar doesn't. The bubble and its arrow are drawn
-	/// above other mods' markers (see SpeechLayer)
+	/// above other mods' markers, and behind the big map and the loading screen (see SpeechLayer)
 	/// </summary>
 	/// <remarks>
 	/// The game sizes its bubble for a trader's long speeches and centers the line in it, so a short line sits far above
@@ -216,6 +216,11 @@ namespace VikingVillages
 				{
 					over.Add(entry.Key);
 					continue;
+				}
+				SpeechLayer.Set(bubble.Npc.m_gui, true);
+				if (bubble.Arrow != null)
+				{
+					SpeechLayer.Set(bubble.Arrow.gameObject, true);
 				}
 				Vector3 said = bubble.Viking.transform.position + bubble.Npc.m_offset;
 				bool expired = (bubble.Npc.m_timeout && bubble.Npc.m_ttl <= 0f);

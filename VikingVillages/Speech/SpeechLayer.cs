@@ -4,7 +4,8 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// Draws what a viking says, and its name over its health bar while it speaks, above other mods' markers - each piece
-	/// in a canvas of its own, sorted above them
+	/// in a canvas of its own, sorted above them - and behind the big map and the black loading screen while either
+	/// shows
 	/// </summary>
 	internal static class SpeechLayer
 	{
@@ -15,7 +16,15 @@ namespace VikingVillages
 		private const int SortingOrder = 460;
 
 		/// <summary>
-		/// Raises a piece of the HUD above the markers, or puts it back in its own canvas's order
+		/// Just below the game's HUD (400), whose canvas holds the big map and the black loading screen shown while
+		/// teleporting, sleeping or dead - where the speech sorts while either shows, so it's covered
+		/// </summary>
+		private const int CoveredOrder = 399;
+
+		/// <summary>
+		/// Raises a piece of the HUD above the markers - or while the big map or the loading screen shows, sorts it just
+		/// behind them - or puts it back in its own canvas's order. Call it every frame for a raised piece, so it follows
+		/// the map and the loading screen as they open and close
 		/// </summary>
 		/// <remarks>
 		/// Putting it back turns its canvas's sorting off rather than the canvas itself, since a disabled canvas draws
@@ -42,10 +51,22 @@ namespace VikingVillages
 			{
 				canvas.overrideSorting = raised;
 			}
-			if (raised && canvas.sortingOrder != SortingOrder)
+			int order = (Covered() ? CoveredOrder : SortingOrder);
+			if (raised && canvas.sortingOrder != order)
 			{
-				canvas.sortingOrder = SortingOrder;
+				canvas.sortingOrder = order;
 			}
+		}
+
+		/// <summary>
+		/// Checks whether the big map or the black loading screen shows - the loading screen even while it fades in or out
+		/// </summary>
+		/// <returns>True when either does</returns>
+		private static bool Covered()
+		{
+			Hud hud = Hud.instance;
+			bool loading = (hud != null && hud.m_loadingScreen != null && hud.m_loadingScreen.gameObject.activeSelf);
+			return(loading || Minimap.IsOpen());
 		}
 	}
 }
