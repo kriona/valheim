@@ -6,6 +6,27 @@ using UnityEngine.UI;
 namespace VikingVillages
 {
 	/// <summary>
+	/// Counts a chair a living viking sits on, or holds on to like a boat's mast, as in use, so a player can't sit on
+	/// it too and the two overlap - the game turning them away the way it does from a chair another player sits on
+	/// </summary>
+	[HarmonyPatch(typeof(Chair), nameof(Chair.IsInUse))]
+	public static class VikingChairPatch
+	{
+		/// <summary>
+		/// Marks the chair in use when a viking is on it
+		/// </summary>
+		/// <param name="__instance">The chair</param>
+		/// <param name="__result">Whether it's in use</param>
+		private static void Postfix(Chair __instance, ref bool __result)
+		{
+			if (!__result && __instance.m_attachPoint != null && VillageLife.VikingOn(__instance.m_attachPoint.position))
+			{
+				__result = true;
+			}
+		}
+	}
+
+	/// <summary>
 	/// Listens for the village's calls for help, alarms and effects in each world
 	/// </summary>
 	[HarmonyPatch(typeof(ZNetScene), nameof(ZNetScene.Awake))]

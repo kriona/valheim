@@ -735,19 +735,60 @@ namespace VikingVillages
 		{
 			Transform seat = myBoat.Seat(mySeat);
 			string pose = myBoat.SeatPose(mySeat);
+			Vector3 at = seat.position;
+			Quaternion facing = seat.rotation;
 			ClearPushedSpot();
+			// A player already on its seat - holding the mast, say - leaves it to sit on the boards instead, so the two
+			// don't overlap
+			if (pose != VikingPoses.FloorPose && Player.IsPlayerInRange(seat.position, SeatTakenReach) && VikingBoat.DeckSpot(myBoat.Ship, out Vector3 deck))
+			{
+				pose = VikingPoses.FloorPose;
+				at = deck;
+				facing = Quaternion.LookRotation(myBoat.transform.forward);
+			}
 			if (pose == VikingPoses.FloorPose)
 			{
 				// Sitting on the boards, it sits at a spot of its own a player can push about (see UpdatePush)
 				GameObject spot = new GameObject("vikingPushed");
 				spot.transform.SetParent(myBoat.transform, false);
-				spot.transform.position = seat.position;
-				spot.transform.rotation = seat.rotation;
+				spot.transform.position = at;
+				spot.transform.rotation = facing;
 				pushedSpot = spot.transform;
 				seat = pushedSpot;
 			}
+			seatPose = pose;
 			Attach(seat, myBoat.gameObject);
 			VikingPoses.SetShipPose(humanoid, pose, true);
+		}
+
+		/// <summary>
+		/// How near a seat a player has to be to count as on it, in meters, the way the game tells a chair is in use
+		/// (see Chair.IsInUse), with room for the boat moving under them
+		/// </summary>
+		private const float SeatTakenReach = 0.3f;
+
+		/// <summary>
+		/// The pose the viking sits in on its boat - its seat's, or the boards' when a player had its seat (see
+		/// SitOnBoard)
+		/// </summary>
+		private string seatPose = VikingPoses.FloorPose;
+
+		/// <summary>
+		/// Checks whether a living or dvergr viking sits at a spot, like a chair's or a boat's mast's - one within
+		/// SeatTakenReach of it, on any client, since a viking sitting is held right at its seat (see VikingChairPatch)
+		/// </summary>
+		/// <param name="point">The spot</param>
+		/// <returns>True when one does</returns>
+		public static bool VikingOn(Vector3 point)
+		{
+			foreach (Character character in Character.GetAllCharacters())
+			{
+				if (character != null && !character.IsDead() && VikingCore.IsLivingOrDvergr(character) && Vector3.Distance(character.transform.position, point) <= SeatTakenReach)
+				{
+					return(true);
+				}
+			}
+			return(false);
 		}
 
 		/// <summary>
@@ -1040,10 +1081,9 @@ namespace VikingVillages
 				mover = ((mySeat == 0) ? "at the helm" : "on board");
 				// Anything that moved it, like its AI before it was seated or its gear going on, stands it back up
 				ai.StopMoving();
-				string pose = myBoat.SeatPose(mySeat);
-				if (!VikingPoses.InShipPose(humanoid, pose))
+				if (!VikingPoses.InShipPose(humanoid, seatPose))
 				{
-					VikingPoses.SetShipPose(humanoid, pose, true);
+					VikingPoses.SetShipPose(humanoid, seatPose, true);
 				}
 				UpdatePush(dt);
 			}
