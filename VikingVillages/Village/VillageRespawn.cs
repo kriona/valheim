@@ -105,17 +105,24 @@ namespace VikingVillages
 		private static readonly Dictionary<ZDOID, float> lastSearch = new Dictionary<ZDOID, float>();
 
 		/// <summary>
-		/// Since when an enemy has been in or near each village while a viking was due to come to it, by its generator's
-		/// ZDO, by Time.time on this client
+		/// Since when an enemy has been in or near each village while a viking was due to come to it, and when one was
+		/// last found there, by its generator's ZDO, by Time.time on this client
 		/// </summary>
 		private static readonly Dictionary<ZDOID, float> enemySince = new Dictionary<ZDOID, float>();
+		private static readonly Dictionary<ZDOID, float> enemyLastSeen = new Dictionary<ZDOID, float>();
+
+		/// <summary>
+		/// How long a village can go unlooked at for enemies before the wait for them to leave starts over, in seconds -
+		/// a village is only looked at while a viking is due to come to it, so a longer gap means a new wait
+		/// </summary>
+		internal const float EnemyWaitGap = CheckInterval * 3f;
 
 		/// <summary>
 		/// How long an enemy in or near a village keeps a viking from coming to it, in seconds - after that it comes
 		/// anyway, from a spot clear of enemies (see FindArrivalSpot), rather than waiting on monsters a raid left behind
 		/// that may never go - unless a raid is still on
 		/// </summary>
-		private const float EnemyPatience = 600f;
+		internal const float EnemyPatience = 600f;
 
 		/// <summary>
 		/// How far from the spot a viking notes as its village the generator can stand, and how far from a house's
@@ -366,7 +373,7 @@ namespace VikingVillages
 			int byPlayers = deaths.FindAll((Death death) => death.ByPlayer).Count;
 			long due = DueAt(zdo.GetLong(LastRespawnKey, 0L), deaths[0], EnvMan.instance.m_dayLengthSec);
 			float hours = (float)(due - NetTime.Now()) / System.TimeSpan.TicksPerSecond / EnvMan.instance.m_dayLengthSec * 24f;
-			string when = ((hours > 0f) ? "next in " + hours.ToString("F1") + " game hours" : (EnemyHoldsBack(village, village.FindEnemy(EnemyReach)) ? "next due, waiting for enemies to leave" : "next due"));
+			string when = ((hours > 0f) ? "next in " + hours.ToString("F1") + " game hours" : (EnemyHoldsBack(village, village.FindEnemy(EnemyReach), false) ? "next due, waiting for enemies to leave" : "next due"));
 			text.Append("Respawns: " + deaths.Count + " waiting" + ((byPlayers > 0) ? " (" + byPlayers + " killed by players)" : "") + ", " + when + "\n");
 		}
 
@@ -1031,25 +1038,73 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Checks whether an enemy in or near a village keeps vikings from coming to it - while a raid is on, or for
-		/// EnemyPatience after it was first found there, noting when that was, and forgetting it once there's none
+		/// EnemyPatience after the wait for it to leave started (see WaitStart) - noting the wait when asked to, and
+		/// forgetting it once there's no enemy
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="enemy">The enemy in the village or within EnemyReach of it, or null</param>
+		/// <param name="note">Whether to note the wait, which only a viking due to come does, so describing the village
+		/// leaves it as it was</param>
 		/// <returns>True when it does</returns>
-		private static bool EnemyHoldsBack(Village village, Character enemy)
+		private static bool EnemyHoldsBack(Village village, Character enemy, bool note)
 		{
 			ZDOID id = village.Zdo.m_uid;
 			if (enemy == null)
 			{
-				enemySince.Remove(id);
+				if (note)
+				{
+					ForgetEnemyWait(id);
+				}
 				return(false);
 			}
-			if (!enemySince.TryGetValue(id, out float since))
+			float since = 0f;
+			float lastSeen = 0f;
+			bool known = (enemySince.TryGetValue(id, out since) && enemyLastSeen.TryGetValue(id, out lastSeen));
+			since = WaitStart(known, since, lastSeen, Time.time);
+			if (note)
 			{
-				since = Time.time;
 				enemySince[id] = since;
+				enemyLastSeen[id] = Time.time;
 			}
-			return(VillageRaids.On(village) || Time.time - since < EnemyPatience);
+			return(HoldsBack(since, Time.time, VillageRaids.On(village)));
+		}
+
+		/// <summary>
+		/// Works out since when vikings have waited for enemies to leave a village - since the wait already noted, when
+		/// an enemy was last found there no more than EnemyWaitGap ago, or else from now, so a wait broken off by a
+		/// viking coming, the village unloading or no viking being due starts over
+		/// </summary>
+		/// <param name="known">Whether a wait is noted for the village</param>
+		/// <param name="since">When the noted wait started, by Time.time</param>
+		/// <param name="lastSeen">When an enemy was last found there, by Time.time</param>
+		/// <param name="now">The time now, by Time.time</param>
+		/// <returns>When the wait started, by Time.time</returns>
+		internal static float WaitStart(bool known, float since, float lastSeen, float now)
+		{
+			return((known && now - lastSeen <= EnemyWaitGap) ? since : now);
+		}
+
+		/// <summary>
+		/// Checks whether an enemy keeps vikings from coming to a village - while a raid is on, or until it has held them
+		/// back for EnemyPatience
+		/// </summary>
+		/// <param name="since">When the wait for it to leave started, by Time.time</param>
+		/// <param name="now">The time now, by Time.time</param>
+		/// <param name="raid">Whether a raid is on</param>
+		/// <returns>True when it does</returns>
+		internal static bool HoldsBack(float since, float now, bool raid)
+		{
+			return(raid || now - since < EnemyPatience);
+		}
+
+		/// <summary>
+		/// Forgets a village's wait for enemies to leave, once there's no enemy or a viking has come
+		/// </summary>
+		/// <param name="id">The village's generator's ZDO</param>
+		private static void ForgetEnemyWait(ZDOID id)
+		{
+			enemySince.Remove(id);
+			enemyLastSeen.Remove(id);
 		}
 
 		/// <summary>
@@ -1082,7 +1137,7 @@ namespace VikingVillages
 			spot = Vector3.zero;
 			outside = false;
 			Character enemy = village.FindEnemy(EnemyReach);
-			if (EnemyHoldsBack(village, enemy))
+			if (EnemyHoldsBack(village, enemy, true))
 			{
 				why = "a hostile " + Utils.GetPrefabName(enemy.gameObject) + " in the village or within " + EnemyReach.ToString("F0") + "m of it, at " + enemy.transform.position.ToString("F0");
 				return(false);
@@ -1206,6 +1261,7 @@ namespace VikingVillages
 			}
 			VillagePaths.House home = (chosen.HasValue ? chosen.Value : FewestClaimed(village, vikings));
 			village.Adopt(zdo, home);
+			ForgetEnemyWait(village.Zdo.m_uid);
 			TestLog.Count("Vikings", (returned ? "came back to a village" : "came to a village"));
 			Plugin.Log.LogInfo(TestLog.Name(zdo) + (returned ? " came back" : " came") + " to the village at " + village.Farm.ToString("F0") + ", calling the house at " + home.Center.ToString("F0") + " home");
 			return(zdo);
@@ -1304,6 +1360,7 @@ namespace VikingVillages
 				}
 			}
 			village.Adopt(zdo, home);
+			ForgetEnemyWait(village.Zdo.m_uid);
 			zdo.Set(VillageLife.ArrivingKey, outside);
 			vikings.Add(zdo);
 			TestLog.Count("Vikings", (questHome ? "came home from a quest" : "arrived at a village from the road"));

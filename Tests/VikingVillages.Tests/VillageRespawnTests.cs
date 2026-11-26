@@ -99,6 +99,47 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a village with no wait noted starts one now
+		/// </summary>
+		[Fact]
+		public void NoWaitNotedStartsNow()
+		{
+			Assert.Equal(500f, VillageRespawn.WaitStart(false, 100f, 495f, 500f));
+		}
+
+		/// <summary>
+		/// Checks that a wait looked at again within the gap goes on from when it started
+		/// </summary>
+		[Fact]
+		public void WaitLookedAtWithinTheGapGoesOn()
+		{
+			Assert.Equal(100f, VillageRespawn.WaitStart(true, 100f, 495f, 500f));
+			Assert.Equal(100f, VillageRespawn.WaitStart(true, 100f, 500f - VillageRespawn.EnemyWaitGap, 500f));
+		}
+
+		/// <summary>
+		/// Checks that a wait not looked at for longer than the gap, as while no viking was due, starts over
+		/// </summary>
+		[Fact]
+		public void WaitBrokenOffStartsOver()
+		{
+			Assert.Equal(5000f, VillageRespawn.WaitStart(true, 100f, 700f, 5000f));
+			Assert.Equal(500f, VillageRespawn.WaitStart(true, 100f, 499f - VillageRespawn.EnemyWaitGap, 500f));
+		}
+
+		/// <summary>
+		/// Checks that an enemy holds vikings back until the patience runs out, and for as long as a raid is on
+		/// </summary>
+		[Fact]
+		public void EnemyHoldsBackUntilThePatienceRunsOut()
+		{
+			Assert.True(VillageRespawn.HoldsBack(100f, 100f, false));
+			Assert.True(VillageRespawn.HoldsBack(100f, 99f + VillageRespawn.EnemyPatience, false));
+			Assert.False(VillageRespawn.HoldsBack(100f, 100f + VillageRespawn.EnemyPatience, false));
+			Assert.True(VillageRespawn.HoldsBack(100f, 5000f, true));
+		}
+
+		/// <summary>
 		/// Checks that a death added to none is the only one
 		/// </summary>
 		[Fact]
