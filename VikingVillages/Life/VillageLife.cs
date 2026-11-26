@@ -4090,8 +4090,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Checks whether the viking would rather shoot an enemy than fight it hand to hand - one it can't reach, out in
-		/// deep water, flying or with no way to it, one too many of its fellows are already at, or a tough one it keeps
-		/// away from (see UpdateKite)
+		/// deep water, flying or with no way to it, one too many of its fellows are already at, or a tough monster or
+		/// poison blob it keeps away from (see Kites)
 		/// </summary>
 		/// <param name="enemy">The enemy</param>
 		/// <returns>True when it would</returns>
@@ -4159,12 +4159,12 @@ namespace VikingVillages
 		private const float ShooterRange = 30f;
 
 		/// <summary>
-		/// How often a monster the viking fights is weighed up again for being tough, in seconds
+		/// How often a monster the viking fights is weighed up again for whether it kites it, in seconds
 		/// </summary>
 		private const float ToughCheckInterval = 2f;
 
 		/// <summary>
-		/// The monster the viking last weighed up, whether it's tough, and when that was, in Time.time seconds
+		/// The monster the viking last weighed up, whether it kites it, and when that was, in Time.time seconds
 		/// </summary>
 		private Character toughChecked;
 		private bool toughResult;
@@ -4189,9 +4189,10 @@ namespace VikingVillages
 		private const float GatherReach = SupportKeepMax + LureFar;
 
 		/// <summary>
-		/// Checks whether the viking keeps away from a monster rather than fight it hand to hand - it's tough for the
-		/// viking (see VikingCore.IsTough), and it isn't charging it with its fellows (see KeepsClear). A hunting party's
-		/// prey is kited only by the one it's after (see HuntParty)
+		/// Checks whether the viking keeps away from a monster rather than fight it hand to hand - it's a poison blob the
+		/// viking doesn't resist and someone near can shoot it (see KitesBlob), or it's tough for the viking (see
+		/// VikingCore.IsTough) and it isn't charging it with its fellows (see KeepsClear). A hunting party's prey is
+		/// kited only by the one it's after (see HuntParty)
 		/// </summary>
 		/// <param name="monster">The monster</param>
 		/// <returns>True when it does</returns>
@@ -4211,9 +4212,66 @@ namespace VikingVillages
 			{
 				toughChecked = monster;
 				toughCheckedAt = Time.time;
-				toughResult = (Tough(monster) && KeepsClear(monster));
+				if (KitesBlob(monster))
+				{
+					gathering = false;
+					toughResult = true;
+				}
+				else
+				{
+					toughResult = (Tough(monster) && KeepsClear(monster));
+				}
 			}
 			return(toughResult);
+		}
+
+		/// <summary>
+		/// Checks whether the viking kites a blob - one whose attacks poison (see VikingPowers.ElementsOf), when nothing
+		/// it wears or has taken resists poison and it or a fellow near the blob can shoot it (see KitesBlob(bool, bool,
+		/// HitData.DamageModifier, bool))
+		/// </summary>
+		/// <param name="monster">The monster</param>
+		/// <returns>True when it kites it</returns>
+		private bool KitesBlob(Character monster)
+		{
+			bool blob = IsBlob(Utils.GetPrefabName(monster.gameObject));
+			bool poisons = (blob && (VikingPowers.ElementsOf(monster) & VikingPowers.Elements.Poison) != 0);
+			HitData.DamageModifier poison = humanoid.GetDamageModifiers().GetModifier(HitData.DamageType.Poison);
+			return(KitesBlob(blob, poisons, poison, (blob && poisons && ShootersNear(monster))));
+		}
+
+		/// <summary>
+		/// Checks whether a viking kites a blob rather than fight it hand to hand - one whose attacks poison, when it
+		/// doesn't resist poison and someone can shoot the blob. With no one to shoot it, the viking fights it anyway
+		/// </summary>
+		/// <param name="blob">Whether the monster is a blob</param>
+		/// <param name="poisons">Whether its attacks poison</param>
+		/// <param name="poison">How the viking takes poison damage</param>
+		/// <param name="shooters">Whether the viking or a fellow near the blob can shoot it</param>
+		/// <returns>True when it kites it</returns>
+		internal static bool KitesBlob(bool blob, bool poisons, HitData.DamageModifier poison, bool shooters)
+		{
+			return(blob && poisons && shooters && !ResistsPoison(poison));
+		}
+
+		/// <summary>
+		/// Checks whether a creature's prefab is a blob - a blob, oozer, growth or any other of the game's blobs
+		/// </summary>
+		/// <param name="prefab">The prefab name</param>
+		/// <returns>True when it is</returns>
+		internal static bool IsBlob(string prefab)
+		{
+			return(prefab != null && prefab.StartsWith("Blob", System.StringComparison.Ordinal));
+		}
+
+		/// <summary>
+		/// Checks whether a poison damage modifier resists poison at all, or shrugs it off
+		/// </summary>
+		/// <param name="poison">The modifier</param>
+		/// <returns>True when it does</returns>
+		internal static bool ResistsPoison(HitData.DamageModifier poison)
+		{
+			return(poison == HitData.DamageModifier.SlightlyResistant || poison == HitData.DamageModifier.Resistant || poison == HitData.DamageModifier.VeryResistant || poison == HitData.DamageModifier.Immune || poison == HitData.DamageModifier.Ignore);
 		}
 
 		/// <summary>
@@ -4393,7 +4451,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Kites a tough monster (see Kites) - the viking it's after lures it, staying just out of its reach, past
+		/// Kites a tough monster or poison blob (see Kites) - the viking it's after lures it, staying just out of its reach, past
 		/// LureNear and backing off whenever it gets closer, while the rest keep SupportKeep past its reach and farther
 		/// from it than the lure, so it stays after the lure, and shoot it. One who can't shoot holds its ground out of
 		/// reach rather than walk in

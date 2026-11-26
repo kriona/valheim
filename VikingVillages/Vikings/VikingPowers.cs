@@ -697,7 +697,7 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="creature">The creature</param>
 		/// <returns>The kinds of damage</returns>
-		private static Elements ElementsOf(Character creature)
+		internal static Elements ElementsOf(Character creature)
 		{
 			if (creature is Humanoid humanoid && creature.TryGetComponent(out VikingCore _))
 			{

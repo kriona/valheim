@@ -627,6 +627,57 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a viking kites a poison blob only when it doesn't resist poison and someone can shoot the blob
+		/// </summary>
+		[Fact]
+		public void KitesPoisonBlobsWithoutResistance()
+		{
+			Assert.True(VillageLife.KitesBlob(true, true, HitData.DamageModifier.Normal, true));
+			Assert.True(VillageLife.KitesBlob(true, true, HitData.DamageModifier.Weak, true));
+			Assert.False(VillageLife.KitesBlob(true, true, HitData.DamageModifier.Normal, false));
+			Assert.False(VillageLife.KitesBlob(true, true, HitData.DamageModifier.Resistant, true));
+			Assert.False(VillageLife.KitesBlob(true, false, HitData.DamageModifier.Normal, true));
+			Assert.False(VillageLife.KitesBlob(false, true, HitData.DamageModifier.Normal, true));
+		}
+
+		/// <summary>
+		/// Checks which poison damage modifiers count as resisting poison
+		/// </summary>
+		/// <param name="poison">The modifier</param>
+		/// <param name="expected">Whether it resists</param>
+		[Theory]
+		[InlineData(HitData.DamageModifier.Normal, false)]
+		[InlineData(HitData.DamageModifier.Weak, false)]
+		[InlineData(HitData.DamageModifier.VeryWeak, false)]
+		[InlineData(HitData.DamageModifier.SlightlyWeak, false)]
+		[InlineData(HitData.DamageModifier.SlightlyResistant, true)]
+		[InlineData(HitData.DamageModifier.Resistant, true)]
+		[InlineData(HitData.DamageModifier.VeryResistant, true)]
+		[InlineData(HitData.DamageModifier.Immune, true)]
+		[InlineData(HitData.DamageModifier.Ignore, true)]
+		public void ResistsPoison(HitData.DamageModifier poison, bool expected)
+		{
+			Assert.Equal(expected, VillageLife.ResistsPoison(poison));
+		}
+
+		/// <summary>
+		/// Checks that the game's blobs are told apart by their prefab names
+		/// </summary>
+		/// <param name="prefab">The prefab name</param>
+		/// <param name="expected">Whether it's a blob</param>
+		[Theory]
+		[InlineData("Blob", true)]
+		[InlineData("BlobElite", true)]
+		[InlineData("BlobTar", true)]
+		[InlineData("Draugr", false)]
+		[InlineData("blob", false)]
+		[InlineData(null, false)]
+		public void TellsBlobs(string prefab, bool expected)
+		{
+			Assert.Equal(expected, VillageLife.IsBlob(prefab));
+		}
+
+		/// <summary>
 		/// Checks that a hunter swings around its prey only as far as it takes to come at its back - none when it's
 		/// already behind it, just enough when that's within reach either way, and none when the prey faces it, rather
 		/// than circling all the way around
