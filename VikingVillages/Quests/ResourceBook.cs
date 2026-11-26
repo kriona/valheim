@@ -354,7 +354,7 @@ namespace VikingVillages
 			Rule(QuestKind.MineTin, BlackForest, 2, 2, 4, false, mining);
 			Rule(QuestKind.MineSilver, Mountain, 3, 3, 5, false, mining);
 			Rule(QuestKind.RaidCrypts, Swamp, 3, 3, 5, true, mining);
-			Rule(QuestKind.RaidBurialChambers, BlackForest, 2, 2, 3, true, new string[0]);
+			Rule(QuestKind.RaidBurialChambers, BlackForest, 2, 2, 2, true, new string[0]);
 			Rule(QuestKind.HuntTrolls, BlackForest, 3, 3, 3, true, new string[0]);
 			Rule(QuestKind.HuntGoblins, Plains, 3, 3, 5, false, new[] { BlastFurnace, Kiln });
 			Rule(QuestKind.SellTreasure, Meadows, 2, 2, 2, false, new string[0]);
@@ -367,7 +367,7 @@ namespace VikingVillages
 			eikthyr.Offering = "TrophyDeer";
 			eikthyr.OfferingCount = 2;
 			Rule(QuestKind.FindBees, Meadows, 1, 1, 1, false, new string[0]).HivesBelow = HivesWanted;
-			Rule(QuestKind.HuntGhosts, BlackForest, 2, 2, 3, true, new string[0]);
+			Rule(QuestKind.HuntGhosts, BlackForest, 2, 2, 2, true, new string[0]);
 			Rule(QuestKind.RaidFrostCaves, Mountain, 3, 3, 3, true, new string[0]);
 			Brings("RawMeat", QuestKind.Hunt, Meadows);
 			Brings("LeatherScraps", QuestKind.Hunt, Meadows);

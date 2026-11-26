@@ -34,8 +34,8 @@ Vikings is how many go - the second number from the Plains on - and up to how ma
 | Mine tin | Black Forest | 2, up to 4 | A pickaxe that breaks tin, a smelter and a kiln | Ground of the Black Forest | 3 min, and as long as their pickaxes take | 2 h 24 min, and as long as their pickaxes take | 15% | See [Mining](#mining) |
 | Mine silver | Mountains | 3, up to 5 | A pickaxe that breaks silver, a smelter and a kiln | Ground of the Mountains | 10 min, and as long as their pickaxes take | 8 h, and as long as their pickaxes take | 50% | See [Mining](#mining) |
 | Raid sunken crypts | Swamp | 3, up to 5 | A pickaxe that breaks muddy scrap piles, a torch or circlet, a smelter and a kiln | The nearest sunken crypts | 30 min, and as long as their pickaxes take | 24 h, and as long as their pickaxes take | A fight - see [Fights](#fights) | See [Sunken crypts](#sunken-crypts) |
-| Raid burial chambers | Black Forest | 2, up to 3 | A torch or circlet | The nearest burial chambers | 15 min | 12 h | A fight - see [Fights](#fights) | See [Burial chambers](#burial-chambers) |
-| Hunt ghosts | Black Forest | 2, up to 3 | A torch or circlet, and Zombie Apocalypse, whose silver-lining takes ectoplasm | The nearest burial chambers | 15 min | 12 h | A fight - see [Fights](#fights) | See [Ghosts](#ghosts) |
+| Raid burial chambers | Black Forest | 2 | A torch or circlet | The nearest burial chambers | 15 min | 12 h | A fight - see [Fights](#fights) | See [Burial chambers](#burial-chambers) |
+| Hunt ghosts | Black Forest | 2 | A torch or circlet, and Zombie Apocalypse, whose silver-lining takes ectoplasm | The nearest burial chambers | 15 min | 12 h | A fight - see [Fights](#fights) | See [Ghosts](#ghosts) |
 | Raid frost caves | Mountains | 3 | A torch or circlet | The nearest frost caves | 15 min | 12 h | A fight - see [Fights](#fights) | See [Frost caves](#frost-caves) |
 | Hunt trolls | Black Forest | 3 | A torch or circlet | The nearest troll caves | 15 min | 12 h | A fight - see [Fights](#fights) | See [Trolls](#trolls) |
 | Hunt goblins | Plains | 3, up to 5 | A blast furnace and a kiln | The nearest fuling villages | 20 min | 16 h | A fight - see [Fights](#fights) | See [Fulings](#fulings) |
@@ -301,21 +301,21 @@ The Meadows, always 2 of them. Eikthyr has 500 health and no resistances, gores 
 
 The Black Forest - 4 skeletons and a rancid remains each, and a ghost for every 2 of them. Skeletons have 40 health, are weak to blunt and resist pierce, and swing swords for 25 slash or shoot bows for 20 pierce. Rancid remains have 100 health, the same weaknesses, and swing maces for 20 blunt and 30 poison. Ghosts have 60 health, resist slash, blunt and pierce, are weak to spirit, and slash for 25.
 
-| Viking's gear | 2: fight | 2: harm | 2: hurt after | 2: died | 3: fight | 3: harm | 3: hurt after | 3: died |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Black Forest troll leather, bronze mace and bronze buckler, 115 health | 16 s | 19% | 5.7% | - | 18 s | 13% | 3.9% | - |
-| Black Forest troll leather, bronze spear and bronze buckler, 115 health | 40 s | 49% | 14.7% | 1.8% | 42 s | 34% | 10.2% | - |
-| Swamp root armor, iron mace and banded shield, 155 health | 9 s | 4% | 1.2% | - | 9 s | 3% | 0.9% | - |
+| Viking's gear | 2: fight | 2: harm | 2: hurt after | 2: died |
+| --- | --- | --- | --- | --- |
+| Black Forest troll leather, bronze mace and bronze buckler, 115 health | 16 s | 19% | 5.7% | - |
+| Black Forest troll leather, bronze spear and bronze buckler, 115 health | 40 s | 49% | 14.7% | 1.8% |
+| Swamp root armor, iron mace and banded shield, 155 health | 9 s | 4% | 1.2% | - |
 
 ### Hunt Ghosts
 
 The Black Forest - 2 ghosts, 3 skeletons and a rancid remains each, in the same burial chambers (see [Raid Burial Chambers](#raid-burial-chambers)).
 
-| Viking's gear | 2: fight | 2: harm | 2: hurt after | 2: died | 3: fight | 3: harm | 3: hurt after | 3: died |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Black Forest troll leather, bronze mace and bronze buckler, 115 health | 27 s | 29% | 8.7% | - | 27 s | 18% | 5.4% | - |
-| Black Forest troll leather, bronze spear and bronze buckler, 115 health | 47 s | 58% | 17.4% | 2.5% | 47 s | 38% | 11.4% | 1.1% |
-| Swamp root armor, iron mace and banded shield, 155 health | 14 s | 7% | 2.1% | - | 14 s | 4% | 1.2% | - |
+| Viking's gear | 2: fight | 2: harm | 2: hurt after | 2: died |
+| --- | --- | --- | --- | --- |
+| Black Forest troll leather, bronze mace and bronze buckler, 115 health | 27 s | 29% | 8.7% | - |
+| Black Forest troll leather, bronze spear and bronze buckler, 115 health | 47 s | 58% | 17.4% | 2.5% |
+| Swamp root armor, iron mace and banded shield, 155 health | 14 s | 7% | 2.1% | - |
 
 ### Hunt Trolls
 
