@@ -95,6 +95,7 @@ namespace VikingVillages
 			VillageNameList.Register();
 			VillagePlannedNames.Register();
 			VillageArea.Register();
+			VillageChestUse.Register();
 			VillagePaths.Register();
 			VillageLocations.Register();
 			VillagePortals.Register();

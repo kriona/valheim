@@ -85,6 +85,7 @@ namespace VikingVillages
 			VikingInventory.Update();
 			VikingConcernSpeech.Update();
 			VillageArea.Update();
+			VillageChestUse.Update();
 			VillageMapPins.Update();
 			VillageNameList.Update();
 			VillagePlannedNames.Update();

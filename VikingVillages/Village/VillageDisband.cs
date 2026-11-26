@@ -85,9 +85,9 @@ namespace VikingVillages
 		private static float nextCheck;
 
 		/// <summary>
-		/// Notes on a bonfire that its village was just disbanded, so its vikings gather at it, and asks the server for the
-		/// village they go to - by what its vikings loaded here can do on the road together (see TravelParty), or the
-		/// village's own biome when none of them is loaded here
+		/// Notes on a bonfire that its village was just disbanded, so its vikings gather at it, along with the chests they
+		/// empty first, and asks the server for the village they go to - by what its vikings loaded here can do on the
+		/// road together (see TravelParty), or the village's own biome when none of them is loaded here
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="fire">Its bonfire's ZDO, owned by this client</param>
@@ -108,6 +108,7 @@ namespace VikingVillages
 			{
 				party = TravelParty.Of(VillageFarmhouses.HardestBiomeNear(village.Farm, VillageFarmhouses.HardBiomeVikingReach));
 			}
+			VillageChestUse.NoteDisbandChests(village, fire);
 			fire.Set(DisbandAtKey, NetTime.Now());
 			fire.Set(GatheredAtKey, 0L);
 			fire.Set(RemainKey, Random.Range(RemainMin, RemainMax));

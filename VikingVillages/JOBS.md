@@ -123,7 +123,7 @@ Out of the village, a Viking after wood, loot or forage who finds an enemy withi
 
 ### Chests
 
-The Vikings use any chest in the village's rings or inside one of its houses that's open to everyone - not a cart, ship or tombstone, a chest a player built inside a ward, one that's open, or one whose player is within 6 meters of it. They walk to within 1.5 meters and reach in for 0.8 seconds, which also merges its part-stacks.
+The Vikings use any chest in the village's rings or inside one of its houses that's open to everyone, whoever built it - not a cart, ship or tombstone, one you've kept them out of with V (see [Village Chests](LOGIC.md#village-chests) in LOGIC.md), one that's open, or one whose player is within 6 meters of it. They walk to within 1.5 meters and reach in for 0.8 seconds, which also merges its part-stacks.
 
 They keep their chests tidy:
 
@@ -484,7 +484,7 @@ Building, fetching and taking one down end at dusk, and a fight unhooks the cart
 
 ### Build More Chests
 
-For 10 minutes after a lot comes into the village at once - Vikings coming home from a quest, travelers arriving, or a cart being emptied - one Viking at a time looks every 15 seconds at the village's own chests, those it was furnished with or its Vikings built. When they have fewer than 4 free slots between them, they build a wood chest - gathering its 10 wood like any piece's, then putting it up with one swing - in a house of the village's core holding fewer than 4 chests, the two it was furnished with and two more: against a wall as near one of its chests as fits, within 4 meters, or in a house with none, as near its middle, keeping the way from a door to every bed and piece clear, the way the house was furnished, houses holding a chest first and then the nearest. The chest is one of the village's own pieces, which they build back like the rest. With no room in any house, they don't look again until more comes in. It ends at dusk.
+For 10 minutes after a lot comes into the village at once - Vikings coming home from a quest, travelers arriving, or a cart being emptied - one Viking at a time looks every 15 seconds at the village's own chests, every chest the Vikings use (see [Chests](#chests)), yours included. When they have fewer than 4 free slots between them, they build a wood chest - gathering its 10 wood like any piece's, then putting it up with one swing - in a house of the village's core holding fewer than 4 chests, the two it was furnished with and two more: against a wall as near one of its chests as fits, within 4 meters, or in a house with none, as near its middle, keeping the way from a door to every bed and piece clear, the way the house was furnished, houses holding a chest first and then the nearest. The chest is one of the village's own pieces, which they build back like the rest. With no room in any house, they don't look again until more comes in. It ends at dusk.
 
 ### Cut Trees
 

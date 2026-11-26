@@ -12,7 +12,7 @@ namespace VikingVillages
 	{
 		/// <summary>
 		/// Lists the village's chests the viking may use - public ones in the village, not on a cart or ship, not a
-		/// tombstone, not open, and not a chest a player built inside a ward - leaving out those it couldn't get to lately
+		/// tombstone, not open, and not one a player keeps the vikings out of - leaving out those it couldn't get to lately
 		/// </summary>
 		/// <returns>The chests</returns>
 		private List<Container> UsableChests()
@@ -156,14 +156,26 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a chest is one of a village's, which its vikings use - a public one in the village or its
-		/// houses, not on a cart or ship, not a tombstone, not one of the game's treasure chests, and not a chest a
-		/// player built inside a ward, which keeps the vikings out of it but not out of the village's own
+		/// Checks whether a chest is one of a village's, which its vikings use - one in the village (see ChestOfVillage)
+		/// that no player keeps them out of (see VillageChestUse)
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="chest">The chest</param>
 		/// <returns>True when it is</returns>
 		private static bool IsVillageChest(Village village, Container chest)
+		{
+			return(ChestOfVillage(village, chest) && !VillageChestUse.KeptOut(chest));
+		}
+
+		/// <summary>
+		/// Checks whether a chest is one a village's vikings would use unless a player keeps them out of it - a public one
+		/// in the village or its houses, whoever built it, not on a cart or ship, not a tombstone and not one of the game's
+		/// treasure chests
+		/// </summary>
+		/// <param name="village">The village, or null</param>
+		/// <param name="chest">The chest</param>
+		/// <returns>True when it is</returns>
+		internal static bool ChestOfVillage(Village village, Container chest)
 		{
 			if (village == null || chest == null || chest.m_nview == null || !chest.m_nview.IsValid() || chest.m_privacy != Container.PrivacySetting.Public)
 			{
@@ -174,12 +186,7 @@ namespace VikingVillages
 				return(false);
 			}
 			Vector3 position = chest.transform.position;
-			if (!village.Contains(position) && !village.InHouse(position, 1f))
-			{
-				return(false);
-			}
-			bool playerBuilt = (chest.m_nview.GetZDO().GetLong(ZDOVars.s_creator, 0L) != 0L);
-			return(!(playerBuilt && Warded(position)));
+			return(village.Contains(position) || village.InHouse(position, 1f));
 		}
 
 		/// <summary>

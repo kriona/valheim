@@ -56,6 +56,7 @@ This page gives a short tour of each feature. Every detail of how it works is in
 - Start a village of your own at a bonfire you built, and disband it when you're done with it (see [Starting and Disbanding a Village](LOGIC.md#starting-and-disbanding-a-village))
 - Make your own fires gathering fires, so a large village spreads out over them at night (see [Gathering Fires](LOGIC.md#gathering-fires))
 - See everything in the village's chests at once from its fire (see [Village Stock](LOGIC.md#village-stock))
+- The Vikings use the chests you build in their village too, and you can keep them out of any chest you choose (see [Village Chests](LOGIC.md#village-chests))
 
 | Key | Look at | What it does |
 | --- | --- | --- |
@@ -66,6 +67,7 @@ This page gives a short tour of each feature. Every detail of how it works is in
 | N | A village's bonfire or campfire | Rename the village |
 | V | A village's bonfire or campfire | Show or hide the village's rings |
 | V | Another fire in a village | Make it a gathering fire, or an ordinary fire again |
+| V | A chest in a village | Keep the Vikings out of it, or let them use it again |
 | V | A bonfire you built | Start a village |
 | Shift+V | The bonfire of a village you started | Disband the village |
 | Shift+E | Your own bed | Unclaim it |

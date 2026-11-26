@@ -44,10 +44,12 @@ namespace VikingVillages
 		private bool roadCartSeenSet;
 
 		/// <summary>
-		/// Where the viking is at in emptying a disbanded village's chests - the chest it's at, when its reach into it
-		/// lands, the cart it loads, and the hammer swing that builds one
+		/// Where the viking is at in emptying a disbanded village's chests - whether it's done, the chests it empties (see
+		/// VillageChestUse.DisbandChests), read the first time it looks, the chest it's at, when its reach into it lands,
+		/// the cart it loads, and the hammer swing that builds one
 		/// </summary>
 		private bool disbandLootDone;
+		private HashSet<ZDOID> disbandChests;
 		private Container lootChest;
 		private float lootActAt = -1f;
 		private Vagon lootCart;
@@ -321,12 +323,12 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Empties a disbanded village's own chests near its fire - those put up with the village or by its vikings, never
-		/// a player's - as the vikings gather, before they set out: taking what they can carry, most useful first (see
-		/// LootRank), and when the chests hold more than that, getting a cart - the village's own when it has one at
-		/// home, or else building one beside the fire from nothing, one cart each at most - and
-		/// carrying the rest to it an armful at a time, up to its full load. A Meadows or Ashlands village's vikings
-		/// take no cart (see CartRules.Allowed)
+		/// Empties a disbanded village's own chests near its fire - the ones its vikings used, a player's included unless
+		/// they were kept out of it (see DisbandChest) - as the vikings gather, before they set out: taking what they can
+		/// carry, most useful first (see LootRank), and when the chests hold more than that, getting a cart - the
+		/// village's own when it has one at home, or else building one beside the fire from nothing, one cart each at
+		/// most - and carrying the rest to it an armful at a time, up to its full load. A Meadows or Ashlands village's
+		/// vikings take no cart (see CartRules.Allowed)
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="zdo">Its ZDO</param>
@@ -347,6 +349,10 @@ namespace VikingVillages
 			if (lootSwing != null)
 			{
 				return(BuildLootCart(dt, zdo, middle));
+			}
+			if (disbandChests == null)
+			{
+				disbandChests = VillageChestUse.DisbandChests(fire);
 			}
 			if (lootChest == null || !DisbandChest(lootChest, middle) || lootChest.GetInventory().NrOfItems() == 0)
 			{
@@ -398,16 +404,16 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a chest is one of a disbanded village's own the viking empties - public, near its fire, put up
-		/// with the village or by its vikings rather than by a player, not a cart's, a ship's, a tombstone or a treasure
-		/// chest, and not open
+		/// Checks whether a chest is one of a disbanded village's own the viking empties - one its vikings used when it was
+		/// disbanded (see VillageChestUse.NoteDisbandChests) that no player has kept them out of since, public, near its
+		/// fire, not a cart's, a ship's, a tombstone or a treasure chest, and not open
 		/// </summary>
 		/// <param name="chest">The chest</param>
 		/// <param name="middle">Where the village's fire stands</param>
 		/// <returns>True when it is</returns>
 		private bool DisbandChest(Container chest, Vector3 middle)
 		{
-			if (chest == null || chest.m_nview == null || !chest.m_nview.IsValid() || chest.m_privacy != Container.PrivacySetting.Public || !OwnChest(chest))
+			if (chest == null || chest.m_nview == null || !chest.m_nview.IsValid() || chest.m_privacy != Container.PrivacySetting.Public || disbandChests == null || !disbandChests.Contains(chest.m_nview.GetZDO().m_uid) || VillageChestUse.KeptOut(chest))
 			{
 				return(false);
 			}

@@ -67,8 +67,8 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Keeps the game from toggling auto-pickup when the village area key is pressed at a fire it does something at -
-	/// the key is auto-pickup's by default (see VillageArea.KeyTaken)
+	/// Keeps the game from toggling auto-pickup when the village area key is pressed at a fire or chest it does something
+	/// at - the key is auto-pickup's by default (see VillageArea.KeyTaken and VillageChestUse.KeyTaken)
 	/// </summary>
 	[HarmonyPatch(typeof(ZInput), nameof(ZInput.GetButtonDown))]
 	public static class VillageAreaKeyPatch
@@ -80,7 +80,7 @@ namespace VikingVillages
 		/// <param name="__result">Whether it was just pressed</param>
 		private static void Postfix(string name, ref bool __result)
 		{
-			if (__result && name == "AutoPickup" && VillageArea.KeyTaken())
+			if (__result && name == "AutoPickup" && (VillageArea.KeyTaken() || VillageChestUse.KeyTaken()))
 			{
 				__result = false;
 			}

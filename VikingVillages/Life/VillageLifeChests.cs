@@ -45,20 +45,10 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a chest is one of the village's own - put up with the village or by its vikings, not by a player
-		/// </summary>
-		/// <param name="chest">The chest</param>
-		/// <returns>True when it is</returns>
-		private static bool OwnChest(Container chest)
-		{
-			return(chest != null && chest.m_nview != null && chest.m_nview.IsValid() && chest.m_nview.GetZDO().GetLong(ZDOVars.s_creator, 0L) == 0L);
-		}
-
-		/// <summary>
 		/// Finds a chest for the viking to build, while the village is looking at its chests' room (see NoteChestCheck)
-		/// and its own chests have fewer than ChestFreeLow free slots between them - one viking of the village at a time,
-		/// beside a chest of a house of its core with fewer than ChestsPerHouse, or else in one with none (see
-		/// VillageFurnishing.ChestSpotNear), when there's wood to get
+		/// and its own chests - every chest its vikings use, whoever built it - have fewer than ChestFreeLow free slots
+		/// between them - one viking of the village at a time, beside a chest of a house of its core with fewer than
+		/// ChestsPerHouse, or else in one with none (see VillageFurnishing.ChestSpotNear), when there's wood to get
 		/// </summary>
 		/// <returns>The job, or null when the chests have room enough or there's nowhere for one</returns>
 		private Job FindChestWork()
@@ -68,7 +58,7 @@ namespace VikingVillages
 				return(null);
 			}
 			nextChestCheck = Time.time + ChestCheckInterval;
-			List<Container> own = VillageChests(village).FindAll(OwnChest);
+			List<Container> own = VillageChests(village);
 			int free = 0;
 			foreach (Container chest in own)
 			{
