@@ -68,6 +68,14 @@ namespace VikingVillages
 		private const float SwimDepth = 1.6f;
 
 		/// <summary>
+		/// How deep water off the sea has to be for a boat to cross it, in meters - deeper than the vikings launch a boat
+		/// in (see VillageLife.LaunchDepth), so a road by boat never runs aground. The world's plan only counts water as
+		/// the ocean well out from the shore, leaving deep water off a beach, between an island and the mainland, to the
+		/// land's biome
+		/// </summary>
+		private const float SailDepth = 2.5f;
+
+		/// <summary>
 		/// The sea's level when the zone system isn't there to say, in meters
 		/// </summary>
 		private const float DefaultWaterLevel = 30f;
@@ -699,7 +707,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Reads a square of the world's map from its plan - the sea is crossed by boat, the Ashlands' deep water too, the
 		/// Ashlands' lava and the water past WorldEdge can't be crossed at all, the sea out where the Ashlands' water
-		/// boils burns a boat not made for it (see Ship.TakeAshlandsDamage), and a river or lake too deep to wade is swum
+		/// boils burns a boat not made for it (see Ship.TakeAshlandsDamage), and a river, lake or water off a shore too
+		/// deep to wade is swum, or sailed when it's deep enough for a boat (see SailDepth)
 		/// </summary>
 		/// <param name="x">The point's x</param>
 		/// <param name="z">The point's z</param>
@@ -715,7 +724,9 @@ namespace VikingVillages
 			float water = ((ZoneSystem.instance != null) ? ZoneSystem.instance.m_waterLevel : DefaultWaterLevel);
 			if (!cell.Sea && biome != Heightmap.Biome.AshLands)
 			{
-				cell.Water = (WorldGenerator.instance.GetBiomeHeight(biome, x, z, out Color _) < water - SwimDepth);
+				float ground = WorldGenerator.instance.GetBiomeHeight(biome, x, z, out Color _);
+				cell.Water = (ground < water - SwimDepth);
+				cell.Deep = (ground < water - SailDepth);
 			}
 			if (biome == Heightmap.Biome.AshLands)
 			{

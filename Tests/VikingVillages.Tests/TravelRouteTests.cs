@@ -398,6 +398,40 @@ namespace VikingVillages.Tests
 			Assert.Contains(route.Road.Points, (Vector3 point) => InLake(point, 416f, 100000f));
 		}
 
+		/// <summary>
+		/// Reads a map with deep water off the shore from x 320 to a far edge, as the world's plan leaves it between an
+		/// island and the mainland - too deep to wade and deep enough for a boat, but not the sea - and nothing past
+		/// 3000 m from the middle
+		/// </summary>
+		/// <param name="x">The point's x</param>
+		/// <param name="z">The point's z</param>
+		/// <param name="far">The water's far edge along x</param>
+		/// <returns>The square</returns>
+		private static TravelRoute.Cell DeepWater(float x, float z, float far)
+		{
+			bool water = (x >= 320f && x < far);
+			return(new TravelRoute.Cell { Open = (x * x + z * z < 3000f * 3000f), Water = water, Deep = water, Biome = 0 });
+		}
+
+		[Fact]
+		public void DeepWaterTooWideToSwimIsSailed()
+		{
+			// 160 meters of it, five squares, with no way around, for a viking who swims one
+			TravelRoute route = RunSwimming(40f, (float x, float z) => DeepWater(x, z, 480f));
+			Assert.Equal(0, route.Found);
+			Assert.Contains(TravelLeg.Sea, route.Road.Legs);
+		}
+
+		[Fact]
+		public void DeepWaterNarrowEnoughToSwimIsSwum()
+		{
+			// One square of it, rather than getting into a boat
+			TravelRoute route = RunSwimming(40f, (float x, float z) => DeepWater(x, z, 352f));
+			Assert.Equal(0, route.Found);
+			Assert.DoesNotContain(TravelLeg.Sea, route.Road.Legs);
+			Assert.Contains(route.Road.Points, (Vector3 point) => point.x >= 320f && point.x < 352f);
+		}
+
 		[Fact]
 		public void SwimmingTakesLongerThanRunning()
 		{

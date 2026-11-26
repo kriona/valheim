@@ -23,8 +23,9 @@ namespace VikingVillages
 	{
 		/// <summary>
 		/// What a square of the map holds - whether a viking can cross it, whether it's sea, crossed by boat, whether that
-		/// sea boils and burns a boat not made for it (see Ship.m_ashlandsReady), whether it's a river or lake too deep to
-		/// wade, swum across on foot, and how hard its biome is, by VikingGear's order
+		/// sea boils and burns a boat not made for it (see Ship.m_ashlandsReady), whether it's a river, lake or water off
+		/// a shore too deep to wade, swum across on foot, whether that water is deep enough for a boat too, so it can be
+		/// sailed as well as swum, and how hard its biome is, by VikingGear's order
 		/// </summary>
 		internal struct Cell
 		{
@@ -32,8 +33,22 @@ namespace VikingVillages
 			public bool Sea;
 			public bool Burning;
 			public bool Water;
+			public bool Deep;
 			public int Biome;
 		}
+
+		/// <summary>
+		/// The swim count of a search's state for a viking in a boat, rather than on foot with that many squares of water
+		/// in a row swum
+		/// </summary>
+		private const int Sailing = -1;
+
+		/// <summary>
+		/// How much longer the search counts getting into a boat, in seconds - finding a spot to launch it and building
+		/// it - so a river the viking can swim across is swum, and a boat is only taken where swimming won't do or the
+		/// sea is long enough to be worth it
+		/// </summary>
+		private const float LaunchSeconds = 30f;
 
 		/// <summary>
 		/// One way through a portal a viking may use - the spot in front of the portal it steps into, and the spot in
@@ -281,17 +296,20 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Reaches out from a square to each neighbor that can be crossed - stepping diagonally only past two neighbors
-		/// that can, so the road doesn't cut a corner of lava or the edge of the world, and into water only while the
-		/// squares of it swum in a row stay within swimSquares
+		/// that can, so the road doesn't cut a corner of lava or the edge of the world. On foot it steps onto land, and
+		/// into water only while the squares of it swum in a row stay within swimSquares. By boat it steps onto the sea
+		/// and water deep enough for a boat, getting into the boat taking LaunchSeconds more - so a strip of deep water
+		/// off a shore too wide to swim, which the world's plan doesn't count as the sea, is sailed across
 		/// </summary>
-		/// <param name="state">The square, and how many squares of water in a row were swum to get there</param>
+		/// <param name="state">The square, and how many squares of water in a row were swum to get there, or Sailing</param>
 		/// <param name="node">What's known of it</param>
 		private void Expand((long Cell, int Swum) state, Node node)
 		{
 			long key = state.Cell;
 			int x = KeyX(key);
 			int z = KeyZ(key);
-			float here = PerMeter(CellAt(x, z));
+			bool sailing = (state.Swum == Sailing);
+			float here = PerMeter(CellAt(x, z), sailing);
 			for (int i = 0; i < StepX.Length; i++)
 			{
 				int nx = x + StepX[i];
@@ -306,13 +324,21 @@ namespace VikingVillages
 				{
 					continue;
 				}
-				int swum = (CellAt(nx, nz).Water ? state.Swum + 1 : 0);
-				if (swum > swimSquares)
+				float length = (diagonal ? CellSize * 1.41421356f : CellSize);
+				Cell cell = CellAt(nx, nz);
+				if (!cell.Sea)
 				{
-					continue;
+					int swum = (cell.Water ? Mathf.Max(0, state.Swum) + 1 : 0);
+					if (swum <= swimSquares)
+					{
+						Reach((next, swum), node.Cost + length * (here + PerMeter(cell, false)) / 2f, state, -1);
+					}
 				}
-				float step = (diagonal ? CellSize * 1.41421356f : CellSize) * (here + PerMeter(CellAt(nx, nz))) / 2f;
-				Reach((next, swum), node.Cost + step, state, -1);
+				if (cell.Sea || cell.Deep)
+				{
+					float launch = (sailing ? 0f : LaunchSeconds);
+					Reach((next, Sailing), node.Cost + launch + length * (here + PerMeter(cell, true)) / 2f, state, -1);
+				}
 			}
 			if (!portalsAt.TryGetValue(key, out List<int> jumps))
 			{
@@ -369,14 +395,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out how long a meter of a square takes - by boat across the sea, on foot over land and swimming across a
-		/// river or lake, longer for each biome it's harder than the viking's own
+		/// Works out how long a meter of a square takes - by boat, on foot over land and swimming across a river or lake,
+		/// longer for each biome it's harder than the viking's own
 		/// </summary>
 		/// <param name="cell">The square</param>
+		/// <param name="sailing">Whether it's crossed by boat</param>
 		/// <returns>The seconds a meter takes</returns>
-		private float PerMeter(Cell cell)
+		private float PerMeter(Cell cell, bool sailing)
 		{
-			if (cell.Sea)
+			if (sailing)
 			{
 				return(1f / boatSpeed);
 			}
@@ -411,7 +438,7 @@ namespace VikingVillages
 				if (portal < 0)
 				{
 					points.Add(Middle(KeyX(path[i]), KeyZ(path[i])));
-					legs.Add(IsSea(path[i]) ? TravelLeg.Sea : TravelLeg.Foot);
+					legs.Add((states[i].Swum == Sailing) ? TravelLeg.Sea : TravelLeg.Foot);
 					continue;
 				}
 				// The square stepped into the portal from becomes the spot in front of the portal itself, unless the road
@@ -429,20 +456,10 @@ namespace VikingVillages
 				legs.Add(TravelLeg.Portal);
 			}
 			points.Add(targets[goal]);
-			legs.Add(IsSea(path[path.Count - 1]) ? TravelLeg.Sea : TravelLeg.Foot);
+			legs.Add((states[states.Count - 1].Swum == Sailing) ? TravelLeg.Sea : TravelLeg.Foot);
 			Road = Straighten(points, legs);
 			Length = Road.Meters(0, start);
 			Seconds = Road.TotalSeconds(boatSpeed);
-		}
-
-		/// <summary>
-		/// Checks whether a square of the road is sea
-		/// </summary>
-		/// <param name="key">The square's key</param>
-		/// <returns>True when it is</returns>
-		private bool IsSea(long key)
-		{
-			return(CellAt(KeyX(key), KeyZ(key)).Sea);
 		}
 
 		/// <summary>
@@ -470,14 +487,14 @@ namespace VikingVillages
 					continue;
 				}
 				bool bySea = (leg == TravelLeg.Sea);
-				float slowest = PerMeter(CellAtPoint(points[next]));
+				float slowest = PerMeter(CellAtPoint(points[next]), bySea);
 				for (int j = at + 2; j < points.Count; j++)
 				{
 					if (legs[j] != leg)
 					{
 						break;
 					}
-					slowest = Mathf.Max(slowest, PerMeter(CellAtPoint(points[j - 1])));
+					slowest = Mathf.Max(slowest, PerMeter(CellAtPoint(points[j - 1]), bySea));
 					if (Flat(points[at], points[j]) > LegMax || !Clear(points[at], points[j], bySea, slowest))
 					{
 						break;
@@ -507,9 +524,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a straight line crosses only squares that can be crossed the same way, on foot or by sea, and
-		/// take no longer than a limit - and on foot, no water, so a straightened road never swims more than the road it
-		/// skips
+		/// Checks whether a straight line crosses only squares that can be crossed the same way, on foot or by boat, and
+		/// take no longer than a limit - on foot, no water, so a straightened road never swims more than the road it
+		/// skips, and by boat, only the sea and water deep enough for a boat
 		/// </summary>
 		/// <param name="from">Where it starts</param>
 		/// <param name="to">Where it ends</param>
@@ -526,7 +543,9 @@ namespace VikingVillages
 				int z = Index(point.z);
 				long key = Key(x, z);
 				Cell cell = CellAt(x, z);
-				if (!Crossable(key, x, z) || (cell.Sea != sea && !goals.ContainsKey(key)) || (!sea && cell.Water) || PerMeter(cell) > limit)
+				bool sailable = (cell.Sea || cell.Deep);
+				bool walkable = (!cell.Sea && !cell.Water);
+				if (!Crossable(key, x, z) || (!(sea ? sailable : walkable) && !goals.ContainsKey(key)) || PerMeter(cell, sea) > limit)
 				{
 					return(false);
 				}
