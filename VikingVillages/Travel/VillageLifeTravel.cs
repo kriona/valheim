@@ -45,12 +45,11 @@ namespace VikingVillages
 		private const float LookMax = 4f;
 
 		/// <summary>
-		/// When a lost viking says what it says - the soonest and latest after it's spawned, in seconds, and how likely it
-		/// says another line, how long after the first
+		/// When a lost viking says what it says - the soonest and latest after it's spawned, in seconds, and how long
+		/// after the first it says another, well before it's no longer lost (see ConfusedMin)
 		/// </summary>
 		private const float FirstLineMin = 1f;
 		private const float FirstLineMax = 2f;
-		private const float SecondLineChance = 0.5f;
 		private const float SecondLineDelay = 7f;
 
 		/// <summary>
@@ -434,10 +433,7 @@ namespace VikingVillages
 				firstLineAt = -1f;
 				lastLostLine = VikingRoadSpeech.Confused(null);
 				VikingSpeech.Say(humanoid, lastLostLine, VikingSpeech.TalkTime, VikingSpeech.TalkCull);
-				if (Random.value < SecondLineChance)
-				{
-					secondLineAt = Time.time + SecondLineDelay;
-				}
+				secondLineAt = Time.time + SecondLineDelay;
 			}
 			if (secondLineAt >= 0f && Time.time >= secondLineAt)
 			{
