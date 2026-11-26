@@ -66,6 +66,50 @@ namespace VikingVillages
 	}
 
 	/// <summary>
+	/// A boat a quest sails in from its village and back (see VillageQuests.PlanBoats) - its prefab, whether it's one of
+	/// the village's own, no player's, rather than one its vikings build, and its crew's GUIDs (see VikingIdentity)
+	/// </summary>
+	internal class QuestBoat
+	{
+		public string Prefab = "";
+		public bool Owned;
+		public List<string> Crew = new List<string>();
+
+		/// <summary>
+		/// Writes the boat to a package
+		/// </summary>
+		/// <param name="pkg">The package</param>
+		public void Write(ZPackage pkg)
+		{
+			pkg.Write(Prefab);
+			pkg.Write(Owned);
+			pkg.Write(Crew.Count);
+			foreach (string member in Crew)
+			{
+				pkg.Write(member);
+			}
+		}
+
+		/// <summary>
+		/// Reads a boat from a package
+		/// </summary>
+		/// <param name="pkg">The package</param>
+		/// <returns>The boat</returns>
+		public static QuestBoat Read(ZPackage pkg)
+		{
+			QuestBoat boat = new QuestBoat();
+			boat.Prefab = pkg.ReadString();
+			boat.Owned = pkg.ReadBool();
+			int count = pkg.ReadInt();
+			for (int i = 0; i < count; i++)
+			{
+				boat.Crew.Add(pkg.ReadString());
+			}
+			return(boat);
+		}
+	}
+
+	/// <summary>
 	/// A village's quest, noted on its ZDO (see VillageQuests) - its ID, what it's for and how many of it, where it's
 	/// at, the vikings on it by their GUIDs (see VikingIdentity) and names, when it set out and when it's due back, in
 	/// ZNet time ticks, the spot its vikings leave from and come back to, whether the village is trapped, so that spot is
@@ -100,9 +144,48 @@ namespace VikingVillages
 		public List<MemberPlan> Plans = new List<MemberPlan>();
 
 		/// <summary>
+		/// For a quest that sails from its village, the sea it sets out across (see BoatRules.QuestSea) and the boats it
+		/// sails in - an empty road and no boats for one that goes on foot
+		/// </summary>
+		public TravelRoad Sea = new TravelRoad();
+		public List<QuestBoat> Boats = new List<QuestBoat>();
+
+		/// <summary>
+		/// The group the quest's boats sail in, which each boat and the viking on it are noted by (see VikingBoat.GroupKey)
+		/// </summary>
+		public string BoatGroup
+		{
+			get
+			{
+				return("quest" + Id);
+			}
+		}
+
+		/// <summary>
+		/// Checks whether the quest sails from its village
+		/// </summary>
+		public bool BySea
+		{
+			get
+			{
+				return(Boats.Count > 0 && Sea.Count >= 2);
+			}
+		}
+
+		/// <summary>
+		/// Finds the boat a viking on the quest sails in
+		/// </summary>
+		/// <param name="member">The viking's GUID</param>
+		/// <returns>The boat's index in Boats, or -1 when it sails in none</returns>
+		public int BoatOf(string member)
+		{
+			return(Boats.FindIndex((QuestBoat boat) => boat.Crew.Contains(member)));
+		}
+
+		/// <summary>
 		/// The version of how a record is written, which a reader skips a record written another way by
 		/// </summary>
-		private const int FormatVersion = 3;
+		private const int FormatVersion = 4;
 
 		/// <summary>
 		/// Gets the tool a viking on the quest takes from a chest
@@ -200,6 +283,12 @@ namespace VikingVillages
 			{
 				plan.Write(pkg);
 			}
+			pkg.Write(Sea.Encode());
+			pkg.Write(Boats.Count);
+			foreach (QuestBoat boat in Boats)
+			{
+				boat.Write(pkg);
+			}
 			return(pkg.GetArray());
 		}
 
@@ -245,6 +334,12 @@ namespace VikingVillages
 				for (int i = 0; i < plans; i++)
 				{
 					record.Plans.Add(MemberPlan.Read(pkg));
+				}
+				record.Sea = TravelRoad.Decode(pkg.ReadByteArray());
+				int boats = pkg.ReadInt();
+				for (int i = 0; i < boats; i++)
+				{
+					record.Boats.Add(QuestBoat.Read(pkg));
 				}
 				return(record);
 			}

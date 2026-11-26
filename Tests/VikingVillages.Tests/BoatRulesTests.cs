@@ -227,6 +227,82 @@ namespace VikingVillages.Tests
 			Assert.False(BoatRules.SwimsForBoat(0f, 3f));
 		}
 
+		/// <summary>
+		/// Makes a road from points, each leg on foot or by sea
+		/// </summary>
+		/// <param name="legs">Each point's x, along the road, and whether the leg to it is by sea - the first's ignored</param>
+		/// <returns>The road</returns>
+		private static TravelRoad RoadOf(params (float X, bool Sea)[] legs)
+		{
+			TravelRoad road = new TravelRoad();
+			foreach ((float X, bool Sea) leg in legs)
+			{
+				road.Add(new Vector3(leg.X, 30f, 0f), (leg.Sea ? TravelLeg.Sea : TravelLeg.Foot));
+			}
+			return(road);
+		}
+
+		[Fact]
+		public void AQuestSailsWhenItsRoadTakesToTheSeaByTheVillage()
+		{
+			TravelRoad road = RoadOf((0f, false), (50f, false), (110f, true), (300f, true), (450f, false), (500f, false));
+			TravelRoad sea = BoatRules.QuestSea(road, Vector3.zero);
+			Assert.NotNull(sea);
+			Assert.Equal(new Vector3(50f, 30f, 0f), sea.Points[0]);
+			Assert.Equal(new Vector3(450f, 30f, 0f), sea.Points[sea.Count - 1]);
+			Assert.True(sea.SeaLeg(1));
+			Assert.True(sea.SeaLeg(2));
+			Assert.False(sea.SeaLeg(3));
+		}
+
+		[Fact]
+		public void AQuestWalksWhenTheSeaIsFarOffShortOrPastAPortal()
+		{
+			// The shore 200 meters off the village
+			Assert.Null(BoatRules.QuestSea(RoadOf((0f, false), (200f, false), (500f, true), (700f, false)), Vector3.zero));
+			// Only 100 meters of sea
+			Assert.Null(BoatRules.QuestSea(RoadOf((0f, false), (50f, false), (150f, true), (200f, false)), Vector3.zero));
+			// No sea at all
+			Assert.Null(BoatRules.QuestSea(RoadOf((0f, false), (500f, false)), Vector3.zero));
+			TravelRoad portal = RoadOf((0f, false), (10f, false));
+			portal.Add(new Vector3(20f, 30f, 0f), TravelLeg.Portal);
+			portal.Add(new Vector3(400f, 30f, 0f), TravelLeg.Sea);
+			Assert.Null(BoatRules.QuestSea(portal, Vector3.zero));
+		}
+
+		[Fact]
+		public void TheVillagesOwnBoatsFillUpFirst()
+		{
+			List<string> ids = new List<string> { "a", "b", "c", "d", "e", "f", "g" };
+			List<List<string>> built = BoatRules.QuestCrews(ids, new List<int> { 4 }, 6, out List<List<string>> owned);
+			Assert.Single(owned);
+			Assert.Equal(new List<string> { "a", "b", "c", "d" }, owned[0]);
+			Assert.Single(built);
+			Assert.Equal(3, built[0].Count);
+			// The village's boats hold them all, so none is built, and a boat not needed isn't taken
+			built = BoatRules.QuestCrews(new List<string> { "a", "b" }, new List<int> { 10, 6 }, 6, out owned);
+			Assert.Single(owned);
+			Assert.Empty(built);
+			// No boat of the village's, so all are built for
+			built = BoatRules.QuestCrews(new List<string> { "a", "b", "c" }, new List<int>(), 2, out owned);
+			Assert.Empty(owned);
+			Assert.Equal(2, built.Count);
+		}
+
+		[Fact]
+		public void AQuestsBoatsComeBackFromOutAtSea()
+		{
+			TravelRoad sea = RoadOf((0f, false), (100f, true), (300f, true), (450f, false));
+			Vector3 start = BoatRules.SailInFrom(sea, out TravelRoad home);
+			Assert.Equal(BoatRules.QuestSailIn, start.x, 2);
+			Assert.Equal(start, home.Points[0]);
+			Assert.Equal(new Vector3(100f, 30f, 0f), home.Points[home.Count - 1]);
+			Assert.True(home.SeaLeg(home.Count - 1));
+			// A sea shorter than that, they come back from its far end
+			TravelRoad short1 = RoadOf((0f, false), (80f, true), (120f, false));
+			Assert.Equal(80f, BoatRules.SailInFrom(short1, out TravelRoad _).x, 2);
+		}
+
 		[Fact]
 		public void ABoatComesInUntilItsNearShallowOrAground()
 		{

@@ -403,6 +403,14 @@ The Plains - 2 fulings, a fuling archer and a third of a berserker each. Fulings
 - The server follows them the whole way. A portal on their road that's broken or no longer joined to its other end has them find another way from wherever they've got to, and come back later for it
 - Mining and cutting trees take as long as their tools take to break off as much as they can all carry home without being slowed - each tool by its damage and their skill, more tools getting it done sooner - on top of the work time above, which is for finding the ore or trees. Each tool is worn by every hit, and comes back worn or broken
 
+## Sailing From the Village
+
+- When a quest's road takes to the sea within 120 meters of the village, through no portal, with at least 200 meters of sea to cross, they set out by boat from the village itself rather than walking out - and setting out takes 90 seconds longer, for them to get on board and sail away
+- They take the village's own boats first - those no player built, like its moored boat or one Vikings left there, within 80 meters of its edge with nobody on board, the biggest first, and on the Ashlands' boiling sea only a drakkar - each filled up to its seats, as many as they need. A ship of yours is never taken
+- The rest share out evenly among as many new boats as they take, the best kind the village's biome has, or a drakkar on a sea that boils. Once they've all packed, the first of them walks down to the water's edge where they set sail and builds the new boats with one swing of the hammer, side by side
+- Each walks down to the water and gets on board their boat the way Vikings on the road do, jumping on or climbing the ladder. Once a boat's crew is all on, it sets off along their road across the sea, without waiting for you
+- Once their boat is 150 meters out, or 40 meters out with no player within 80 meters of it, they're gone from the world on the quest, and the empty boat with them - it's noted on the quest, to come home with them. Still on board yourself, the boat stays for you, a ship like any other, and one whose crew never got on is left at the shore as it was, the village's own, or broken up, a new one
+
 ## On the Way
 
 - Each Viking takes along the food they'd eat for as long as they're gone, by how long each food lasts and going on with what they've eaten already, up to 9 foods, and up to 2 healing potions - no more than half of any stack in the chests. For a quest that kills creatures they take their strongest food, and for the rest the food they eat at home to keep their foods up - the weakest that raises them above their least max health, so the strong food stays home for the wounded. Since they never eat two of one food at once, they take different foods when the chests have them, to keep all three places full
@@ -414,6 +422,7 @@ The Plains - 2 fulings, a fuling archer and a third of a berserker each. Fulings
 ## Coming Home
 
 - They all walk back in together from where they left the village, however long apart they left - those who left first wait for the rest, giving up on one a few minutes after they're due when it never left
+- A quest that sailed from the village sails home. With a player within 210 meters of the shore it set sail from, each of its boats with any of its crew still living comes back out at sea, 150 meters out along the way it went, side by side, with them on board, and sails in to that shore, where they come ashore the way Vikings on the road do. With no player that near, the boats are moored by the village and they come home the usual way. The village's own boats are left for it, and a new one only when the village has no boat of its kind yet - the rest are broken up. A boat whose crew all died is lost with them, the village's own too
 - They put what they brought home in the chests before anything else, even at night, and call their own houses home again
 - A village that can't be left - walled in, or ringed by water - sends them from the spot nearest its edge they can reach, and they come back there
 - A quest not back 2 game days past when it was due is given up on

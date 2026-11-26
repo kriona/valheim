@@ -89,6 +89,26 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Moors a boat by a village the way its own boat is moored (see VillageBoatSite) - a quest's boat its vikings
+		/// came home in while no player was near to see them sail in (see VillageQuests.SailHome)
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="prefab">The boat's prefab</param>
+		public static void MoorAnother(Village village, string prefab)
+		{
+			if (ZNetScene.instance == null || ZoneSystem.instance == null || WorldGenerator.instance == null)
+			{
+				return;
+			}
+			if (!Find(village, prefab, out Vector3 spot, out Vector3 facing))
+			{
+				Plugin.Log.LogInfo("The village at " + village.Farm.ToString("F0") + " has no water by it with room to moor a " + prefab);
+				return;
+			}
+			Build(village, prefab, spot, facing);
+		}
+
+		/// <summary>
 		/// Finds where a village's boat goes and which boat it is - the best of the village's biome, or a drakkar when the
 		/// spot found for that is on the Ashlands' boiling sea, which would burn any other
 		/// </summary>

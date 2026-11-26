@@ -694,6 +694,18 @@ namespace VikingVillages
 			private float actAt = -1f;
 
 			/// <summary>
+			/// For a quest that sails from the village (see SailOff), the viking's GUID, the water's edge it goes down to,
+			/// and for its first viking, whether it has swung its hammer to build the quest's new boats, when the swing
+			/// lands, and whether they're built
+			/// </summary>
+			private readonly string self;
+			private Vector3 seaEdge;
+			private bool hasSeaEdge;
+			private bool swung;
+			private float swingLands;
+			private bool boatsBuilt;
+
+			/// <summary>
 			/// Whether the quest fights (see QuestLoot.Fights), so the viking packs its strongest food, how long it's gone,
 			/// in seconds, and how many of each food it carries for the quest
 			/// </summary>
@@ -717,10 +729,11 @@ namespace VikingVillages
 			public QuestLeaveJob(VillageLife owner, QuestRecord record, string member) : base(owner)
 			{
 				questId = record.Id;
+				self = member;
 				tool = record.ToolOf(member);
 				leader = (record.Members.Count > 0 && record.Members[0] == member);
 				exit = record.Exit;
-				leaveBy = Time.time + QuestRules.LeaveTimeout;
+				leaveBy = Time.time + QuestRules.LeaveTimeout + (record.BySea ? QuestRules.SailOffSeconds : 0f);
 				toolDone = (tool.Length == 0);
 				seconds = Mathf.Max(0f, (record.Due - record.SetOutAt) / (float)NetTime.Ticks(1f));
 				fights = QuestLoot.Fights(record.Kind);
@@ -816,6 +829,10 @@ namespace VikingVillages
 					announced = true;
 					VikingSpeech.Say(life.humanoid, QuestSpeech.Departure(VillageQuests.DuePhrase(record)), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 				}
+				if (record.BySea && SailOff(dt, record))
+				{
+					return(false);
+				}
 				if (Utils.DistanceXZ(exit, life.transform.position) > ExitReach)
 				{
 					life.Go(dt, exit, ExitReach, true);
@@ -827,6 +844,122 @@ namespace VikingVillages
 				}
 				life.LeaveOnQuest(record);
 				return(true);
+			}
+
+			/// <summary>
+			/// Sets off on a quest that sails from the village - walking down to the water's edge where the quest sets sail,
+			/// the quest's first viking swinging its hammer there once to build the new boats it needs (see
+			/// VillageQuests.PlanBoats), and once its own boat is there, getting on board (see StartQuestBoarding), from
+			/// which its crossing takes over until it sails off on the quest (see SailOffOnQuest)
+			/// </summary>
+			/// <param name="dt">Seconds since the AI's last update</param>
+			/// <param name="record">The quest</param>
+			/// <returns>True while it's setting off by sea, and false when it sails in no boat and walks out instead</returns>
+			private bool SailOff(float dt, QuestRecord record)
+			{
+				if (record.BoatOf(self) < 0)
+				{
+					return(false);
+				}
+				string group = record.BoatGroup;
+				bool unbuilt = record.Boats.Exists((QuestBoat boat) => !boat.Owned && boat.Crew.Count > 0 && VikingBoat.FindFor(group, boat.Crew[0], out int _) == null);
+				VikingBoat mine = VikingBoat.FindFor(group, self, out int seat);
+				if (mine != null && !(leader && unbuilt && !boatsBuilt))
+				{
+					life.StartQuestBoarding(mine, seat);
+					return(true);
+				}
+				if (!hasSeaEdge)
+				{
+					seaEdge = WaterEdge(record.Sea.Points[0], record.Sea.Points[1]);
+					hasSeaEdge = true;
+				}
+				if (Utils.DistanceXZ(seaEdge, life.transform.position) > BuildReach)
+				{
+					life.mover = "walking down to the water to sail on a quest";
+					if (!life.Go(dt, seaEdge, BuildReach / 2f, true))
+					{
+						return(true);
+					}
+					life.moveFailed = false;
+					seaEdge = life.transform.position;
+				}
+				life.Face(record.Sea.Points[1]);
+				if (!leader || !unbuilt || boatsBuilt)
+				{
+					life.mover = "waiting at the water for its boat";
+					return(true);
+				}
+				life.mover = "building the quest's boats";
+				life.HoldHammer(true);
+				if (!swung)
+				{
+					swung = true;
+					VikingPoses.Swing(life.humanoid);
+					swingLands = Time.time + BuildSwingGap;
+					return(true);
+				}
+				if (Time.time < swingLands)
+				{
+					return(true);
+				}
+				life.HoldHammer(false);
+				boatsBuilt = true;
+				BuildQuestBoats(record);
+				return(true);
+			}
+
+			/// <summary>
+			/// Builds the new boats a quest sails in from the village, side by side out from the water's edge the viking
+			/// stands at - each with its crew and the quest's road across the sea
+			/// </summary>
+			/// <param name="record">The quest</param>
+			private void BuildQuestBoats(QuestRecord record)
+			{
+				if (!FindLaunchToward(life.transform.position, record.Sea.Points[1], out Vector3 launch))
+				{
+					Plugin.Log.LogInfo("Quest: " + record.Kind + " found no water deep enough for a boat by " + life.transform.position.ToString("F0") + ", so its vikings walk out instead");
+					return;
+				}
+				Vector3 facing = record.Sea.Points[1] - launch;
+				facing.y = 0f;
+				Vector3 side = Vector3.Cross(Vector3.up, (facing.sqrMagnitude > 0.01f) ? facing.normalized : life.transform.forward);
+				Vector3 land = record.Sea.Points[record.Sea.Count - 1];
+				string group = record.BoatGroup;
+				int placed = 0;
+				for (int i = 0; i < record.Boats.Count; i++)
+				{
+					QuestBoat plan = record.Boats[i];
+					if (plan.Owned || plan.Crew.Count == 0 || VikingBoat.FindFor(group, plan.Crew[0], out int _) != null)
+					{
+						continue;
+					}
+					GameObject prefab = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(plan.Prefab) : null);
+					if (prefab == null)
+					{
+						continue;
+					}
+					// The first goes where the water was found, the rest to either side of it in turn
+					float offset = ((placed + 1) / 2) * ((placed % 2 == 1) ? 1f : -1f) * BoatSpacing;
+					Vector3 spot = launch + side * offset;
+					TravelRoad route = new TravelRoad();
+					route.Add(spot, TravelLeg.Foot);
+					for (int p = 1; p < record.Sea.Count; p++)
+					{
+						if (record.Sea.SeaLeg(p))
+						{
+							route.Add(record.Sea.Points[p], TravelLeg.Sea);
+						}
+					}
+					VikingBoat boat = VikingBoat.Build(prefab, spot, facing, group, i, plan.Crew, route, land, 0, 0);
+					if (boat != null)
+					{
+						boat.MarkQuest(record.Id, false, false);
+						placed++;
+					}
+				}
+				Plugin.Log.LogInfo(life.LogName() + " built " + placed + " boats for the quest " + record.Kind + " at " + launch.ToString("F0"));
+				TestLog.Count("Boats", "built for a quest", placed);
 			}
 
 			/// <summary>

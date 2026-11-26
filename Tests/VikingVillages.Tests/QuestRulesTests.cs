@@ -212,6 +212,36 @@ namespace VikingVillages.Tests
 		}
 
 		[Fact]
+		public void AQuestsSeaAndBoatsSurviveBeingWrittenAndRead()
+		{
+			QuestRecord record = FullRecord();
+			record.Sea.Add(new Vector3(0f, 30f, 0f), TravelLeg.Foot);
+			record.Sea.Add(new Vector3(100f, 30f, 0f), TravelLeg.Sea);
+			record.Sea.Add(new Vector3(300f, 30f, 0f), TravelLeg.Foot);
+			record.Boats.Add(new QuestBoat { Prefab = "Karve", Owned = true, Crew = new List<string> { "a", "b" } });
+			record.Boats.Add(new QuestBoat { Prefab = "Raft", Owned = false, Crew = new List<string> { "c" } });
+			QuestRecord read = QuestRecord.Decode(record.Encode());
+			Assert.True(read.BySea);
+			Assert.Equal(record.Sea.Points, read.Sea.Points);
+			Assert.True(read.Sea.SeaLeg(1));
+			Assert.Equal(2, read.Boats.Count);
+			Assert.Equal("Karve", read.Boats[0].Prefab);
+			Assert.True(read.Boats[0].Owned);
+			Assert.Equal(new List<string> { "a", "b" }, read.Boats[0].Crew);
+			Assert.False(read.Boats[1].Owned);
+			Assert.Equal(1, read.BoatOf("c"));
+			Assert.Equal(-1, read.BoatOf("z"));
+		}
+
+		[Fact]
+		public void AQuestOnFootHasNoBoats()
+		{
+			QuestRecord read = QuestRecord.Decode(FullRecord().Encode());
+			Assert.False(read.BySea);
+			Assert.Empty(read.Boats);
+		}
+
+		[Fact]
 		public void NoQuestReadsAsNone()
 		{
 			Assert.Null(QuestRecord.Decode(null));

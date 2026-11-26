@@ -102,11 +102,45 @@ namespace VikingVillages
 		/// <param name="biome">The key of the biome it goes to</param>
 		private static void RouteKeys(QuestKind kind, string item, out int there, out int back, out int at, out int biome)
 		{
-			string name = "kriona.VikingVillages.villageQuestRoad." + kind + "." + item;
+			string name = RouteName(kind, item);
 			there = (name + ".there").GetStableHashCode();
 			back = (name + ".back").GetStableHashCode();
 			at = (name + ".at").GetStableHashCode();
 			biome = (name + ".biome").GetStableHashCode();
+		}
+
+		/// <summary>
+		/// Gets the name a quest's road is noted under on its village's generator
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <param name="item">What it's for, or ""</param>
+		/// <returns>The name</returns>
+		private static string RouteName(QuestKind kind, string item)
+		{
+			return("kriona.VikingVillages.villageQuestRoad." + kind + "." + item);
+		}
+
+		/// <summary>
+		/// Gets the key of the sea a quest's road sets out across from its village (see BoatRules.QuestSea)
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <param name="item">What it's for, or ""</param>
+		/// <returns>The key</returns>
+		private static int SeaKey(QuestKind kind, string item)
+		{
+			return((RouteName(kind, item) + ".sea").GetStableHashCode());
+		}
+
+		/// <summary>
+		/// Gets the sea a quest's road sets out across from a village, as the server last worked it out
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="kind">The quest</param>
+		/// <param name="item">What it's for, or ""</param>
+		/// <returns>The sea, with no waypoints when the road goes on foot from the village</returns>
+		private static TravelRoad SeaOf(Village village, QuestKind kind, string item)
+		{
+			return(TravelRoad.Decode(village.Zdo.GetByteArray(SeaKey(kind, item))));
 		}
 
 		/// <summary>
@@ -160,7 +194,8 @@ namespace VikingVillages
 			}
 			routesAsked.Add(asked);
 			ZDOID id = village.Zdo.m_uid;
-			TravelPlanner.AskQuestRoute(village.Farm, VillageCooking.VillageBiome(village), kind, item, (float answerThere, float answerBack, int answerBiome) =>
+			int seaKey = SeaKey(kind, item);
+			TravelPlanner.AskQuestRoute(village.Farm, VillageCooking.VillageBiome(village), kind, item, (float answerThere, float answerBack, int answerBiome, TravelRoad answerSea) =>
 			{
 				routesAsked.Remove(asked);
 				ZDO zdo = ((ZDOMan.instance != null) ? ZDOMan.instance.GetZDO(id) : null);
@@ -170,6 +205,7 @@ namespace VikingVillages
 					zdo.Set(backKey, answerBack);
 					zdo.Set(atKey, NetTime.Now());
 					zdo.Set(biomeKey, answerBiome);
+					zdo.Set(seaKey, answerSea.Encode());
 				}
 			});
 			return(there);
@@ -714,8 +750,10 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Sets a quest out - working out the spot its vikings leave from, what each does and when they're due back (see
-		/// QuestGame.Prepare), noting it, and stopping what its vikings on this client are doing, so they get ready to go.
-		/// A quest one of whose vikings isn't here any more is given up on, for another to be picked
+		/// QuestGame.Prepare), and for one whose road takes to the sea by the village, the boats it sails in and
+		/// QuestRules.SailOffSeconds more to set out (see PlanBoats) - noting it, and stopping what its vikings on this
+		/// client are doing, so they get ready to go. A quest one of whose vikings isn't here any more is given up on, for
+		/// another to be picked
 		/// </summary>
 		/// <param name="village">The village, run by this client</param>
 		/// <param name="record">The quest</param>
@@ -743,11 +781,283 @@ namespace VikingVillages
 				}
 				return;
 			}
+			if (!record.Trapped && PlanBoats(village, record, SeaOf(village, record.Kind, record.Item)))
+			{
+				record.Due += NetTime.Ticks(QuestRules.SailOffSeconds);
+			}
 			Write(village, record);
 			VillageLife.CallToQuest(village, record);
 			TestLog.Count("Quests", record.Kind + " set out");
 			float seconds = (record.Due - record.SetOutAt) / (float)NetTime.Ticks(1f);
 			Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " sets out from " + record.Exit.ToString("F0") + (record.Trapped ? ", inside the village, as it's trapped" : "") + ", " + travel.ToString("F0") + "s there, " + back.ToString("F0") + "s back and " + record.ActiveSeconds.ToString("F0") + "s there, due back in " + seconds.ToString("F0") + "s");
+		}
+
+		/// <summary>
+		/// How far past a village's edge its own boats can be moored to sail a quest from it, in meters - as far out as a
+		/// village's boat is moored (see VillageBoatSite)
+		/// </summary>
+		private const float OwnBoatReach = 80f;
+
+		/// <summary>
+		/// Plans the boats a quest sails in from its village, when its road sets out across the sea there (see
+		/// BoatRules.QuestSea) - the village's own boats, no player's, that are loaded with nobody on board, the biggest
+		/// first and only those that hold up in the sea it crosses, as many as its vikings fill, each taken over for the
+		/// quest (see VikingBoat.Enlist), and new boats of the best kind the village's biome has, or a drakkar on a sea
+		/// that boils, for the rest, which its first viking builds at the shore (see BoatRules.QuestCrews)
+		/// </summary>
+		/// <param name="village">The village, run by this client</param>
+		/// <param name="record">The quest, its vikings picked, given its sea and boats</param>
+		/// <param name="sea">The sea its road sets out across, with no waypoints when it goes on foot</param>
+		/// <returns>True when it sails</returns>
+		private static bool PlanBoats(Village village, QuestRecord record, TravelRoad sea)
+		{
+			if (sea.Count < 2 || ZNetScene.instance == null)
+			{
+				return(false);
+			}
+			bool burning = SeaBurns(sea);
+			int biome = VillageCooking.VillageBiome(village);
+			if (burning && !TravelTime.BoatSurvivesAshlands(biome))
+			{
+				biome = TravelTime.BiomeOfBoat("drakkar");
+			}
+			string built = TravelTime.BoatPrefab(biome);
+			if (ZNetScene.instance.GetPrefab(built) == null)
+			{
+				return(false);
+			}
+			List<Ship> own = OwnBoats(village, burning);
+			List<List<string>> builtCrews = BoatRules.QuestCrews(record.Members, own.ConvertAll((Ship ship) => TravelTime.BoatCrew(TravelTime.BiomeOfBoat(Utils.GetPrefabName(ship.gameObject)))), TravelTime.BoatCrew(biome), out List<List<string>> ownCrews);
+			record.Sea = sea;
+			record.Boats.Clear();
+			Vector3 land = sea.Points[sea.Count - 1];
+			for (int i = 0; i < ownCrews.Count; i++)
+			{
+				record.Boats.Add(new QuestBoat { Prefab = Utils.GetPrefabName(own[i].gameObject), Owned = true, Crew = ownCrews[i] });
+				TravelRoad route = new TravelRoad();
+				route.Add(own[i].transform.position, TravelLeg.Foot);
+				for (int p = 1; p < sea.Count; p++)
+				{
+					if (sea.SeaLeg(p))
+					{
+						route.Add(sea.Points[p], TravelLeg.Sea);
+					}
+				}
+				VikingBoat.Enlist(own[i], record.BoatGroup, i, ownCrews[i], route, land, record.Id);
+			}
+			foreach (List<string> crew in builtCrews)
+			{
+				record.Boats.Add(new QuestBoat { Prefab = built, Owned = false, Crew = crew });
+			}
+			Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " sails from " + sea.Points[0].ToString("F0") + " in " + ownCrews.Count + " of the village's boats and " + builtCrews.Count + " new " + TravelTime.BoatName(biome) + ((builtCrews.Count == 1) ? "" : "s"));
+			return(true);
+		}
+
+		/// <summary>
+		/// Finds a village's own boats a quest can sail in - ships of the vikings' kinds no player built, within
+		/// OwnBoatReach of its edge, loaded with nobody on board and not out with other vikings, and on a sea that boils
+		/// only those that hold up in it - the biggest first
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="burning">Whether the sea the quest crosses boils</param>
+		/// <returns>The boats</returns>
+		private static List<Ship> OwnBoats(Village village, bool burning)
+		{
+			HashSet<int> kinds = new HashSet<int>();
+			foreach (string prefab in TravelTime.BoatPrefabNames())
+			{
+				kinds.Add(prefab.GetStableHashCode());
+			}
+			List<ZDO> near = new List<ZDO>();
+			VillageRespawn.ZdosNear(village.Middle, village.Radius + OwnBoatReach, near);
+			List<Ship> found = new List<Ship>();
+			foreach (ZDO zdo in near)
+			{
+				if (!kinds.Contains(zdo.GetPrefab()) || zdo.GetLong(ZDOVars.s_creator, 0L) != 0L || zdo.GetString(VikingBoat.GroupKey, "").Length > 0 || village.DistanceOutside(zdo.GetPosition()) > OwnBoatReach)
+				{
+					continue;
+				}
+				ZNetView instance = ZNetScene.instance.FindInstance(zdo);
+				Ship ship = ((instance != null) ? instance.GetComponent<Ship>() : null);
+				if (ship == null || ship.m_players.Count > 0 || VikingBoat.Of(ship) != null)
+				{
+					continue;
+				}
+				int boatBiome = TravelTime.BiomeOfBoat(Utils.GetPrefabName(ship.gameObject));
+				if (burning && !TravelTime.BoatSurvivesAshlands(boatBiome))
+				{
+					continue;
+				}
+				found.Add(ship);
+			}
+			found.Sort((Ship a, Ship b) => TravelTime.BoatCrew(TravelTime.BiomeOfBoat(Utils.GetPrefabName(b.gameObject))).CompareTo(TravelTime.BoatCrew(TravelTime.BiomeOfBoat(Utils.GetPrefabName(a.gameObject)))));
+			return(found);
+		}
+
+		/// <summary>
+		/// Checks whether a quest's sea boils anywhere along it, burning a boat not made for it (see
+		/// TravelPlanner.Sample)
+		/// </summary>
+		/// <param name="sea">The sea</param>
+		/// <returns>True when it does</returns>
+		private static bool SeaBurns(TravelRoad sea)
+		{
+			for (int i = 1; i < sea.Count; i++)
+			{
+				int samples = Mathf.Max(1, Mathf.CeilToInt(TravelRoad.Flat(sea.Points[i - 1], sea.Points[i]) / (TravelRoute.CellSize / 2f)));
+				for (int s = 1; s <= samples; s++)
+				{
+					Vector3 point = Vector3.Lerp(sea.Points[i - 1], sea.Points[i], (float)s / samples);
+					if (WorldGenerator.GetAshlandsOceanGradient(point.x, point.z) > 0f)
+					{
+						return(true);
+					}
+				}
+			}
+			return(false);
+		}
+
+		/// <summary>
+		/// How near the shore a quest set sail from a player has to be for its vikings to sail home where they can be
+		/// seen, in meters, rather than come home with their boats moored
+		/// </summary>
+		private const float SailHomeWatch = BoatRules.QuestSailIn + 60f;
+
+		/// <summary>
+		/// Brings a quest that sailed from its village home by boat while a player is near enough to see - each of its
+		/// boats with any of its crew still living back out at sea (see BoatRules.SailInFrom), with them on board, sailing
+		/// in to the shore it set sail from, where it's left for the village or broken up (see KeepsBoat). A boat whose
+		/// crew all died is lost with them
+		/// </summary>
+		/// <param name="village">The village, whose generator this client owns</param>
+		/// <param name="vikings">Its living vikings' ZDOs, added to</param>
+		/// <param name="entry">The quest's vikings coming home, those brought in on board taken out of it</param>
+		/// <param name="living">The snapshots of those of them still living</param>
+		/// <returns>True when they sail home, and false when they come home the usual way</returns>
+		internal static bool SailHome(Village village, List<ZDO> vikings, TravelEntry entry, List<byte[]> living)
+		{
+			QuestRecord record = Read(village);
+			if (record == null || record.Id != entry.QuestId || !record.BySea || living.Count == 0 || ZNetScene.instance == null)
+			{
+				return(false);
+			}
+			Vector3 shore = record.Sea.Points[0];
+			if (!Player.IsPlayerInRange(shore, SailHomeWatch))
+			{
+				return(false);
+			}
+			Dictionary<string, byte[]> alive = LivingById(living);
+			Vector3 start = BoatRules.SailInFrom(record.Sea, out TravelRoad home);
+			Vector3 facing = ((home.Count > 1) ? home.Points[1] : shore) - start;
+			facing.y = 0f;
+			Vector3 side = Vector3.Cross(Vector3.up, (facing.sqrMagnitude > 0.01f) ? facing.normalized : Vector3.forward);
+			HashSet<string> keptKinds = new HashSet<string>();
+			string group = "home" + record.BoatGroup;
+			int placed = 0;
+			for (int i = 0; i < record.Boats.Count; i++)
+			{
+				QuestBoat plan = record.Boats[i];
+				List<string> crew = plan.Crew.FindAll((string member) => alive.ContainsKey(member));
+				GameObject prefab = ZNetScene.instance.GetPrefab(plan.Prefab);
+				if (crew.Count == 0 || prefab == null)
+				{
+					continue;
+				}
+				float offset = ((placed + 1) / 2) * ((placed % 2 == 1) ? 1f : -1f) * VikingBoat.SailInSpacing;
+				Vector3 spot = start + side * offset;
+				TravelRoad route = new TravelRoad();
+				route.Add(spot, TravelLeg.Foot);
+				for (int p = 1; p < home.Count; p++)
+				{
+					route.Add(home.Points[p], TravelLeg.Sea);
+				}
+				VikingBoat boat = VikingBoat.Build(prefab, spot, facing, group, i, crew, route, shore, 0, 0);
+				if (boat == null)
+				{
+					continue;
+				}
+				placed++;
+				boat.MarkQuest(record.Id, true, plan.Owned);
+				boat.SetKept(KeepsBoat(village, plan, keptKinds));
+				for (int seat = 0; seat < crew.Count; seat++)
+				{
+					byte[] snapshot = alive[crew[seat]];
+					ZDO zdo = VillageRespawn.SpawnArrivalAt(village, vikings, snapshot, boat.Seat(seat).position, false);
+					if (zdo != null)
+					{
+						zdo.Set(VikingBoat.BoatKey, boat.Key);
+						zdo.Set(VikingBoat.BoardKey, VikingBoat.Aboard);
+						entry.Vikings.Remove(snapshot);
+					}
+				}
+				boat.StartHomeward();
+			}
+			Plugin.Log.LogInfo("Quest: " + record.Kind + " sails home to the village at " + village.Farm.ToString("F0") + " in " + placed + " boats, from " + start.ToString("F0"));
+			TestLog.Count("Quests", record.Kind + " sailed home");
+			return(placed > 0);
+		}
+
+		/// <summary>
+		/// Moors the boats a quest that sailed from its village comes home in while no player is near to see them sail in
+		/// - each with any of its crew still living that's left for the village (see KeepsBoat). A boat whose crew all died
+		/// is lost with them
+		/// </summary>
+		/// <param name="village">The village, whose generator this client owns</param>
+		/// <param name="entry">The quest's vikings coming home</param>
+		/// <param name="living">The snapshots of those of them still living</param>
+		internal static void MoorQuestBoats(Village village, TravelEntry entry, List<byte[]> living)
+		{
+			QuestRecord record = Read(village);
+			if (record == null || record.Id != entry.QuestId || !record.BySea)
+			{
+				return;
+			}
+			Dictionary<string, byte[]> alive = LivingById(living);
+			HashSet<string> keptKinds = new HashSet<string>();
+			foreach (QuestBoat plan in record.Boats)
+			{
+				if (plan.Crew.Exists((string member) => alive.ContainsKey(member)) && KeepsBoat(village, plan, keptKinds))
+				{
+					VillageShoreBoat.MoorAnother(village, plan.Prefab);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Checks whether a quest's boat is left for its village once its vikings are home - the village's own always, and
+		/// a new one when the village has no boat of its kind yet, nor another of the quest's boats of that kind kept
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="plan">The boat</param>
+		/// <param name="keptKinds">The kinds of the quest's boats kept so far, added to</param>
+		/// <returns>True when it's left</returns>
+		private static bool KeepsBoat(Village village, QuestBoat plan, HashSet<string> keptKinds)
+		{
+			bool kept = (plan.Owned || (!keptKinds.Contains(plan.Prefab) && !VikingBoat.HasSuchBoat(village, plan.Prefab.GetStableHashCode(), null)));
+			if (kept)
+			{
+				keptKinds.Add(plan.Prefab);
+			}
+			return(kept);
+		}
+
+		/// <summary>
+		/// Finds the living vikings of a quest coming home by their GUIDs
+		/// </summary>
+		/// <param name="living">Their snapshots</param>
+		/// <returns>Each snapshot, by the viking's GUID</returns>
+		private static Dictionary<string, byte[]> LivingById(List<byte[]> living)
+		{
+			Dictionary<string, byte[]> alive = new Dictionary<string, byte[]>();
+			foreach (byte[] snapshot in living)
+			{
+				string id = VikingIdentity.OfSnapshot(snapshot);
+				if (id.Length > 0)
+				{
+					alive[id] = snapshot;
+				}
+			}
+			return(alive);
 		}
 
 		/// <summary>

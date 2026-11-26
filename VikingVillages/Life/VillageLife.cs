@@ -2658,6 +2658,12 @@ namespace VikingVillages
 			{
 				ForgetRoad();
 			}
+			// Getting on a quest's boat, riding it or swimming in from it, its crossing takes the update over (see
+			// UpdateBoat)
+			if (UpdateBoat(dt))
+			{
+				return(true);
+			}
 			if (ZombieState.IsRising(humanoid))
 			{
 				return(false);

@@ -196,12 +196,19 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets the group the viking crosses the sea with - its group on the road, or itself alone
+		/// Gets the group the viking crosses the sea with - its boat's, once it's noted on one (see VikingBoat.KeyOf), like
+		/// a quest's, and otherwise its group on the road, or itself alone
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
 		/// <returns>The group's name</returns>
 		private string CrossingGroup(ZDO zdo)
 		{
+			string boat = zdo.GetString(VikingBoat.BoatKey, "");
+			int mark = boat.LastIndexOf('#');
+			if (mark > 0)
+			{
+				return(boat.Substring(0, mark));
+			}
 			string group = zdo.GetString(VillageTravel.GroupKey, "");
 			return((group.Length > 0) ? group : "alone" + VikingIdentity.Get(zdo));
 		}
@@ -379,29 +386,122 @@ namespace VikingVillages
 		private bool FindLaunch(out Vector3 spot)
 		{
 			spot = Vector3.zero;
-			if (ZoneSystem.instance == null || roadLeg >= travelRoad.Count)
+			if (roadLeg >= travelRoad.Count)
+			{
+				return(false);
+			}
+			return(FindLaunchToward(transform.position, travelRoad.Points[roadLeg], out spot));
+		}
+
+		/// <summary>
+		/// Finds where a boat goes in the water out from a spot - the first spot toward a point where the water is deep
+		/// enough, a little past it, on the water
+		/// </summary>
+		/// <param name="from">Where it's looked for from, at the shore</param>
+		/// <param name="toward">The point it's looked for toward, out at sea</param>
+		/// <param name="spot">Set to the spot</param>
+		/// <returns>False when there's no water deep enough within LaunchSearch</returns>
+		private static bool FindLaunchToward(Vector3 from, Vector3 toward, out Vector3 spot)
+		{
+			spot = Vector3.zero;
+			if (ZoneSystem.instance == null)
 			{
 				return(false);
 			}
 			float water = ZoneSystem.instance.m_waterLevel;
-			Vector3 toward = travelRoad.Points[roadLeg] - transform.position;
-			toward.y = 0f;
-			if (toward.sqrMagnitude < 0.01f)
+			Vector3 way = toward - from;
+			way.y = 0f;
+			if (way.sqrMagnitude < 0.01f)
 			{
 				return(false);
 			}
-			toward.Normalize();
+			way.Normalize();
 			for (float out1 = LaunchStep; out1 <= LaunchSearch; out1 += LaunchStep)
 			{
-				Vector3 point = transform.position + toward * out1;
+				Vector3 point = from + way * out1;
 				if (ZoneSystem.instance.GetGroundHeight(point) < water - LaunchDepth)
 				{
-					spot = point + toward * LaunchOut;
+					spot = point + way * LaunchOut;
 					spot.y = water;
 					return(true);
 				}
 			}
 			return(false);
+		}
+
+		/// <summary>
+		/// How far out a quest's boat has to be, in meters, for its vikings to be gone with the quest once no player is
+		/// within QuestSightReach of it, rather than only at BoatRules.QuestSailAway, and how often they look, in seconds
+		/// </summary>
+		private const float QuestSightOut = 40f;
+		private const float QuestSightReach = 80f;
+		private const float SailCheckInterval = 1f;
+
+		/// <summary>
+		/// When a viking on a quest's boat next looks whether it has sailed far enough to be gone (see SailedAway)
+		/// </summary>
+		private float nextSailCheck;
+
+		/// <summary>
+		/// Starts a village's viking getting on board the boat its quest sails in (see Board)
+		/// </summary>
+		/// <param name="boat">The boat</param>
+		/// <param name="seat">Its seat on it, the helm being 0</param>
+		private void StartQuestBoarding(VikingBoat boat, int seat)
+		{
+			ZDO zdo = nview.GetZDO();
+			myBoat = boat;
+			mySeat = seat;
+			jumped = false;
+			hasEdge = false;
+			HoldHammer(false);
+			zdo.Set(VikingBoat.BoatKey, boat.Key);
+			SetCrossing(zdo, Crossing.Boarding);
+			Plugin.Log.LogInfo(LogName() + " gets on board " + boat.Key + " to leave on its village's quest");
+		}
+
+		/// <summary>
+		/// Checks whether a village's viking on a quest's boat setting out has sailed far enough to be gone with the quest -
+		/// BoatRules.QuestSailAway from the shore it set sail from, or QuestSightOut once no player is near enough to see
+		/// it, looking every SailCheckInterval seconds
+		/// </summary>
+		/// <returns>True when it has</returns>
+		private bool SailedAway()
+		{
+			if (myBoat == null || !myBoat.OnQuest() || myBoat.Homeward() || myBoat.CurrentPhase != VikingBoat.Phase.Sailing || Time.time < nextSailCheck)
+			{
+				return(false);
+			}
+			nextSailCheck = Time.time + SailCheckInterval;
+			float distance = Utils.DistanceXZ(myBoat.transform.position, myBoat.Launch);
+			if (distance >= BoatRules.QuestSailAway)
+			{
+				return(true);
+			}
+			return(distance >= QuestSightOut && !Player.IsPlayerInRange(myBoat.transform.position, QuestSightReach));
+		}
+
+		/// <summary>
+		/// Has a village's viking sail off on its quest from the boat it set out in - off its seat and gone from the world
+		/// with the quest (see LeaveOnQuest), its boat following once its crew is all gone (see VikingBoat). One whose
+		/// quest is no longer setting out swims for the shore instead
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		private void SailOffOnQuest(ZDO zdo)
+		{
+			QuestRecord record = VillageQuests.Read(village);
+			string me = VikingIdentity.Get(zdo);
+			StopDefending(false);
+			GetOffBoard();
+			if (record == null || record.Phase != QuestPhase.Leaving || !record.Members.Contains(me))
+			{
+				StartSwim(zdo, Crossing.Wrecked, Vector3.zero);
+				return;
+			}
+			zdo.Set(VikingBoat.BoatKey, "");
+			SetCrossing(zdo, Crossing.None);
+			myBoat = null;
+			LeaveOnQuest(record);
 		}
 
 		/// <summary>
@@ -508,7 +608,9 @@ namespace VikingVillages
 					return(true);
 				}
 			}
-			if (myBoat.CurrentPhase != VikingBoat.Phase.Boarding || myBoat.PhaseSeconds > VikingBoat.BoardTime)
+			// Timed from when it came to board as well as from the boat's launch, so one coming late to a quest's boat that
+			// has waited long for its crew still gets its try
+			if (myBoat.CurrentPhase != VikingBoat.Phase.Boarding || Mathf.Min(myBoat.PhaseSeconds, Time.time - crossingSince) > VikingBoat.BoardTime)
 			{
 				GetAboard(zdo, "was put");
 				return(true);
@@ -758,7 +860,9 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Runs the viking's crossing once it's on board or back in the water - riding along, getting off at the far shore,
-		/// swimming in and breaking the boat up - and picks up a crossing it was in the middle of as it loads again
+		/// swimming in and breaking the boat up - and picks up a crossing it was in the middle of as it loads again. A
+		/// village's viking runs its quest's crossing here too - getting on board as it sets out, sailing off on the quest
+		/// once it's far enough out (see SailedAway), and riding home from it
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <returns>True when it took the update over</returns>
@@ -771,7 +875,15 @@ namespace VikingVillages
 			}
 			switch (crossing)
 			{
+				case Crossing.Boarding:
+					// A village's viking boards a quest's boat here, as one on the road boards in UpdateCrossing
+					return(Board(dt, zdo));
 				case Crossing.Aboard:
+					if (active && SailedAway())
+					{
+						SailOffOnQuest(zdo);
+						return(true);
+					}
 					return(RideAlong(dt, zdo));
 				case Crossing.Landing:
 				case Crossing.Wrecked:
@@ -1171,7 +1283,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Brings the viking ashore - on along its road from the far shore, the one at the helm breaking the boat up first,
-		/// or for one wrecked, planning its road again from where it washed up
+		/// or for one wrecked, planning its road again from where it washed up. A village's viking, home from a quest by
+		/// boat, goes back to its life in the village, the one at the helm breaking up a boat that isn't left for it
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
 		private void Ashore(ZDO zdo)
@@ -1179,6 +1292,19 @@ namespace VikingVillages
 			bool wrecked = (crossing == Crossing.Wrecked);
 			zdo.Set(VikingBoat.BoatKey, "");
 			SetCrossing(zdo, Crossing.None);
+			if (active)
+			{
+				Plugin.Log.LogInfo(LogName() + " came ashore at " + transform.position.ToString("F0") + " by its village");
+				if (!wrecked && myBoat != null && mySeat == 0 && !myBoat.Kept())
+				{
+					swings = 0;
+					nextSwing = Time.time + 0.5f;
+					SetCrossing(zdo, Crossing.Breaking);
+					return;
+				}
+				myBoat = null;
+				return;
+			}
 			if (wrecked || myBoat == null)
 			{
 				Plugin.Log.LogInfo(LogName() + " washed up at " + transform.position.ToString("F0") + ", and plans its road again");

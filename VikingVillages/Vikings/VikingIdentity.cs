@@ -80,6 +80,18 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Gets the GUID of a viking kept out of the world (see VillageDeparted.SnapshotOf)
+		/// </summary>
+		/// <param name="snapshot">Its values</param>
+		/// <returns>The GUID, or "" when it has none or they can't be read</returns>
+		public static string OfSnapshot(byte[] snapshot)
+		{
+			VillageDeparted.VikingValues values = VillageDeparted.Decode(snapshot);
+			int at = ((values != null) ? values.Strings.FindIndex((KeyValuePair<int, string> entry) => entry.Key == IdKey) : -1);
+			return((at >= 0) ? values.Strings[at].Value : "");
+		}
+
+		/// <summary>
 		/// Gives a viking a GUID when it has none, on its owner
 		/// </summary>
 		/// <param name="view">The viking's view</param>

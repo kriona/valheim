@@ -461,11 +461,27 @@ namespace VikingVillages
 		{
 			List<byte[]> fallen = entry.Vikings.FindAll((byte[] snapshot) => VillageQuests.DiedOnQuest(snapshot));
 			List<byte[]> living = entry.Vikings.FindAll((byte[] snapshot) => !fallen.Contains(snapshot));
+			// A quest that sailed from the village sails home where a player can see it, on board its boats
+			bool sailed = VillageQuests.SailHome(village, vikings, entry, living);
 			Vector3 spot = Vector3.zero;
 			bool outside = false;
-			if (living.Count > 0 && !VillageRespawn.ArrivalSpotFor(village, living[0], entry.From, out spot, out outside))
+			if (!sailed && living.Count > 0 && !VillageRespawn.ArrivalSpotFor(village, living[0], entry.From, out spot, out outside))
 			{
 				return;
+			}
+			if (!sailed)
+			{
+				VillageQuests.MoorQuestBoats(village, entry, living);
+			}
+			else
+			{
+				// Any of them not brought in on board come in the usual way, or at the village's middle
+				List<byte[]> left = entry.Vikings.FindAll((byte[] snapshot) => !fallen.Contains(snapshot));
+				if (left.Count > 0 && !VillageRespawn.ArrivalSpotFor(village, left[0], entry.From, out spot, out outside))
+				{
+					spot = village.RallyPoint();
+					outside = false;
+				}
 			}
 			foreach (byte[] snapshot in fallen)
 			{

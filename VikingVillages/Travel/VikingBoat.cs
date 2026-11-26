@@ -63,6 +63,23 @@ namespace VikingVillages
 		private const float ShoreVillageReach = 80f;
 
 		/// <summary>
+		/// On a boat a quest sails in (see VillageQuests.PlanBoats), the quest's ID, or "", whether it's sailing home from
+		/// it rather than setting out, and whether it's one of the village's own, which goes back to being a ship like any
+		/// other if the quest never sails in it
+		/// </summary>
+		public static readonly int QuestKey = "kriona.VikingVillages.boatQuest".GetStableHashCode();
+		public static readonly int HomewardKey = "kriona.VikingVillages.boatHomeward".GetStableHashCode();
+		public static readonly int VillageOwnedKey = "kriona.VikingVillages.boatVillageOwned".GetStableHashCode();
+
+		/// <summary>
+		/// How long a quest's boat waits at the shore for its crew to get packed and on board before it gives up on them,
+		/// in seconds, and how far out a quest's boat has to be with nobody left on it to count as gone with the quest,
+		/// in meters - any nearer, it's left at the shore
+		/// </summary>
+		private const float QuestBoardTime = QuestRules.LeaveTimeout + QuestRules.SailOffSeconds + BoardTime;
+		private const float QuestGoneOut = 40f;
+
+		/// <summary>
 		/// On a living viking, the boat it's crossing the sea in, as its group and the boat's index, or "", and how far
 		/// along its crossing it is (see VillageLife's Crossing)
 		/// </summary>
@@ -285,6 +302,119 @@ namespace VikingVillages
 			}
 			Take(ship);
 			return(instance.GetComponent<VikingBoat>());
+		}
+
+		/// <summary>
+		/// Takes over one of a village's own boats for a quest that sails from the village (see VillageQuests.PlanBoats)
+		/// - noting its crew and road on it as Build does a new boat's, for this client to sail, and that it's the
+		/// village's, so it's left as it was if the quest never sails in it
+		/// </summary>
+		/// <param name="ship">The ship</param>
+		/// <param name="group">The quest's boats' group (see QuestRecord.BoatGroup)</param>
+		/// <param name="index">Which of the quest's boats it is</param>
+		/// <param name="crew">Its crew's IDs, helm first</param>
+		/// <param name="route">Its road across the sea, from where it's moored</param>
+		/// <param name="land">The shore past the sea</param>
+		/// <param name="quest">The quest's ID</param>
+		/// <returns>The boat, or null when the ship couldn't be taken over</returns>
+		public static VikingBoat Enlist(Ship ship, string group, int index, List<string> crew, TravelRoad route, Vector3 land, string quest)
+		{
+			ZNetView view = ship.GetComponent<ZNetView>();
+			if (view == null || !view.IsValid())
+			{
+				return(null);
+			}
+			if (!view.IsOwner())
+			{
+				view.ClaimOwnership();
+			}
+			ZDO zdo = view.GetZDO();
+			zdo.Set(GroupKey, group);
+			zdo.Set(IndexKey, index);
+			zdo.Set(CrewKey, string.Join(",", crew));
+			zdo.Set(RouteKey, route.Encode());
+			zdo.Set(LegKey, 1);
+			zdo.Set(LandKey, land);
+			zdo.Set(SeaStartKey, 0);
+			zdo.Set(AshoreKey, 0);
+			zdo.Set(PhaseKey, (int)Phase.Boarding);
+			zdo.Set(PhaseAtKey, NetTime.Now());
+			zdo.Set(QuestKey, quest);
+			zdo.Set(HomewardKey, false);
+			zdo.Set(VillageOwnedKey, true);
+			Take(ship);
+			return(Of(ship));
+		}
+
+		/// <summary>
+		/// Notes on a boat just built that a quest sails in it (see QuestKey)
+		/// </summary>
+		/// <param name="quest">The quest's ID</param>
+		/// <param name="homeward">Whether it sails home from the quest</param>
+		/// <param name="owned">Whether it's one of the village's own</param>
+		public void MarkQuest(string quest, bool homeward, bool owned)
+		{
+			if (!Valid())
+			{
+				return;
+			}
+			ZDO zdo = nview.GetZDO();
+			zdo.Set(QuestKey, quest);
+			zdo.Set(HomewardKey, homeward);
+			zdo.Set(VillageOwnedKey, owned);
+		}
+
+		/// <summary>
+		/// Sets a boat just built for a quest's vikings coming home under way, its crew already on board, holding still a
+		/// moment for them to load onto it
+		/// </summary>
+		public void StartHomeward()
+		{
+			if (!Valid())
+			{
+				return;
+			}
+			SetPhase(Phase.Sailing);
+			settleUntil = Time.time + SettleTime;
+		}
+
+		/// <summary>
+		/// Checks whether a quest sails in the boat, setting out from its village or coming home (see QuestKey)
+		/// </summary>
+		/// <returns>True when it does</returns>
+		public bool OnQuest()
+		{
+			return(Valid() && nview.GetZDO().GetString(QuestKey, "").Length > 0);
+		}
+
+		/// <summary>
+		/// Checks whether the boat sails home from a quest, rather than setting out on it
+		/// </summary>
+		/// <returns>True when it does</returns>
+		public bool Homeward()
+		{
+			return(Valid() && nview.GetZDO().GetBool(HomewardKey));
+		}
+
+		/// <summary>
+		/// Checks whether the boat is one of a village's own, rather than one its vikings built
+		/// </summary>
+		/// <returns>True when it is</returns>
+		public bool VillageOwned()
+		{
+			return(Valid() && nview.GetZDO().GetBool(VillageOwnedKey));
+		}
+
+		/// <summary>
+		/// Gets where the boat set sail from, the start of its road
+		/// </summary>
+		public Vector3 Launch
+		{
+			get
+			{
+				TravelRoad route = (Valid() ? TravelRoad.Decode(nview.GetZDO().GetByteArray(RouteKey)) : new TravelRoad());
+				return((route.Count > 0) ? route.Points[0] : transform.position);
+			}
 		}
 
 		/// <summary>
@@ -739,10 +869,12 @@ namespace VikingVillages
 			{
 				case Phase.Boarding:
 					Hold();
-					if (CrewAboard() >= Crew.Count || PhaseSeconds > BoardTime + 10f)
+					// A quest's boat waits for its crew to pack, and sets off without asking a player along, since its crew
+					// is soon gone from the world (see UpdateQuestOutbound)
+					if (CrewAboard() >= Crew.Count || PhaseSeconds > (OnQuest() ? QuestBoardTime : BoardTime + 10f))
 					{
 						nextAsk = 0f;
-						SetPhase(Phase.Waiting);
+						SetPhase(OnQuest() ? Phase.Sailing : Phase.Waiting);
 					}
 					break;
 				case Phase.Waiting:
@@ -869,6 +1001,10 @@ namespace VikingVillages
 			{
 				crewlessSince = -1f;
 				ComeAbout(dt, overboard);
+				return;
+			}
+			if (UpdateQuestOutbound())
+			{
 				return;
 			}
 			if (CrewAboard() == 0)
@@ -1068,6 +1204,70 @@ namespace VikingVillages
 			float rudder = BoatRules.Rudder(transform.forward, who.transform.position - transform.position);
 			Ship.m_speed = speed;
 			Ship.m_rudderValue = Mathf.MoveTowards(Ship.m_rudderValue, rudder, Ship.m_rudderSpeed * dt * 2f);
+		}
+
+		/// <summary>
+		/// How long a quest's boat out at sea holds still with nobody left on it before it's gone with the quest, in
+		/// seconds
+		/// </summary>
+		private const float QuestGoneWait = 3f;
+
+		/// <summary>
+		/// Looks after a quest's boat setting out once nobody of its crew is on it - out at sea, QuestGoneOut from the shore
+		/// or farther, its crew gone from the world with the quest (see VillageLife.SailOffOnQuest), it's gone too, or left
+		/// as a ship like any other when a player is still on it, and at the shore, its crew never having got on, the
+		/// village's own is left as it was and a new one broken up, after CrewlessTime seconds
+		/// </summary>
+		/// <returns>True when it's crewless, so it holds still</returns>
+		private bool UpdateQuestOutbound()
+		{
+			if (!OnQuest() || Homeward())
+			{
+				return(false);
+			}
+			if (CrewAboard() > 0)
+			{
+				crewlessSince = -1f;
+				return(false);
+			}
+			crewlessSince = ((crewlessSince < 0f) ? Time.time : crewlessSince);
+			float crewless = Time.time - crewlessSince;
+			Hold();
+			bool outAtSea = (Utils.DistanceXZ(transform.position, Launch) >= QuestGoneOut);
+			if (outAtSea && crewless >= QuestGoneWait)
+			{
+				if (Ship.m_players.Count > 0)
+				{
+					LeaveBehind();
+				}
+				else
+				{
+					Vanish();
+				}
+			}
+			else if (!outAtSea && crewless >= CrewlessTime)
+			{
+				if (VillageOwned())
+				{
+					LeaveBehind();
+				}
+				else
+				{
+					Break();
+				}
+			}
+			return(true);
+		}
+
+		/// <summary>
+		/// Takes a quest's boat out of the world, gone with its crew - noted on the quest, so it comes back with them (see
+		/// QuestRecord.Boats)
+		/// </summary>
+		private void Vanish()
+		{
+			Plugin.Log.LogInfo("Boat: " + Key + " sailed away with its quest at " + transform.position.ToString("F0"));
+			TestLog.Count("Boats", "sailed away on a quest");
+			nview.Destroy();
 		}
 
 		/// <summary>
@@ -1314,6 +1514,24 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Notes whether the boat's crew leaves it for the village they come to, on a quest's boat coming home, which is
+		/// decided as it comes back (see VillageQuests.SailHome)
+		/// </summary>
+		/// <param name="kept">True to leave it</param>
+		public void SetKept(bool kept)
+		{
+			if (Valid())
+			{
+				nview.GetZDO().Set(KeptKey, kept);
+			}
+		}
+
+		/// <summary>
+		/// How far apart a quest's boats come back side by side, in meters
+		/// </summary>
+		public const float SailInSpacing = 12f;
+
+		/// <summary>
 		/// Decides, as the boat comes in to the far shore, whether its crew leaves it for the village they're going to -
 		/// the first of their group's boats, when the village stands on this shore, within ShoreVillageReach of where
 		/// they go ashore, and has no ship of this kind by it already, its own moored one, a player's or one left before
@@ -1322,7 +1540,8 @@ namespace VikingVillages
 		private void DecideKept()
 		{
 			ZDO zdo = nview.GetZDO();
-			if (zdo.GetInt(IndexKey) != 0)
+			// A quest's boat coming home was decided on as it came back (see VillageQuests.SailHome)
+			if (zdo.GetInt(IndexKey) != 0 || OnQuest())
 			{
 				return;
 			}
@@ -1333,7 +1552,7 @@ namespace VikingVillages
 			{
 				return;
 			}
-			if (HasSuchBoat(village))
+			if (HasSuchBoat(village, zdo.GetPrefab(), zdo))
 			{
 				Plugin.Log.LogInfo("Boat: " + Key + " is broken up at " + transform.position.ToString("F0") + ", since the village at " + village.Farm.ToString("F0") + " has a " + Utils.GetPrefabName(gameObject) + " already");
 				return;
@@ -1342,17 +1561,18 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a ship of the boat's kind is by a village already - within ShoreVillageReach of its edge, but for
-		/// boats still out on the road with their vikings
+		/// Checks whether a ship of a kind is by a village already - within ShoreVillageReach of its edge, but for boats
+		/// still out on the road with their vikings
 		/// </summary>
 		/// <param name="village">The village</param>
+		/// <param name="prefab">The ship's prefab hash</param>
+		/// <param name="except">A ship's ZDO not to count, or null</param>
 		/// <returns>True when one is</returns>
-		private bool HasSuchBoat(Village village)
+		public static bool HasSuchBoat(Village village, int prefab, ZDO except)
 		{
-			int prefab = nview.GetZDO().GetPrefab();
 			List<ZDO> near = new List<ZDO>();
 			VillageRespawn.ZdosNear(village.Middle, village.Radius + ShoreVillageReach, near);
-			return(near.Exists((ZDO other) => other != nview.GetZDO() && other.GetPrefab() == prefab && other.GetString(GroupKey, "").Length == 0 && village.DistanceOutside(other.GetPosition()) <= ShoreVillageReach));
+			return(near.Exists((ZDO other) => other != except && other.GetPrefab() == prefab && other.GetString(GroupKey, "").Length == 0 && village.DistanceOutside(other.GetPosition()) <= ShoreVillageReach));
 		}
 
 		/// <summary>
@@ -1370,6 +1590,9 @@ namespace VikingVillages
 			zdo.Set(CrewKey, "");
 			zdo.Set(KeptKey, false);
 			zdo.Set(BreakAtKey, 0L);
+			zdo.Set(QuestKey, "");
+			zdo.Set(HomewardKey, false);
+			zdo.Set(VillageOwnedKey, false);
 			Destroy(this);
 		}
 

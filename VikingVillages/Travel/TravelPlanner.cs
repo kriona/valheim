@@ -227,7 +227,7 @@ namespace VikingVillages
 		/// question's ID
 		/// </summary>
 		private static readonly Dictionary<long, System.Action<Answer>> asked = new Dictionary<long, System.Action<Answer>>();
-		private static readonly Dictionary<long, System.Action<float, float, int>> askedRoutes = new Dictionary<long, System.Action<float, float, int>>();
+		private static readonly Dictionary<long, System.Action<float, float, int, TravelRoad>> askedRoutes = new Dictionary<long, System.Action<float, float, int, TravelRoad>>();
 
 		/// <summary>
 		/// Registers the RPCs with a world's routed RPC, starting the world with no search running
@@ -237,7 +237,7 @@ namespace VikingVillages
 			ZRoutedRpc.instance.Register<ZPackage>(SearchRpc, OnSearch);
 			ZRoutedRpc.instance.Register<ZPackage>(FoundRpc, OnFound);
 			ZRoutedRpc.instance.Register<ZPackage>(QuestRouteRpc, OnQuestRoute);
-			ZRoutedRpc.instance.Register<long, float, float, int>(QuestRoutedRpc, OnQuestRouted);
+			ZRoutedRpc.instance.Register<long, float, float, int, byte[]>(QuestRoutedRpc, OnQuestRouted);
 			searches.Clear();
 			running = null;
 			candidates = null;
@@ -826,9 +826,10 @@ namespace VikingVillages
 		/// <param name="biome">The village's biome, by VikingGear's order</param>
 		/// <param name="kind">The quest</param>
 		/// <param name="item">What it's for, or ""</param>
-		/// <param name="done">What to do with the answer - the time there and the time back, in seconds, and the biome the
-		/// road goes to, by VikingGear's order, or -1 when it goes nowhere</param>
-		public static void AskQuestRoute(Vector3 from, int biome, QuestKind kind, string item, System.Action<float, float, int> done)
+		/// <param name="done">What to do with the answer - the time there and the time back, in seconds, the biome the road
+		/// goes to, by VikingGear's order, or -1 when it goes nowhere, and the sea it sets out across from the village (see
+		/// BoatRules.QuestSea), with no waypoints when it goes on foot</param>
+		public static void AskQuestRoute(Vector3 from, int biome, QuestKind kind, string item, System.Action<float, float, int, TravelRoad> done)
 		{
 			if (ZRoutedRpc.instance == null)
 			{
@@ -850,7 +851,8 @@ namespace VikingVillages
 		/// whichever place the quest could go they get to soonest, over land and sea in the best boat the village's biome
 		/// has and through portals, and the road home again, without the portals that won't take what the quest brings
 		/// back, like ore - or straight there on foot when there's no road, or QuestRules.DefaultTravel when there's
-		/// nowhere to go - and answers the client that asked
+		/// nowhere to go - and answers the client that asked, with the sea the road sets out across from the village when
+		/// it takes to the sea there (see BoatRules.QuestSea)
 		/// </summary>
 		/// <param name="sender">The client that asked</param>
 		/// <param name="pkg">The question's ID, where the village stands, its biome, the quest and what it's for</param>
@@ -869,7 +871,7 @@ namespace VikingVillages
 			if (targets.Count == 0)
 			{
 				Plugin.Log.LogInfo("Travel: a quest " + kind + " from the village at " + from.ToString("F0") + " has nowhere to go, so it takes " + QuestRules.DefaultTravel.ToString("F0") + "s each way");
-				ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, QuestRules.DefaultTravel, QuestRules.DefaultTravel, -1);
+				ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, QuestRules.DefaultTravel, QuestRules.DefaultTravel, -1, new byte[0]);
 				return;
 			}
 			string label = "a quest " + kind + " from the village";
@@ -879,12 +881,14 @@ namespace VikingVillages
 				Vector3 target = (outward.Found ? outward.Destination : targets[0]);
 				float seconds = (outward.Found ? outward.Seconds : TravelTime.Seconds(Utils.DistanceXZ(from, target)));
 				int reached = ((WorldGenerator.instance != null) ? VikingGear.IndexOf(WorldGenerator.instance.GetBiome(target)) : -1);
+				TravelRoad seaOut = (outward.Found ? BoatRules.QuestSea(outward.Road, from) : null);
+				byte[] sea = ((seaOut != null) ? seaOut.Encode() : new byte[0]);
 				TravelParty home = TravelParty.Of(biome);
 				home.Unteleportable = !Teleportable(item);
 				if (!outward.Found || outward.Road.PortalCount() == 0 || !home.Unteleportable)
 				{
 					Plugin.Log.LogInfo("Travel: " + label + " at " + from.ToString("F0") + " goes to " + target.ToString("F0") + ", " + seconds.ToString("F0") + "s each way");
-					ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, seconds, seconds, reached);
+					ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, seconds, seconds, reached, sea);
 					return;
 				}
 				Search back = new Search { From = target, Party = home, Targets = new List<Vector3> { from }, Label = label + " coming home with " + item };
@@ -892,7 +896,7 @@ namespace VikingVillages
 				{
 					float returning = (homeward.Found ? homeward.Seconds : TravelTime.Seconds(Utils.DistanceXZ(from, target)));
 					Plugin.Log.LogInfo("Travel: " + label + " at " + from.ToString("F0") + " goes to " + target.ToString("F0") + ", " + seconds.ToString("F0") + "s there and " + returning.ToString("F0") + "s back, as no portal on the way takes " + item);
-					ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, seconds, returning, reached);
+					ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, seconds, returning, reached, sea);
 				};
 				searches.Enqueue(back);
 			};
@@ -907,12 +911,14 @@ namespace VikingVillages
 		/// <param name="there">How long it takes there, in seconds</param>
 		/// <param name="back">How long it takes back, in seconds</param>
 		/// <param name="biome">The biome the road goes to, by VikingGear's order, or -1 when it goes nowhere</param>
-		private static void OnQuestRouted(long sender, long id, float there, float back, int biome)
+		/// <param name="sea">The sea the road sets out across from the village, as written (see TravelRoad.Encode), or
+		/// nothing when it goes on foot</param>
+		private static void OnQuestRouted(long sender, long id, float there, float back, int biome, byte[] sea)
 		{
-			if (askedRoutes.TryGetValue(id, out System.Action<float, float, int> done))
+			if (askedRoutes.TryGetValue(id, out System.Action<float, float, int, TravelRoad> done))
 			{
 				askedRoutes.Remove(id);
-				done(there, back, biome);
+				done(there, back, biome, TravelRoad.Decode(sea));
 			}
 		}
 

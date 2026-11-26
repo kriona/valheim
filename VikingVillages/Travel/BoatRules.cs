@@ -202,6 +202,124 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// How a quest goes by boat from its village (see QuestSea) - how near the village its road has to reach the sea
+		/// for the quest to sail from the village, how long the sea stretch has to be for it to be worth a boat, how far out
+		/// the boats sail before the vikings are gone from the world, and how far out the boats come back from, in meters
+		/// </summary>
+		internal const float QuestSeaReach = 120f;
+		internal const float QuestSeaMin = 200f;
+		internal const float QuestSailAway = 150f;
+		internal const float QuestSailIn = 150f;
+
+		/// <summary>
+		/// Finds the sea a quest's road sets out across from its village - its first sea stretch, when the road reaches
+		/// the sea within QuestSeaReach of the village through no portal and the stretch is QuestSeaMin long at least -
+		/// from the shore it sets sail from, across the sea, to the shore past it
+		/// </summary>
+		/// <param name="road">The quest's road there</param>
+		/// <param name="from">Where the village stands</param>
+		/// <returns>The stretch - the shore, the sea's waypoints and the shore past them - or null when the quest goes on
+		/// foot from the village</returns>
+		internal static TravelRoad QuestSea(TravelRoad road, Vector3 from)
+		{
+			if (road == null)
+			{
+				return(null);
+			}
+			int first = -1;
+			for (int i = 1; i < road.Count; i++)
+			{
+				if (road.PortalLeg(i))
+				{
+					return(null);
+				}
+				if (road.SeaLeg(i))
+				{
+					first = i;
+					break;
+				}
+			}
+			if (first < 0 || TravelRoad.Flat(road.Points[first - 1], from) > QuestSeaReach)
+			{
+				return(null);
+			}
+			int ashore = Ashore(road, first, out int lastSea);
+			TravelRoad sea = new TravelRoad();
+			sea.Add(road.Points[first - 1], TravelLeg.Foot);
+			for (int i = first; i <= lastSea; i++)
+			{
+				sea.Add(road.Points[i], TravelLeg.Sea);
+			}
+			if (ashore < road.Count)
+			{
+				sea.Add(road.Points[ashore], TravelLeg.Foot);
+			}
+			return((sea.Meters(1, sea.Points[0]) >= QuestSeaMin) ? sea : null);
+		}
+
+		/// <summary>
+		/// Shares a quest's vikings out among the boats they sail in - the village's own boats first, each filled up to its
+		/// seats, as many as they need, and the rest shared out evenly among as many new boats as they take (see Crews)
+		/// </summary>
+		/// <param name="ids">The vikings' IDs</param>
+		/// <param name="owned">How many each of the village's own boats seats, in the order they're filled</param>
+		/// <param name="built">How many a new boat seats</param>
+		/// <param name="ownedCrews">Set to the crew of each of the village's boats that goes, in their order, as many as
+		/// go</param>
+		/// <returns>The crews of the new boats built for the rest</returns>
+		internal static List<List<string>> QuestCrews(List<string> ids, List<int> owned, int built, out List<List<string>> ownedCrews)
+		{
+			ownedCrews = new List<List<string>>();
+			int at = 0;
+			for (int i = 0; i < owned.Count && at < ids.Count; i++)
+			{
+				int take = Mathf.Min(Mathf.Max(1, owned[i]), ids.Count - at);
+				ownedCrews.Add(ids.GetRange(at, take));
+				at += take;
+			}
+			List<string> rest = ids.GetRange(at, ids.Count - at);
+			return((rest.Count > 0) ? Crews(rest, built) : new List<List<string>>());
+		}
+
+		/// <summary>
+		/// Finds where a quest's boats come back into the world from - QuestSailIn along its sea from the shore it set
+		/// sail from, or the sea's far end when it's shorter - and the road home from there, back to that shore
+		/// </summary>
+		/// <param name="sea">The quest's sea (see QuestSea)</param>
+		/// <param name="home">Set to the road home, by sea, ending at the shore the quest set sail from</param>
+		/// <returns>Where the boats come back from, on the sea</returns>
+		internal static Vector3 SailInFrom(TravelRoad sea, out TravelRoad home)
+		{
+			home = new TravelRoad();
+			int last = sea.Count - 1;
+			while (last > 0 && !sea.SeaLeg(last))
+			{
+				last--;
+			}
+			Vector3 start = sea.Points[Mathf.Max(0, last)];
+			int at = Mathf.Max(0, last);
+			float covered = 0f;
+			for (int i = 1; i <= last; i++)
+			{
+				covered += TravelRoad.Flat(sea.Points[i - 1], sea.Points[i]);
+				if (covered >= QuestSailIn)
+				{
+					float over = covered - QuestSailIn;
+					float leg = TravelRoad.Flat(sea.Points[i - 1], sea.Points[i]);
+					start = Vector3.Lerp(sea.Points[i], sea.Points[i - 1], (leg > 0f) ? over / leg : 0f);
+					at = i;
+					break;
+				}
+			}
+			home.Add(start, TravelLeg.Foot);
+			for (int i = at - 1; i >= 1; i--)
+			{
+				home.Add(sea.Points[i], TravelLeg.Sea);
+			}
+			return(start);
+		}
+
+		/// <summary>
 		/// How a boat comes in to the far shore before it lets its crew off - how near the spot ashore it comes, in meters,
 		/// how shallow the water ahead of its bow can get before it stops short of running aground, in meters, and how long
 		/// it goes without getting a meter nearer before it counts as aground already, in seconds

@@ -64,7 +64,7 @@ Everything Viking Villages does, in full. The [README](README.md) has the short 
 
 ### Boats
 
-- A farm whose edge comes within 24 meters of water that runs on to the sea - the sea itself, or a lake or river joined to it - gets a boat moored on it the first time the whole village has loaded around you: the best boat of the village's biome, the same as its Vikings would build (a raft in the Meadows), as near the village as there's water deep enough all around it - up to 80 meters past its edge - facing along the most open water. It's yours to take - the Vikings never sail it or build it back - and breaking it drops a third of what it's built from, like any piece no player built. A village on the shore can also get a boat from Vikings who sail there, when it has none of that kind (see [Sailing](#sailing))
+- A farm whose edge comes within 24 meters of water that runs on to the sea - the sea itself, or a lake or river joined to it - gets a boat moored on it the first time the whole village has loaded around you: the best boat of the village's biome, the same as its Vikings would build (a raft in the Meadows), as near the village as there's water deep enough all around it - up to 80 meters past its edge - facing along the most open water. It's yours to take - the Vikings never build it back - and breaking it drops a third of what it's built from, like any piece no player built. A village on the shore can also get a boat from Vikings who sail there, when it has none of that kind (see [Sailing](#sailing)). Its Vikings sail its boats on a quest that sets out by sea, and bring them home again (see [Sailing From the Village](QUESTS.md#sailing-from-the-village))
 
 ### Signs
 

@@ -32,6 +32,13 @@ namespace VikingVillages
 		public const float LeaveTimeout = 90f;
 
 		/// <summary>
+		/// How much longer a quest that sails from its village takes to set out, in seconds - for its vikings to build
+		/// any boats they need, get on board and sail out of sight - added to when it's due back and to how long its
+		/// vikings have to leave
+		/// </summary>
+		public const float SailOffSeconds = 90f;
+
+		/// <summary>
 		/// How long after a village's last quest came back it waits before it sends out another, as a share of a day
 		/// </summary>
 		public const float RestBetween = 0.25f;
