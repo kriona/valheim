@@ -615,6 +615,86 @@ namespace VikingVillages
 	}
 
 	/// <summary>
+	/// Has the damage a living or dvergr viking takes land as it does on a player, rather than scaled the way the
+	/// game scales the damage a creature takes - by the players nearby, as their enemies' health grows with them, and
+	/// by the world's player damage setting
+	/// </summary>
+	/// <remarks>
+	/// Here the game scales a player's damage only by their own damage taken key, which a viking doesn't have, so the
+	/// viking's is left as it is - the world's enemy damage setting has already scaled the hit as it was dealt, the
+	/// same as a player's. The swap is made in place of the two factors rather than in place of the IsPlayer check,
+	/// which would also count the viking's hits in the local player's stats
+	/// </remarks>
+	[HarmonyPatch(typeof(Character), nameof(Character.ApplyDamage))]
+	public static class VikingDamageTakenPatch
+	{
+		/// <summary>
+		/// Swaps the call to Game.GetDifficultyDamageScaleEnemy for EnemyScale and the read of Game.m_playerDamageRate for
+		/// PlayerDamageRate, leaving the method as it is unless each is there once
+		/// </summary>
+		/// <param name="instructions">The method's instructions</param>
+		/// <returns>The instructions with both swapped</returns>
+		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		{
+			MethodInfo difficulty = AccessTools.Method(typeof(Game), nameof(Game.GetDifficultyDamageScaleEnemy));
+			FieldInfo rate = AccessTools.Field(typeof(Game), nameof(Game.m_playerDamageRate));
+			List<CodeInstruction> result = new List<CodeInstruction>(instructions);
+			int difficultyAt = -1;
+			int rateAt = -1;
+			int difficultyCount = 0;
+			int rateCount = 0;
+			for (int i = 0; i < result.Count; i++)
+			{
+				if (difficulty != null && result[i].Calls(difficulty))
+				{
+					difficultyAt = i;
+					difficultyCount++;
+				}
+				else if (rate != null && result[i].LoadsField(rate))
+				{
+					rateAt = i;
+					rateCount++;
+				}
+			}
+			if (difficultyCount != 1 || rateCount != 1)
+			{
+				Plugin.Log.LogWarning("Expected one Game.GetDifficultyDamageScaleEnemy call and one Game.m_playerDamageRate read in Character.ApplyDamage but found " + difficultyCount + " and " + rateCount + " - living vikings will take damage scaled like a creature's");
+				return(result);
+			}
+			result[rateAt].opcode = OpCodes.Ldarg_0;
+			result[rateAt].operand = null;
+			result.Insert(rateAt + 1, CodeInstruction.Call(typeof(VikingDamageTakenPatch), nameof(PlayerDamageRate)));
+			result[difficultyAt].opcode = OpCodes.Ldarg_0;
+			result[difficultyAt].operand = null;
+			result.Insert(difficultyAt + 1, CodeInstruction.Call(typeof(VikingDamageTakenPatch), nameof(EnemyScale)));
+			return(result);
+		}
+
+		/// <summary>
+		/// Gets how the players near a creature scale the damage it takes - not at all for a living or dvergr viking
+		/// </summary>
+		/// <param name="game">The game</param>
+		/// <param name="position">Where the creature is</param>
+		/// <param name="character">The creature hit</param>
+		/// <returns>The multiplier</returns>
+		public static float EnemyScale(Game game, Vector3 position, Character character)
+		{
+			return(VikingCore.IsLivingOrDvergr(character) ? 1f : game.GetDifficultyDamageScaleEnemy(position));
+		}
+
+		/// <summary>
+		/// Gets how the world's player damage setting scales the damage a creature takes - not at all for a living or
+		/// dvergr viking
+		/// </summary>
+		/// <param name="character">The creature hit</param>
+		/// <returns>The multiplier</returns>
+		public static float PlayerDamageRate(Character character)
+		{
+			return(VikingCore.IsLivingOrDvergr(character) ? 1f : Game.m_playerDamageRate);
+		}
+	}
+
+	/// <summary>
 	/// Spreads the poison a living viking takes over as long as a player's, so it deals as much each second as it does
 	/// to a player - the game only gives a player the longer time (see SE_Poison.AddDamage)
 	/// </summary>
