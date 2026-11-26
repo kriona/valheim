@@ -305,8 +305,37 @@ namespace VikingVillages
 		};
 
 		/// <summary>
+		/// What a viking says when a player tries to name its village after a legend - a god, a beast of the myths, a
+		/// boss or the like - with the name
+		/// </summary>
+		private static readonly string[] VillageLegendRefusals =
+		{
+			"Name our village {0}? That's tempting fate.",
+			"{0}? We'd never live it down if word got back to them.",
+			"A village called {0}? Every skald from here to the Mistlands would mock us.",
+			"{0}? Some names are too big for a few houses and a fire."
+		};
+
+		/// <summary>
+		/// What a viking says when a player tries to leave its village without a name, and when they try to call it just
+		/// Village, with the name as they typed it
+		/// </summary>
+		private static readonly string[] VillageNamelessRefusals =
+		{
+			"No name at all? We'd be just a few houses in the woods again.",
+			"A village needs a name, friend. Give us a real one.",
+			"Nameless? How would travelers ever find us?"
+		};
+		private static readonly string[] VillageGenericRefusals =
+		{
+			"{0}? Every village is a village. Give us a real name.",
+			"Call it {0}? Then what would we call all the others?",
+			"{0}... and the river can be River, I suppose?"
+		};
+
+		/// <summary>
 		/// What a viking says when a player names its village, with the name - the first time, and when it had one
-		/// before - and when a player takes its name away
+		/// before
 		/// </summary>
 		private static readonly string[] VillageNamedLines =
 		{
@@ -320,12 +349,6 @@ namespace VikingVillages
 			"{0}? I'd only just got used to the old name.",
 			"{0} now, is it? The skalds will have to change their songs.",
 			"Again? Fine, {0} it is."
-		};
-		private static readonly string[] VillageClearedLines =
-		{
-			"No name at all? Just a few houses in the woods again.",
-			"Nameless again. How will travelers find us?",
-			"Back to no name, then. I liked the old one."
 		};
 
 		/// <summary>
@@ -1086,6 +1109,35 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Picks what a viking says when a player tries to name its village after a legend
+		/// </summary>
+		/// <param name="name">The name</param>
+		/// <returns>The line</returns>
+		public static string VillageLegendRefused(string name)
+		{
+			return(string.Format(Pick(VillageLegendRefusals), name));
+		}
+
+		/// <summary>
+		/// Picks what a viking says when a player tries to leave its village without a name
+		/// </summary>
+		/// <returns>The line</returns>
+		public static string VillageNamelessRefused()
+		{
+			return(Pick(VillageNamelessRefusals));
+		}
+
+		/// <summary>
+		/// Picks what a viking says when a player tries to call its village just Village
+		/// </summary>
+		/// <param name="name">The name as they typed it</param>
+		/// <returns>The line</returns>
+		public static string VillageGenericRefused(string name)
+		{
+			return(string.Format(Pick(VillageGenericRefusals), name));
+		}
+
+		/// <summary>
 		/// Picks what a viking says when a player names its village
 		/// </summary>
 		/// <param name="name">The village's new name</param>
@@ -1094,15 +1146,6 @@ namespace VikingVillages
 		public static string VillageNamed(string name, bool renamed)
 		{
 			return(string.Format(Pick(renamed ? VillageRenamedLines : VillageNamedLines), name));
-		}
-
-		/// <summary>
-		/// Picks what a viking says when a player takes its village's name away
-		/// </summary>
-		/// <returns>The line</returns>
-		public static string VillageCleared()
-		{
-			return(Pick(VillageClearedLines));
 		}
 
 		/// <summary>

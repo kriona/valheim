@@ -699,6 +699,19 @@ namespace VikingVillages
 			HashSet<string> legends = new HashSet<string>();
 			HashSet<string> places = new HashSet<string>();
 			foreach (string legend in Legends)
+		/// <summary>
+		/// Checks whether a name is a legend's - a god, giant or beast of the myths, a figure of the game's world, a
+		/// legendary weapon, or a boss or trader among the game's creatures - which vikings turn down for themselves and
+		/// their village alike
+		/// </summary>
+		/// <param name="name">The name</param>
+		/// <returns>True when it is</returns>
+		public static bool IsLegend(string name)
+		{
+			LoadNames();
+			return(legendNames.Contains(Plain(name).ToLowerInvariant()));
+		}
+
 			{
 				legends.Add(legend.ToLowerInvariant());
 			}

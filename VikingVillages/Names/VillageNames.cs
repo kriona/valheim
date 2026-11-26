@@ -7,8 +7,9 @@ namespace VikingVillages
 	/// The names players give villages - typed in a box opened with NameKey while looking at the village's fire, kept in
 	/// its generator's or anchor's ZDO with who named it, so the name is filtered for that player's words wherever it
 	/// shows - in what its vikings say, on its fire and on each player's map (see VillageMapPins). Its vikings turn
-	/// down a place's name for it and text markup, the way they do for themselves (see VikingNames.IsPlace and
-	/// VikingNames.IsMarkup)
+	/// down a legend's or a place's name for it and text markup, the way they do for themselves (see
+	/// VikingNames.IsLegend, VikingNames.IsPlace and VikingNames.IsMarkup), and won't have it go without a name or be
+	/// called just Village (see IsGeneric)
 	/// </summary>
 	/// <remarks>
 	/// The name is sent to every client, and the one that owns the village's generator or anchor notes it, the way a
@@ -42,6 +43,11 @@ namespace VikingVillages
 		/// The box's title
 		/// </summary>
 		private const string Topic = "Name the village";
+
+		/// <summary>
+		/// The name too plain for a village, which its vikings turn down (see IsGeneric)
+		/// </summary>
+		private const string GenericName = "Village";
 
 		/// <summary>
 		/// The names a village no player has named is given, picked at random among those no other village in the world
@@ -87,21 +93,20 @@ namespace VikingVillages
 		};
 
 		/// <summary>
-		/// Checks whether a village's generator or anchor has ever been named - it has a name, or a player took its name
-		/// away
+		/// Checks whether a village's generator or anchor has been named
 		/// </summary>
 		/// <param name="zdo">The generator's or anchor's ZDO</param>
 		/// <returns>True when it has</returns>
 		public static bool EverNamed(ZDO zdo)
 		{
-			return(zdo.GetString(NameZdoKey).Length > 0 || zdo.GetString(AuthorKey).Length > 0);
+			return(zdo.GetString(NameZdoKey).Length > 0);
 		}
 
 		/// <summary>
 		/// Gives a village the name settled for its farm in advance (see VillagePlannedNames), on the client that owns its
 		/// generator or anchor, when it has never been named - or, with none settled or the one settled taken, one of
-		/// AutoNames no other village goes by or has settled - noted as given by no player. A village whose name a player
-		/// took away keeps having none, and its map pin shows once it's named (see VillageMapPins)
+		/// AutoNames no other village goes by or has settled - noted as given by no player. Its map pin shows once it's
+		/// named (see VillageMapPins)
 		/// </summary>
 		/// <param name="village">The village, whose generator or anchor this client owns</param>
 		public static void TryAutoName(Village village)
@@ -230,15 +235,20 @@ namespace VikingVillages
 
 			/// <summary>
 			/// Names the village what the player typed - the client that owns it notes it - and tells them so, with a word
-			/// from the village's viking nearest them within SpeakRange, unless it's text markup or a place's name, which
-			/// its vikings turn down (see Refuse)
+			/// from the village's viking nearest them within SpeakRange, unless it's nothing, text markup, a legend's or
+			/// a place's name or just Village, which its vikings turn down (see Refuse)
 			/// </summary>
-			/// <param name="text">The name, or "" to take it away</param>
+			/// <param name="text">The name</param>
 			public void SetText(string text)
 			{
 				string name = VikingNames.Clip(VikingNames.Plain(text ?? ""), MaxLength);
 				if (ZRoutedRpc.instance == null || name == current)
 				{
+					return;
+				}
+				if (name.Length == 0)
+				{
+					Refuse(farm, VikingSpeech.VillageNamelessRefused(), "The Vikings won't have their village go without a name");
 					return;
 				}
 				string filtered = VikingNames.Filter(name, VikingNames.LocalAuthor());
@@ -249,9 +259,19 @@ namespace VikingVillages
 					return;
 				}
 				string shown = filtered.RemoveRichTextTags();
-				if (name.Length > 0 && VikingNames.IsPlace(name))
+				if (VikingNames.IsLegend(name))
+				{
+					Refuse(farm, VikingSpeech.VillageLegendRefused(shown), "The Vikings won't have their village named after " + shown);
+					return;
+				}
+				if (VikingNames.IsPlace(name))
 				{
 					Refuse(farm, VikingSpeech.VillageRefused(shown), "The Vikings won't have their village named " + shown);
+					return;
+				}
+				if (IsGeneric(name))
+				{
+					Refuse(farm, VikingSpeech.VillageGenericRefused(shown), "The Vikings want a better name than " + shown);
 					return;
 				}
 				ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, NameRpc, farm, name, VikingNames.LocalAuthor());
@@ -263,14 +283,9 @@ namespace VikingVillages
 				Character speaker = NearestViking(farm, player);
 				if (speaker != null)
 				{
-					string line = ((name.Length == 0) ? VikingSpeech.VillageCleared() : VikingSpeech.VillageNamed(shown, current.Length > 0));
-					VikingSpeech.Say(speaker, line, VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+					VikingSpeech.Say(speaker, VikingSpeech.VillageNamed(shown, current.Length > 0), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 				}
-				if (name.Length == 0)
-				{
-					player.Message(MessageHud.MessageType.Center, "The village no longer has a name");
-				}
-				else if (MessageHud.instance != null)
+				if (MessageHud.instance != null)
 				{
 					MessageHud.instance.ShowBiomeFoundMsg(shown, false);
 				}
@@ -447,7 +462,7 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="sender">The client that named it</param>
 		/// <param name="farm">Where the village's farm stands</param>
-		/// <param name="name">The name, or "" to take it away</param>
+		/// <param name="name">The name</param>
 		/// <param name="author">Who named it</param>
 		private static void OnName(long sender, Vector3 farm, string name, string author)
 		{
@@ -466,13 +481,23 @@ namespace VikingVillages
 			}
 			name = VikingNames.Plain(name);
 			// Turned down as it was typed (see NameBox.SetText), and here too, for the client that keeps the name
-			if (VikingNames.IsMarkup(name) || (name.Length > 0 && VikingNames.IsPlace(name)))
+			if (name.Length == 0 || VikingNames.IsMarkup(name) || VikingNames.IsLegend(name) || VikingNames.IsPlace(name) || IsGeneric(name))
 			{
 				return;
 			}
 			generator.Set(NameZdoKey, VikingNames.Clip(name, MaxLength));
 			generator.Set(AuthorKey, author);
-			Plugin.Log.LogInfo("The village at " + farm.ToString("F0") + (name.Length > 0 ? " is now called " + name : " no longer has a name"));
+			Plugin.Log.LogInfo("The village at " + farm.ToString("F0") + " is now called " + name);
+		}
+
+		/// <summary>
+		/// Checks whether a name is too plain for a village - just Village, in any case
+		/// </summary>
+		/// <param name="name">The name</param>
+		/// <returns>True when it is</returns>
+		internal static bool IsGeneric(string name)
+		{
+			return(string.Equals(VikingNames.Plain(name ?? ""), GenericName, System.StringComparison.OrdinalIgnoreCase));
 		}
 	}
 }
