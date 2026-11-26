@@ -538,7 +538,7 @@ namespace VikingVillages
 
 	/// <summary>
 	/// Keeps a living viking from taking a critical hit while staggered, the same as a player - the game doubles the
-	/// damage to any staggered character but a player
+	/// damage to any staggered character but a player. A dvergr viking takes one like any other creature
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
 	public static class VikingNoCriticalPatch
@@ -578,13 +578,14 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a hit on a character is a critical hit for its staggering - never on a living viking
+		/// Checks whether a hit on a character is a critical hit for its staggering - never on a living viking, though
+		/// on a dvergr viking as on any other creature
 		/// </summary>
 		/// <param name="character">The character hit</param>
 		/// <returns>True when it's staggering and isn't a living viking</returns>
 		public static bool Crits(Character character)
 		{
-			return(character.IsStaggering() && !(character is LivingVikingBody));
+			return(character.IsStaggering() && (!(character is LivingVikingBody) || character is DvergrVikingBody));
 		}
 	}
 
