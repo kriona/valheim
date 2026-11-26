@@ -228,6 +228,17 @@ namespace VikingVillages.Tests
 		}
 
 		[Fact]
+		public void ABoatComesInUntilItsNearShallowOrAground()
+		{
+			Assert.False(BoatRules.Beached(25f, 6f, 0f));
+			Assert.True(BoatRules.Beached(BoatRules.ShoreNear, 6f, 0f));
+			Assert.True(BoatRules.Beached(25f, 1f, 0f));
+			Assert.True(BoatRules.Beached(25f, -0.5f, 0f));
+			Assert.True(BoatRules.Beached(25f, 6f, BoatRules.BeachStall));
+			Assert.False(BoatRules.Beached(25f, BoatRules.ShoalDepth, BoatRules.BeachStall - 1f));
+		}
+
+		[Fact]
 		public void ABoatSlowsAndStopsForSomeoneOverboard()
 		{
 			Assert.Equal(Ship.Speed.Half, BoatRules.RescueSpeed(100f));

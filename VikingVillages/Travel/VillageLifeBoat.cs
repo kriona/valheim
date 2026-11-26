@@ -1188,7 +1188,8 @@ namespace VikingVillages
 			zdo.Set(VillageTravel.LegKey, roadLeg);
 			Plugin.Log.LogInfo(LogName() + " came ashore at " + transform.position.ToString("F0") + " from " + myBoat.Key);
 			TestLog.Count("Boats", "vikings ashore");
-			if (mySeat == 0)
+			// A boat left for the village they came to isn't broken up (see VikingBoat.DecideKept)
+			if (mySeat == 0 && !myBoat.Kept())
 			{
 				swings = 0;
 				nextSwing = Time.time + 0.5f;
@@ -1206,7 +1207,7 @@ namespace VikingVillages
 		/// <returns>True while it works on the boat</returns>
 		private bool BreakBoat(ZDO zdo)
 		{
-			if (myBoat == null)
+			if (myBoat == null || myBoat.Kept())
 			{
 				HoldHammer(false);
 				SetCrossing(zdo, Crossing.None);

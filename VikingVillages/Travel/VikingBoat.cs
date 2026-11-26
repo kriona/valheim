@@ -52,6 +52,17 @@ namespace VikingVillages
 		public static readonly int BreakAtKey = "kriona.VikingVillages.boatBreakAt".GetStableHashCode();
 
 		/// <summary>
+		/// On a boat, that its crew leaves it for the village they came to rather than breaking it up (see DecideKept)
+		/// </summary>
+		public static readonly int KeptKey = "kriona.VikingVillages.boatKept".GetStableHashCode();
+
+		/// <summary>
+		/// How far past a village's edge the far shore can be for the village to count as on the shore, and the boat to
+		/// be left for it, in meters - as far out as a village's own boat is moored (see VillageBoatSite)
+		/// </summary>
+		private const float ShoreVillageReach = 80f;
+
+		/// <summary>
 		/// On a living viking, the boat it's crossing the sea in, as its group and the boat's index, or "", and how far
 		/// along its crossing it is (see VillageLife's Crossing)
 		/// </summary>
@@ -106,6 +117,13 @@ namespace VikingVillages
 		private const float WaypointReach = 20f;
 		private const float LandReach = 30f;
 		private const float SlowReach = 60f;
+
+		/// <summary>
+		/// For a boat coming in to the far shore within LandReach, the nearest it has got to the spot ashore and since
+		/// when it has been no nearer, in Time.time seconds (see BoatRules.Beached)
+		/// </summary>
+		private float beachBest = float.MaxValue;
+		private float beachSince = -1f;
 
 		/// <summary>
 		/// How the boat gets itself unstuck - every StuckCheck seconds, if it hasn't got StuckGain meters nearer where it's
@@ -878,8 +896,12 @@ namespace VikingVillages
 			}
 			if (leg >= route.Count && distance < LandReach)
 			{
-				LandHo();
-				SetPhase(Phase.Landing);
+				if (ComeIn(dt, distance, target))
+				{
+					DecideKept();
+					LandHo();
+					SetPhase(Phase.Landing);
+				}
 				return;
 			}
 			UpdateTalk();
@@ -1030,10 +1052,12 @@ namespace VikingVillages
 				Plugin.Log.LogInfo("Boat: " + Key + " at " + transform.position.ToString("F0") + " comes about for " + TestLog.Name(who) + ", overboard " + Utils.DistanceXZ(transform.position, who.transform.position).ToString("F0") + "m away");
 				TestLog.Count("Boats", "came about for someone overboard");
 			}
-			// Coming about isn't being stuck, so the road picks up afresh after
+			// Coming about isn't being stuck, so the road and coming in to shore pick up afresh after
 			stuckLookAt = Time.time + StuckCheck;
 			stuckDistance = float.MaxValue;
 			backUntil = 0f;
+			beachBest = float.MaxValue;
+			beachSince = -1f;
 			float distance = Utils.DistanceXZ(transform.position, who.transform.position);
 			Ship.Speed speed = BoatRules.RescueSpeed(distance);
 			if (speed == Ship.Speed.Stop)
@@ -1044,6 +1068,52 @@ namespace VikingVillages
 			float rudder = BoatRules.Rudder(transform.forward, who.transform.position - transform.position);
 			Ship.m_speed = speed;
 			Ship.m_rudderValue = Mathf.MoveTowards(Ship.m_rudderValue, rudder, Ship.m_rudderSpeed * dt * 2f);
+		}
+
+		/// <summary>
+		/// Brings the boat in to the far shore at slow speed from within LandReach of the spot ashore, so its crew has as
+		/// little as it can to swim - until it's near the spot, the water ahead of its bow is about to run it aground, or
+		/// it's no longer getting nearer (see BoatRules.Beached)
+		/// </summary>
+		/// <param name="dt">Seconds since the last update</param>
+		/// <param name="distance">How far the spot ashore is, in meters</param>
+		/// <param name="land">The spot ashore</param>
+		/// <returns>True once it has come as near as it can, and holds there</returns>
+		private bool ComeIn(float dt, float distance, Vector3 land)
+		{
+			if (distance < beachBest - 1f || beachSince < 0f)
+			{
+				beachBest = distance;
+				beachSince = Time.time;
+			}
+			if (BoatRules.Beached(distance, DepthAhead(), Time.time - beachSince))
+			{
+				Hold();
+				beachBest = float.MaxValue;
+				beachSince = -1f;
+				return(true);
+			}
+			UpdateTalk();
+			float rudder = BoatRules.Rudder(transform.forward, land - transform.position);
+			Ship.m_speed = Ship.Speed.Slow;
+			Ship.m_rudderValue = Mathf.MoveTowards(Ship.m_rudderValue, rudder, Ship.m_rudderSpeed * dt * 2f);
+			return(false);
+		}
+
+		/// <summary>
+		/// Finds how deep the water is just ahead of the boat's bow, by the ground's height there
+		/// </summary>
+		/// <returns>The depth, in meters, less than 0 over dry ground</returns>
+		private float DepthAhead()
+		{
+			if (ZoneSystem.instance == null)
+			{
+				return(float.MaxValue);
+			}
+			BoxCollider hull = Ship.m_floatCollider;
+			float half = ((hull != null) ? hull.size.z * hull.transform.lossyScale.z / 2f : 3f);
+			Vector3 bow = transform.position + transform.forward * (half + 1f);
+			return(ZoneSystem.instance.m_waterLevel - ZoneSystem.instance.GetGroundHeight(bow));
 		}
 
 		/// <summary>
@@ -1204,10 +1274,19 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Breaks the boat up once one of its crew has asked, or once its crew has all got off and BreakWait seconds have
-		/// passed - waiting on a player standing on it for up to BreakWait seconds from then
+		/// passed - waiting on a player standing on it for up to BreakWait seconds from then. One left for the village its
+		/// crew came to is left there once they're all off it (see LeaveBehind)
 		/// </summary>
 		private void UpdateLanding()
 		{
+			if (Kept())
+			{
+				if (CrewAboard() == 0)
+				{
+					LeaveBehind();
+				}
+				return;
+			}
 			long breakAt = nview.GetZDO().GetLong(BreakAtKey, 0L);
 			if (breakAt == 0L)
 			{
@@ -1223,6 +1302,75 @@ namespace VikingVillages
 				return;
 			}
 			Break();
+		}
+
+		/// <summary>
+		/// Checks whether the boat's crew leaves it for the village they came to rather than breaking it up
+		/// </summary>
+		/// <returns>True when they do</returns>
+		public bool Kept()
+		{
+			return(Valid() && nview.GetZDO().GetBool(KeptKey));
+		}
+
+		/// <summary>
+		/// Decides, as the boat comes in to the far shore, whether its crew leaves it for the village they're going to -
+		/// the first of their group's boats, when the village stands on this shore, within ShoreVillageReach of where
+		/// they go ashore, and has no ship of this kind by it already, its own moored one, a player's or one left before
+		/// (see HasSuchBoat)
+		/// </summary>
+		private void DecideKept()
+		{
+			ZDO zdo = nview.GetZDO();
+			if (zdo.GetInt(IndexKey) != 0)
+			{
+				return;
+			}
+			Character member = TalkerAboard();
+			Vector3 destination = ((member != null) ? member.m_nview.GetZDO().GetVec3(VillageTravel.DestinationKey, Vector3.zero) : Vector3.zero);
+			Village village = ((destination != Vector3.zero) ? Village.Find(destination) : null);
+			if (village == null || village.DistanceOutside(Land) > ShoreVillageReach)
+			{
+				return;
+			}
+			if (HasSuchBoat(village))
+			{
+				Plugin.Log.LogInfo("Boat: " + Key + " is broken up at " + transform.position.ToString("F0") + ", since the village at " + village.Farm.ToString("F0") + " has a " + Utils.GetPrefabName(gameObject) + " already");
+				return;
+			}
+			zdo.Set(KeptKey, true);
+		}
+
+		/// <summary>
+		/// Checks whether a ship of the boat's kind is by a village already - within ShoreVillageReach of its edge, but for
+		/// boats still out on the road with their vikings
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>True when one is</returns>
+		private bool HasSuchBoat(Village village)
+		{
+			int prefab = nview.GetZDO().GetPrefab();
+			List<ZDO> near = new List<ZDO>();
+			VillageRespawn.ZdosNear(village.Middle, village.Radius + ShoreVillageReach, near);
+			return(near.Exists((ZDO other) => other != nview.GetZDO() && other.GetPrefab() == prefab && other.GetString(GroupKey, "").Length == 0 && village.DistanceOutside(other.GetPosition()) <= ShoreVillageReach));
+		}
+
+		/// <summary>
+		/// Leaves the boat for the village its crew came to, once they're all off it - a ship like any other from then on,
+		/// as the village's own moored one is (see VillageShoreBoat): its sail down where it came in, no longer the
+		/// vikings', so a player can take the helm, and dropping what it's built from when it breaks
+		/// </summary>
+		private void LeaveBehind()
+		{
+			Hold();
+			Plugin.Log.LogInfo("Boat: " + Key + " was left at " + transform.position.ToString("F0") + " for the village its crew came to");
+			TestLog.Count("Boats", "left for a village");
+			ZDO zdo = nview.GetZDO();
+			zdo.Set(GroupKey, "");
+			zdo.Set(CrewKey, "");
+			zdo.Set(KeptKey, false);
+			zdo.Set(BreakAtKey, 0L);
+			Destroy(this);
 		}
 
 		/// <summary>

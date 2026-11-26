@@ -202,6 +202,28 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// How a boat comes in to the far shore before it lets its crew off - how near the spot ashore it comes, in meters,
+		/// how shallow the water ahead of its bow can get before it stops short of running aground, in meters, and how long
+		/// it goes without getting a meter nearer before it counts as aground already, in seconds
+		/// </summary>
+		internal const float ShoreNear = 6f;
+		internal const float ShoalDepth = 1.5f;
+		internal const float BeachStall = 4f;
+
+		/// <summary>
+		/// Checks whether a boat coming in to the far shore has come as near as it can - near the spot ashore, about to
+		/// run aground, or aground already, no longer getting nearer
+		/// </summary>
+		/// <param name="distance">How far the spot ashore is, in meters</param>
+		/// <param name="depthAhead">How deep the water is just ahead of its bow, in meters</param>
+		/// <param name="stalledFor">How long it has gone without getting a meter nearer, in seconds</param>
+		/// <returns>True when it lets its crew off</returns>
+		internal static bool Beached(float distance, float depthAhead, float stalledFor)
+		{
+			return(distance <= ShoreNear || depthAhead < ShoalDepth || stalledFor >= BeachStall);
+		}
+
+		/// <summary>
 		/// How near a boat comes to someone overboard before it stops for them, and how near it slows for them, in meters
 		/// </summary>
 		internal const float RescueStop = 8f;
