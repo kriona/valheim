@@ -104,6 +104,30 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// The boat a viking crossing alone takes, by its index into Boats - the karve, enough for one, rather than a
+		/// longship or drakkar
+		/// </summary>
+		private const int SoloBoat = 1;
+
+		/// <summary>
+		/// Gets the biome the boats for a crossing are picked by - the best boat of its vikings' biome, or for a viking
+		/// crossing alone, a karve when the best is bigger than that, unless the sea it crosses boils and only its best
+		/// boat holds up in it
+		/// </summary>
+		/// <param name="best">The biome of the best boat its vikings have, by VikingGear's order</param>
+		/// <param name="crew">How many vikings cross</param>
+		/// <param name="burning">Whether the sea it crosses boils (see Ship.m_ashlandsReady)</param>
+		/// <returns>The biome, by VikingGear's order</returns>
+		internal static int CrossingBoatBiome(int best, int crew, bool burning)
+		{
+			if (crew > 1 || burning || Boat(best) <= SoloBoat)
+			{
+				return(best);
+			}
+			return(BoatFrom[SoloBoat]);
+		}
+
+		/// <summary>
 		/// Finds the first biome whose best boat is the one given - by its prefab, like "VikingShip", or its name as the
 		/// vikings say it, like "longship"
 		/// </summary>

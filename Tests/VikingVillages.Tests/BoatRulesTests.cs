@@ -195,5 +195,45 @@ namespace VikingVillages.Tests
 			Assert.Equal(new[] { "Raft", "Karve", "VikingShip", "VikingShip_Ashlands" }, TravelTime.BoatPrefabNames());
 			Assert.Equal(new[] { "raft", "karve", "longship", "drakkar" }, TravelTime.BoatNames());
 		}
+
+		[Theory]
+		[InlineData(6, 1, false, 1)]
+		[InlineData(3, 1, false, 1)]
+		[InlineData(1, 1, false, 1)]
+		[InlineData(0, 1, false, 0)]
+		[InlineData(6, 1, true, 6)]
+		[InlineData(6, 2, false, 6)]
+		[InlineData(3, 4, false, 3)]
+		public void OneCrossingAloneTakesAKarveUnlessTheSeaBoils(int best, int crew, bool burning, int expected)
+		{
+			Assert.Equal(expected, TravelTime.CrossingBoatBiome(best, crew, burning));
+		}
+
+		[Fact]
+		public void SwimLeftGoesByTheStaminaLeft()
+		{
+			// Unskilled, a second takes 5 stamina, so 50 lasts 10 seconds - 20 meters at 2 a second
+			Assert.Equal(20f, BoatRules.SwimMetersLeft(50f, 0f, 1f, 2f), 3);
+			Assert.Equal(0f, BoatRules.SwimMetersLeft(0f, 0f, 1f, 2f), 3);
+			Assert.True(BoatRules.SwimMetersLeft(50f, 1f, 1f, 2f) > BoatRules.SwimMetersLeft(50f, 0f, 1f, 2f));
+		}
+
+		[Fact]
+		public void AVikingOverboardSwimsOnlyForABoatWellWithinReach()
+		{
+			Assert.True(BoatRules.SwimsForBoat(40f, 20f));
+			Assert.True(BoatRules.SwimsForBoat(40f, 40f * BoatRules.SwimMargin));
+			Assert.False(BoatRules.SwimsForBoat(40f, 35f));
+			Assert.False(BoatRules.SwimsForBoat(0f, 3f));
+		}
+
+		[Fact]
+		public void ABoatSlowsAndStopsForSomeoneOverboard()
+		{
+			Assert.Equal(Ship.Speed.Half, BoatRules.RescueSpeed(100f));
+			Assert.Equal(Ship.Speed.Slow, BoatRules.RescueSpeed(BoatRules.RescueSlow));
+			Assert.Equal(Ship.Speed.Stop, BoatRules.RescueSpeed(BoatRules.RescueStop));
+			Assert.Equal(Ship.Speed.Stop, BoatRules.RescueSpeed(2f));
+		}
 	}
 }

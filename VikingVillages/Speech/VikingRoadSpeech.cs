@@ -167,6 +167,28 @@ namespace VikingVillages
 		};
 
 		/// <summary>
+		/// What the viking at a boat's helm says as it comes about for someone who went overboard, by their name
+		/// </summary>
+		internal static readonly string[] OverboardLines =
+		{
+			"{0}'s in the water! Bring her about!",
+			"Hold on, {0}! We're coming for you!",
+			"Stop the boat! {0} went over!",
+			"Man overboard! Hang on, {0}!"
+		};
+
+		/// <summary>
+		/// What a viking overboard says as it treads water for its boat to come to it, too far off to swim to
+		/// </summary>
+		internal static readonly string[] TreadWaterLines =
+		{
+			"Over here! I can't swim that far!",
+			"Come back for me! I'll wait here!",
+			"Bring the boat round - I'll keep my strength!",
+			"Don't leave me out here!"
+		};
+
+		/// <summary>
 		/// What a viking says as its boat goes down under it at sea
 		/// </summary>
 		internal static readonly string[] WreckedLines =
@@ -417,6 +439,25 @@ namespace VikingVillages
 		public static string Wrecked()
 		{
 			return(VikingSpeech.Pick(WreckedLines, ""));
+		}
+
+		/// <summary>
+		/// Picks what the viking at a boat's helm says as it comes about for someone overboard
+		/// </summary>
+		/// <param name="name">Their name</param>
+		/// <returns>The line</returns>
+		public static string Overboard(string name)
+		{
+			return(string.Format(VikingSpeech.Pick(OverboardLines, ""), name));
+		}
+
+		/// <summary>
+		/// Picks what a viking overboard says as it treads water for its boat to come to it
+		/// </summary>
+		/// <returns>The line</returns>
+		public static string TreadWater()
+		{
+			return(VikingSpeech.Pick(TreadWaterLines, ""));
 		}
 
 		/// <summary>

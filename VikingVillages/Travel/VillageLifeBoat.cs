@@ -36,8 +36,19 @@ namespace VikingVillages
 			Landing = 4,
 			Aboard = VikingBoat.Aboard,
 			Wrecked = 6,
-			Breaking = 7
+			Breaking = 7,
+			Overboard = VikingBoat.Overboard
 		}
+
+		/// <summary>
+		/// How often a viking overboard treading water calls out to its boat, in seconds
+		/// </summary>
+		private const float TreadCallInterval = 20f;
+
+		/// <summary>
+		/// When a viking overboard treading water next calls out to its boat
+		/// </summary>
+		private float nextTreadCall;
 
 		/// <summary>
 		/// How long a viking at the shore waits for the rest of its group, how long it waits for a boat before it builds
@@ -275,8 +286,56 @@ namespace VikingVillages
 			swings = 0;
 			nextSwing = Time.time + 0.5f;
 			SetCrossing(zdo, Crossing.Building);
-			VikingSpeech.Say(humanoid, VikingRoadSpeech.Build(TravelTime.BoatName(VillageTravel.BoatBiome(zdo))), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+			VikingSpeech.Say(humanoid, VikingRoadSpeech.Build(TravelTime.BoatName(CrossingBoat(zdo, buildCrew.Count))), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 			return(true);
+		}
+
+		/// <summary>
+		/// How far apart the points along the sea ahead are looked at for water that boils, in meters - half a square of
+		/// the road's map (see TravelRoute.CellSize)
+		/// </summary>
+		private const float BurnStep = 16f;
+
+		/// <summary>
+		/// Gets the biome the boats for the viking's crossing are picked by (see TravelTime.CrossingBoatBiome) - the best
+		/// boat of its group's hardest biome, or a karve for one crossing alone, unless the sea ahead of it boils
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <param name="crew">How many cross</param>
+		/// <returns>The biome, by VikingGear's order</returns>
+		private int CrossingBoat(ZDO zdo, int crew)
+		{
+			return(TravelTime.CrossingBoatBiome(VillageTravel.BoatBiome(zdo), crew, BurningAhead()));
+		}
+
+		/// <summary>
+		/// Checks whether the sea legs of the viking's road from its next waypoint on cross water that boils and burns a
+		/// boat not made for it, the way the road's planning reads it (see TravelPlanner.Sample)
+		/// </summary>
+		/// <returns>True when they do</returns>
+		private bool BurningAhead()
+		{
+			if (WorldGenerator.instance == null)
+			{
+				return(false);
+			}
+			BoatRules.Ashore(travelRoad, roadLeg, out int lastSea);
+			Vector3 from = transform.position;
+			for (int i = roadLeg; i <= lastSea && i < travelRoad.Count; i++)
+			{
+				Vector3 to = travelRoad.Points[i];
+				int samples = Mathf.Max(1, Mathf.CeilToInt(Utils.DistanceXZ(from, to) / BurnStep));
+				for (int s = 1; s <= samples; s++)
+				{
+					Vector3 point = Vector3.Lerp(from, to, (float)s / samples);
+					if (WorldGenerator.GetAshlandsOceanGradient(point.x, point.z) > 0f)
+					{
+						return(true);
+					}
+				}
+				from = to;
+			}
+			return(false);
 		}
 
 		/// <summary>
@@ -345,13 +404,14 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Puts the group's boats in the water side by side, each sailing the sea legs of the road from here
+		/// Puts the group's boats in the water side by side, each sailing the sea legs of the road from here - the best
+		/// boat of the group's hardest biome, or a karve for one crossing alone (see CrossingBoat)
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
 		/// <returns>False when the boat's prefab is missing</returns>
 		private bool LaunchBoats(ZDO zdo)
 		{
-			int biome = VillageTravel.BoatBiome(zdo);
+			int biome = CrossingBoat(zdo, buildCrew.Count);
 			GameObject prefab = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(TravelTime.BoatPrefab(biome)) : null);
 			if (prefab == null)
 			{
@@ -641,7 +701,8 @@ namespace VikingVillages
 			SitOnBoard();
 			zdo.Set(VikingBoat.BoatKey, myBoat.Key);
 			SetCrossing(zdo, Crossing.Aboard);
-			string boat = TravelTime.BoatName(VillageTravel.BoatBiome(zdo));
+			int built = TravelTime.BiomeOfBoat(Utils.GetPrefabName(myBoat.gameObject));
+			string boat = TravelTime.BoatName((built >= 0) ? built : VillageTravel.BoatBiome(zdo));
 			TripStory.Note(zdo, (TripStory story) => story.Boat = boat);
 			Plugin.Log.LogInfo(LogName() + " " + how + " on board " + myBoat.Key + ((mySeat == 0) ? ", at the helm" : ""));
 			TestLog.Count("Boats", "vikings " + how + " on board");
@@ -667,6 +728,8 @@ namespace VikingVillages
 				case Crossing.Landing:
 				case Crossing.Wrecked:
 					return(SwimAshore(dt, zdo));
+				case Crossing.Overboard:
+					return(SwimBack(zdo));
 				case Crossing.Breaking:
 					return(BreakBoat(zdo));
 			}
@@ -685,6 +748,28 @@ namespace VikingVillages
 			if (saved == Crossing.None)
 			{
 				return(false);
+			}
+			if (saved == Crossing.Overboard)
+			{
+				myBoat = VikingBoat.FindFor(CrossingGroup(zdo), VikingIdentity.Get(zdo), out mySeat);
+				if (myBoat != null)
+				{
+					crossing = Crossing.Overboard;
+					crossingSince = Time.time;
+					resumeSince = -1f;
+					return(true);
+				}
+				resumeSince = ((resumeSince < 0f) ? Time.time : resumeSince);
+				if (Time.time - resumeSince < RestoreWait)
+				{
+					// Treading water until its boat loads
+					mover = "waiting for its boat to load";
+					ai.StopMoving();
+					return(true);
+				}
+				resumeSince = -1f;
+				StartSwim(zdo, Crossing.Wrecked, Vector3.zero);
+				return(true);
 			}
 			if (saved != Crossing.Aboard && saved != Crossing.Landing && saved != Crossing.Wrecked)
 			{
@@ -727,14 +812,31 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Rides along on the boat, keeping its place on the road with the boat's - and gets off at the far shore, or swims
-		/// for it when the boat is gone from under it
+		/// for it when the boat is gone from under it. Knocked out of its seat, like by a fight, it sits back down while
+		/// it's still on board, and in the water while the boat sails on, it's overboard and swims back to it (see
+		/// SwimBack)
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="zdo">Its ZDO</param>
 		/// <returns>True, as it takes the update over</returns>
 		private bool RideAlong(float dt, ZDO zdo)
 		{
-			if (myBoat == null || attachPoint == null)
+			if (myBoat != null && attachPoint == null && myBoat.CurrentPhase != VikingBoat.Phase.Landing)
+			{
+				if (humanoid.GetStandingOnShip() == myBoat.Ship || Vector3.Distance(transform.position, myBoat.Seat(mySeat).position) < ClimbReach)
+				{
+					SitOnBoard();
+					return(true);
+				}
+				GetOffBoard();
+				Plugin.Log.LogInfo(LogName() + " went overboard from " + myBoat.Key + " at " + transform.position.ToString("F0"));
+				TestLog.Count("Boats", "vikings overboard");
+				// The helm calls out first, as the boat comes about
+				nextTreadCall = Time.time + 4f;
+				SetCrossing(zdo, Crossing.Overboard);
+				return(true);
+			}
+			if (myBoat == null)
 			{
 				GetOffBoard();
 				Plugin.Log.LogInfo(LogName() + " lost its boat at sea at " + transform.position.ToString("F0") + ", and swims for the shore");
@@ -781,6 +883,55 @@ namespace VikingVillages
 			swimTo = ((to != Vector3.zero) ? to : NearestShore(transform.position));
 			ashoreFor = 0f;
 			SetCrossing(zdo, why);
+		}
+
+		/// <summary>
+		/// Gets a viking overboard back on its boat, which comes about for it (see VikingBoat.UpdateSailing) - swimming
+		/// for the nearest ladder when its stamina will get it there (see BoatRules.SwimsForBoat), and otherwise treading
+		/// water, which takes no stamina, calling out now and then until the boat comes near enough. Back at the ladder it
+		/// climbs aboard to its seat. It swims ashore once the boat reaches the far shore, and for the nearest shore when
+		/// the boat is gone
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True, as it takes the update over</returns>
+		private bool SwimBack(ZDO zdo)
+		{
+			if (myBoat == null)
+			{
+				Plugin.Log.LogInfo(LogName() + " lost its boat while overboard at " + transform.position.ToString("F0") + ", and swims for the shore");
+				StartSwim(zdo, Crossing.Wrecked, Vector3.zero);
+				return(true);
+			}
+			if (myBoat.CurrentPhase == VikingBoat.Phase.Landing)
+			{
+				StartSwim(zdo, Crossing.Landing, myBoat.Land);
+				return(true);
+			}
+			Vector3 ladder = myBoat.Ladder(transform.position);
+			float distance = Vector3.Distance(transform.position, ladder);
+			if (distance < ClimbReach || humanoid.GetStandingOnShip() == myBoat.Ship)
+			{
+				GetAboard(zdo, "climbed back");
+				return(true);
+			}
+			float left = ((body != null) ? BoatRules.SwimMetersLeft(body.Stamina(), humanoid.GetSkillFactor(Skills.SkillType.Swim), Game.m_moveStaminaRate, humanoid.m_swimSpeed) : float.MaxValue);
+			if (!humanoid.InWater() || BoatRules.SwimsForBoat(left, distance))
+			{
+				mover = "swimming back to its boat";
+				Vector3 way = ladder - transform.position;
+				way.y = 0f;
+				ai.MoveTowards(way.normalized, true);
+				return(true);
+			}
+			mover = "treading water for its boat to come";
+			ai.StopMoving();
+			Face(ladder);
+			if (Time.time >= nextTreadCall)
+			{
+				nextTreadCall = Time.time + TreadCallInterval;
+				VikingSpeech.Say(humanoid, VikingRoadSpeech.TreadWater(), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+			}
+			return(true);
 		}
 
 		/// <summary>
@@ -922,9 +1073,14 @@ namespace VikingVillages
 			{
 				line += ", " + myBoat.Key + " seat " + mySeat + " (" + myBoat.CurrentPhase.ToString().ToLowerInvariant() + ", " + myBoat.CrewAboard() + " of " + myBoat.Crew.Count + " on board)";
 			}
+			string stamina = ((body != null) ? " with " + body.Stamina().ToString("F0") + " of " + body.MaxStamina().ToString("F0") + " stamina" : "");
 			if (crossing == Crossing.Landing || crossing == Crossing.Wrecked)
 			{
-				line += ", swimming to " + swimTo.ToString("F0") + ((body != null) ? " with " + body.Stamina().ToString("F0") + " of " + body.MaxStamina().ToString("F0") + " stamina" : "");
+				line += ", swimming to " + swimTo.ToString("F0") + stamina;
+			}
+			else if (crossing == Crossing.Overboard && myBoat != null)
+			{
+				line += ", " + Vector3.Distance(transform.position, myBoat.Ladder(transform.position)).ToString("F0") + "m from its ladder" + stamina;
 			}
 			return(line);
 		}

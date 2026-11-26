@@ -170,6 +170,59 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// The share of how far a viking in the water can still swim that its boat may be away for it to swim there - less
+		/// than all of it, since the boat may drift and the way to its ladder isn't straight
+		/// </summary>
+		internal const float SwimMargin = 0.75f;
+
+		/// <summary>
+		/// Works out how far a viking in the water can still swim on the stamina it has left (see LivingVikingBody.OnSwimming)
+		/// </summary>
+		/// <param name="stamina">The stamina it has left</param>
+		/// <param name="skillFactor">Its Swim skill, from 0 to 1</param>
+		/// <param name="staminaRate">The world's rate of stamina use (see Game.m_moveStaminaRate)</param>
+		/// <param name="swimSpeed">How fast it swims, in meters a second</param>
+		/// <returns>How far, in meters</returns>
+		internal static float SwimMetersLeft(float stamina, float skillFactor, float staminaRate, float swimSpeed)
+		{
+			float drain = SwimDrain(skillFactor) * Mathf.Max(0.01f, staminaRate);
+			return(Mathf.Max(0f, stamina) / drain * Mathf.Max(0f, swimSpeed));
+		}
+
+		/// <summary>
+		/// Checks whether a viking overboard swims for its boat's ladder, or treads water - which takes no stamina - until
+		/// the boat comes near enough for it to make it (see SwimMargin)
+		/// </summary>
+		/// <param name="metersLeft">How far it can still swim (see SwimMetersLeft)</param>
+		/// <param name="distance">How far the ladder is, in meters</param>
+		/// <returns>True when it swims for it</returns>
+		internal static bool SwimsForBoat(float metersLeft, float distance)
+		{
+			return(distance <= metersLeft * SwimMargin);
+		}
+
+		/// <summary>
+		/// How near a boat comes to someone overboard before it stops for them, and how near it slows for them, in meters
+		/// </summary>
+		internal const float RescueStop = 8f;
+		internal const float RescueSlow = 30f;
+
+		/// <summary>
+		/// Picks how fast a boat goes as it comes about for someone overboard - stopped beside them, slow as it closes in,
+		/// and at half sail farther off
+		/// </summary>
+		/// <param name="distance">How far they are from the boat, in meters</param>
+		/// <returns>The speed</returns>
+		internal static Ship.Speed RescueSpeed(float distance)
+		{
+			if (distance <= RescueStop)
+			{
+				return(Ship.Speed.Stop);
+			}
+			return((distance <= RescueSlow) ? Ship.Speed.Slow : Ship.Speed.Half);
+		}
+
+		/// <summary>
 		/// Works out how much a viking drowning loses each second
 		/// </summary>
 		/// <param name="maxHealth">Its max health</param>

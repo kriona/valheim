@@ -58,9 +58,16 @@ namespace VikingVillages
 		public static readonly int BoardKey = "kriona.VikingVillages.vikingBoard".GetStableHashCode();
 
 		/// <summary>
-		/// The value of BoardKey for a viking sitting on board
+		/// The values of BoardKey for a viking sitting on board, and for one that went overboard and is getting back on
 		/// </summary>
 		public const int Aboard = 5;
+		public const int Overboard = 8;
+
+		/// <summary>
+		/// The longest the boat comes about for any one person overboard before it sails on without them, in seconds - so
+		/// one it can't reach, past land or rocks, doesn't hold it at sea for good
+		/// </summary>
+		private const float RescueMost = 180f;
 
 		/// <summary>
 		/// The RPC a viking asks the boat's owner to break it up with
@@ -143,6 +150,14 @@ namespace VikingVillages
 		private float backUntil;
 		private int stuckTimes;
 		private float crewlessSince = -1f;
+
+		/// <summary>
+		/// On its owner, the players who've stood on the boat while it sailed, since one of them in the water is overboard,
+		/// and since when it has come about for each person overboard, in Time.time seconds - one it gave up on staying
+		/// in it, so it isn't come back for
+		/// </summary>
+		private readonly HashSet<ZDOID> riders = new HashSet<ZDOID>();
+		private readonly Dictionary<ZDOID, float> rescues = new Dictionary<ZDOID, float>();
 
 		/// <summary>
 		/// Turns a ship into a vikings' boat, when its ZDO says it's one - as it loads on any client
@@ -740,7 +755,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Steers the boat along its road, a waypoint at a time, then for the spot ashore - backing off when it's stuck,
 		/// and letting its crew off once it's there, or once it has been stuck StuckLimit times, or has had no crew on
-		/// board for CrewlessTime seconds
+		/// board for CrewlessTime seconds. While someone who was on it is overboard, it comes about for them instead (see
+		/// ComeAbout), and sails on once they're back on board, ashore or dead
 		/// </summary>
 		/// <param name="dt">Seconds since the last update</param>
 		private void UpdateSailing(float dt)
@@ -754,6 +770,20 @@ namespace VikingVillages
 					body.linearVelocity = Vector3.zero;
 					body.angularVelocity = Vector3.zero;
 				}
+				return;
+			}
+			foreach (Player player in Ship.m_players)
+			{
+				if (player != null)
+				{
+					riders.Add(player.GetZDOID());
+				}
+			}
+			Character overboard = FindOverboard();
+			if (overboard != null)
+			{
+				crewlessSince = -1f;
+				ComeAbout(dt, overboard);
 				return;
 			}
 			if (CrewAboard() == 0)
@@ -811,6 +841,157 @@ namespace VikingVillages
 				Ship.m_speed = ((leg >= route.Count && distance < SlowReach) ? Ship.Speed.Half : Ship.Speed.Full);
 			}
 			Ship.m_rudderValue = Mathf.MoveTowards(Ship.m_rudderValue, rudder, Ship.m_rudderSpeed * dt * 2f);
+		}
+
+		/// <summary>
+		/// Finds the nearest person overboard the boat comes about for - one of its crew getting back on (see
+		/// VillageLife.SwimBack), or a player who stood on it while it sailed and is swimming now - while they're alive
+		/// and for up to RescueMost seconds each. A player out of the water, ashore or back on board, is no longer
+		/// overboard, and one who died or left is forgotten
+		/// </summary>
+		/// <returns>The person, or null when no one is overboard</returns>
+		private Character FindOverboard()
+		{
+			Character nearest = null;
+			float best = float.MaxValue;
+			overboardNow.Clear();
+			string key = Key;
+			foreach (Character character in Character.GetAllCharacters())
+			{
+				ZDO zdo = ((character != null && character.m_nview != null && character.m_nview.IsValid()) ? character.m_nview.GetZDO() : null);
+				if (zdo != null && !character.IsDead() && zdo.GetInt(BoardKey) == Overboard && zdo.GetString(BoatKey, "") == key)
+				{
+					Consider(character, ref nearest, ref best);
+				}
+			}
+			List<ZDOID> gone = new List<ZDOID>();
+			foreach (ZDOID id in riders)
+			{
+				Player player = Player.GetAllPlayers().Find((Player found) => found != null && found.GetZDOID() == id);
+				if (player == null || player.IsDead())
+				{
+					gone.Add(id);
+					continue;
+				}
+				if (!Ship.IsPlayerInBoat(player) && player.IsSwimming())
+				{
+					Consider(player, ref nearest, ref best);
+				}
+				else if (!Ship.IsPlayerInBoat(player))
+				{
+					// Ashore, or wherever else they went, they've left the boat
+					gone.Add(id);
+				}
+			}
+			foreach (ZDOID id in gone)
+			{
+				riders.Remove(id);
+			}
+			// One back on board, ashore or dead is no longer come about for, and is come back for if they go over again
+			List<ZDOID> done = new List<ZDOID>();
+			foreach (ZDOID id in rescues.Keys)
+			{
+				if (!overboardNow.Contains(id))
+				{
+					done.Add(id);
+				}
+			}
+			foreach (ZDOID id in done)
+			{
+				rescues.Remove(id);
+			}
+			return(nearest);
+		}
+
+		/// <summary>
+		/// Everyone FindOverboard found overboard on its last look, whether or not the boat still comes about for them
+		/// </summary>
+		private readonly HashSet<ZDOID> overboardNow = new HashSet<ZDOID>();
+
+		/// <summary>
+		/// Takes someone overboard as the one the boat comes about for when they're the nearest so far and it hasn't given
+		/// up on them
+		/// </summary>
+		/// <param name="who">Who's overboard</param>
+		/// <param name="nearest">The nearest so far, changed to them when they're nearer</param>
+		/// <param name="best">How far the nearest is, in meters, changed along with it</param>
+		private void Consider(Character who, ref Character nearest, ref float best)
+		{
+			ZDOID id = who.GetZDOID();
+			overboardNow.Add(id);
+			if (rescues.TryGetValue(id, out float since) && Time.time - since > RescueMost)
+			{
+				if (since >= 0f)
+				{
+					// Noted as given up on, so it's said once
+					rescues[id] = float.NegativeInfinity;
+					Plugin.Log.LogInfo("Boat: " + Key + " gives up coming about for " + TestLog.Name(who) + " after " + RescueMost.ToString("F0") + "s, and sails on");
+					TestLog.Count("Boats", "gave up on someone overboard");
+				}
+				return;
+			}
+			float distance = Utils.DistanceXZ(transform.position, who.transform.position);
+			if (distance < best)
+			{
+				best = distance;
+				nearest = who;
+			}
+		}
+
+		/// <summary>
+		/// Comes about for someone overboard - the viking at the helm calling out their name the first time, the boat
+		/// turning toward them at half sail, slowing as it closes in and stopping beside them (see BoatRules.RescueSpeed),
+		/// so they can swim to its ladder - without counting any of it as being stuck. It gives up on them after
+		/// RescueMost seconds (see Consider)
+		/// </summary>
+		/// <param name="dt">Seconds since the last update</param>
+		/// <param name="who">Who's overboard</param>
+		private void ComeAbout(float dt, Character who)
+		{
+			ZDOID id = who.GetZDOID();
+			if (!rescues.ContainsKey(id))
+			{
+				rescues[id] = Time.time;
+				string name = ((who is Player player) ? player.GetPlayerName() : VikingNames.Get(who));
+				Character caller = SpeakerAboard();
+				if (caller != null)
+				{
+					VikingSpeech.SayFirst(caller, VikingRoadSpeech.Overboard(name), VikingSpeech.CallTime, VikingSpeech.CallCull);
+				}
+				Plugin.Log.LogInfo("Boat: " + Key + " at " + transform.position.ToString("F0") + " comes about for " + TestLog.Name(who) + ", overboard " + Utils.DistanceXZ(transform.position, who.transform.position).ToString("F0") + "m away");
+				TestLog.Count("Boats", "came about for someone overboard");
+			}
+			// Coming about isn't being stuck, so the road picks up afresh after
+			stuckLookAt = Time.time + StuckCheck;
+			stuckDistance = float.MaxValue;
+			backUntil = 0f;
+			float distance = Utils.DistanceXZ(transform.position, who.transform.position);
+			Ship.Speed speed = BoatRules.RescueSpeed(distance);
+			if (speed == Ship.Speed.Stop)
+			{
+				Hold();
+				return;
+			}
+			float rudder = BoatRules.Rudder(transform.forward, who.transform.position - transform.position);
+			Ship.m_speed = speed;
+			Ship.m_rudderValue = Mathf.MoveTowards(Ship.m_rudderValue, rudder, Ship.m_rudderSpeed * dt * 2f);
+		}
+
+		/// <summary>
+		/// Finds one of the boat's crew sitting on board and loaded on this client to call out - the one at the helm first
+		/// </summary>
+		/// <returns>The viking, or null when none is</returns>
+		private Character SpeakerAboard()
+		{
+			for (int seat = 0; seat < Crew.Count; seat++)
+			{
+				Character member = CrewMember(seat);
+				if (member != null && member.m_nview.GetZDO().GetInt(BoardKey) == Aboard)
+				{
+					return(member);
+				}
+			}
+			return(null);
 		}
 
 		/// <summary>
