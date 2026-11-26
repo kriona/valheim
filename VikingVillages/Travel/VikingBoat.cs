@@ -210,28 +210,124 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds a spot on a ship's deck for a viking riding along on it - the deck at its middle, or a little fore or aft
-		/// of it when something stands there
+		/// Where a free spot on a ship's deck is looked for (see DeckSpot) - rows along the ship and columns across it, as
+		/// shares of its hull's length and breadth, how far above the hull's top a spot can be and still be its deck, in
+		/// meters, how much the surface can lean and still be sat on, as the least upward share of its normal, and how far
+		/// anyone else has to be from a spot for it to be free, in meters
+		/// </summary>
+		private static readonly float[] SpotRows = { 0.35f, 0.25f, 0.15f, 0.05f, -0.05f, -0.15f, -0.25f, -0.35f };
+		private static readonly float[] SpotColumns = { -0.25f, 0f, 0.25f };
+		private const float DeckAboveHull = 1f;
+		private const float DeckFlat = 0.7f;
+		private const float SpotClear = 0.9f;
+
+		/// <summary>
+		/// Finds a free spot on a ship's deck for a viking to sit at that isn't its seat - riding along on a ship not its
+		/// own, or moved off its seat by a player already there - the one nearest a point of a grid across the ship's hull
+		/// that's on the deck itself, not up the mast or on its rail, with room to sit and nothing of the ship there (see
+		/// Roomy), and nobody else within SpotClear. Its middle, or a little fore or aft of it, when none is
 		/// </summary>
 		/// <param name="ship">The ship</param>
+		/// <param name="near">Where the spot is wanted near, like the ladder it climbed</param>
+		/// <param name="self">The viking it's for, who doesn't count as in the way</param>
 		/// <param name="deck">Set to the spot</param>
-		/// <returns>False when no deck was found</returns>
-		public static bool DeckSpot(Ship ship, out Vector3 deck)
+		/// <returns>False when no deck was found at all</returns>
+		public static bool DeckSpot(Ship ship, Vector3 near, Character self, out Vector3 deck)
 		{
 			deck = Vector3.zero;
-			foreach (float along in new[] { 0f, -1.5f, 1.5f, -3f })
+			BoxCollider hull = ship.m_floatCollider;
+			if (hull != null)
 			{
-				Vector3 above = ship.transform.position + ship.transform.forward * along + Vector3.up * 6f;
-				float nearest = float.MaxValue;
-				foreach (RaycastHit hit in Physics.RaycastAll(above, Vector3.down, 12f))
+				float top = hull.bounds.max.y + DeckAboveHull;
+				float best = float.MaxValue;
+				foreach (float row in SpotRows)
 				{
-					if (hit.collider != null && !hit.collider.isTrigger && hit.collider.transform.IsChildOf(ship.transform) && hit.distance < nearest)
+					foreach (float column in SpotColumns)
 					{
-						nearest = hit.distance;
-						deck = hit.point;
+						Vector3 local = hull.center + new Vector3(hull.size.x * column, 0f, hull.size.z * row);
+						Vector3 above = hull.transform.TransformPoint(local) + Vector3.up * 5f;
+						if (!ShipSurfaceBelow(ship, above, out Vector3 spot, out Vector3 normal) || spot.y > top || normal.y < DeckFlat || !RoomToSit(ship, spot) || Taken(spot, self))
+						{
+							continue;
+						}
+						float distance = Vector3.Distance(spot, near);
+						if (distance < best)
+						{
+							best = distance;
+							deck = spot;
+						}
 					}
 				}
-				if (nearest < float.MaxValue)
+				if (best < float.MaxValue)
+				{
+					return(true);
+				}
+			}
+			foreach (float along in new[] { 0f, -1.5f, 1.5f, -3f })
+			{
+				if (ShipSurfaceBelow(ship, ship.transform.position + ship.transform.forward * along + Vector3.up * 6f, out deck, out Vector3 _))
+				{
+					return(true);
+				}
+			}
+			return(false);
+		}
+
+		/// <summary>
+		/// Finds the top of a ship below a point - the first of its solid colliders a ray straight down meets
+		/// </summary>
+		/// <param name="ship">The ship</param>
+		/// <param name="above">The point, above the ship</param>
+		/// <param name="surface">Set to where the ray meets the ship</param>
+		/// <param name="normal">Set to which way the ship's surface faces there</param>
+		/// <returns>False when the ship isn't below it</returns>
+		private static bool ShipSurfaceBelow(Ship ship, Vector3 above, out Vector3 surface, out Vector3 normal)
+		{
+			surface = Vector3.zero;
+			normal = Vector3.up;
+			float nearest = float.MaxValue;
+			foreach (RaycastHit hit in Physics.RaycastAll(above, Vector3.down, 12f))
+			{
+				if (hit.collider != null && !hit.collider.isTrigger && hit.collider.transform.IsChildOf(ship.transform) && hit.distance < nearest)
+				{
+					nearest = hit.distance;
+					surface = hit.point;
+					normal = hit.normal;
+				}
+			}
+			return(nearest < float.MaxValue);
+		}
+
+		/// <summary>
+		/// Checks whether a viking sitting at a spot on a ship's deck has room - nothing of the ship, like its mast, its
+		/// chest or its cargo, where it would sit (see Roomy)
+		/// </summary>
+		/// <param name="ship">The ship</param>
+		/// <param name="deck">The spot</param>
+		/// <returns>True when it has</returns>
+		private static bool RoomToSit(Ship ship, Vector3 deck)
+		{
+			foreach (Collider collider in Physics.OverlapSphere(deck + ship.transform.up * SitRoomHeight, SitRoom))
+			{
+				if (collider != null && !collider.isTrigger && collider.transform.IsChildOf(ship.transform))
+				{
+					return(false);
+				}
+			}
+			return(true);
+		}
+
+		/// <summary>
+		/// Checks whether anyone - a player or a viking - is within SpotClear of a spot
+		/// </summary>
+		/// <param name="spot">The spot</param>
+		/// <param name="self">One who doesn't count, or null</param>
+		/// <returns>True when someone is</returns>
+		private static bool Taken(Vector3 spot, Character self)
+		{
+			foreach (Character character in Character.GetAllCharacters())
+			{
+				if (character != null && character != self && !character.IsDead() && Vector3.Distance(character.transform.position, spot) <= SpotClear)
 				{
 					return(true);
 				}

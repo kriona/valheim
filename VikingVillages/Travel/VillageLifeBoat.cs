@@ -740,7 +740,7 @@ namespace VikingVillages
 			ClearPushedSpot();
 			// A player already on its seat - holding the mast, say - leaves it to sit on the boards instead, so the two
 			// don't overlap
-			if (pose != VikingPoses.FloorPose && Player.IsPlayerInRange(seat.position, SeatTakenReach) && VikingBoat.DeckSpot(myBoat.Ship, out Vector3 deck))
+			if (pose != VikingPoses.FloorPose && Player.IsPlayerInRange(seat.position, SeatTakenReach) && VikingBoat.DeckSpot(myBoat.Ship, seat.position, humanoid, out Vector3 deck))
 			{
 				pose = VikingPoses.FloorPose;
 				at = deck;
@@ -1377,7 +1377,7 @@ namespace VikingVillages
 		{
 			StopDefending(false);
 			GetOffBoard();
-			if (!VikingBoat.DeckSpot(ship, out Vector3 deck))
+			if (!VikingBoat.DeckSpot(ship, transform.position, humanoid, out Vector3 deck))
 			{
 				deck = ship.transform.position;
 			}
