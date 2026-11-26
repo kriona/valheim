@@ -344,9 +344,10 @@ A quest of their village setting out with them on it - between 0.24 and 0.6 of t
 1. Take the quest's tool from the nearest chest that has it, or go without
 2. Pack the food they'd eat for as long as they're gone - by how long each food lasts, going on with what they've eaten already, up to 9 - up to 2 healing potions, and what the quest spends, like treasure to sell. For a quest that kills creatures they take their strongest food, and for the rest the food they'd keep their foods up on (see [Keep Their Foods Up](#keep-their-foods-up)). They take no more than half of any stack of food or potions, from each chest once
 3. The first of them says when they'll be back
-4. Run out of the village to a spot outside it, and are gone
+4. When the quest takes the village's cart, the first of them hooks it up and pulls it along (see [Taking the Cart](QUESTS.md#taking-the-cart) in QUESTS.md)
+5. Run out of the village to a spot outside it, and are gone
 
-After 90 seconds they leave from wherever they are. See [QUESTS.md](QUESTS.md) for the rest.
+After 90 seconds they leave from wherever they are - 150 seconds for the one pulling the cart, who takes it along from wherever they are too. See [QUESTS.md](QUESTS.md) for the rest.
 
 ### Eat
 
@@ -471,11 +472,12 @@ The village took up a new fire, and one of the sitting logs it built by the old 
 
 Every village from the Black Forest on keeps a cart, but not in the Ashlands (see [The Cart](LOGIC.md#the-cart) in LOGIC.md). One Viking at a time, each looking every 10 seconds:
 
-1. Takes down an old cart of the village's that turned up again after it built another, within 40 meters of the village's edge - one swing, dropping its wood, nails and whatever it held for the Vikings to put away
-2. Fetches the village's cart back when it stands outside the village - walking to its handle, hooking it up the way you do and pulling it home to a spot beside a house, nearest where it stood. When it snags on something, its handle left more than 1.6 meters behind, or comes loose, for 3 seconds, it's set down on their way behind them and hooked up again
-3. Builds a cart when the village has none - taking the nails it takes from the chests, gathering its 20 wood like any piece's, then putting it up with one swing beside a house. Not without the 10 bronze nails a cart takes in the chests
+1. Takes what a cart brought home from a quest out of it, as much as they can carry, reaching in the way you open one, and puts it away in the chests like any loot. With no room to carry anything, they leave the cart alone for a while
+2. Takes down an old cart of the village's that turned up again after it built another, within 40 meters of the village's edge - one swing, dropping its wood, nails and whatever it held for the Vikings to put away
+3. Fetches the village's cart back when it stands outside the village - walking to its handle, hooking it up the way you do and pulling it home to a spot beside a house, nearest where it stood. When it snags on something, its handle left more than 1.6 meters behind, or comes loose, for 3 seconds, it's set down on their way behind them and hooked up again
+4. Builds a cart when the village has none - taking the nails it takes from the chests, gathering its 20 wood like any piece's, then putting it up with one swing beside a house. Not without the 10 bronze nails a cart takes in the chests
 
-A cart you're pulling or have open is left alone. Each job ends at dusk, and a fight unhooks the cart where it stands.
+A cart you're pulling or have open is left alone. Building, fetching and taking one down end at dusk, and a fight unhooks the cart where it stands. A Viking who came home from a quest pulling the cart brings it into the village before anything else, even at night, as part of [putting away what a quest brought home](#put-away-what-a-quest-brought-home).
 
 ### Cut Trees
 

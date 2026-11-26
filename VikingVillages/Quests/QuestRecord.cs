@@ -18,8 +18,9 @@ namespace VikingVillages
 	/// <summary>
 	/// What one viking does on a quest, worked out as the quest sets out (see QuestGame.Prepare) - what it brings home,
 	/// the tool it works with and the durability that tool has left after, how many times it swings it, the enemies it
-	/// kills, what it takes along to spend there, like treasure to sell, and on a quest that kills creatures, the health
-	/// the fight harms it by (see QuestFight), or -1 on one whose danger harms it (see QuestSim.Harm)
+	/// kills, what it takes along to spend there, like treasure to sell, on a quest that kills creatures, the health
+	/// the fight harms it by (see QuestFight), or -1 on one whose danger harms it (see QuestSim.Harm), and for the viking
+	/// who pulls the village's cart along, what the cart brings home (see CartRules.ShareWithCart)
 	/// </summary>
 	internal class MemberPlan
 	{
@@ -30,6 +31,7 @@ namespace VikingVillages
 		public int Kills;
 		public List<KeyValuePair<string, int>> Spend = new List<KeyValuePair<string, int>>();
 		public float FightHarm = -1f;
+		public List<KeyValuePair<string, int>> CartLoot = new List<KeyValuePair<string, int>>();
 
 		/// <summary>
 		/// Writes the plan to a package
@@ -44,6 +46,7 @@ namespace VikingVillages
 			pkg.Write(Kills);
 			QuestRecord.WriteItems(pkg, Spend);
 			pkg.Write(FightHarm);
+			QuestRecord.WriteItems(pkg, CartLoot);
 		}
 
 		/// <summary>
@@ -61,6 +64,7 @@ namespace VikingVillages
 			plan.Kills = pkg.ReadInt();
 			plan.Spend = QuestRecord.ReadItems(pkg);
 			plan.FightHarm = pkg.ReadSingle();
+			plan.CartLoot = QuestRecord.ReadItems(pkg);
 			return(plan);
 		}
 	}
@@ -185,7 +189,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The version of how a record is written, which a reader skips a record written another way by
 		/// </summary>
-		private const int FormatVersion = 4;
+		private const int FormatVersion = 5;
 
 		/// <summary>
 		/// Gets the tool a viking on the quest takes from a chest
@@ -355,7 +359,8 @@ namespace VikingVillages
 	/// home (see VillageLife.ReturnFromQuest) - the quest, what it was for, the others on it, what it brings home, the
 	/// tool it worked with and the durability that tool has left, what it ate, drank and spent of what it carried, the
 	/// share of its health it comes home at, how much each of its skills rose, the enemies it killed, when the quest set
-	/// out, in ZNet time ticks, and the name of the village it set out from
+	/// out, in ZNet time ticks, the name of the village it set out from, and for the viking who pulled the village's cart
+	/// along, what the cart brings home
 	/// </summary>
 	internal class QuestOutcome
 	{
@@ -363,6 +368,7 @@ namespace VikingVillages
 		public string Item = "";
 		public List<string> Companions = new List<string>();
 		public List<KeyValuePair<string, int>> Loot = new List<KeyValuePair<string, int>>();
+		public List<KeyValuePair<string, int>> CartLoot = new List<KeyValuePair<string, int>>();
 		public string Tool = "";
 		public float ToolLeft = -1f;
 		public List<KeyValuePair<string, int>> Used = new List<KeyValuePair<string, int>>();
@@ -392,7 +398,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The version of how an outcome is written, which a reader skips one written another way by
 		/// </summary>
-		private const int FormatVersion = 1;
+		private const int FormatVersion = 2;
 
 		/// <summary>
 		/// Writes the outcome as bytes
@@ -423,6 +429,7 @@ namespace VikingVillages
 			pkg.Write(Kills);
 			pkg.Write(SetOutAt);
 			pkg.Write(Village);
+			QuestRecord.WriteItems(pkg, CartLoot);
 			return(pkg.GetArray());
 		}
 
@@ -466,6 +473,7 @@ namespace VikingVillages
 				outcome.Kills = pkg.ReadInt();
 				outcome.SetOutAt = pkg.ReadLong();
 				outcome.Village = pkg.ReadString();
+				outcome.CartLoot = QuestRecord.ReadItems(pkg);
 				return(outcome);
 			}
 			catch (System.Exception)

@@ -36,9 +36,22 @@ namespace VikingVillages
 		internal static readonly int PlacedKey = "kriona.VikingVillages.villageCartPlaced".GetStableHashCode();
 
 		/// <summary>
-		/// On a cart, the farm of the village it belongs to
+		/// On a cart, the farm of the village it belongs to, and whether it came home from a quest with what it holds
+		/// still to be put away
 		/// </summary>
 		internal static readonly int VillageKey = "kriona.VikingVillages.cartVillage".GetStableHashCode();
+		internal static readonly int UnloadKey = "kriona.VikingVillages.cartUnload".GetStableHashCode();
+
+		/// <summary>
+		/// On a farm's generator, until when in ZNet time ticks its village's cart is out on a quest, or 0 while it isn't -
+		/// once that's past without it coming home, it's lost, and the vikings build another
+		/// </summary>
+		private static readonly int OnQuestUntilKey = "kriona.VikingVillages.villageCartOnQuestUntil".GetStableHashCode();
+
+		/// <summary>
+		/// How long past when its quest was due a cart that hasn't come home with it counts as lost, in seconds
+		/// </summary>
+		private const float QuestGrace = 1800f;
 
 		/// <summary>
 		/// Seconds between looks at each village's cart, and how long a village has to have been loaded before a cart
@@ -64,8 +77,8 @@ namespace VikingVillages
 		private const float ExtraReach = 40f;
 
 		/// <summary>
-		/// What a village's cart is up to - its state, the cart when it's loaded, and the village's old carts loaded
-		/// near it to take down
+		/// What a village's cart is up to - its state, the cart when it's loaded, the village's old carts loaded near it
+		/// to take down, and its carts standing in it that came home from a quest with things still in them to put away
 		/// </summary>
 		internal class Status
 		{
@@ -73,6 +86,7 @@ namespace VikingVillages
 			public Vagon Cart;
 			public ZDOID Id;
 			public readonly List<Vagon> Extras = new List<Vagon>();
+			public readonly List<Vagon> Unload = new List<Vagon>();
 		}
 
 		/// <summary>
@@ -229,6 +243,18 @@ namespace VikingVillages
 				{
 					continue;
 				}
+				if (zdo.GetBool(UnloadKey))
+				{
+					Vector3 at = cart.transform.position;
+					if (!HoldsAnything(cart))
+					{
+						zdo.Set(UnloadKey, false);
+					}
+					else if ((village.Contains(at) || village.InHouse(at, 0.5f)) && !cart.IsAttached() && !CartHitch.PlayerUsing(cart))
+					{
+						status.Unload.Add(cart);
+					}
+				}
 				if (recorded && zdo.m_uid == id)
 				{
 					status.Cart = cart;
@@ -242,7 +268,8 @@ namespace VikingVillages
 					status.Cart = cart;
 					continue;
 				}
-				if (village.DistanceOutside(cart.transform.position) <= ExtraReach && !CartHitch.PlayerUsing(cart))
+				// One being pulled, or with things in it still to put away, waits to be taken down
+				if (village.DistanceOutside(cart.transform.position) <= ExtraReach && !cart.IsAttached() && !CartHitch.PlayerUsing(cart) && !HoldsAnything(cart))
 				{
 					status.Extras.Add(cart);
 				}
@@ -276,7 +303,14 @@ namespace VikingVillages
 			bool playerUsing = (loaded && CartHitch.PlayerUsing(status.Cart));
 			bool inside = (loaded && (village.Contains(position) || village.InHouse(position, 0.5f)));
 			double day = ((EnvMan.instance != null) ? EnvMan.instance.m_dayLengthSec : 1800.0);
-			status.State = CartRules.Decide(allowed, recorded, known != null, lastSeenLoaded, loaded, playerUsing, inside, awaySeconds, day);
+			long questUntil = village.Zdo.GetLong(OnQuestUntilKey, 0L);
+			bool onQuest = (questUntil > 0L && NetTime.Now() < questUntil);
+			if (questUntil > 0L && !onQuest && owner)
+			{
+				Plugin.Log.LogInfo("Cart: the cart of the village at " + village.Farm.ToString("F0") + " never came home from its quest");
+				village.Zdo.Set(OnQuestUntilKey, 0L);
+			}
+			status.State = CartRules.Decide(allowed, onQuest, recorded, known != null, lastSeenLoaded, loaded, playerUsing, inside, awaySeconds, day);
 			if (status.State == CartRules.CartState.Missing && recorded && owner)
 			{
 				Plugin.Log.LogInfo("Cart: the village at " + village.Farm.ToString("F0") + " has lost its cart, last seen at " + seen.ToString("F0") + " - " + ((known == null) ? "destroyed" : "gone " + (awaySeconds / 60.0).ToString("F0") + " minutes"));
@@ -308,6 +342,129 @@ namespace VikingVillages
 		{
 			village.Zdo.Set(CartKey, ZDOID.None);
 			village.Zdo.Set(AwaySinceKey, 0L);
+		}
+
+		/// <summary>
+		/// Checks whether a cart holds anything
+		/// </summary>
+		/// <param name="cart">The cart</param>
+		/// <returns>True when it does</returns>
+		public static bool HoldsAnything(Vagon cart)
+		{
+			return(cart != null && cart.m_container != null && cart.m_container.GetInventory() != null && cart.m_container.GetInventory().NrOfItems() > 0);
+		}
+
+		/// <summary>
+		/// Counts the slots a cart has, from the game's own cart
+		/// </summary>
+		/// <returns>The slots, or 0 when the game has no cart</returns>
+		public static int Slots()
+		{
+			GameObject prefab = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(CartPrefab) : null);
+			Vagon cart = ((prefab != null) ? prefab.GetComponent<Vagon>() : null);
+			Container container = ((cart != null) ? cart.m_container : null);
+			return((container != null) ? container.m_width * container.m_height : 0);
+		}
+
+		/// <summary>
+		/// Checks whether a quest can take the village's cart along - when it keeps one, and the cart stands at home, not
+		/// in use
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>True when it can</returns>
+		public static bool AtHome(Village village)
+		{
+			Status status = Of(village);
+			return(status.State == CartRules.CartState.Home && status.Cart != null && !HoldsAnything(status.Cart));
+		}
+
+		/// <summary>
+		/// Takes a village's cart out of the world as it leaves on a quest with the viking pulling it - it isn't missing
+		/// while the quest is out, and comes home with it (see Return), or counts as lost once QuestGrace has passed
+		/// since the quest was due
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="cart">The cart, owned by this client</param>
+		/// <param name="due">When the quest is due back, in ZNet time ticks</param>
+		public static void LeaveWithQuest(Village village, Vagon cart, long due)
+		{
+			village.Zdo.Set(OnQuestUntilKey, due + NetTime.Ticks(QuestGrace));
+			if (cart.m_nview != null && cart.m_nview.IsValid() && cart.m_nview.GetZDO().m_uid == village.Zdo.GetZDOID(CartKey))
+			{
+				Forget(village);
+			}
+			CartHitch.Unhitch(cart);
+			// Nothing drops, as it isn't broken - it goes along
+			if (cart.m_nview != null && cart.m_nview.IsValid())
+			{
+				cart.m_nview.ClaimOwnership();
+				cart.m_nview.Destroy();
+			}
+			Plugin.Log.LogInfo("Cart: the cart of the village at " + village.Farm.ToString("F0") + " went out on a quest");
+			Refresh(village);
+		}
+
+		/// <summary>
+		/// Brings a village's cart back into the world with a quest's viking - set down behind it, holding what the quest
+		/// brought home in it, marked to be put away - as the village's own when it has none, or else as an old one,
+		/// taken down once it's emptied
+		/// </summary>
+		/// <param name="village">The village the viking comes home to</param>
+		/// <param name="puller">The viking</param>
+		/// <param name="load">What the cart holds, each item and how many</param>
+		/// <returns>The cart, or null when the game has none</returns>
+		public static Vagon Return(Village village, Humanoid puller, List<KeyValuePair<string, int>> load)
+		{
+			GameObject prefab = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(CartPrefab) : null);
+			if (prefab == null)
+			{
+				return(null);
+			}
+			Vector3 behind = -puller.transform.forward;
+			Vector3 spot = puller.transform.position + behind * 2.5f;
+			spot.y = ZoneSystem.instance.GetGroundHeight(spot) + 0.3f;
+			GameObject made = Object.Instantiate(prefab, spot, Quaternion.LookRotation(puller.transform.forward));
+			ZNetView view = made.GetComponent<ZNetView>();
+			Vagon cart = made.GetComponent<Vagon>();
+			if (view == null || !view.IsValid() || cart == null)
+			{
+				return(null);
+			}
+			view.GetZDO().Set(VillageKey, village.Farm);
+			view.GetZDO().Set(UnloadKey, true);
+			WearNTear wear = made.GetComponent<WearNTear>();
+			if (wear != null)
+			{
+				wear.OnPlaced();
+			}
+			Inventory inventory = cart.m_container.GetInventory();
+			foreach (KeyValuePair<string, int> entry in load)
+			{
+				int left = entry.Value;
+				GameObject item = ((ObjectDB.instance != null) ? ObjectDB.instance.GetItemPrefab(entry.Key) : null);
+				ItemDrop drop = ((item != null) ? item.GetComponent<ItemDrop>() : null);
+				int maxStack = ((drop != null) ? Mathf.Max(1, drop.m_itemData.m_shared.m_maxStackSize) : 1);
+				while (left > 0 && drop != null)
+				{
+					int stack = Mathf.Min(left, maxStack);
+					if (inventory.AddItem(entry.Key, stack, 1, 0, 0L, "", false) == null)
+					{
+						TestLog.Count("Left behind on quests", entry.Key, left);
+						break;
+					}
+					TestLog.Count("Brought home from quests", entry.Key, stack);
+					left -= stack;
+				}
+			}
+			village.Zdo.Set(OnQuestUntilKey, 0L);
+			if (village.Zdo.GetZDOID(CartKey).IsNone() && Allowed(village))
+			{
+				Record(village, view.GetZDO());
+			}
+			CartHitch.Hitch(cart, puller, behind);
+			Plugin.Log.LogInfo("Cart: the cart of the village at " + village.Farm.ToString("F0") + " came home from a quest with " + load.Count + " kinds of loot");
+			Refresh(village);
+			return(cart);
 		}
 
 		/// <summary>

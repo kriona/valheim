@@ -139,7 +139,10 @@ namespace VikingVillages
 		/// between them and how long their tools take to get it, wearing each tool; and what else it brings back (see
 		/// QuestLoot), leaving behind what the village wouldn't keep (see LeaveUnwanted), and not going at all when
 		/// nothing it would bring home is wanted - then shares what it finds out among the vikings by their room, works out a fight with the creatures
-		/// the quest kills, if any, and the harm it does each viking (see QuestFightGame), and when it's due back
+		/// the quest kills, if any, and the harm it does each viking (see QuestFightGame), and when it's due back. When
+		/// the village's cart may go along, its room counts toward what they bring home, and it goes when it ends up
+		/// holding anything (see CartRules.ShareWithCart) - pulled by the first of them, and slowing the trip home by its
+		/// load (see CartRules.Slowdown)
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="record">The quest, its plans and due time filled in</param>
@@ -147,9 +150,10 @@ namespace VikingVillages
 		/// <param name="there">How long the trip there takes, in seconds</param>
 		/// <param name="back">How long the trip back takes, in seconds</param>
 		/// <param name="roadBiome">The biome the road goes to, by VikingGear's order, or -1 when it isn't known</param>
+		/// <param name="cartAllowed">Whether the village's cart may go along</param>
 		/// <param name="why">Set to why it doesn't go, or "" when it does</param>
 		/// <returns>False when one of its vikings isn't loaded here, or nothing it would bring home is wanted</returns>
-		public static bool Prepare(Village village, QuestRecord record, ResourceSource source, float there, float back, int roadBiome, out string why)
+		public static bool Prepare(Village village, QuestRecord record, ResourceSource source, float there, float back, int roadBiome, bool cartAllowed, out string why)
 		{
 			why = "";
 			List<Humanoid> members = Members(village, record);
@@ -170,6 +174,8 @@ namespace VikingVillages
 				record.Plans.Add(new MemberPlan());
 				spaces.Add(SpaceOf(members[i], ToolItem(record.Tools[i])));
 			}
+			int cartSlots = (cartAllowed ? VillageCarts.Slots() : 0);
+			List<CarrySpace> roomy = ((cartSlots > 0 && members.Count > 0) ? CartRules.Pooled(spaces, cartSlots) : spaces);
 			Dictionary<string, int> found = new Dictionary<string, int>();
 			float toNight = ((EnvMan.instance != null) ? QuestRules.SecondsToNight(EnvMan.instance.GetDayFraction(), EnvMan.instance.m_dayLengthSec) : float.MaxValue);
 			bool byNight = (QuestRules.HomeByNight(record.Kind) && toNight < float.MaxValue);
@@ -178,7 +184,7 @@ namespace VikingVillages
 			if (source.Tool != ToolKind.None && record.Item.Length > 0)
 			{
 				// Cutting trees stops in time to be home before night
-				active += Gather(village, record, source, members, spaces, found, (byNight ? Mathf.Max(QuestRules.TreesLeastSeconds, work - active) : float.MaxValue));
+				active += Gather(village, record, source, members, roomy, found, (byNight ? Mathf.Max(QuestRules.TreesLeastSeconds, work - active) : float.MaxValue));
 			}
 			int most = 0;
 			if (record.Kind == QuestKind.Hunt)
@@ -189,7 +195,7 @@ namespace VikingVillages
 			{
 				most = Mathf.Max(QuestRules.ForagePicksLeast, (byNight ? QuestRules.ForagePicksBeforeNight(toNight, there, back) : QuestRules.ForagePicksMost));
 			}
-			int taken = QuestLoot.Roll(village, record, members, spaces, most, found, roadBiome);
+			int taken = QuestLoot.Roll(village, record, members, roomy, most, found, roadBiome);
 			LeaveUnwanted(village, record, found);
 			// A quest that would bring home nothing the village wants isn't needed - but for a trade, worked out from what
 			// its vikings take along
@@ -213,7 +219,16 @@ namespace VikingVillages
 				active = most * QuestRules.ForagePickSeconds;
 			}
 			List<KeyValuePair<string, int>> ordered = Ordered(found, record.Item);
-			List<Dictionary<string, int>> shares = QuestSim.Share(ordered, spaces, WeightOf, StackOf);
+			Dictionary<string, int> cartShare = null;
+			List<Dictionary<string, int>> shares = ((roomy != spaces) ? CartRules.ShareWithCart(ordered, record.Item, spaces, cartSlots, WeightOf, StackOf, out cartShare) : QuestSim.Share(ordered, spaces, WeightOf, StackOf));
+			if (cartShare != null && cartShare.Count > 0 && record.Plans.Count > 0)
+			{
+				// The first of them pulls the cart, which slows them on the way home by what it holds
+				record.Plans[0].CartLoot = Ordered(cartShare, record.Item);
+				float load = CartRules.WeightOf(cartShare, WeightOf);
+				back *= CartRules.Slowdown(load);
+				Plugin.Log.LogInfo("Quest: " + record.Kind + " takes the village's cart along, bringing home " + load.ToString("F0") + " weight in it");
+			}
 			for (int i = 0; i < members.Count; i++)
 			{
 				record.Plans[i].Loot = Ordered(shares[i], record.Item);

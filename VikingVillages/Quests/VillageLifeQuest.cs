@@ -500,6 +500,22 @@ namespace VikingVillages
 			string me = VikingIdentity.Get(zdo);
 			List<ItemDrop.ItemData> carried = humanoid.GetInventory().GetAllItems().FindAll((ItemDrop.ItemData item) => IsCarriedFor(item, CarryQuest) && item.m_dropPrefab != null);
 			QuestOutcome outcome = QuestGame.OutcomeFor(humanoid, viking, record, me, carried, VillageNames.Get(village), out List<QuestMeal> lasting);
+			// The village's cart goes along with the one pulling it, bringing home what it holds - and when it didn't come
+			// along, what it would have held is left behind
+			List<KeyValuePair<string, int>> cartLoot = record.PlanOf(me).CartLoot;
+			if (questCart != null && CartHitch.IsHitched(questCart, humanoid))
+			{
+				outcome.CartLoot = cartLoot;
+				VillageCarts.LeaveWithQuest(village, questCart, record.Due);
+			}
+			else
+			{
+				foreach (KeyValuePair<string, int> left in cartLoot)
+				{
+					TestLog.Count("Left behind on quests", left.Key, left.Value);
+				}
+			}
+			questCart = null;
 			VikingFood.Note(zdo, lasting, record.Due);
 			zdo.Set(VillageQuests.QuestOutcomeKey, outcome.Encode());
 			zdo.Set(VillageQuests.QuestIdKey, record.Id);
@@ -559,6 +575,15 @@ namespace VikingVillages
 				VillageQuests.FellOnQuest(village, VillageDeparted.SnapshotOf(zdo));
 				nview.Destroy();
 				return;
+			}
+			if (outcome != null && outcome.CartLoot.Count > 0 && village != null)
+			{
+				// It comes home pulling the cart, which it brings into the village before anything else
+				Vagon cart = VillageCarts.Return(village, humanoid, outcome.CartLoot);
+				if (cart != null)
+				{
+					zdo.Set(QuestCartKey, cart.m_nview.GetZDO().m_uid);
+				}
 			}
 			if (outcome != null)
 			{
@@ -645,11 +670,17 @@ namespace VikingVillages
 		/// <summary>
 		/// Finds the job putting away what the viking brought home from a quest, which goes on through dusk and night -
 		/// cooking the raw food it brought first by day, when a cooking station has room for it, since this is picked
-		/// ahead of the cooking work it would otherwise leave the raw food for
+		/// ahead of the cooking work it would otherwise leave the raw food for. One that came home pulling the village's
+		/// cart pulls it into the village first (see FindQuestCartWork)
 		/// </summary>
 		/// <returns>The job, or null when it carries none home</returns>
 		private Job FindQuestLootWork()
 		{
+			Job cart = FindQuestCartWork();
+			if (cart != null)
+			{
+				return(cart);
+			}
 			ZDO zdo = nview.GetZDO();
 			if (!zdo.GetBool(QuestLootKey))
 			{
@@ -694,6 +725,14 @@ namespace VikingVillages
 			private float actAt = -1f;
 
 			/// <summary>
+			/// For the viking who pulls the village's cart along (see MemberPlan.CartLoot), whether it still means to, and
+			/// the cart as it pulls it
+			/// </summary>
+			private bool wantsCart;
+			private CartPull cartPull;
+			private ZDOID cartId;
+
+			/// <summary>
 			/// For a quest that sails from the village (see SailOff), the viking's GUID, the water's edge it goes down to,
 			/// and for its first viking, whether it has swung its hammer to build the quest's new boats, when the swing
 			/// lands, and whether they're built
@@ -733,7 +772,8 @@ namespace VikingVillages
 				tool = record.ToolOf(member);
 				leader = (record.Members.Count > 0 && record.Members[0] == member);
 				exit = record.Exit;
-				leaveBy = Time.time + QuestRules.LeaveTimeout + (record.BySea ? QuestRules.SailOffSeconds : 0f);
+				wantsCart = (record.PlanOf(member).CartLoot.Count > 0);
+				leaveBy = Time.time + QuestRules.LeaveTimeout + (record.BySea ? QuestRules.SailOffSeconds : 0f) + (wantsCart ? CartLeaveExtra : 0f);
 				toolDone = (tool.Length == 0);
 				seconds = Mathf.Max(0f, (record.Due - record.SetOutAt) / (float)NetTime.Ticks(1f));
 				fights = QuestLoot.Fights(record.Kind);
@@ -833,6 +873,10 @@ namespace VikingVillages
 				{
 					return(false);
 				}
+				if (wantsCart && PullCartOut(dt))
+				{
+					return(cartPull == null);
+				}
 				if (Utils.DistanceXZ(exit, life.transform.position) > ExitReach)
 				{
 					life.Go(dt, exit, ExitReach, true);
@@ -844,6 +888,71 @@ namespace VikingVillages
 				}
 				life.LeaveOnQuest(record);
 				return(true);
+			}
+
+			/// <summary>
+			/// Pulls the village's cart out to the spot the quest's vikings leave from, and leaves there with it - or, when
+			/// the cart isn't at home or the viking can't get it there, goes without it
+			/// </summary>
+			/// <param name="dt">Seconds since the AI's last update</param>
+			/// <returns>True while it's pulling the cart out, or once it has left with it, which clears cartPull - false
+			/// once it goes without the cart</returns>
+			private bool PullCartOut(float dt)
+			{
+				if (cartPull == null)
+				{
+					VillageCarts.Status status = VillageCarts.Of(life.village);
+					if (status.State != CartRules.CartState.Home || status.Cart == null || !life.ClaimWork(status.Id))
+					{
+						wantsCart = false;
+						return(false);
+					}
+					cartId = status.Id;
+					cartPull = new CartPull(life, status.Cart);
+					life.questCart = status.Cart;
+				}
+				if (!cartPull.Tick(dt, exit, ExitReach))
+				{
+					return(true);
+				}
+				if (cartPull.Failed)
+				{
+					DropCart();
+					wantsCart = false;
+					return(false);
+				}
+				QuestRecord record = VillageQuests.Read(life.village);
+				cartPull = null;
+				if (record != null)
+				{
+					life.LeaveOnQuest(record);
+				}
+				return(true);
+			}
+
+			/// <summary>
+			/// Lets go of the village's cart, unhooking it where it stands
+			/// </summary>
+			private void DropCart()
+			{
+				if (cartPull != null)
+				{
+					cartPull.Release();
+					cartPull = null;
+				}
+				life.questCart = null;
+				if (!cartId.IsNone())
+				{
+					life.ReleaseWork(cartId);
+				}
+			}
+
+			/// <summary>
+			/// Lets go of the village's cart when the viking stops before leaving with it
+			/// </summary>
+			public override void End()
+			{
+				DropCart();
 			}
 
 			/// <summary>

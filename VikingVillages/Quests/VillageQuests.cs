@@ -768,7 +768,9 @@ namespace VikingVillages
 			travel = ((travel >= 0f) ? travel : QuestRules.DefaultTravel);
 			back = ((back >= 0f) ? back : travel);
 			ResourceSource source = QuestGame.SourceFor(ResourceBookGame.Get(), record.Kind, record.Item);
-			if (!QuestGame.Prepare(village, record, source, travel, back, RouteBiome(village, record.Kind, record.Item), out string why))
+			// A quest that sails from the village leaves the cart at home
+			bool cart = (VillageCarts.AtHome(village) && (exit.Trapped || SeaOf(village, record.Kind, record.Item).Count < 2));
+			if (!QuestGame.Prepare(village, record, source, travel, back, RouteBiome(village, record.Kind, record.Item), cart, out string why))
 			{
 				Plugin.Log.LogInfo("Quest: " + record.Kind + " from the village at " + village.Farm.ToString("F0") + " was given up on, as " + why);
 				TestLog.Count("Quests", record.Kind + " given up on");
@@ -1524,8 +1526,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Describes what a viking does on a quest - the tool it takes from a chest, and once the quest has set out, the
-		/// tool it works with, the enemies it kills, the health the quest's fight harms it by, what it brings home
-		/// and what it spends
+		/// tool it works with, the enemies it kills, the health the quest's fight harms it by, what it brings home, what
+		/// the village's cart it pulls brings home, and what it spends
 		/// </summary>
 		/// <param name="record">The quest</param>
 		/// <param name="index">The viking's index among its members</param>
@@ -1537,7 +1539,8 @@ namespace VikingVillages
 			string tool = ((index < record.Tools.Count) ? record.Tools[index] : "");
 			string loot = string.Join(", ", plan.Loot.ConvertAll((KeyValuePair<string, int> entry) => entry.Value + " " + entry.Key));
 			string spend = string.Join(", ", plan.Spend.ConvertAll((KeyValuePair<string, int> entry) => entry.Value + " " + entry.Key));
-			return(name + ((tool.Length > 0) ? ", taking " + tool + " from a chest" : "") + ((plan.Tool.Length > 0) ? ", working with " + plan.Tool + " (" + plan.Hits + " hits, " + plan.ToolLeft.ToString("F0") + " durability left)" : "") + ((plan.Kills > 0) ? ", " + plan.Kills + " kills" : "") + ((plan.FightHarm >= 0f) ? ", harmed by " + plan.FightHarm.ToString("F0") + " health in the fight" : "") + ", bringing home " + ((loot.Length > 0) ? loot : "nothing") + ((spend.Length > 0) ? ", spending " + spend : ""));
+			string cart = string.Join(", ", plan.CartLoot.ConvertAll((KeyValuePair<string, int> entry) => entry.Value + " " + entry.Key));
+			return(name + ((tool.Length > 0) ? ", taking " + tool + " from a chest" : "") + ((plan.Tool.Length > 0) ? ", working with " + plan.Tool + " (" + plan.Hits + " hits, " + plan.ToolLeft.ToString("F0") + " durability left)" : "") + ((plan.Kills > 0) ? ", " + plan.Kills + " kills" : "") + ((plan.FightHarm >= 0f) ? ", harmed by " + plan.FightHarm.ToString("F0") + " health in the fight" : "") + ", bringing home " + ((loot.Length > 0) ? loot : "nothing") + ((cart.Length > 0) ? ", and pulling the village's cart home with " + cart : "") + ((spend.Length > 0) ? ", spending " + spend : ""));
 		}
 
 		/// <summary>

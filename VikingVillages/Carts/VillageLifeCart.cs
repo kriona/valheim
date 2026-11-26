@@ -45,9 +45,52 @@ namespace VikingVillages
 		private float nextCartCheck;
 
 		/// <summary>
-		/// Finds cart work for the viking, every CartCheckInterval seconds - taking down an old cart of the village's,
-		/// fetching the village's cart back from outside it, or building one when the village has none and has what it
-		/// takes - each claimed so only one viking does it
+		/// On a living viking, the village's cart it came home from a quest pulling, which it pulls into the village before
+		/// anything else, even at night
+		/// </summary>
+		private static readonly KeyValuePair<int, int> QuestCartKey = ZDO.GetHashZDOID("kriona.VikingVillages.vikingQuestCart");
+
+		/// <summary>
+		/// The village's cart the viking is pulling out of the village on a quest, which goes along with it as it leaves
+		/// (see LeaveOnQuest)
+		/// </summary>
+		private Vagon questCart;
+
+		/// <summary>
+		/// How much longer a quest's first viking has to get out of the village when it pulls the village's cart along, in
+		/// seconds
+		/// </summary>
+		private const float CartLeaveExtra = 60f;
+
+		/// <summary>
+		/// Finds the job pulling the village's cart into the village, for a viking that came home from a quest pulling it
+		/// - until the cart stands in the village, or is gone
+		/// </summary>
+		/// <returns>The job, or null when it brought no cart home or the cart is home</returns>
+		private Job FindQuestCartWork()
+		{
+			ZDO zdo = nview.GetZDO();
+			ZDOID id = zdo.GetZDOID(QuestCartKey);
+			if (id.IsNone())
+			{
+				return(null);
+			}
+			ZDO cartZdo = ZDOMan.instance.GetZDO(id);
+			ZNetView view = ((cartZdo != null && ZNetScene.instance != null) ? ZNetScene.instance.FindInstance(cartZdo) : null);
+			Vagon cart = ((view != null) ? view.GetComponent<Vagon>() : null);
+			bool home = (cart != null && village != null && (village.Contains(cart.transform.position) || village.InHouse(cart.transform.position, 0.5f)) && !CartHitch.IsHitched(cart, humanoid));
+			if (cart == null || village == null || home || CartHitch.PlayerUsing(cart))
+			{
+				zdo.Set(QuestCartKey, ZDOID.None);
+				return(null);
+			}
+			return(ClaimWork(id) ? new CartFetchJob(this, cart, true) : null);
+		}
+
+		/// <summary>
+		/// Finds cart work for the viking, every CartCheckInterval seconds - putting away what a cart brought home from a
+		/// quest, taking down an old cart of the village's, fetching the village's cart back from outside it, or building
+		/// one when the village has none and has what it takes - each claimed so only one viking does it
 		/// </summary>
 		/// <returns>The job, or null when there's none</returns>
 		private Job FindCartWork()
@@ -58,6 +101,14 @@ namespace VikingVillages
 			}
 			nextCartCheck = Time.time + CartCheckInterval;
 			VillageCarts.Status status = VillageCarts.Of(village);
+			foreach (Vagon full in status.Unload)
+			{
+				ZNetView view = ((full != null) ? full.m_nview : null);
+				if (view != null && view.IsValid() && !Avoided(view.GetZDO().m_uid) && ClaimWork(view.GetZDO().m_uid))
+				{
+					return(new CartUnloadJob(this, full));
+				}
+			}
 			foreach (Vagon extra in status.Extras)
 			{
 				ZNetView view = ((extra != null) ? extra.m_nview : null);
@@ -165,6 +216,15 @@ namespace VikingVillages
 			private float troubleSince = -1f;
 
 			/// <summary>
+			/// How far the viking has walked with the cart hooked up and for how long, in meters and seconds, and where it
+			/// was last noted, for the test log's note of how fast vikings pull carts by their load (see LogSpeed)
+			/// </summary>
+			private float pulledMeters;
+			private float pulledSeconds;
+			private Vector3 lastAt;
+			private bool hasLastAt;
+
+			/// <summary>
 			/// Whether the viking couldn't get to the cart, or the cart is gone
 			/// </summary>
 			public bool Failed { get; private set; }
@@ -209,6 +269,14 @@ namespace VikingVillages
 				}
 				wasHitched = true;
 				NoteTrail();
+				Vector3 at = life.transform.position;
+				if (hasLastAt)
+				{
+					pulledMeters += Utils.DistanceXZ(at, lastAt);
+					pulledSeconds += dt;
+				}
+				lastAt = at;
+				hasLastAt = true;
 				bool there = life.Go(dt, target, reach, false);
 				if (life.moveFailed)
 				{
@@ -322,14 +390,36 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Unhooks the cart, if the viking has it hooked up
+			/// Unhooks the cart, if the viking has it hooked up, and notes how fast it pulled it
 			/// </summary>
 			public void Release()
 			{
+				LogSpeed();
 				if (Hitched())
 				{
 					CartHitch.Unhitch(cart);
 				}
+			}
+
+			/// <summary>
+			/// How far a viking has to have pulled a cart for its speed to be noted, in meters
+			/// </summary>
+			private const float SpeedNoteMeters = 15f;
+
+			/// <summary>
+			/// Notes in the log how fast the viking pulled the cart and the weight it held, in a test run or debug mode, once
+			/// it has pulled it far enough to tell - for putting CartRules.FullWeight and FullSlowdown right
+			/// </summary>
+			private void LogSpeed()
+			{
+				if ((!TestLog.On && !Player.m_debugMode) || pulledMeters < SpeedNoteMeters || pulledSeconds <= 0f || cart == null)
+				{
+					return;
+				}
+				float load = ((cart.m_container != null && cart.m_container.GetInventory() != null) ? cart.m_container.GetInventory().GetTotalWeight() : 0f);
+				Plugin.Log.LogInfo("Cart pull: " + TestLog.Name(life.humanoid, "F0") + " pulled a cart holding " + load.ToString("F0") + " weight " + pulledMeters.ToString("F0") + "m in " + pulledSeconds.ToString("F0") + "s, " + (pulledMeters / pulledSeconds).ToString("F2") + " m/s");
+				pulledMeters = 0f;
+				pulledSeconds = 0f;
 			}
 		}
 
@@ -501,14 +591,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Fetching the village's cart back from outside it - walking to it, hooking it up, pulling it home and parking it
-		/// beside a house (see VillageCarts.FindSpot), nearest where it stood
+		/// Fetching the village's cart back from outside it, or bringing it home from a quest - walking to it, hooking it
+		/// up, pulling it home and parking it beside a house (see VillageCarts.FindSpot), nearest where it stood
 		/// </summary>
 		private class CartFetchJob : Job
 		{
 			private readonly Vagon cart;
 			private readonly ZDOID id;
 			private readonly CartPull pull;
+			private readonly bool anyHour;
 			private bool hasSpot;
 			private Vector3 spot;
 			private Quaternion rotation;
@@ -519,11 +610,14 @@ namespace VikingVillages
 			/// </summary>
 			/// <param name="owner">The viking's life</param>
 			/// <param name="astray">The cart</param>
-			public CartFetchJob(VillageLife owner, Vagon astray) : base(owner)
+			/// <param name="homecoming">True when it's bringing the cart home from a quest, which it does at any hour,
+			/// rather than fetching it by day</param>
+			public CartFetchJob(VillageLife owner, Vagon astray, bool homecoming = false) : base(owner)
 			{
 				cart = astray;
 				id = astray.m_nview.GetZDO().m_uid;
 				pull = new CartPull(owner, astray);
+				anyHour = homecoming;
 			}
 
 			/// <summary>
@@ -548,10 +642,11 @@ namespace VikingVillages
 			/// Pulls the cart to where it's parked, then lets go of it there
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
-			/// <returns>True once it's parked, gone, used by a player or out of reach, or it's dusk</returns>
+			/// <returns>True once it's parked, gone, used by a player or out of reach, or for one fetched by day, it's
+			/// dusk</returns>
 			public override bool Tick(float dt)
 			{
-				if (IsNight() || IsDusk() || cart == null || cart.m_nview == null || !cart.m_nview.IsValid())
+				if ((!anyHour && (IsNight() || IsDusk())) || cart == null || cart.m_nview == null || !cart.m_nview.IsValid())
 				{
 					return(true);
 				}
@@ -591,6 +686,111 @@ namespace VikingVillages
 			public override void End()
 			{
 				pull.Release();
+				life.ReleaseWork(id);
+			}
+		}
+
+		/// <summary>
+		/// Putting away what a cart brought home from a quest - walking to it, reaching in the way a player opens it and
+		/// taking out as much as the viking can carry, which it puts away in the chests like any loot it carries
+		/// </summary>
+		private class CartUnloadJob : Job
+		{
+			private readonly Vagon cart;
+			private readonly ZDOID id;
+			private float actAt = -1f;
+
+			/// <summary>
+			/// Makes the job, with the cart already claimed
+			/// </summary>
+			/// <param name="owner">The viking's life</param>
+			/// <param name="full">The cart</param>
+			public CartUnloadJob(VillageLife owner, Vagon full) : base(owner)
+			{
+				cart = full;
+				id = full.m_nview.GetZDO().m_uid;
+			}
+
+			/// <summary>
+			/// Describes the job for the debug hover text
+			/// </summary>
+			/// <returns>Its name</returns>
+			public override string Describe()
+			{
+				return("Unloading the village's cart");
+			}
+
+			/// <summary>
+			/// Walks to the cart and takes out what it can carry
+			/// </summary>
+			/// <param name="dt">Seconds since the AI's last update</param>
+			/// <returns>True once it has taken what it can, or the cart is gone, pulled, open or out of reach</returns>
+			public override bool Tick(float dt)
+			{
+				if (cart == null || cart.m_nview == null || !cart.m_nview.IsValid() || cart.IsAttached() || CartHitch.PlayerUsing(cart))
+				{
+					return(true);
+				}
+				Vector3 box = cart.m_container.transform.position;
+				if (Utils.DistanceXZ(box, life.transform.position) > ChestReach + 0.5f)
+				{
+					life.Go(dt, box, ChestReach, false);
+					if (life.moveFailed)
+					{
+						life.Avoid(cart.m_nview);
+						return(true);
+					}
+					actAt = -1f;
+					return(false);
+				}
+				if (actAt < 0f)
+				{
+					life.Face(box);
+					VikingPoses.Interact(life.humanoid);
+					actAt = Time.time + ReachTime;
+					return(false);
+				}
+				if (Time.time < actAt)
+				{
+					return(false);
+				}
+				if (!cart.m_nview.IsOwner())
+				{
+					cart.m_nview.ClaimOwnership();
+				}
+				Inventory store = cart.m_container.GetInventory();
+				int took = 0;
+				foreach (ItemDrop.ItemData item in new List<ItemDrop.ItemData>(store.GetAllItems()))
+				{
+					int carried = life.Carry(item, item.m_stack, CarryLoot);
+					if (carried > 0)
+					{
+						store.RemoveItem(item, carried);
+						took += carried;
+					}
+					if (carried < item.m_stack)
+					{
+						break;
+					}
+				}
+				if (store.NrOfItems() == 0)
+				{
+					cart.m_nview.GetZDO().Set(VillageCarts.UnloadKey, false);
+				}
+				else if (took == 0)
+				{
+					// With no room to carry anything, it leaves the cart for a while
+					life.Avoid(cart.m_nview);
+				}
+				TestLog.Count("Work done", "items taken out of carts", took);
+				return(true);
+			}
+
+			/// <summary>
+			/// Lets go of the cart
+			/// </summary>
+			public override void End()
+			{
 				life.ReleaseWork(id);
 			}
 		}

@@ -43,7 +43,218 @@ namespace VikingVillages
 			/// <summary>
 			/// A player is pulling it or has it open, so the vikings leave it be
 			/// </summary>
-			InUse
+			InUse,
+
+			/// <summary>
+			/// It went out on a quest, and comes back with it
+			/// </summary>
+			OnQuest
+		}
+
+		/// <summary>
+		/// The weight in a cart that slows a viking pulling it as much as it's slowed at all - its "full" load, which
+		/// the cart is loaded up to (see ShareWithCart) - and how much longer a trip takes pulling it full, as a share
+		/// </summary>
+		/// <remarks>
+		/// A cart has no weight limit - the game only adds what it holds to its mass (see Vagon.UpdateMass) - so these are
+		/// estimates, to be put right by the speeds the test log notes for vikings pulling carts (see CartPull)
+		/// </remarks>
+		internal const float FullWeight = 800f;
+		internal const float FullSlowdown = 0.25f;
+
+		/// <summary>
+		/// The most a trip can be slowed by a cart, as times its length, however heavy the cart
+		/// </summary>
+		private const float SlowdownMost = 1.5f;
+
+		/// <summary>
+		/// The weight from which an item counts as heavy for loading a cart - wood, stone, ore and metal - rather than
+		/// light, like trophies, hides and feathers
+		/// </summary>
+		internal const float HeavyWeight = 2f;
+
+		/// <summary>
+		/// Works out how much longer a trip takes pulling a cart holding a weight
+		/// </summary>
+		/// <param name="load">The weight in the cart</param>
+		/// <returns>How many times as long it takes, 1 for an empty cart</returns>
+		internal static float Slowdown(float load)
+		{
+			return(Mathf.Min(SlowdownMost, 1f + FullSlowdown * Mathf.Max(0f, load) / FullWeight));
+		}
+
+		/// <summary>
+		/// Works out how many of a light item go in a cart once its heavy load is in (see ShareWithCart) - a small stack,
+		/// like a single trophy
+		/// </summary>
+		/// <param name="maxStack">How many of it make a full stack</param>
+		/// <returns>How many</returns>
+		internal static int SmallStack(int maxStack)
+		{
+			return(Mathf.Clamp(maxStack / 20, 1, 5));
+		}
+
+		/// <summary>
+		/// Adds a cart's room to what a quest's vikings can carry between them, shared out evenly, for working out how
+		/// much they bring home - its slots and the weight of the heavy load it takes, half its full weight
+		/// </summary>
+		/// <param name="spaces">Each viking's room</param>
+		/// <param name="cartSlots">The cart's slots</param>
+		/// <returns>Each viking's room with a share of the cart's, new copies</returns>
+		internal static List<CarrySpace> Pooled(List<CarrySpace> spaces, int cartSlots)
+		{
+			List<CarrySpace> pooled = new List<CarrySpace>();
+			int count = spaces.Count;
+			for (int i = 0; i < count; i++)
+			{
+				pooled.Add(new CarrySpace { WeightRoom = spaces[i].WeightRoom + FullWeight / 2f / count, FreeSlots = spaces[i].FreeSlots + cartSlots / count + ((i < cartSlots % count) ? 1 : 0) });
+			}
+			return(pooled);
+		}
+
+		/// <summary>
+		/// Shares what a quest found out among its vikings and a cart - the vikings carrying the heaviest things first,
+		/// after what the quest was for, then the cart taking heavy things (see HeavyWeight) up to half its full weight,
+		/// heaviest first, then light things in small stacks (see SmallStack) up to its full weight, lightest first -
+		/// leaving behind what doesn't fit, so the cart is never loaded so heavy it holds the vikings back for long
+		/// </summary>
+		/// <param name="found">What was found, each item and how many</param>
+		/// <param name="wanted">What the quest was for, which goes first, or ""</param>
+		/// <param name="spaces">Each viking's room, used up as they're given things</param>
+		/// <param name="cartSlots">The cart's slots</param>
+		/// <param name="weightOf">Gets an item's weight</param>
+		/// <param name="stackOf">Gets how many of an item make a stack</param>
+		/// <param name="cartShare">Set to what goes in the cart, none when it isn't needed</param>
+		/// <returns>What each viking carries home, in the order of spaces</returns>
+		internal static List<Dictionary<string, int>> ShareWithCart(List<KeyValuePair<string, int>> found, string wanted, List<CarrySpace> spaces, int cartSlots, System.Func<string, float> weightOf, System.Func<string, int> stackOf, out Dictionary<string, int> cartShare)
+		{
+			List<Dictionary<string, int>> shares = QuestSim.Share(HeavyFirst(found, wanted, weightOf), spaces, weightOf, stackOf);
+			Dictionary<string, int> left = new Dictionary<string, int>();
+			foreach (KeyValuePair<string, int> entry in found)
+			{
+				int carried = 0;
+				foreach (Dictionary<string, int> share in shares)
+				{
+					carried += (share.TryGetValue(entry.Key, out int count) ? count : 0);
+				}
+				if (entry.Value > carried)
+				{
+					left[entry.Key] = (left.TryGetValue(entry.Key, out int known) ? known : 0) + entry.Value - carried;
+				}
+			}
+			cartShare = new Dictionary<string, int>();
+			CarrySpace cart = new CarrySpace { WeightRoom = FullWeight / 2f, FreeSlots = cartSlots };
+			foreach (KeyValuePair<string, int> entry in HeavyFirst(ToList(left), wanted, weightOf))
+			{
+				if (weightOf(entry.Key) >= HeavyWeight)
+				{
+					TakeUnits(cart, cartShare, entry.Key, weightOf(entry.Key), stackOf(entry.Key), entry.Value);
+				}
+			}
+			cart.WeightRoom += FullWeight / 2f;
+			List<KeyValuePair<string, int>> light = HeavyFirst(ToList(left), "", weightOf);
+			light.Reverse();
+			foreach (KeyValuePair<string, int> entry in light)
+			{
+				int maxStack = stackOf(entry.Key);
+				if (weightOf(entry.Key) < HeavyWeight)
+				{
+					TakeUnits(cart, cartShare, entry.Key, weightOf(entry.Key), maxStack, Mathf.Min(entry.Value, SmallStack(maxStack)));
+				}
+			}
+			return(shares);
+		}
+
+		/// <summary>
+		/// Weighs up what's in a load
+		/// </summary>
+		/// <param name="load">Each item and how many</param>
+		/// <param name="weightOf">Gets an item's weight</param>
+		/// <returns>The weight</returns>
+		internal static float WeightOf(Dictionary<string, int> load, System.Func<string, float> weightOf)
+		{
+			float weight = 0f;
+			foreach (KeyValuePair<string, int> entry in load)
+			{
+				weight += weightOf(entry.Key) * entry.Value;
+			}
+			return(weight);
+		}
+
+		/// <summary>
+		/// Orders items heaviest first, after what's wanted, keeping the order they came in between items that weigh the
+		/// same
+		/// </summary>
+		/// <param name="items">Each item and how many</param>
+		/// <param name="wanted">The item that goes first, or ""</param>
+		/// <param name="weightOf">Gets an item's weight</param>
+		/// <returns>The items, ordered, a new list leaving out those there are none of</returns>
+		private static List<KeyValuePair<string, int>> HeavyFirst(List<KeyValuePair<string, int>> items, string wanted, System.Func<string, float> weightOf)
+		{
+			List<int> order = new List<int>();
+			for (int i = 0; i < items.Count; i++)
+			{
+				if (items[i].Value > 0)
+				{
+					order.Add(i);
+				}
+			}
+			order.Sort((int a, int b) =>
+			{
+				bool aWanted = (wanted.Length > 0 && items[a].Key == wanted);
+				bool bWanted = (wanted.Length > 0 && items[b].Key == wanted);
+				if (aWanted != bWanted)
+				{
+					return(aWanted ? -1 : 1);
+				}
+				int byWeight = weightOf(items[b].Key).CompareTo(weightOf(items[a].Key));
+				return((byWeight != 0) ? byWeight : a.CompareTo(b));
+			});
+			return(order.ConvertAll((int i) => items[i]));
+		}
+
+		/// <summary>
+		/// Lists a tally's items and how many of each
+		/// </summary>
+		/// <param name="tally">The tally</param>
+		/// <returns>The items</returns>
+		private static List<KeyValuePair<string, int>> ToList(Dictionary<string, int> tally)
+		{
+			return(new List<KeyValuePair<string, int>>(tally));
+		}
+
+		/// <summary>
+		/// Puts as many of an item in a cart as it has room for, up to a number - on a stack of it already there, or in
+		/// an empty slot
+		/// </summary>
+		/// <param name="space">The cart's room, used up</param>
+		/// <param name="share">What it holds, added to</param>
+		/// <param name="item">The item</param>
+		/// <param name="weight">Its weight</param>
+		/// <param name="maxStack">How many make a stack</param>
+		/// <param name="most">The most to put in</param>
+		/// <returns>How many went in</returns>
+		private static int TakeUnits(CarrySpace space, Dictionary<string, int> share, string item, float weight, int maxStack, int most)
+		{
+			maxStack = Mathf.Max(1, maxStack);
+			int taken = 0;
+			while (taken < most && space.WeightRoom >= weight)
+			{
+				int held = (share.TryGetValue(item, out int known) ? known : 0);
+				bool newSlot = (held % maxStack == 0);
+				if (newSlot && space.FreeSlots <= 0)
+				{
+					break;
+				}
+				if (newSlot)
+				{
+					space.FreeSlots--;
+				}
+				space.WeightRoom -= weight;
+				share[item] = held + 1;
+				taken++;
+			}
+			return(taken);
 		}
 
 		/// <summary>
@@ -61,6 +272,7 @@ namespace VikingVillages
 		/// Works out what a village's cart is up to from what its village can see of it
 		/// </summary>
 		/// <param name="allowed">Whether the village keeps a cart (see Allowed)</param>
+		/// <param name="onQuest">Whether its cart went out on a quest and hasn't come back yet</param>
 		/// <param name="recorded">Whether the village has noted a cart as its own</param>
 		/// <param name="known">Whether this client knows the cart's ZDO</param>
 		/// <param name="lastSeenLoaded">Whether where the cart was last seen is loaded here, so a cart that isn't known
@@ -71,11 +283,15 @@ namespace VikingVillages
 		/// <param name="awaySeconds">How long it has been out of reach, in seconds, or 0 when it hasn't</param>
 		/// <param name="daySeconds">How long a game day lasts, in seconds</param>
 		/// <returns>What it's up to</returns>
-		internal static CartState Decide(bool allowed, bool recorded, bool known, bool lastSeenLoaded, bool loaded, bool playerUsing, bool inside, double awaySeconds, double daySeconds)
+		internal static CartState Decide(bool allowed, bool onQuest, bool recorded, bool known, bool lastSeenLoaded, bool loaded, bool playerUsing, bool inside, double awaySeconds, double daySeconds)
 		{
 			if (!allowed)
 			{
 				return(CartState.None);
+			}
+			if (onQuest && !recorded)
+			{
+				return(CartState.OnQuest);
 			}
 			if (!recorded || (!known && lastSeenLoaded))
 			{
