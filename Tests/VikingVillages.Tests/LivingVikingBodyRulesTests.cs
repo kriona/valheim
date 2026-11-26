@@ -22,8 +22,8 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that a viking named Elsa is immune to frost whatever its case and byname, and one whose name only
-		/// starts with it or has none isn't
+		/// Checks that Elsa is immune to frost whatever her name's case and her byname, and a viking whose name only
+		/// starts with hers or who has none isn't
 		/// </summary>
 		/// <param name="name">The viking's name</param>
 		/// <param name="expected">True when it's immune</param>
@@ -38,6 +38,25 @@ namespace VikingVillages.Tests
 		public void ElsaIsFrostImmune(string name, bool expected)
 		{
 			Assert.Equal(expected, LivingVikingBodyRules.FrostImmune(name));
+			Assert.Equal(expected, VikingNames.IsElsa(name));
+		}
+
+		/// <summary>
+		/// Checks that Anna is found by her name whatever its case and her byname, and a viking whose name only starts
+		/// with hers or who has none isn't
+		/// </summary>
+		/// <param name="name">The viking's name</param>
+		/// <param name="expected">True when she's Anna</param>
+		[Theory]
+		[InlineData("Anna", true)]
+		[InlineData("anna the Bold", true)]
+		[InlineData("Elsa", false)]
+		[InlineData("Annabel", false)]
+		[InlineData("", false)]
+		[InlineData(null, false)]
+		public void GoesByAnna(string name, bool expected)
+		{
+			Assert.Equal(expected, VikingNames.IsAnna(name));
 		}
 
 		/// <summary>

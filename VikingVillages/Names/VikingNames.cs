@@ -402,6 +402,44 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// The names whose vikings take after Frozen's sisters - an Elsa immune to frost (see LivingVikingBody.FrostImmune)
+		/// and rolled with a long blond braid, an Anna rolled with red twin braids (see VikingCore.StyleAfterName)
+		/// </summary>
+		internal const string ElsaName = "Elsa";
+		internal const string AnnaName = "Anna";
+
+		/// <summary>
+		/// Checks whether a viking goes by ElsaName, whatever its case and byname
+		/// </summary>
+		/// <param name="name">The viking's name, or null</param>
+		/// <returns>True when it does</returns>
+		internal static bool IsElsa(string name)
+		{
+			return(GoesBy(name, ElsaName));
+		}
+
+		/// <summary>
+		/// Checks whether a viking goes by AnnaName, whatever its case and byname
+		/// </summary>
+		/// <param name="name">The viking's name, or null</param>
+		/// <returns>True when it does</returns>
+		internal static bool IsAnna(string name)
+		{
+			return(GoesBy(name, AnnaName));
+		}
+
+		/// <summary>
+		/// Checks whether a viking's first name is one name, whatever its case and byname
+		/// </summary>
+		/// <param name="name">The viking's name, or null</param>
+		/// <param name="first">The first name</param>
+		/// <returns>True when it is</returns>
+		private static bool GoesBy(string name, string first)
+		{
+			return(string.Equals(VikingLoreSpeech.FirstName(name), first, System.StringComparison.OrdinalIgnoreCase));
+		}
+
+		/// <summary>
 		/// Gets whether a name is a man's or a woman's, by which of MaleNames and FemaleNames lists it
 		/// </summary>
 		/// <param name="name">The name, without a byname</param>

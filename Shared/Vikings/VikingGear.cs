@@ -124,6 +124,21 @@ namespace Kriona.Vikings
 		private const float BeardChance = 0.7f;
 
 		/// <summary>
+		/// The blond and red of HairColors, and the range a viking's hair color is brightened or darkened by as it's
+		/// rolled
+		/// </summary>
+		private const int BlondHair = 2;
+		private const int RedHair = 3;
+		private const float HairBrightnessMin = 0.85f;
+		private const float HairBrightnessMax = 1.1f;
+
+		/// <summary>
+		/// The hair the game calls Long Braid and Twin Braids, as the player's customization stores them
+		/// </summary>
+		public const string LongBraidHair = "Hair11";
+		public const string TwinBraidsHair = "Hair13";
+
+		/// <summary>
 		/// The beard item of a viking with no beard, as the player's customization stores it
 		/// </summary>
 		public const string NoBeard = "BeardNone";
@@ -249,7 +264,7 @@ namespace Kriona.Vikings
 			data.Tombstone = false;
 			data.Biome = index;
 			data.SkinColor = Vector3.Lerp(PaleSkin, DarkSkin, Random.value);
-			data.HairColor = HairColors[Random.Range(0, HairColors.Length)] * Random.Range(0.85f, 1.1f);
+			data.HairColor = HairColors[Random.Range(0, HairColors.Length)] * Random.Range(HairBrightnessMin, HairBrightnessMax);
 			data.Hair = "Hair" + Random.Range(1, HairStyles + 1);
 			SetModel(data, Random.Range(0, 2));
 			data.MaxHealth = gear.Health;
@@ -274,6 +289,26 @@ namespace Kriona.Vikings
 		{
 			data.Model = model;
 			data.Beard = ((model == 0 && Random.value < BeardChance) ? "Beard" + Random.Range(1, BeardStyles + 1) : NoBeard);
+		}
+
+		/// <summary>
+		/// Gives a viking being rolled the blondest hair color a viking is rolled with - the blond of HairColors at the
+		/// brightest of the range it's rolled in
+		/// </summary>
+		/// <param name="data">Its data</param>
+		public static void MakeBlondest(VikingData data)
+		{
+			data.HairColor = HairColors[BlondHair] * HairBrightnessMax;
+		}
+
+		/// <summary>
+		/// Gives a viking being rolled red hair - the red of HairColors, brightened or darkened the way any viking's hair
+		/// color is rolled
+		/// </summary>
+		/// <param name="data">Its data</param>
+		public static void MakeRedhead(VikingData data)
+		{
+			data.HairColor = HairColors[RedHair] * Random.Range(HairBrightnessMin, HairBrightnessMax);
 		}
 
 		/// <summary>

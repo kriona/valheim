@@ -779,18 +779,14 @@ namespace VikingVillages
 	internal static class LivingVikingBodyRules
 	{
 		/// <summary>
-		/// The name a viking goes by that makes it immune to frost
-		/// </summary>
-		internal const string FrostImmuneName = "Elsa";
-
-		/// <summary>
-		/// Checks whether a viking's name makes it immune to frost - Elsa, whatever its case and byname
+		/// Checks whether a viking's name makes it immune to frost - Elsa, whatever its case and byname (see
+		/// VikingNames.IsElsa)
 		/// </summary>
 		/// <param name="name">The viking's name, or null</param>
 		/// <returns>True when it does</returns>
 		internal static bool FrostImmune(string name)
 		{
-			return(string.Equals(VikingLoreSpeech.FirstName(name), FrostImmuneName, System.StringComparison.OrdinalIgnoreCase));
+			return(VikingNames.IsElsa(name));
 		}
 
 		/// <summary>

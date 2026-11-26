@@ -74,7 +74,8 @@ namespace Kriona.Vikings
 		/// Rolls a new living viking's look, health, skill, power and gear for the biome it's in, or the hardest biome
 		/// within HardBiomeVikingReach of its village's farm when that's harder (see VillageFarmhouses.HardestBiomeNear),
 		/// as a man or a woman to suit a name it was given before it was rolled (see VikingNames.PresetFirst), and names
-		/// it - or a dvergr viking's for the Mistlands (see GenerateDvergr)
+		/// it, with the looks its name comes with (see StyleAfterName) - or a dvergr viking's for the Mistlands (see
+		/// GenerateDvergr)
 		/// </summary>
 		private partial void Generate()
 		{
@@ -106,13 +107,38 @@ namespace Kriona.Vikings
 			{
 				VikingGear.AddWisp(gear);
 			}
-			ZDO zdo = SaveGenerated(rolled, gear);
-			// It's named for whether it's a man or a woman - model 1 is a woman's
+			// It's named for whether it's a man or a woman - model 1 is a woman's - before its looks are saved, since some
+			// names come with looks of their own
+			ZDO zdo = nview.GetZDO();
 			VikingNames.GiveName(zdo, rolled, false);
+			StyleAfterName(zdo, rolled);
+			SaveGenerated(rolled, gear);
 			VillageTravel.NoteSpawned(zdo);
 			if (TestLog.On)
 			{
 				Plugin.Log.LogInfo("New viking: " + TestLog.Name(humanoid) + ", rolled up for the " + VikingGear.Biomes[index].Biome + (zdo.GetBool(ArcherKey) ? " as the village's archer" : ""));
+			}
+		}
+
+		/// <summary>
+		/// Gives a viking being rolled the looks its name comes with - an Elsa (see VikingNames.IsElsa) wears the game's
+		/// Long Braid, with the blondest hair a viking is rolled with, and an Anna (see VikingNames.IsAnna) its Twin
+		/// Braids, with red hair
+		/// </summary>
+		/// <param name="zdo">Its ZDO, with the name it was given</param>
+		/// <param name="rolled">Its data, not saved yet</param>
+		private static void StyleAfterName(ZDO zdo, VikingData rolled)
+		{
+			VikingNames.ReadRaw(zdo, out string name, out string _);
+			if (VikingNames.IsElsa(name))
+			{
+				rolled.Hair = VikingGear.LongBraidHair;
+				VikingGear.MakeBlondest(rolled);
+			}
+			else if (VikingNames.IsAnna(name))
+			{
+				rolled.Hair = VikingGear.TwinBraidsHair;
+				VikingGear.MakeRedhead(rolled);
 			}
 		}
 
