@@ -146,6 +146,92 @@ namespace VikingVillages
 		/// knows (see TakeAnswer)
 		/// </summary>
 		private bool wasLost;
+
+		/// <summary>
+		/// How near each other lost vikings have to be to set out as a group, in meters (see FormLostGroup)
+		/// </summary>
+		private const float LostGroupReach = 20f;
+
+		/// <summary>
+		/// For a lost viking gone with others lost near it as a group (see FormLostGroup), the one of them who decides where
+		/// they go, or null, and the road it took and what the group can do on it, which this one takes as soon as it's no
+		/// longer lost itself
+		/// </summary>
+		private VillageLife roadLeader;
+		private TravelPlanner.Answer leaderAnswer;
+		private TravelParty leaderParty;
+
+		/// <summary>
+		/// Gathers the other lost vikings within LostGroupReach of the viking, as it comes to, into a group it leads - those
+		/// still lost or waiting to know where to go, with no road or group of their own yet, run by this client - so they
+		/// decide where to go together: it alone asks for a road, for all of them (see RoadParty), and they drop their
+		/// own asking and take its road once it has one (see TakeAnswer), setting out as one group, which crosses the sea
+		/// together in the boats one of them builds (see Gather)
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		private void FormLostGroup(ZDO zdo)
+		{
+			if (roadLeader != null || zdo.GetString(VillageTravel.GroupKey, "").Length > 0)
+			{
+				return;
+			}
+			List<VillageLife> others = new List<VillageLife>();
+			foreach (VillageLife other in All)
+			{
+				if (other != this && !other.active && other.roadLeader == null && (other.road == Road.Confused || other.road == Road.Searching) && other.nview != null && other.nview.IsValid() && other.nview.IsOwner() && other.humanoid != null && !other.humanoid.IsDead() && !VillageTravel.OnRoad(other.nview.GetZDO()) && other.nview.GetZDO().GetString(VillageTravel.GroupKey, "").Length == 0 && Utils.DistanceXZ(other.transform.position, transform.position) <= LostGroupReach)
+				{
+					others.Add(other);
+				}
+			}
+			if (others.Count == 0)
+			{
+				return;
+			}
+			string group = "lost" + zdo.m_uid.ToString();
+			zdo.Set(VillageTravel.GroupKey, group);
+			foreach (VillageLife other in others)
+			{
+				other.nview.GetZDO().Set(VillageTravel.GroupKey, group);
+				other.roadLeader = this;
+				other.leaderAnswer = null;
+				other.leaderParty = null;
+				other.ForgetSearch();
+			}
+			Plugin.Log.LogInfo(LogName() + " gathers " + others.Count + " other lost vikings near it into a group, and decides where they go");
+			TestLog.Count("Travel", "lost vikings gone as a group");
+			AskRoad(true);
+		}
+
+		/// <summary>
+		/// Stops waiting on the road the viking asked the server for, for one that goes where its group's leader decides
+		/// </summary>
+		private void ForgetSearch()
+		{
+			if (onAnswer != null)
+			{
+				TravelPlanner.Forget(onAnswer);
+			}
+			onAnswer = null;
+			searching = false;
+			answered = null;
+		}
+
+		/// <summary>
+		/// Lists the lost vikings in the group the viking leads that haven't set out yet (see FormLostGroup)
+		/// </summary>
+		/// <returns>Them</returns>
+		private List<VillageLife> LostFollowers()
+		{
+			List<VillageLife> followers = new List<VillageLife>();
+			foreach (VillageLife other in All)
+			{
+				if (other != null && other != this && other.roadLeader == this)
+				{
+					followers.Add(other);
+				}
+			}
+			return(followers);
+		}
 		private float stillUntil;
 		private float nextLookAt;
 		private Vector3 lookToward;
@@ -415,6 +501,14 @@ namespace VikingVillages
 		{
 			TravelParty party = new TravelParty();
 			TravelPlanner.AddTo(party, humanoid, true);
+			// A lost group's leader asks for the whole group (see FormLostGroup)
+			foreach (VillageLife other in LostFollowers())
+			{
+				if (other.humanoid != null)
+				{
+					TravelPlanner.AddTo(party, other.humanoid, false);
+				}
+			}
 			if (VillageTravel.OnRoad(zdo))
 			{
 				TravelParty group = VillageTravel.PartyOf(zdo);
@@ -460,6 +554,7 @@ namespace VikingVillages
 				zdo.Set(VillageTravel.ConfusedKey, false);
 				road = Road.Searching;
 				wasLost = true;
+				FormLostGroup(zdo);
 			}
 			return(true);
 		}
@@ -474,6 +569,25 @@ namespace VikingVillages
 		{
 			mover = "waiting to know where to go";
 			ai.StopMoving();
+			if (roadLeader != null && roadLeader.humanoid != null && !roadLeader.humanoid.IsDead())
+			{
+				mover = "waiting for its group to decide where to go";
+				if (leaderAnswer != null)
+				{
+					TravelPlanner.Answer shared = leaderAnswer;
+					leaderAnswer = null;
+					TakeAnswer(zdo, shared);
+				}
+				return(true);
+			}
+			if ((object)roadLeader != null)
+			{
+				// Its group's leader is gone - unloaded or dead - so it decides for itself
+				roadLeader = null;
+				zdo.Set(VillageTravel.GroupKey, "");
+				AskRoad(true);
+				return(true);
+			}
 			if (answered != null)
 			{
 				TravelPlanner.Answer answer = answered;
@@ -493,16 +607,41 @@ namespace VikingVillages
 		/// <param name="answer">The server's answer</param>
 		private void TakeAnswer(ZDO zdo, TravelPlanner.Answer answer)
 		{
+			// A lost group's leader hands its road on to the rest, who take it as one group, and only it says so
+			TravelParty party = null;
+			bool follower = (roadLeader != null);
+			if (follower)
+			{
+				party = leaderParty;
+				roadLeader = null;
+				leaderParty = null;
+			}
+			else
+			{
+				List<VillageLife> followers = LostFollowers();
+				if (followers.Count > 0)
+				{
+					party = RoadParty(zdo);
+					foreach (VillageLife other in followers)
+					{
+						other.leaderAnswer = answer;
+						other.leaderParty = party;
+					}
+				}
+			}
 			if (wasLost)
 			{
 				wasLost = false;
-				VikingSpeech.Say(humanoid, (answer.Found ? VikingRoadSpeech.FoundWay(answer.Spoken()) : VikingRoadSpeech.Nowhere()), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
-				TakeRoad(zdo, answer);
+				if (!follower)
+				{
+					VikingSpeech.Say(humanoid, (answer.Found ? VikingRoadSpeech.FoundWay(answer.Spoken()) : VikingRoadSpeech.Nowhere()), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+				}
+				TakeRoad(zdo, answer, party);
 				// Its road talk starts later, so it doesn't talk over what it just said
 				nextRoadLine = Mathf.Max(nextRoadLine, Time.time + RoadLineMin);
 				return;
 			}
-			TakeRoad(zdo, answer);
+			TakeRoad(zdo, answer, party);
 		}
 
 		/// <summary>
@@ -510,7 +649,9 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
 		/// <param name="answer">The server's answer</param>
-		private void TakeRoad(ZDO zdo, TravelPlanner.Answer answer)
+		/// <param name="party">What its group can do on the road, or null to work it out from the viking (see
+		/// RoadParty)</param>
+		private void TakeRoad(ZDO zdo, TravelPlanner.Answer answer, TravelParty party)
 		{
 			if (!answer.Found)
 			{
@@ -531,7 +672,7 @@ namespace VikingVillages
 				nextSearchAt = Time.time + RecheckTime;
 				return;
 			}
-			VillageTravel.SetOut(zdo, answer, zdo.GetString(VillageTravel.GroupKey, ""), RoadParty(zdo));
+			VillageTravel.SetOut(zdo, answer, zdo.GetString(VillageTravel.GroupKey, ""), (party ?? RoadParty(zdo)));
 			LoadRoad(zdo);
 			road = Road.Travelling;
 			nextRoadLine = Time.time + Random.Range(RoadLineMin, RoadLineMax) / 3f;
