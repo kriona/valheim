@@ -1764,6 +1764,12 @@ namespace VikingVillages
 		private readonly Dictionary<ZDOID, float> avoided = new Dictionary<ZDOID, float>();
 
 		/// <summary>
+		/// The pieces the viking couldn't get to to repair or clear snow off, and until when it leaves each to the others
+		/// - kept apart from avoided, so a chest it gave up repairing is still one it eats from and stores in
+		/// </summary>
+		private readonly Dictionary<ZDOID, float> hammerAvoided = new Dictionary<ZDOID, float>();
+
+		/// <summary>
 		/// What the vikings this client runs have all given up on reaching, and when it's next pruned of what's
 		/// forgotten, every GiveUpPruneInterval seconds
 		/// </summary>
@@ -5555,7 +5561,7 @@ namespace VikingVillages
 			foreach (WearNTear piece in damaged)
 			{
 				ZNetView view = piece.GetComponent<ZNetView>();
-				if (view != null && view.IsValid() && !Avoided(view.GetZDO().m_uid) && ClaimWork(view.GetZDO().m_uid))
+				if (view != null && view.IsValid() && !HammerAvoided(view.GetZDO().m_uid) && ClaimWork(view.GetZDO().m_uid))
 				{
 					return(new RepairJob(this, piece, view.GetZDO().m_uid));
 				}
@@ -5564,7 +5570,7 @@ namespace VikingVillages
 			foreach (WearNTear piece in VillageSnow.Snowy(village, transform.position))
 			{
 				ZNetView view = piece.m_nview;
-				if (!Warded(piece.transform.position) && !Avoided(view.GetZDO().m_uid) && ClaimWork(view.GetZDO().m_uid))
+				if (!Warded(piece.transform.position) && !HammerAvoided(view.GetZDO().m_uid) && ClaimWork(view.GetZDO().m_uid))
 				{
 					return(new SnowJob(this, piece, view.GetZDO().m_uid));
 				}
@@ -7170,12 +7176,35 @@ namespace VikingVillages
 		/// <param name="seconds">How long it's left alone</param>
 		private void Avoid(ZNetView view, float seconds = AvoidTime)
 		{
+			Avoid(avoided, view, seconds);
+		}
+
+		/// <summary>
+		/// Leaves a piece the viking couldn't get to to repair or clear snow off to the others for RepairAvoidTime - for
+		/// that work alone (see HammerAvoided), so a chest it gave up on is still one it uses - noting the failed try for
+		/// the village the way Avoid does
+		/// </summary>
+		/// <param name="view">The piece</param>
+		private void AvoidHammerWork(ZNetView view)
+		{
+			Avoid(hammerAvoided, view, RepairAvoidTime);
+		}
+
+		/// <summary>
+		/// Notes in a list of the things the viking leaves alone that it couldn't get to a chest, loot or piece (see
+		/// Avoid)
+		/// </summary>
+		/// <param name="list">The list, by ZDO, with until when each is left alone</param>
+		/// <param name="view">The chest, loot or piece</param>
+		/// <param name="seconds">How long it's left alone</param>
+		private void Avoid(Dictionary<ZDOID, float> list, ZNetView view, float seconds)
+		{
 			if (view == null || !view.IsValid())
 			{
 				return;
 			}
 			List<ZDOID> expired = new List<ZDOID>();
-			foreach (KeyValuePair<ZDOID, float> entry in avoided)
+			foreach (KeyValuePair<ZDOID, float> entry in list)
 			{
 				if (Time.time >= entry.Value)
 				{
@@ -7184,10 +7213,10 @@ namespace VikingVillages
 			}
 			foreach (ZDOID id in expired)
 			{
-				avoided.Remove(id);
+				list.Remove(id);
 			}
 			ZDOID thing = view.GetZDO().m_uid;
-			avoided[thing] = Time.time + seconds;
+			list[thing] = Time.time + seconds;
 			string name = Utils.GetPrefabName(view.gameObject);
 			bool chest = (view.GetComponent<Container>() != null);
 			TestLog.Count("Couldn't reach, by job", LogJobName());
@@ -7357,6 +7386,17 @@ namespace VikingVillages
 		private bool Avoided(ZDOID id)
 		{
 			return((avoided.TryGetValue(id, out float until) && Time.time < until) || giveUps.GivenUp(id, Time.time));
+		}
+
+		/// <summary>
+		/// Checks whether the viking is leaving a piece alone for repairing and clearing snow off, after it couldn't get
+		/// to it for that work or it couldn't get to it at all (see Avoided)
+		/// </summary>
+		/// <param name="id">The piece's ZDO</param>
+		/// <returns>True while it is</returns>
+		private bool HammerAvoided(ZDOID id)
+		{
+			return((hammerAvoided.TryGetValue(id, out float until) && Time.time < until) || Avoided(id));
 		}
 
 		/// <summary>
@@ -13442,7 +13482,7 @@ namespace VikingVillages
 				{
 					life.LogHammerGiveUp("Repair", piece, false, hasAim, aim, stand, standOnMesh);
 					life.ai.StopMoving();
-					life.Avoid(piece.m_nview, RepairAvoidTime);
+					life.AvoidHammerWork(piece.m_nview);
 					return(true);
 				}
 				// A long piece like a fence is worked on from wherever along it is nearest where the viking started, picked
@@ -13463,7 +13503,7 @@ namespace VikingVillages
 					{
 						// It can't get to this piece, so it leaves it alone for a while rather than trying it again
 						life.LogHammerGiveUp("Repair", piece, true, hasAim, aim, stand, standOnMesh);
-						life.Avoid(piece.m_nview, RepairAvoidTime);
+						life.AvoidHammerWork(piece.m_nview);
 						return(true);
 					}
 					return(false);
@@ -13550,7 +13590,7 @@ namespace VikingVillages
 				{
 					life.LogHammerGiveUp("Snow", piece, false, hasAim, aim, stand, standOnMesh);
 					life.ai.StopMoving();
-					life.Avoid(piece.m_nview, RepairAvoidTime);
+					life.AvoidHammerWork(piece.m_nview);
 					return(true);
 				}
 				// Picked once and walked to on the ground under it, the way a piece is repaired
@@ -13568,7 +13608,7 @@ namespace VikingVillages
 					if (life.moveFailed)
 					{
 						life.LogHammerGiveUp("Snow", piece, true, hasAim, aim, stand, standOnMesh);
-						life.Avoid(piece.m_nview, RepairAvoidTime);
+						life.AvoidHammerWork(piece.m_nview);
 						return(true);
 					}
 					return(false);

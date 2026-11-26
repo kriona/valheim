@@ -138,7 +138,7 @@ A Viking who finds no wood skips work that takes it for 60 seconds, unless they 
 
 ### Giving Up
 
-Something a Viking can't get to - a chest, an item, a tree, prey - they leave alone for 60 seconds, and a piece to repair or clear snow off for 5 minutes. Once 3 tries by at least 2 Vikings have failed within 10 minutes, every Viking leaves it alone for 30 minutes, then an hour, and so on up to 2 hours each time it happens again.
+Something a Viking can't get to - a chest, an item, a tree, prey - they leave alone for 60 seconds, and a piece to repair or clear snow off for 5 minutes - for that work alone, so a chest they couldn't get to to repair is still one they eat from, store in and take from. Once 3 tries by at least 2 Vikings have failed within 10 minutes, every Viking leaves it alone for 30 minutes, then an hour, and so on up to 2 hours each time it happens again.
 
 A Viking who walks for 10 seconds without getting half a meter nearer gives up on where they were going. After 3 seconds held up, they open or close a door beside them, or jump a low obstacle like a pen's fence, up to 3 times - one shut in a pen climbs over its fence on their 4th jump out, however far apart the jumps come - and after 1 second, they ask Vikings standing about, strolling, talking, petting a boar or standing at the fire within 2.5 meters ahead of them to step 2 meters aside.
 
