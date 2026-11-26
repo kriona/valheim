@@ -54,7 +54,7 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void PartySurvivesBeingWrittenAndRead()
 		{
-			TravelParty party = new TravelParty { Easiest = 1, Hardest = 5, Unteleportable = true, SwimMeters = 62.5f };
+			TravelParty party = new TravelParty { Easiest = 1, Hardest = 5, Unteleportable = true, SwimMeters = 62.5f, Cart = true };
 			ZPackage pkg = new ZPackage();
 			party.Write(pkg);
 			TravelParty read = TravelParty.Read(new ZPackage(pkg.GetArray()));
@@ -62,6 +62,7 @@ namespace VikingVillages.Tests
 			Assert.Equal(5, read.Hardest);
 			Assert.True(read.Unteleportable);
 			Assert.Equal(62.5f, read.SwimMeters);
+			Assert.True(read.Cart);
 		}
 
 		[Fact]

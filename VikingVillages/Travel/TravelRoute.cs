@@ -395,8 +395,14 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Whether the vikings pull a cart along the road, so it keeps off rough ground where it can (see
+		/// CartRules.Rough)
+		/// </summary>
+		public bool Cart;
+
+		/// <summary>
 		/// Works out how long a meter of a square takes - by boat, on foot over land and swimming across a river or lake,
-		/// longer for each biome it's harder than the viking's own
+		/// longer for each biome it's harder than the viking's own, and longer on rough ground for vikings pulling a cart
 		/// </summary>
 		/// <param name="cell">The square</param>
 		/// <param name="sailing">Whether it's crossed by boat</param>
@@ -407,7 +413,8 @@ namespace VikingVillages
 			{
 				return(1f / boatSpeed);
 			}
-			return((1f + HarderCost * Mathf.Max(0, cell.Biome - biome)) / (cell.Water ? TravelTime.SwimSpeed : TravelTime.Speed));
+			float rough = ((Cart && !cell.Water && CartRules.Rough(cell.Biome)) ? CartRules.RoughCost : 0f);
+			return((1f + HarderCost * Mathf.Max(0, cell.Biome - biome) + rough) / (cell.Water ? TravelTime.SwimSpeed : TravelTime.Speed));
 		}
 
 		/// <summary>

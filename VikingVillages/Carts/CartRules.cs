@@ -68,6 +68,23 @@ namespace VikingVillages
 		private const float SlowdownMost = 1.5f;
 
 		/// <summary>
+		/// How much longer a meter of rough ground counts as taking for a road a cart is pulled along, on top of its
+		/// usual time (see Rough), so the road keeps off it where it can
+		/// </summary>
+		internal const float RoughCost = 2f;
+
+		/// <summary>
+		/// Checks whether a biome is rough ground for pulling a cart - the Swamp's mire, the Mountains' slopes and the
+		/// Mistlands' cliffs
+		/// </summary>
+		/// <param name="biome">The biome's index (see ResourceBook)</param>
+		/// <returns>True when it is</returns>
+		internal static bool Rough(int biome)
+		{
+			return(biome == ResourceBook.Swamp || biome == ResourceBook.Mountain || biome == ResourceBook.Mistlands);
+		}
+
+		/// <summary>
 		/// The weight from which an item counts as heavy for loading a cart - wood, stone, ore and metal - rather than
 		/// light, like trophies, hides and feathers
 		/// </summary>

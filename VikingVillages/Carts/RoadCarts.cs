@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Kriona.Vikings;
 using UnityEngine;
 
 namespace VikingVillages
@@ -104,8 +105,77 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Takes a viking's cart down with one swing of its hammer before it steps through a portal or sets sail - keeping
+		/// what the cart holds on the viking, the way the server does as it takes the viking off the road (see Stow), so
+		/// the viking builds it back holding the same on the other side (see PutBack)
+		/// </summary>
+		/// <param name="viking">The viking's ZDO</param>
+		/// <param name="cart">The cart</param>
+		public static void PackUp(ZDO viking, Vagon cart)
+		{
+			CartHitch.Unhitch(cart);
+			ZPackage items = new ZPackage();
+			cart.m_container.GetInventory().Save(items);
+			viking.Set(LoadKey, items.GetArray());
+			viking.Set(KeptKey, true);
+			viking.Set(CartKey, ZDOID.None);
+			// It's taken down whole, so nothing drops - it goes along with the viking
+			cart.m_nview.ClaimOwnership();
+			cart.m_nview.Destroy();
+		}
+
+		/// <summary>
+		/// Reads what a viking's kept cart holds
+		/// </summary>
+		/// <param name="viking">The viking's ZDO</param>
+		/// <returns>What it holds, or null when it has no cart kept or it can't be read</returns>
+		private static Inventory KeptLoad(ZDO viking)
+		{
+			byte[] items = viking.GetByteArray(LoadKey);
+			if (!viking.GetBool(KeptKey) || items == null || items.Length == 0)
+			{
+				return(null);
+			}
+			try
+			{
+				Inventory load = new Inventory("", null, 8, 8);
+				load.Load(new ZPackage(items));
+				return(load);
+			}
+			catch (System.Exception)
+			{
+				return(null);
+			}
+		}
+
+		/// <summary>
+		/// Weighs what a viking's kept cart holds
+		/// </summary>
+		/// <param name="viking">The viking's ZDO</param>
+		/// <returns>The weight, or 0 with no cart kept</returns>
+		public static float KeptWeight(ZDO viking)
+		{
+			Inventory load = KeptLoad(viking);
+			return((load != null) ? load.GetTotalWeight() : 0f);
+		}
+
+		/// <summary>
+		/// Checks whether a viking's cart, in the world or kept, holds something a portal won't take (see
+		/// TravelPlanner.Unteleportable)
+		/// </summary>
+		/// <param name="viking">The viking</param>
+		/// <returns>True when it does</returns>
+		public static bool CarriesUnteleportable(Humanoid viking)
+		{
+			ZDO zdo = viking.m_nview.GetZDO();
+			Vagon cart = Of(zdo);
+			Inventory load = ((cart != null && cart.m_container != null) ? cart.m_container.GetInventory() : KeptLoad(zdo));
+			return(TravelPlanner.Unteleportable(load));
+		}
+
+		/// <summary>
 		/// Puts a viking's kept cart back in the world behind it, holding what it held, as the viking comes back into the
-		/// world - hooked up, ready to pull
+		/// world - built back with one swing of its hammer, hooked up, ready to pull
 		/// </summary>
 		/// <param name="puller">The viking, owned by this client</param>
 		/// <param name="village">The village the cart belongs to as it's put back, or null on the road</param>
@@ -120,6 +190,7 @@ namespace VikingVillages
 			byte[] items = viking.GetByteArray(LoadKey);
 			viking.Set(KeptKey, false);
 			viking.Set(LoadKey, new byte[0]);
+			VikingPoses.Swing(puller);
 			Vagon cart = Spawn(puller, village);
 			if (cart == null)
 			{

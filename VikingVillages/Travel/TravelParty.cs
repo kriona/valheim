@@ -3,7 +3,8 @@ namespace VikingVillages
 	/// <summary>
 	/// What a group of vikings setting out together can do on the road - the easiest biome among them, which the road
 	/// keeps to and the village they go to is no harder than, the hardest, whose best boat they all sail in, whether
-	/// any of them carries something a portal won't take, like ore, and how far the weakest swimmer among them swims
+	/// any of them carries something a portal won't take, like ore, how far the weakest swimmer among them swims, and
+	/// whether any of them pulls a cart
 	/// </summary>
 	internal class TravelParty
 	{
@@ -24,6 +25,11 @@ namespace VikingVillages
 		/// TravelRoute.SwimSquares)
 		/// </summary>
 		public float SwimMeters;
+
+		/// <summary>
+		/// Whether any of them pulls a cart, so the road keeps off rough ground where it can (see CartRules.Rough)
+		/// </summary>
+		public bool Cart;
 
 		/// <summary>
 		/// Notes how far a viking of the party swims - the first one noted setting it, and each after only shortening it
@@ -65,7 +71,7 @@ namespace VikingVillages
 		/// boat it would sail where its road crosses the sea, whether or not it does</returns>
 		public string Describe()
 		{
-			return("biomes " + Easiest + ((Hardest != Easiest) ? "-" + Hardest : "") + ", sails a " + TravelTime.BoatName(Hardest) + ((SwimMeters > 0f) ? ", swimming " + SwimMeters.ToString("F0") + "m" : "") + (Unteleportable ? ", carrying what no portal takes" : ""));
+			return("biomes " + Easiest + ((Hardest != Easiest) ? "-" + Hardest : "") + ", sails a " + TravelTime.BoatName(Hardest) + ((SwimMeters > 0f) ? ", swimming " + SwimMeters.ToString("F0") + "m" : "") + (Unteleportable ? ", carrying what no portal takes" : "") + (Cart ? ", pulling a cart" : ""));
 		}
 
 		/// <summary>
@@ -78,6 +84,7 @@ namespace VikingVillages
 			pkg.Write(Hardest);
 			pkg.Write(Unteleportable);
 			pkg.Write(SwimMeters);
+			pkg.Write(Cart);
 		}
 
 		/// <summary>
@@ -92,6 +99,7 @@ namespace VikingVillages
 			party.Hardest = pkg.ReadInt();
 			party.Unteleportable = pkg.ReadBool();
 			party.SwimMeters = pkg.ReadSingle();
+			party.Cart = pkg.ReadBool();
 			return(party);
 		}
 	}

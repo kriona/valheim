@@ -95,6 +95,70 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// The hammer swing that takes the viking's cart down before it steps through a portal or sets sail
+		/// </summary>
+		private HammerWork packSwing;
+
+		/// <summary>
+		/// Takes the viking's cart down before it steps through a portal or sets sail - letting go of it, walking up to it
+		/// and swinging a hammer at it, which keeps what it holds on the viking to build it back with on the other side
+		/// (see RoadCarts.PackUp)
+		/// </summary>
+		/// <param name="dt">Seconds since the AI's last update</param>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True while it's taking its cart down</returns>
+		private bool PackRoadCart(float dt, ZDO zdo)
+		{
+			Vagon cart = RoadCarts.Of(zdo);
+			if (cart == null)
+			{
+				packSwing = null;
+				return(false);
+			}
+			ReleaseRoadCart();
+			mover = "taking its cart down";
+			if (packSwing == null)
+			{
+				packSwing = new HammerWork(this, RebuildSwings);
+			}
+			if (!packSwing.Tick(dt, cart.transform.position))
+			{
+				if (!moveFailed)
+				{
+					return(true);
+				}
+				moveFailed = false;
+			}
+			packSwing = null;
+			HoldHammer(false);
+			RoadCarts.PackUp(zdo, cart);
+			TestLog.Count("Carts", "taken down to cross");
+			Plugin.Log.LogInfo(LogName() + " took its cart down at " + transform.position.ToString("F0") + " to cross, keeping what it held");
+			return(false);
+		}
+
+		/// <summary>
+		/// Checks whether the viking or its cart carries something a portal won't take that its road was planned without,
+		/// in a world whose portals don't take everything - noting it, so its road is planned again without such portals
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True when its road has to be planned again</returns>
+		private bool PortalRefuses(ZDO zdo)
+		{
+			if (zdo.GetBool(VillageTravel.UnteleportableKey) || (ZoneSystem.instance != null && ZoneSystem.instance.GetGlobalKey(GlobalKeys.TeleportAll)))
+			{
+				return(false);
+			}
+			if (!TravelPlanner.Unteleportable(humanoid.GetInventory()) && !(RoadCarts.Has(zdo) && RoadCarts.CarriesUnteleportable(humanoid)))
+			{
+				return(false);
+			}
+			zdo.Set(VillageTravel.UnteleportableKey, true);
+			Plugin.Log.LogInfo(LogName() + " carries what a portal won't take, and plans its road again without the portal at " + transform.position.ToString("F0"));
+			return(true);
+		}
+
+		/// <summary>
 		/// Lets go of the viking's cart where it stands, as a fight starts - it goes back for it once it's over
 		/// </summary>
 		private void ReleaseRoadCart()

@@ -86,6 +86,12 @@ namespace VikingVillages
 		private const float RoadCheckInterval = 30f;
 
 		/// <summary>
+		/// A boat speed so fast that a road's time with it is only its time on land, in meters a second - for working out
+		/// how much a cart slows a group, which it only does on land
+		/// </summary>
+		private const float LandOnlyBoat = 100000f;
+
+		/// <summary>
 		/// When the server next looks at the portals on its groups' roads, in Time.time seconds, and the groups whose road
 		/// it's planning again
 		/// </summary>
@@ -949,6 +955,19 @@ namespace VikingVillages
 			{
 				entry.Journey = TravelJourney.Along(behind, boat, entry.Unteleportable);
 				entry.Remaining = entry.Journey.TotalSeconds();
+				// The group goes as fast as its heaviest cart lets it on land - by boat, the carts are taken down
+				float load = 0f;
+				foreach (ZDO zdo in members)
+				{
+					load = Mathf.Max(load, RoadCarts.KeptWeight(zdo));
+				}
+				float extra = ((load > 0f) ? behind.TotalSeconds(LandOnlyBoat) * (CartRules.Slowdown(load) - 1f) : 0f);
+				if (extra > 0f)
+				{
+					entry.Journey.AddStay(extra);
+					entry.Remaining += extra;
+					Plugin.Log.LogInfo("Travel: a cart holding " + load.ToString("F0") + " weight slows the group by " + extra.ToString("F0") + "s");
+				}
 			}
 			entry.Due = entry.Unloaded + NetTime.Ticks(entry.Remaining);
 			Plugin.Log.LogInfo("Travel: " + members.Count + " vikings (" + party.Describe() + ") " + how + " on their way to the village at " + entry.Destination.ToString("F0") + ", " + entry.Spent.ToString("F0") + "s into the road, due there in " + entry.Remaining.ToString("F0") + "s");

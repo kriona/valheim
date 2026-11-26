@@ -206,6 +206,19 @@ namespace VikingVillages.Tests
 			Assert.True(CartRules.WeightOf(cart, WeightOf) <= CartRules.FullWeight);
 		}
 
+		[Theory]
+		[InlineData(ResourceBook.Meadows, false)]
+		[InlineData(ResourceBook.BlackForest, false)]
+		[InlineData(ResourceBook.Swamp, true)]
+		[InlineData(ResourceBook.Mountain, true)]
+		[InlineData(ResourceBook.Plains, false)]
+		[InlineData(ResourceBook.Mistlands, true)]
+		[InlineData(ResourceBook.DeepNorth, false)]
+		public void SwampsMountainsAndMistlandsAreRoughForACart(int biome, bool expected)
+		{
+			Assert.Equal(expected, CartRules.Rough(biome));
+		}
+
 		[Fact]
 		public void FoodComesFirstAndTrophiesLast()
 		{

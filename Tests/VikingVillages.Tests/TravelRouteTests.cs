@@ -87,6 +87,27 @@ namespace VikingVillages.Tests
 		}
 
 		[Fact]
+		public void ARoadWithACartGoesAroundRoughGround()
+		{
+			// A strip of Swamp at x 300-400 that ends to the north at z 150, all of the viking's own biome
+			System.Func<float, float, TravelRoute.Cell> map = (float x, float z) => new TravelRoute.Cell { Open = true, Biome = ((x > 300f && x < 400f && z < 150f) ? ResourceBook.Swamp : ResourceBook.Swamp - 1) };
+			Vector3 from = new Vector3(100f, 0f, 0f);
+			Vector3 village = new Vector3(600f, 0f, 0f);
+			TravelRoute walking = Run(from, ResourceBook.Swamp, Raft, new List<Vector3> { village }, map);
+			Assert.Contains(walking.Road.Points, (Vector3 point) => point.x > 320f && point.x < 380f && point.z < 130f);
+			TravelRoute pulling = new TravelRoute(from, ResourceBook.Swamp, Raft, new List<Vector3> { village }, map);
+			pulling.Cart = true;
+			int steps = 0;
+			while (!pulling.Step(1000))
+			{
+				steps++;
+				Assert.True(steps < 2000, "The search never ended");
+			}
+			Assert.Equal(0, pulling.Found);
+			Assert.DoesNotContain(pulling.Road.Points, (Vector3 point) => point.x > 320f && point.x < 380f && point.z < 130f);
+		}
+
+		[Fact]
 		public void FarVillagesAreFound()
 		{
 			TravelRoute route = Run(Vector3.zero, 0, Raft, new List<Vector3> { new Vector3(7000f, 0f, 0f) }, Meadows);

@@ -783,6 +783,11 @@ namespace VikingVillages
 			}
 			if (travelRoad.SeaLeg(roadLeg))
 			{
+				// Its cart is taken down at the shore, to be built back where it comes ashore
+				if (PackRoadCart(dt, zdo))
+				{
+					return(true);
+				}
 				return(UpdateCrossing(dt, zdo));
 			}
 			if (travelRoad.PortalLeg(roadLeg))
@@ -933,7 +938,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Has a viking that reached a portal on its road step into it - saying so, and standing at the portal until the
+		/// Has a viking that reached a portal on its road step into it - pulling its cart up to it and taking it down
+		/// first (see PackRoadCart), or planning its road again when it carries what the portal won't take (see
+		/// PortalRefuses) - saying so, and standing at the portal until the
 		/// server takes it and the rest of its group off the road together, which it does once they've all reached it or
 		/// are out of every player's reach (see VillageTravel.TakeOffRoad), so the group never splits up
 		/// </summary>
@@ -946,11 +953,22 @@ namespace VikingVillages
 			Vector3 entry = travelRoad.Points[roadLeg - 1];
 			if (Utils.DistanceXZ(transform.position, entry) > WaypointReach)
 			{
-				Go(dt, entry, WaypointReach / 2f, false);
+				RoadGo(dt, entry, WaypointReach / 2f);
 				moveFailed = false;
 				return(true);
 			}
 			ai.StopMoving();
+			// What it found or loaded since its road was planned may be what a portal won't take
+			if (!zdo.GetBool(VillageTravel.PortalKey) && PortalRefuses(zdo))
+			{
+				AskRoad(true);
+				return(true);
+			}
+			// Its cart is taken down by the portal, to be built back on the other side
+			if (!zdo.GetBool(VillageTravel.PortalKey) && PackRoadCart(dt, zdo))
+			{
+				return(true);
+			}
 			if (!zdo.GetBool(VillageTravel.PortalKey))
 			{
 				VillageTravel.EnterPortal(zdo);

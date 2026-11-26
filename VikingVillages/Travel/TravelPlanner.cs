@@ -273,7 +273,10 @@ namespace VikingVillages
 		public static void AddTo(TravelParty party, Humanoid viking, bool first)
 		{
 			VikingCore core = viking.GetComponent<VikingCore>();
-			party.Add(((core != null) ? core.BiomeIndex() : 0), Unteleportable(viking.GetInventory()), first);
+			ZDO zdo = ((viking.m_nview != null && viking.m_nview.IsValid()) ? viking.m_nview.GetZDO() : null);
+			bool cart = (zdo != null && RoadCarts.Has(zdo));
+			party.Add(((core != null) ? core.BiomeIndex() : 0), Unteleportable(viking.GetInventory()) || (cart && RoadCarts.CarriesUnteleportable(viking)), first);
+			party.Cart |= cart;
 			LivingVikingBody body = viking as LivingVikingBody;
 			float food = ((body != null && body.Food != null) ? body.Food.FoodStamina() : 0f);
 			party.AddSwimmer(BoatRules.SwimMeters(food, viking.GetSkillFactor(Skills.SkillType.Swim), Game.m_moveStaminaRate, viking.m_swimSpeed), first);
@@ -593,6 +596,7 @@ namespace VikingVillages
 			List<Vector3> targets = search.Candidates.ConvertAll((Candidate candidate) => candidate.Position);
 			int boat = search.Party.Hardest;
 			search.Route = new TravelRoute(search.From, search.Party.Easiest, TravelTime.BoatSpeed(boat), BoatFireproof(boat), search.Party.SwimMeters, targets, Sample, UsablePortals(search.Party));
+			search.Route.Cart = search.Party.Cart;
 		}
 
 		/// <summary>
