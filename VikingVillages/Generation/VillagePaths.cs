@@ -1619,6 +1619,19 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Checks whether one house added to a village for a player's bed still needs its path - it's still among the
+		/// added houses, and its path hasn't been made
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="added">The houses added to it for players' beds</param>
+		/// <param name="house">The house</param>
+		/// <returns>True when it does</returns>
+		public static bool StillNeedsPath(Village village, List<House> added, House house)
+		{
+			return(HasHouse(added, house) && !HasHouse(PathedHouses(village.Zdo), house));
+		}
+
+		/// <summary>
 		/// Plans the path a viking makes with a hoe for the first house added to a village for a player's bed that has
 		/// none yet - to the nearest of the village's other houses that has one, steering around what the village's own
 		/// paths steer around, from door to door, once everything between them has loaded, and crossing water a bridge can

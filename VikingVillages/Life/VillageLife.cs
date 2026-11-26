@@ -155,6 +155,22 @@ namespace VikingVillages
 		private static readonly Dictionary<ZDOID, float> nextPathPlan = new Dictionary<ZDOID, float>();
 
 		/// <summary>
+		/// The path each village's vikings are partway through making, by its generator's ZDO - kept when the viking
+		/// making it is called away, so whoever takes it up next carries on from where it left off (see FindPathWork)
+		/// </summary>
+		private static readonly Dictionary<ZDOID, PathProgress> pathProgress = new Dictionary<ZDOID, PathProgress>();
+
+		/// <summary>
+		/// A house's path partway made - its plan, the next of its spots to hoe and the next of its bridges to build
+		/// </summary>
+		private class PathProgress
+		{
+			public VillagePaths.HousePath Plan;
+			public int Next;
+			public int BridgeNext;
+		}
+
+		/// <summary>
 		/// The prey each hunting viking on this client has gone for, which its AI treats as an enemy even when it isn't
 		/// one, like a deer
 		/// </summary>
@@ -5229,7 +5245,8 @@ namespace VikingVillages
 		/// burning, until the weather clears, then cooking the raw food it carries or the chests hold at a cooking station, then
 		/// putting away loot it already carries, then loot lying around the village to put in a chest, then gear in the
 		/// village's chests better than its own to take up, then for an archer arrows in a chest while it's missing a
-		/// batch or better ones than its best, then the nearest damaged piece of the village to repair, then
+		/// batch or better ones than its best, then a path for a house added for a player's bed (see FindPathWork), then
+		/// the nearest damaged piece of the village to repair, then
 		/// its own gear to repair at the
 		/// workbench or forge when a piece of it has worn down to GearWornShare, then the village's bonfire or campfire to
 		/// build back when it's been destroyed, which takes nothing, then a sitting log left by the village's old fire to
@@ -5240,7 +5257,7 @@ namespace VikingVillages
 		/// everything it takes (see FindUpgradeWork), then the next step toward the village's goal - smelting or crafting
 		/// what it takes (see FindGoalWork) - then tools for the chests (see FindToolStockWork), then with Zombie
 		/// Apocalypse a weapon of its own to line with silver (see FindLiningWork) and silver arrows to restock (see
-		/// FindSilverArrowWork), then paths and beehives -
+		/// FindSilverArrowWork), then beehives -
 		/// leaving out work that needs wood for a while after it found none to gather, unless there's wood in the
 		/// village's chests
 		/// </summary>
@@ -5312,6 +5329,16 @@ namespace VikingVillages
 			if (quiver != null)
 			{
 				return(new AmmoJob(this, quiver));
+			}
+			// A new house's path comes ahead of the village's upkeep - one viking at a time makes it, leaving the rest to
+			// the upkeep - and waits out a thunderstorm, while light rain doesn't put it off
+			if (!VikingWeather.Storming())
+			{
+				Job paths = FindPathWork();
+				if (paths != null)
+				{
+					return(paths);
+				}
 			}
 			List<WearNTear> damaged = VillageRecords.Damaged(village);
 			damaged.Sort((WearNTear a, WearNTear b) => Vector3.Distance(a.transform.position, transform.position).CompareTo(Vector3.Distance(b.transform.position, transform.position)));
@@ -5422,15 +5449,10 @@ namespace VikingVillages
 			{
 				return(silverArrows);
 			}
-			// Paths and beehives wait out a thunderstorm, while light rain doesn't put them off
+			// Beehives wait out a thunderstorm, while light rain doesn't put them off
 			if (VikingWeather.Storming())
 			{
 				return(null);
-			}
-			Job paths = FindPathWork();
-			if (paths != null)
-			{
-				return(paths);
 			}
 			Job hive = FindHiveWork();
 			if (hive != null)
@@ -5839,13 +5861,18 @@ namespace VikingVillages
 			{
 				why = "waiting for a viking free of other work";
 			}
+			if (maker == null && pathProgress.TryGetValue(village.Zdo.m_uid, out PathProgress started))
+			{
+				why += " - " + started.Next + "/" + started.Plan.Spots.Count + " made so far";
+			}
 			return("Paths: a house added for a player's bed has none yet, " + why + "\n");
 		}
 
 		/// <summary>
 		/// Finds a path for the viking to make with a hoe - from a house added to the village for a player's bed to the
 		/// rest of the village, when no other viking is making one and the village has a workbench, with a hoe of its own
-		/// or in a chest, or what one takes to craft. When the village is short of something a hoe takes, like stone, it
+		/// or in a chest, or what one takes to craft. A path partway made is carried on from where it was left, without
+		/// waiting to plan one (see pathProgress). When the village is short of something a hoe takes, like stone, it
 		/// goes out for it instead (see GatherFor)
 		/// </summary>
 		/// <returns>The job, or null when there's no path to make or no way to get a hoe</returns>
@@ -5856,12 +5883,18 @@ namespace VikingVillages
 				return(null);
 			}
 			List<VillagePaths.House> added = VillageBeds.AddedHouses(village);
+			ZDOID id = village.Zdo.m_uid;
 			if (added.Count == 0 || !VillagePaths.NeedsPath(village, added))
 			{
+				pathProgress.Remove(id);
 				return(null);
 			}
-			ZDOID id = village.Zdo.m_uid;
-			if (nextPathPlan.TryGetValue(id, out float next) && Time.time < next)
+			if (pathProgress.TryGetValue(id, out PathProgress started) && !VillagePaths.StillNeedsPath(village, added, started.Plan.House))
+			{
+				pathProgress.Remove(id);
+				started = null;
+			}
+			if (started == null && nextPathPlan.TryGetValue(id, out float next) && Time.time < next)
 			{
 				return(null);
 			}
@@ -5884,22 +5917,28 @@ namespace VikingVillages
 					}
 				}
 			}
-			nextPathPlan[id] = Time.time + PathPlanInterval;
-			VillagePaths.HousePath plan = VillagePaths.PlanHousePath(village, added);
-			if (plan == null)
+			if (started == null)
 			{
-				return(null);
-			}
-			if (plan.Spots.Count == 0)
-			{
-				VillagePaths.Pathed(village, plan.House);
-				return(null);
+				nextPathPlan[id] = Time.time + PathPlanInterval;
+				VillagePaths.HousePath plan = VillagePaths.PlanHousePath(village, added);
+				if (plan == null)
+				{
+					return(null);
+				}
+				if (plan.Spots.Count == 0)
+				{
+					VillagePaths.Pathed(village, plan.House);
+					return(null);
+				}
+				started = new PathProgress();
+				started.Plan = plan;
+				pathProgress[id] = started;
 			}
 			if (craft != null && craft.Station != null && !ClaimObject(craft.Station.GetComponent<ZNetView>()))
 			{
 				return(null);
 			}
-			return(new PathJob(this, plan, hoeChest, craft));
+			return(new PathJob(this, started, hoeChest, craft));
 		}
 
 		/// <summary>
@@ -18790,15 +18829,14 @@ namespace VikingVillages
 		/// </summary>
 		private class PathJob : Job
 		{
+			private readonly PathProgress progress;
 			private readonly VillagePaths.HousePath plan;
 			private readonly ItemRun hoeRun;
 			private CraftingStation repairBench;
-			private int next;
 
 			/// <summary>
-			/// The next of the path's bridges it builds, the wood it's getting for it, and its hammering at it
+			/// The wood it's getting for the path's next bridge, and its hammering at it
 			/// </summary>
-			private int bridgeNext;
 			private WoodRun bridgeRun;
 			private HammerWork bridgeWork;
 			private bool finishing;
@@ -18811,12 +18849,13 @@ namespace VikingVillages
 			/// Makes the job, with the station the hoe is crafted at already claimed when it's crafted
 			/// </summary>
 			/// <param name="owner">The viking's life</param>
-			/// <param name="path">The path it makes</param>
+			/// <param name="path">The path it makes, carried on from where it was left</param>
 			/// <param name="fromChest">The chest it takes a hoe from, or null</param>
 			/// <param name="hoe">What the hoe takes to craft when it crafts one, or null</param>
-			public PathJob(VillageLife owner, VillagePaths.HousePath path, Container fromChest, ArrowPlan hoe) : base(owner)
+			public PathJob(VillageLife owner, PathProgress path, Container fromChest, ArrowPlan hoe) : base(owner)
 			{
-				plan = path;
+				progress = path;
+				plan = path.Plan;
 				hoeRun = new ItemRun(owner, fromChest, (ItemDrop.ItemData item) => item.m_dropPrefab != null && item.m_dropPrefab.name == HoePrefab, HoePrefab, hoe);
 			}
 
@@ -18835,7 +18874,7 @@ namespace VikingVillages
 			/// <returns>Its name, and how far along the path it is</returns>
 			public override string Describe()
 			{
-				return("Making paths (" + next + "/" + plan.Spots.Count + ")");
+				return("Making paths (" + progress.Next + "/" + plan.Spots.Count + ")");
 			}
 
 			/// <summary>
@@ -18844,7 +18883,7 @@ namespace VikingVillages
 			/// <returns>True when it has</returns>
 			public override bool Outing()
 			{
-				bool spotOutside = (next < plan.Spots.Count && !life.village.Contains(plan.Spots[next]));
+				bool spotOutside = (progress.Next < plan.Spots.Count && !life.village.Contains(plan.Spots[progress.Next]));
 				return(spotOutside || hoeRun.Outing() || (bridgeRun != null && bridgeRun.Outing()));
 			}
 
@@ -18897,12 +18936,12 @@ namespace VikingVillages
 			/// <returns>False, so the job goes on</returns>
 			private bool MakePath(float dt, ItemDrop.ItemData hoe)
 			{
-				if (bridgeNext < plan.Bridges.Count && next >= plan.Bridges[bridgeNext].Before)
+				if (progress.BridgeNext < plan.Bridges.Count && progress.Next >= plan.Bridges[progress.BridgeNext].Before)
 				{
 					BuildBridge(dt);
 					return(false);
 				}
-				Vector3 spot = plan.Spots[next];
+				Vector3 spot = plan.Spots[progress.Next];
 				if (hitAt >= 0f)
 				{
 					life.Face(spot);
@@ -18911,7 +18950,7 @@ namespace VikingVillages
 						return(false);
 					}
 					hitAt = -1f;
-					VillagePaths.PaintSpot(spot, plan.Clutter[next]);
+					VillagePaths.PaintSpot(spot, plan.Clutter[progress.Next]);
 					if (hoe.m_shared.m_useDurability)
 					{
 						hoe.m_durability = Mathf.Max(0f, hoe.m_durability - hoe.m_shared.m_useDurabilityDrain * Game.m_durabilityRate);
@@ -18952,7 +18991,7 @@ namespace VikingVillages
 			/// <param name="dt">Seconds since the AI's last update</param>
 			private void BuildBridge(float dt)
 			{
-				VillagePaths.HouseBridge bridge = plan.Bridges[bridgeNext];
+				VillagePaths.HouseBridge bridge = plan.Bridges[progress.BridgeNext];
 				int wood = Mathf.Min(bridge.Wood, CarryMax);
 				if (!life.HaveWood(wood, ref bridgeRun, dt, out bool done))
 				{
@@ -18988,7 +19027,7 @@ namespace VikingVillages
 			/// </summary>
 			private void NextBridge()
 			{
-				bridgeNext++;
+				progress.BridgeNext++;
 				bridgeWork = null;
 				if (bridgeRun != null)
 				{
@@ -18998,14 +19037,16 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Moves on to the path's next spot, noting the house as joined to the village once it's past the last
+			/// Moves on to the path's next spot, noting the house as joined to the village once it's past the last, and
+			/// the path as no longer partway made
 			/// </summary>
 			private void Advance()
 			{
-				next++;
-				if (next >= plan.Spots.Count)
+				progress.Next++;
+				if (progress.Next >= plan.Spots.Count)
 				{
 					VillagePaths.Pathed(life.village, plan.House);
+					pathProgress.Remove(life.village.Zdo.m_uid);
 					finishing = true;
 					ItemDrop.ItemData hoe = life.OwnTool(HoePrefab);
 					if (hoe != null && life.humanoid.IsItemEquiped(hoe))

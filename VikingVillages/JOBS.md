@@ -43,24 +43,24 @@ Everything a living Viking does, most important first. What's higher up stops wh
 | [Pick up loot](#pick-up-loot) | Day 8 | Gather items lying around the village |
 | [Take up better gear](#take-up-better-gear) | Day 9 | Put on better gear from the chests |
 | [Fill their quiver](#fill-their-quiver) | Day 10 | Take arrows from the chests |
-| [Repair the village](#repair-the-village) | Day 11 | Fix damaged pieces |
-| [Clear snow](#clear-snow) | Day 12 | In the Deep North, knock heavy snow off pieces and the ground |
-| [Repair their gear](#repair-their-gear) | Day 13 | Fix worn gear at the workbench or forge |
-| [Rebuild the fire](#rebuild-the-fire) | Day 14 | Build back the village's fire |
-| [Take down a sitting log](#take-down-a-sitting-log) | Day 15 | Take down the logs by an old fire for their wood |
-| [Cut trees](#cut-trees) | Day 16 | Fell brush trees when the village is out of wood |
-| [Rebuild the village](#rebuild-the-village) | Day 17 | Build back destroyed pieces |
-| [Stack the fire](#stack-the-fire) | Day 18 | Put wood on the fire |
-| [Craft arrows](#craft-arrows) | Day 19 | Make the best arrows the village can |
-| [Craft a torch](#craft-a-torch) | Day 20 | Make a torch when theirs is missing or worn |
-| [Craft a second weapon](#craft-a-second-weapon) | Day 21 | Make a crude bow, or an axe or club |
-| [Craft better gear](#craft-better-gear) | Day 22 | Make a weapon, shield or armor better than their own |
-| [Upgrade their gear](#upgrade-their-gear) | Day 23 | Raise a piece of their gear one quality |
-| [Work toward the goal](#work-toward-the-goal) | Day 24 | Fuel and fill smelters, and craft materials for the village's goal |
-| [Stock tools](#stock-tools) | Day 25 | Make axes and pickaxes for the chests |
-| [Line a weapon with silver](#line-a-weapon-with-silver) | Day 26 | With Zombie Apocalypse, line a weapon with silver |
-| [Silver arrows](#silver-arrows) | Day 27 | With Zombie Apocalypse, take or craft silver arrows |
-| [Make paths](#make-paths) | Day 28 | Hoe paths to new buildings, bridging water |
+| [Make paths](#make-paths) | Day 11 | Hoe paths to new buildings, bridging water |
+| [Repair the village](#repair-the-village) | Day 12 | Fix damaged pieces |
+| [Clear snow](#clear-snow) | Day 13 | In the Deep North, knock heavy snow off pieces and the ground |
+| [Repair their gear](#repair-their-gear) | Day 14 | Fix worn gear at the workbench or forge |
+| [Rebuild the fire](#rebuild-the-fire) | Day 15 | Build back the village's fire |
+| [Take down a sitting log](#take-down-a-sitting-log) | Day 16 | Take down the logs by an old fire for their wood |
+| [Cut trees](#cut-trees) | Day 17 | Fell brush trees when the village is out of wood |
+| [Rebuild the village](#rebuild-the-village) | Day 18 | Build back destroyed pieces |
+| [Stack the fire](#stack-the-fire) | Day 19 | Put wood on the fire |
+| [Craft arrows](#craft-arrows) | Day 20 | Make the best arrows the village can |
+| [Craft a torch](#craft-a-torch) | Day 21 | Make a torch when theirs is missing or worn |
+| [Craft a second weapon](#craft-a-second-weapon) | Day 22 | Make a crude bow, or an axe or club |
+| [Craft better gear](#craft-better-gear) | Day 23 | Make a weapon, shield or armor better than their own |
+| [Upgrade their gear](#upgrade-their-gear) | Day 24 | Raise a piece of their gear one quality |
+| [Work toward the goal](#work-toward-the-goal) | Day 25 | Fuel and fill smelters, and craft materials for the village's goal |
+| [Stock tools](#stock-tools) | Day 26 | Make axes and pickaxes for the chests |
+| [Line a weapon with silver](#line-a-weapon-with-silver) | Day 27 | With Zombie Apocalypse, line a weapon with silver |
+| [Silver arrows](#silver-arrows) | Day 28 | With Zombie Apocalypse, take or craft silver arrows |
 | [Build a beehive](#build-a-beehive) | Day 29 | Build a hive with a queen bee |
 | [Talk](#talk) | Day, weight 25 | Chat with another Viking |
 | [Pet a boar](#pet-a-boar) | Day, weight 10 | Pet one of the village's livestock |
@@ -420,6 +420,17 @@ A chest holding gear better than their own - never broken - they put on, carryin
 
 An archer missing at least a batch of their 100 arrows - 20 for wood arrows - with arrows for their bow in a chest, or with arrows in a chest better than their best, takes the 100 best of their own and the chest's, putting back their own that don't make the cut while the chest has room, and shoots their best first.
 
+### Make Paths
+
+A building of yours that grew the village with no path to the rest of it - while the village has a workbench, no other Viking is making paths and it isn't a thunderstorm - gets a path from its door to the nearest other house's. It comes ahead of the village's upkeep, since only one Viking makes paths at a time and the rest see to the upkeep.
+
+1. They get a hoe from a chest, or craft one at the workbench, going out for its stone when the village has too little
+2. They hoe the path every 1.5 meters, swinging every 1.2 seconds, clearing branches, stones and bushes as they go, the hoe wearing down as yours does
+3. Water no wider than the village's bridges span - 14 meters for wood - is crossed on a bridge like theirs, wood, or grausten in the Ashlands and the Deep North, that they gather the wood for, up to 20, and hammer up when they reach the bank. The village repairs and rebuilds it like its other pieces
+4. A broken hoe is repaired at the workbench. Once it's done, they repair the hoe and put it in a chest, even their own
+
+A Viking called away partway - by a fight, the cold, dusk or the like - puts the hoe away, and whoever takes the path up next, them or another, carries on from the spot and bridge it was left at. A house with no way through is given up on.
+
 ### Repair the Village
 
 A piece of the village below full health - within 12 meters past its edge or inside a house, those you built included - they repair, the nearest first, with one swing of a hammer, taking nothing. Not reaching it within 90 seconds, they leave it for 5 minutes.
@@ -508,17 +519,6 @@ With Zombie Apocalypse, a weapon of their own that it can line with silver, the 
 ### Silver Arrows
 
 With Zombie Apocalypse, checked every 15 seconds, an archer whose bow would hurt the dead more with silver arrows, down to fewer than 20, takes up to 50 from a chest - or crafts them, when the chests hold all but the wood, until they have 50. Silver arrows don't count toward their 100.
-
-### Make Paths
-
-A building of yours that grew the village with no path to the rest of it - while the village has a workbench, no other Viking is making paths and it isn't a thunderstorm - gets a path from its door to the nearest other house's.
-
-1. They get a hoe from a chest, or craft one at the workbench, going out for its stone when the village has too little
-2. They hoe the path every 1.5 meters, swinging every 1.2 seconds, clearing branches, stones and bushes as they go, the hoe wearing down as yours does
-3. Water no wider than the village's bridges span - 14 meters for wood - is crossed on a bridge like theirs, wood, or grausten in the Ashlands and the Deep North, that they gather the wood for, up to 20, and hammer up when they reach the bank. The village repairs and rebuilds it like its other pieces
-4. A broken hoe is repaired at the workbench. Once it's done, they repair the hoe and put it in a chest, even their own
-
-A house with no way through is given up on.
 
 ### Build a Beehive
 
