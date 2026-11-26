@@ -54,7 +54,7 @@ namespace VikingVillages
 		/// How far inside an upgrade's reach of its station it's put, and how far out in front of a station is kept clear
 		/// to use it from, in meters
 		/// </summary>
-		private const float UpgradeReachSlack = 0.3f;
+		private const float UpgradeReachSlack = 0.1f;
 		private const float StationFrontClear = 1f;
 
 		/// <summary>
@@ -438,9 +438,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Furnishes a village's houses, giving it each crafting station it doesn't have in a house of its core - each
-		/// in a different house while there are enough - and the beds only in its core, where the vikings live, not its
-		/// outposts
+		/// Furnishes a village's houses, giving each crafting station it doesn't have to a house of its core - each a
+		/// different house while there are enough - and the beds only in its core, where the vikings live, not its
+		/// outposts. A station its house has no room for is left to AddStations, which tries the rest of the core next
 		/// </summary>
 		/// <param name="village">The village</param>
 		private static void Furnish(Village village)
@@ -478,16 +478,7 @@ namespace VikingVillages
 				}
 				int heads = (core.Contains(i) ? VillageRespawn.PlannedHeads(houses[i].Center) : 0);
 				List<string> stations = (assigned.TryGetValue(i, out List<string> given) ? given : new List<string>());
-				foreach (string placed in Furnish(layout, heads, stations))
-				{
-					missing.Remove(placed);
-				}
-			}
-			// A station whose chosen house had no room for it goes in another house of the village's core
-			PlaceAnywhere(core, layouts, missing);
-			foreach (string station in missing)
-			{
-				Plugin.Log.LogWarning("Found no room for a " + station + " in the core of the village around " + houses[0].Center.ToString("F0"));
+				Furnish(layout, heads, stations);
 			}
 			foreach (Layout layout in layouts)
 			{
@@ -532,7 +523,10 @@ namespace VikingVillages
 						layouts[i] = Layout.Measure(house);
 					}
 				}
-				PlaceAnywhere(HiddenFirst(village, designed), layouts, missing);
+				if (designed.Count > 0)
+				{
+					PlaceAnywhere(HiddenFirst(village, designed), layouts, missing);
+				}
 			}
 			List<PieceRecord> built = new List<PieceRecord>();
 			foreach (Layout layout in layouts)
@@ -649,6 +643,10 @@ namespace VikingVillages
 				else
 				{
 					Plugin.Log.LogWarning("Found no room for a " + extension + " within " + reach.ToString("F1") + "m of the " + stationName + " at " + position.ToString("F1") + " in the village at " + village.Farm.ToString("F0") + ((layout != null) ? " - " + layout.DescribeMisses() : ""));
+					if (layout != null && (TestLog.On || Player.m_debugMode))
+					{
+						Plugin.Log.LogInfo("Station room floor: " + layout.DescribeGrid());
+					}
 				}
 			}
 			if (layout != null)
@@ -1355,7 +1353,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Places each of some crafting stations against a wall in the first house of a village's core with room for it,
 		/// spreading them across different houses while there are enough - writing to the log why each house tried had
-		/// no room for a station none had room for
+		/// no room for a station none had room for, and in a test run or debug mode, each such house's floor
 		/// </summary>
 		/// <param name="core">The indexes of the village's core houses</param>
 		/// <param name="layouts">Each house's layout, or null</param>
@@ -1369,11 +1367,13 @@ namespace VikingVillages
 				List<int> order = new List<int>(core);
 				order.Sort((int a, int b) => (used.Contains(a) ? 1 : 0).CompareTo(used.Contains(b) ? 1 : 0));
 				List<string> misses = new List<string>();
+				List<Layout> missed = new List<Layout>();
 				foreach (int i in order)
 				{
 					if (layouts[i] == null)
 					{
 						misses.Add("house " + i + " of the village, which couldn't be laid out");
+						missed.Add(null);
 						continue;
 					}
 					if (layouts[i].PlaceAgainstWall(station))
@@ -1381,17 +1381,24 @@ namespace VikingVillages
 						missing.Remove(station);
 						used.Add(i);
 						misses.Clear();
+						missed.Clear();
 						break;
 					}
 					misses.Add(layouts[i].DescribeMisses());
+					missed.Add(layouts[i]);
 				}
 				if (core.Count == 0)
 				{
 					misses.Add("the village, which has no core houses");
+					missed.Add(null);
 				}
-				foreach (string miss in misses)
+				for (int m = 0; m < misses.Count; m++)
 				{
-					Plugin.Log.LogWarning("Station room: no room for a " + station + " in " + miss);
+					Plugin.Log.LogWarning("Station room: no room for a " + station + " in " + misses[m]);
+					if (missed[m] != null && (TestLog.On || Player.m_debugMode))
+					{
+						Plugin.Log.LogInfo("Station room floor: " + missed[m].DescribeGrid());
+					}
 				}
 			}
 		}
@@ -1403,10 +1410,8 @@ namespace VikingVillages
 		/// <param name="layout">The house's layout</param>
 		/// <param name="heads">How many vikings call the house home</param>
 		/// <param name="stations">The crafting stations the house gets</param>
-		/// <returns>The stations it had room for</returns>
-		private static List<string> Furnish(Layout layout, int heads, List<string> stations)
+		private static void Furnish(Layout layout, int heads, List<string> stations)
 		{
-			List<string> placedStations = new List<string>();
 			int beds = 0;
 			if (heads > 0 && layout.PlaceAgainstWall(BedPrefab))
 			{
@@ -1415,10 +1420,7 @@ namespace VikingVillages
 			int chests = (layout.PlaceAgainstWall(ChestPrefab) ? 1 : 0);
 			foreach (string station in stations)
 			{
-				if (layout.PlaceAgainstWall(station))
-				{
-					placedStations.Add(station);
-				}
+				layout.PlaceAgainstWall(station);
 			}
 			for (int i = beds; i < heads; i++)
 			{
@@ -1437,7 +1439,6 @@ namespace VikingVillages
 			{
 				Plugin.Log.LogInfo("Furnished floor: " + layout.DescribeGrid());
 			}
-			return(placedStations);
 		}
 
 		/// <summary>
@@ -1623,11 +1624,18 @@ namespace VikingVillages
 			private readonly List<StandingPiece> standingPieces = new List<StandingPiece>();
 
 			/// <summary>
+			/// How many of the cells something stood on when the house was measured each thing stood on, by its prefab,
+			/// for the log (see DescribeGrid)
+			/// </summary>
+			private readonly Dictionary<string, int> standingCells = new Dictionary<string, int>();
+
+			/// <summary>
 			/// The spots tried for the last piece placed against a wall or near a point, and why each that didn't fit
 			/// didn't - its cells something stands on or with no floor, kept clear by a door or in front of a station,
 			/// or taken by a piece laid out, something already standing in its way, the house left too hard to get
-			/// around, or out of reach of the point once pushed back against the wall - and for a piece placed near a
-			/// point, how many spots with free cells were out of its reach, for the log (see DescribeMisses)
+			/// around, or out of reach of the point once pushed back against the wall or slid along it - and for a piece
+			/// placed near a point, how many spots with free cells were out of its reach, and how many cells the piece
+			/// takes along the wall and out from it, for the log (see DescribeMisses)
 			/// </summary>
 			private int missTried;
 			private int missStanding;
@@ -1639,6 +1647,8 @@ namespace VikingVillages
 			private int missFar;
 			private bool missNear;
 			private bool missNoSize;
+			private int missWidth;
+			private int missDepth;
 
 			/// <summary>
 			/// Describes why the last piece placed against a wall or near a point didn't fit in the house, for the log
@@ -1659,12 +1669,12 @@ namespace VikingVillages
 				{
 					return(floor + ": the piece's size couldn't be measured");
 				}
-				string tried = floor + ": " + missTried + " spots tried - " + missStanding + " on cells something stands on or with no floor, " + missKeptClear + " on cells kept clear by a door or in front of a station, " + missTaken + " on cells taken by pieces laid out, " + missBlocked + " with something already standing in the way, " + missCramped + " leaving the house too hard to get around";
+				string tried = floor + ": " + missTried + " spots tried for a piece " + missWidth + "x" + missDepth + " cells along the wall and out from it - " + missStanding + " on cells something stands on or with no floor, " + missKeptClear + " on cells kept clear by a door or in front of a station, " + missTaken + " on cells taken by pieces laid out, " + missBlocked + " with something already standing in the way, " + missCramped + " leaving the house too hard to get around";
 				if (!missNear)
 				{
 					return(tried);
 				}
-				return(tried + ", " + missPushedFar + " out of reach once pushed back against the wall - and " + missFar + " spots against the walls with free cells out of reach");
+				return(tried + ", " + missPushedFar + " out of reach once pushed back against the wall or slid along it - and " + missFar + " spots against the walls with free cells out of reach");
 			}
 
 			/// <summary>
@@ -1682,6 +1692,8 @@ namespace VikingVillages
 				missFar = 0;
 				missNear = false;
 				missNoSize = false;
+				missWidth = 0;
+				missDepth = 0;
 			}
 
 			/// <summary>
@@ -1810,7 +1822,8 @@ namespace VikingVillages
 			/// <summary>
 			/// Marks each cell blocked where there's no floor or something stands, kept clear by a door, or free, notes
 			/// where the way in from each door starts, and notes the cells of the beds already standing that can be
-			/// walked up to, and of every bed and chest already standing for the log
+			/// walked up to, and of every bed and chest already standing, and which cells have no floor and what stands
+			/// on the others that are blocked, for the log
 			/// </summary>
 			private void MarkCells()
 			{
@@ -1835,6 +1848,7 @@ namespace VikingVillages
 						if (!floored)
 						{
 							grid.Cells[column, row] = FloorGrid.Blocked;
+							grid.Floorless[column, row] = true;
 							continue;
 						}
 						Collider[] standing = Physics.OverlapBox(checkCenter, halfCell, facing, solidMask, QueryTriggerInteraction.Ignore);
@@ -1843,6 +1857,7 @@ namespace VikingVillages
 							grid.Cells[column, row] = FloorGrid.Blocked;
 							NoteStanding(standing, new Vector2Int(column, row), beds);
 							NoteStanding(standing, new Vector2Int(column, row), chests);
+							CountStanding(standing);
 							continue;
 						}
 						grid.Cells[column, row] = FloorGrid.Free;
@@ -1884,6 +1899,27 @@ namespace VikingVillages
 			}
 
 			/// <summary>
+			/// Counts a cell for each thing standing on it, once each, by its prefab - or the collider's name for what
+			/// isn't a networked object, and "terrain" for the ground - for the log
+			/// </summary>
+			/// <param name="standing">The colliders standing on the cell</param>
+			private void CountStanding(Collider[] standing)
+			{
+				int terrain = LayerMask.NameToLayer("terrain");
+				HashSet<string> names = new HashSet<string>();
+				foreach (Collider collider in standing)
+				{
+					ZNetView view = collider.GetComponentInParent<ZNetView>();
+					string name = ((collider.gameObject.layer == terrain) ? "terrain" : ((view != null) ? Utils.GetPrefabName(view.gameObject) : collider.gameObject.name));
+					if (names.Add(name))
+					{
+						standingCells.TryGetValue(name, out int count);
+						standingCells[name] = count + 1;
+					}
+				}
+			}
+
+			/// <summary>
 			/// Notes a cell as one a piece of a kind stands on, for each piece of that kind among what stands on it
 			/// </summary>
 			/// <typeparam name="T">The kind of piece, like Bed</typeparam>
@@ -1914,8 +1950,9 @@ namespace VikingVillages
 			/// <summary>
 			/// Describes the house's floor for the log once it's laid out - which way the grid lies, the pieces laid out
 			/// and the beds and chests already standing, each with whether it can still be walked up to (see
-			/// FloorGrid.Reachable), and the grid drawn a row a line (see FloorGrid.Draw), with each piece laid out marked
-			/// by its number, a bed already standing by "B" and a chest by "C"
+			/// FloorGrid.Reachable), what blocked its cells when it was measured (see DescribeBlocked), and the grid drawn
+			/// a row a line (see FloorGrid.Draw), with each piece laid out marked by its number, a bed already standing by
+			/// "B" and a chest by "C"
 			/// </summary>
 			/// <returns>The description, its grid on the lines after the first</returns>
 			public string DescribeGrid()
@@ -1943,7 +1980,7 @@ namespace VikingVillages
 					}
 					pieces.Add(standing.Mark + " " + standing.Name + " at " + standing.Position.ToString("F1") + ", already standing" + (grid.Reachable(standing.Cells, reached) ? "" : ", out of reach"));
 				}
-				string head = "the house at " + House.Center.ToString("F0") + ", " + grid.Columns + "x" + grid.Rows + " cells of " + Cell.ToString("F1") + "m around its floor's middle at " + origin.ToString("F1") + ", drawn with " + facing.eulerAngles.y.ToString("F0") + " degrees from north up, " + reachedFree + " of " + grid.FreeAtStart + " free cells reached from the way in - " + ((pieces.Count > 0) ? string.Join(", ", pieces) : "no pieces");
+				string head = "the house at " + House.Center.ToString("F0") + ", " + grid.Columns + "x" + grid.Rows + " cells of " + Cell.ToString("F1") + "m around its floor's middle at " + origin.ToString("F1") + ", drawn with " + facing.eulerAngles.y.ToString("F0") + " degrees from north up, " + reachedFree + " of " + grid.FreeAtStart + " free cells reached from the way in, blocked cells " + DescribeBlocked(grid.CountFloorless(), standingCells) + " - " + ((pieces.Count > 0) ? string.Join(", ", pieces) : "no pieces");
 				return(head + "\n" + string.Join("\n", grid.Draw(reached, marks)));
 			}
 
@@ -1962,6 +1999,10 @@ namespace VikingVillages
 					return(false);
 				}
 				int start = Random.Range(0, 4);
+				int width = CellSpan(size.size.x);
+				int depth = CellSpan(size.size.z);
+				missWidth = width;
+				missDepth = depth;
 				// Every wall is tried right against it before any a cell out from one
 				for (int gap = 0; gap <= 1; gap++)
 				{
@@ -1971,14 +2012,18 @@ namespace VikingVillages
 						// edge
 						int quarter = (start + side) % 4;
 						Quaternion rotation = facing * Quaternion.Euler(0f, quarter * 90f, 0f);
-						int width = CellSpan(size.size.x);
-						int depth = CellSpan(size.size.z);
 						int along = (((quarter % 2) == 0) ? grid.Columns : grid.Rows);
 						int offsetStart = Random.Range(0, Mathf.Max(1, along));
 						for (int step = 0; step < along; step++)
 						{
 							int offset = (offsetStart + step) % along;
-							if (TryTake(prefabName, size, rotation, grid.WallCells(quarter, offset, gap, width, depth)))
+							List<Vector2Int> cells = grid.WallCells(quarter, offset, gap, width, depth);
+							// A piece running past the end of the wall isn't a spot along it
+							if (!cells.TrueForAll(grid.Inside))
+							{
+								continue;
+							}
+							if (TryTake(prefabName, size, rotation, cells))
 							{
 								if (gap == 0)
 								{
@@ -2030,7 +2075,8 @@ namespace VikingVillages
 
 			/// <summary>
 			/// Places a piece against one of the house's walls within reach of a point, back to the wall and facing into
-			/// the house - right against a wall before a cell out from one, and the nearest the point first
+			/// the house - right against a wall before a cell out from one, and the nearest the point first - sliding it
+			/// along the wall toward the point when its cells leave it out of reach (see SlideToward)
 			/// </summary>
 			/// <param name="prefabName">The piece</param>
 			/// <param name="point">The point, like the crafting station it's an upgrade of</param>
@@ -2047,6 +2093,10 @@ namespace VikingVillages
 				missNear = true;
 				int width = CellSpan(size.size.x);
 				int depth = CellSpan(size.size.z);
+				missWidth = width;
+				missDepth = depth;
+				// A spot a little out of reach can still be tried, since the piece can slide along the wall toward the point
+				float slideMost = SlideRoom(width, size.size.x) + Cell;
 				List<WallSpot> spots = new List<WallSpot>();
 				for (int gap = 0; gap <= 1; gap++)
 				{
@@ -2072,7 +2122,7 @@ namespace VikingVillages
 								}
 								continue;
 							}
-							if (distance > reach)
+							if (distance > reach + slideMost)
 							{
 								missFar++;
 								continue;
@@ -2093,7 +2143,11 @@ namespace VikingVillages
 					{
 						PushBack(Placed.Count - 1, size);
 					}
-					// Pushed back against the wall, it can end up out of reach
+					if (Vector3.Distance(Placed[Placed.Count - 1].Position, point) > reach)
+					{
+						SlideToward(Placed.Count - 1, size, point, spot, width, depth);
+					}
+					// Pushed back against the wall, or slid along it no farther than it could, it can end up out of reach
 					if (Vector3.Distance(Placed[Placed.Count - 1].Position, point) > reach)
 					{
 						missPushedFar++;
@@ -2142,6 +2196,54 @@ namespace VikingVillages
 					return;
 				}
 				placement.Position = moved;
+				Placed[index] = placement;
+			}
+
+			/// <summary>
+			/// Slides a piece laid out against a wall along it toward a point, until it meets something standing - like the
+			/// crafting station it's an upgrade of - so it stands as near the point as it can: no farther than the room
+			/// its cells leave beside it, or a cell more when the cells just past it are blocked by something standing,
+			/// which is the room between it and what stands there
+			/// </summary>
+			/// <remarks>
+			/// A piece takes whole cells, so two pieces side by side stand apart by the room their cells leave - enough
+			/// to put a station's upgrade out of its reach
+			/// </remarks>
+			/// <param name="index">The piece's place among the pieces laid out</param>
+			/// <param name="size">Its size</param>
+			/// <param name="point">The point</param>
+			/// <param name="spot">The spot against the wall its cells are at</param>
+			/// <param name="width">How many cells it takes along the wall</param>
+			/// <param name="depth">How many cells it takes out from the wall</param>
+			private void SlideToward(int index, Bounds size, Vector3 point, WallSpot spot, int width, int depth)
+			{
+				Placement placement = Placed[index];
+				// A higher offset along the wall is toward the piece's right
+				Vector3 along = placement.Rotation * Vector3.right;
+				float toPoint = Vector3.Dot(point - placement.Position, along);
+				if (Mathf.Abs(toPoint) < 0.01f)
+				{
+					return;
+				}
+				Vector3 direction = ((toPoint > 0f) ? along : -along);
+				float most = SlideRoom(width, size.size.x);
+				List<Vector2Int> past = grid.WallCells(spot.Quarter, ((toPoint > 0f) ? spot.Offset + width : spot.Offset - 1), spot.Gap, 1, depth);
+				if (past.TrueForAll((Vector2Int cell) => grid.Inside(cell) && grid.Cells[cell.x, cell.y] == FloorGrid.Blocked && !grid.Floorless[cell.x, cell.y]))
+				{
+					most += Cell;
+				}
+				most = Mathf.Min(most, Mathf.Abs(toPoint));
+				PieceBox(size, placement.Position, placement.Rotation, out Vector3 center, out Vector3 half);
+				float slide = most;
+				if (Physics.BoxCast(center, half, direction, out RaycastHit hit, placement.Rotation, most + FitSlack, solidMask, QueryTriggerInteraction.Ignore))
+				{
+					slide = Mathf.Min(most, hit.distance - FitSlack);
+				}
+				if (slide <= 0f)
+				{
+					return;
+				}
+				placement.Position += direction * slide;
 				Placed[index] = placement;
 			}
 
@@ -2340,6 +2442,36 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Works out the room a piece's cells leave on each side of it one way, with the piece in their middle
+		/// </summary>
+		/// <param name="cells">How many cells it takes that way</param>
+		/// <param name="size">The piece's size that way, in meters</param>
+		/// <returns>The room, in meters, or 0 when it fills them</returns>
+		internal static float SlideRoom(int cells, float size)
+		{
+			return(Mathf.Max(0f, (cells * Cell - size) / 2f));
+		}
+
+		/// <summary>
+		/// Describes what blocked a house's cells for the log - how many have no floor, then how many each thing stood
+		/// on, the most first and by name among those alike
+		/// </summary>
+		/// <param name="floorless">How many cells have no floor</param>
+		/// <param name="standing">How many cells each thing stood on, by its name</param>
+		/// <returns>The description, like "8 with no floor, 30 by woodwall, 12 by wood_pole"</returns>
+		internal static string DescribeBlocked(int floorless, Dictionary<string, int> standing)
+		{
+			List<KeyValuePair<string, int>> counts = new List<KeyValuePair<string, int>>(standing);
+			counts.Sort((KeyValuePair<string, int> a, KeyValuePair<string, int> b) => ((a.Value != b.Value) ? b.Value.CompareTo(a.Value) : string.CompareOrdinal(a.Key, b.Key)));
+			List<string> parts = new List<string> { floorless + " with no floor" };
+			foreach (KeyValuePair<string, int> count in counts)
+			{
+				parts.Add(count.Value + " by " + count.Key);
+			}
+			return(string.Join(", ", parts));
+		}
+
+		/// <summary>
 		/// Works out which way a house's walls run from the level normals of the walls hit - since walls run at right
 		/// angles, each normal's angle is folded into a quarter turn by taking it four times over, and the folded angles
 		/// are averaged around the circle
@@ -2385,6 +2517,12 @@ namespace VikingVillages
 			public int FreeAtStart;
 
 			/// <summary>
+			/// Whether each blocked cell is blocked for having no floor, or a floor too far above or below the house's,
+			/// rather than for something standing on it, by column and row
+			/// </summary>
+			public readonly bool[,] Floorless;
+
+			/// <summary>
 			/// The four steps from a cell to the cells beside it
 			/// </summary>
 			private static readonly Vector2Int[] Steps = new Vector2Int[] { new Vector2Int(0, 1), new Vector2Int(0, -1), new Vector2Int(-1, 0), new Vector2Int(1, 0) };
@@ -2399,6 +2537,24 @@ namespace VikingVillages
 				Columns = columns;
 				Rows = rows;
 				Cells = new byte[Mathf.Max(columns, 0), Mathf.Max(rows, 0)];
+				Floorless = new bool[Mathf.Max(columns, 0), Mathf.Max(rows, 0)];
+			}
+
+			/// <summary>
+			/// Counts the cells blocked for having no floor
+			/// </summary>
+			/// <returns>How many there are</returns>
+			public int CountFloorless()
+			{
+				int count = 0;
+				for (int column = 0; column < Columns; column++)
+				{
+					for (int row = 0; row < Rows; row++)
+					{
+						count += ((Floorless[column, row] && Cells[column, row] == Blocked) ? 1 : 0);
+					}
+				}
+				return(count);
 			}
 
 			/// <summary>
@@ -2718,8 +2874,8 @@ namespace VikingVillages
 
 			/// <summary>
 			/// Draws the grid for the log, a character a cell, its last row first - a cell marked with a piece shows the
-			/// piece's mark, and the others show their state: "#" for something standing on it or no floor, "E" for a
-			/// way in that can be walked to, "." and "," for free cells that can and can't be walked to from the way in,
+			/// piece's mark, and the others show their state: "#" for something standing on it, "_" for no floor, "E" for
+			/// a way in that can be walked to, "." and "," for free cells that can and can't be walked to from the way in,
 			/// "+" and "-" for cells kept clear that can and can't, and "x" for a cell taken by a piece with no mark
 			/// </summary>
 			/// <param name="reached">Whether each cell can be walked to from the way in (see Reach)</param>
@@ -2742,7 +2898,7 @@ namespace VikingVillages
 						}
 						else if (state == Blocked)
 						{
-							line[column] = '#';
+							line[column] = (Floorless[column, row] ? '_' : '#');
 						}
 						else if (state == Taken)
 						{

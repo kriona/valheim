@@ -548,5 +548,71 @@ namespace VikingVillages.Tests
 			List<string> lines = grid.Draw(grid.Reach(out int _), marks);
 			Assert.Equal(new List<string> { ".1x,", "..B,", "E+#-" }, lines);
 		}
+
+		/// <summary>
+		/// Checks that a blocked cell with no floor is drawn apart from one something stands on
+		/// </summary>
+		[Fact]
+		public void DrawsFloorlessCellsApart()
+		{
+			VillageFurnishing.FloorGrid grid = OpenGrid(3, 1, new Vector2Int(0, 0));
+			grid.Cells[1, 0] = VillageFurnishing.FloorGrid.Blocked;
+			grid.Cells[2, 0] = VillageFurnishing.FloorGrid.Blocked;
+			grid.Floorless[2, 0] = true;
+			List<string> lines = grid.Draw(grid.Reach(out int _), new Dictionary<Vector2Int, char>());
+			Assert.Equal(new List<string> { "E#_" }, lines);
+			Assert.Equal(1, grid.CountFloorless());
+		}
+
+		/// <summary>
+		/// Checks that only cells still blocked count as having no floor
+		/// </summary>
+		[Fact]
+		public void CountsOnlyBlockedCellsAsFloorless()
+		{
+			VillageFurnishing.FloorGrid grid = OpenGrid(2, 1, new Vector2Int(0, 0));
+			grid.Floorless[0, 0] = true;
+			grid.Floorless[1, 0] = true;
+			grid.Cells[1, 0] = VillageFurnishing.FloorGrid.Blocked;
+			Assert.Equal(1, grid.CountFloorless());
+		}
+
+		/// <summary>
+		/// Checks what blocked a house's cells is listed with the cells with no floor first, then what stood on the
+		/// most cells, and by name among those alike
+		/// </summary>
+		[Fact]
+		public void DescribesWhatBlockedTheMostCellsFirst()
+		{
+			Dictionary<string, int> standing = new Dictionary<string, int> { { "wood_pole", 12 }, { "woodwall", 30 }, { "bed", 12 } };
+			Assert.Equal("8 with no floor, 30 by woodwall, 12 by bed, 12 by wood_pole", VillageFurnishing.DescribeBlocked(8, standing));
+		}
+
+		/// <summary>
+		/// Checks that nothing standing leaves only the cells with no floor
+		/// </summary>
+		[Fact]
+		public void DescribesNoBlockedCells()
+		{
+			Assert.Equal("0 with no floor", VillageFurnishing.DescribeBlocked(0, new Dictionary<string, int>()));
+		}
+
+		/// <summary>
+		/// Checks the room a piece's cells leave on each side of it - a bellows 1.76 meters wide in its 4 cells leaving
+		/// 12 centimeters, and none when a piece fills its cells or runs past them
+		/// </summary>
+		/// <param name="cells">How many cells it takes</param>
+		/// <param name="size">Its size, in meters</param>
+		/// <param name="expected">The room on each side, in meters</param>
+		[Theory]
+		[InlineData(4, 1.76f, 0.12f)]
+		[InlineData(4, 1.8f, 0.1f)]
+		[InlineData(6, 3.01f, 0f)]
+		[InlineData(2, 1f, 0f)]
+		[InlineData(3, 1.1f, 0.2f)]
+		public void SlideRoomIsHalfTheCellsLeftOver(int cells, float size, float expected)
+		{
+			Assert.Equal(expected, VillageFurnishing.SlideRoom(cells, size), 4);
+		}
 	}
 }
