@@ -886,13 +886,14 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Describes a village for the snapshot - its debug summary, the raid, the items lying around it and its pieces
+		/// Describes a village for the snapshot - its debug summary, the raid, its food, the items lying around it and its
+		/// pieces
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <returns>The description, on one line</returns>
 		private static string DescribeVillage(Village village)
 		{
-			return(Flatten(VillageDebug.Describe(village) + VillageRaids.Describe(village) + VillageLife.DescribeLyingLoot(village) + PiecesIn(village)));
+			return(Flatten(VillageDebug.Describe(village) + VillageRaids.Describe(village) + VillageLife.DescribeFood(village) + VillageLife.DescribeLyingLoot(village) + PiecesIn(village)));
 		}
 
 		/// <summary>

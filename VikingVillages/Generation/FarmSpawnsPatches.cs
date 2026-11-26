@@ -33,6 +33,7 @@ namespace VikingVillages
 			{
 				__result.GetZDO().Set(FarmSpawns.LivestockKey, true);
 				animal.SetTamed(true);
+				Plugin.Log.LogInfo("Tamed the " + animal.GetHoverName() + " at " + animal.transform.position.ToString("F0") + " as a farm's livestock");
 			}
 		}
 	}

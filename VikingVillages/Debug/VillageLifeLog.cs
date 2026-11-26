@@ -749,6 +749,64 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Describes a village's food for the snapshot - the food in its chests against its vikings loaded and whether
+		/// it's low (see FoodLow), the raw food in its chests, its livestock alive and whether wild prey that drops food is
+		/// near, as one of its loaded vikings sees it (see WildFoodNear) - so a run shows whether its vikings could hunt
+		/// or slaughter for food
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>The line, ending in a line break</returns>
+		public static string DescribeFood(Village village)
+		{
+			int food = 0;
+			int raw = 0;
+			foreach (Container chest in VillageChests(village))
+			{
+				foreach (ItemDrop.ItemData item in chest.GetInventory().GetAllItems())
+				{
+					food += (VikingFood.IsFood(item) ? item.m_stack : 0);
+					raw += (VillageCooking.IsRaw(item) ? item.m_stack : 0);
+				}
+			}
+			int livestock = 0;
+			foreach (Character creature in Character.GetAllCharacters())
+			{
+				if (creature != null && !creature.IsDead() && FarmSpawns.IsLivestock(creature) && !ZombieState.IsZombie(creature) && village.OwnsPiece(creature.transform.position))
+				{
+					livestock++;
+				}
+			}
+			VillageLife looker = null;
+			foreach (VillageLife life in All)
+			{
+				if (life != null && life.active && life.village == village)
+				{
+					looker = life;
+					break;
+				}
+			}
+			bool? wildFood = ((looker != null) ? looker.WildFoodNear() : (bool?)null);
+			return(DescribeFoodFor(food, village.Vikings().Count, raw, livestock, wildFood) + "\n");
+		}
+
+		/// <summary>
+		/// Describes a village's food for the snapshot from what's been counted (see DescribeFood)
+		/// </summary>
+		/// <param name="food">How much food the chests hold</param>
+		/// <param name="vikings">How many vikings the village has loaded</param>
+		/// <param name="raw">How much raw food the chests hold</param>
+		/// <param name="livestock">How many of its livestock are alive</param>
+		/// <param name="wildFood">Whether wild prey that drops food is near, or null with no viking loaded to look</param>
+		/// <returns>The description, on one line</returns>
+		internal static string DescribeFoodFor(int food, int vikings, int raw, int livestock, bool? wildFood)
+		{
+			int needed = Mathf.Max(1, vikings) * SpareMeals;
+			string enough = (FoodEnough(food, vikings) ? "enough" : "low, " + (needed - food) + " short of " + needed);
+			string wild = ((wildFood == null) ? "no viking loaded to look for wild prey" : (wildFood.Value ? "wild prey that drops food near" : "no wild prey that drops food near"));
+			return("Food: " + food + " in the chests for " + vikings + " vikings loaded, " + enough + ", " + raw + " raw, " + livestock + " livestock, " + wild);
+		}
+
+		/// <summary>
 		/// Describes loot about to despawn that the vikings of a village could have put away - lying within LootReach of
 		/// it - and why they left it
 		/// </summary>

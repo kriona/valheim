@@ -725,6 +725,18 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that the snapshot's food line shows how far short of three foods each the chests are, and says when no
+		/// viking is loaded to look for wild prey
+		/// </summary>
+		[Fact]
+		public void FoodLineShowsHowShortTheChestsAre()
+		{
+			Assert.Equal("Food: 14 in the chests for 7 vikings loaded, low, 7 short of 21, 0 raw, 1 livestock, no wild prey that drops food near", VillageLife.DescribeFoodFor(14, 7, 0, 1, false));
+			Assert.Equal("Food: 30 in the chests for 6 vikings loaded, enough, 4 raw, 0 livestock, wild prey that drops food near", VillageLife.DescribeFoodFor(30, 6, 4, 0, true));
+			Assert.Equal("Food: 0 in the chests for 0 vikings loaded, low, 3 short of 3, 0 raw, 2 livestock, no viking loaded to look for wild prey", VillageLife.DescribeFoodFor(0, 0, 0, 2, null));
+		}
+
+		/// <summary>
 		/// Checks that a viking only gets food as day work while food is low and it may hunt, hunting wild prey that drops
 		/// food when it can, and slaughtering livestock only with no such prey about for any of the village's hunters
 		/// </summary>
