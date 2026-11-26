@@ -64,6 +64,12 @@ namespace VikingVillages
 		/// </summary>
 		private const float WaypointReach = 4f;
 		private const float RoadArriveReach = 40f;
+
+		/// <summary>
+		/// How many times RoadArriveReach from the village it's going to a viking can be at the end of its road and still
+		/// count as there - past that, its road no longer covers where it is (see UpdateTravelling)
+		/// </summary>
+		private const float RoadEndSlack = 2f;
 		private const int LegFailuresMax = 3;
 
 		/// <summary>
@@ -148,46 +154,55 @@ namespace VikingVillages
 		private bool wasLost;
 
 		/// <summary>
-		/// How near each other lost vikings have to be to set out as a group, in meters (see FormLostGroup)
+		/// How near each other vikings with no road have to be to decide where to go as a group, in meters (see
+		/// FormRoadGroup)
 		/// </summary>
-		private const float LostGroupReach = 20f;
+		private const float RoadGroupReach = 20f;
 
 		/// <summary>
-		/// For a lost viking gone with others lost near it as a group (see FormLostGroup), the one of them who decides where
-		/// they go, or null, and the road it took and what the group can do on it, which this one takes as soon as it's no
-		/// longer lost itself
+		/// For a viking deciding where to go as a group with others near it (see FormRoadGroup), the one of them who
+		/// decides, or null, and the road it took and what the group can do on it, which this one takes as soon as it's
+		/// no longer lost itself
 		/// </summary>
 		private VillageLife roadLeader;
 		private TravelPlanner.Answer leaderAnswer;
 		private TravelParty leaderParty;
 
 		/// <summary>
-		/// Gathers the other lost vikings within LostGroupReach of the viking, as it comes to, into a group it leads - those
-		/// still lost or waiting to know where to go, with no road or group of their own yet, run by this client - so they
-		/// decide where to go together: it alone asks for a road, for all of them (see RoadParty), and they drop their
-		/// own asking and take its road once it has one (see TakeAnswer), setting out as one group, which crosses the sea
-		/// together in the boats one of them builds (see Gather)
+		/// Gathers the other vikings with no village within RoadGroupReach of the viking that also have to decide where
+		/// to go - still lost or waiting to know, or needing their road planned again, like after a wreck (see NeedsRoad) -
+		/// those in no group or in its own, run by this client, into a group it leads, so they decide together: it alone
+		/// asks for a road, for all of them (see RoadParty), and they drop their own asking and take its road once it has
+		/// one (see TakeAnswer), setting out as one group, which crosses the sea together in the boats one of them builds
+		/// (see Gather). It keeps the group it's in, or starts one
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
-		private void FormLostGroup(ZDO zdo)
+		/// <returns>True when it leads a group now, having asked for its road</returns>
+		private bool FormRoadGroup(ZDO zdo)
 		{
-			if (roadLeader != null || zdo.GetString(VillageTravel.GroupKey, "").Length > 0)
+			if (roadLeader != null)
 			{
-				return;
+				return(false);
 			}
+			string own = zdo.GetString(VillageTravel.GroupKey, "");
 			List<VillageLife> others = new List<VillageLife>();
 			foreach (VillageLife other in All)
 			{
-				if (other != this && !other.active && other.roadLeader == null && (other.road == Road.Confused || other.road == Road.Searching) && other.nview != null && other.nview.IsValid() && other.nview.IsOwner() && other.humanoid != null && !other.humanoid.IsDead() && !VillageTravel.OnRoad(other.nview.GetZDO()) && other.nview.GetZDO().GetString(VillageTravel.GroupKey, "").Length == 0 && Utils.DistanceXZ(other.transform.position, transform.position) <= LostGroupReach)
+				if (other == this || other.active || other.roadLeader != null || !other.NeedsRoad() || other.nview == null || !other.nview.IsValid() || !other.nview.IsOwner() || other.humanoid == null || other.humanoid.IsDead() || Utils.DistanceXZ(other.transform.position, transform.position) > RoadGroupReach)
+				{
+					continue;
+				}
+				string theirs = other.nview.GetZDO().GetString(VillageTravel.GroupKey, "");
+				if (theirs.Length == 0 || theirs == own)
 				{
 					others.Add(other);
 				}
 			}
 			if (others.Count == 0)
 			{
-				return;
+				return(false);
 			}
-			string group = "lost" + zdo.m_uid.ToString();
+			string group = ((own.Length > 0) ? own : "road" + zdo.m_uid.ToString());
 			zdo.Set(VillageTravel.GroupKey, group);
 			foreach (VillageLife other in others)
 			{
@@ -196,10 +211,43 @@ namespace VikingVillages
 				other.leaderAnswer = null;
 				other.leaderParty = null;
 				other.ForgetSearch();
+				if (other.road != Road.Confused)
+				{
+					other.road = Road.Searching;
+				}
 			}
-			Plugin.Log.LogInfo(LogName() + " gathers " + others.Count + " other lost vikings near it into a group, and decides where they go");
-			TestLog.Count("Travel", "lost vikings gone as a group");
+			Plugin.Log.LogInfo(LogName() + " gathers " + others.Count + " other vikings near it with no road into a group, and decides where they go");
+			TestLog.Count("Travel", "vikings deciding their road as a group");
 			AskRoad(true);
+			return(true);
+		}
+
+		/// <summary>
+		/// Checks whether the viking has to decide where to go - lost, waiting to know, or on the road with it being
+		/// planned again or past the end of it
+		/// </summary>
+		/// <returns>True when it has</returns>
+		private bool NeedsRoad()
+		{
+			if (road == Road.Confused || road == Road.Searching)
+			{
+				return(true);
+			}
+			return((road == Road.Travelling || road == Road.Waiting) && (searching || roadLeg >= travelRoad.Count));
+		}
+
+		/// <summary>
+		/// Plans the viking's road again from where it is, deciding as a group with the vikings near it that have to as
+		/// well (see FormRoadGroup), or alone
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		private void PlanRoadAgain(ZDO zdo)
+		{
+			road = Road.Searching;
+			if (!FormRoadGroup(zdo))
+			{
+				AskRoad(true);
+			}
 		}
 
 		/// <summary>
@@ -217,7 +265,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Lists the lost vikings in the group the viking leads that haven't set out yet (see FormLostGroup)
+		/// Lists the vikings in the group the viking leads that haven't set out yet (see FormRoadGroup)
 		/// </summary>
 		/// <returns>Them</returns>
 		private List<VillageLife> LostFollowers()
@@ -501,7 +549,7 @@ namespace VikingVillages
 		{
 			TravelParty party = new TravelParty();
 			TravelPlanner.AddTo(party, humanoid, true);
-			// A lost group's leader asks for the whole group (see FormLostGroup)
+			// A group's leader asks for the whole group (see FormRoadGroup)
 			foreach (VillageLife other in LostFollowers())
 			{
 				if (other.humanoid != null)
@@ -554,7 +602,7 @@ namespace VikingVillages
 				zdo.Set(VillageTravel.ConfusedKey, false);
 				road = Road.Searching;
 				wasLost = true;
-				FormLostGroup(zdo);
+				FormRoadGroup(zdo);
 			}
 			return(true);
 		}
@@ -607,7 +655,7 @@ namespace VikingVillages
 		/// <param name="answer">The server's answer</param>
 		private void TakeAnswer(ZDO zdo, TravelPlanner.Answer answer)
 		{
-			// A lost group's leader hands its road on to the rest, who take it as one group, and only it says so
+			// A group's leader hands its road on to the rest, who take it as one group, and only it says so
 			TravelParty party = null;
 			bool follower = (roadLeader != null);
 			if (follower)
@@ -681,7 +729,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Runs the viking along its road, a waypoint at a time - eating and picking food on the way, waiting for its group
-		/// when they fall behind, and planning its road again when it can't get through
+		/// when they fall behind, and planning its road again when it can't get through, or when it's past the end of
+		/// its road far from the village it's going to
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="zdo">Its ZDO</param>
@@ -708,7 +757,25 @@ namespace VikingVillages
 				return(true);
 			}
 			Vector3 destination = zdo.GetVec3(VillageTravel.DestinationKey, Vector3.zero);
-			if (Utils.DistanceXZ(transform.position, destination) <= RoadArriveReach || roadLeg >= travelRoad.Count)
+			float toVillage = Utils.DistanceXZ(transform.position, destination);
+			if (roadLeg >= travelRoad.Count && toVillage > RoadArriveReach * RoadEndSlack)
+			{
+				// Past the end of its road far from the village - having ridden a boat somewhere else, or its road being
+				// planned again when the world was last saved - it plans its road again from where it is, with the vikings
+				// near it that have to as well, or out in the water, climbs onto the nearest boat or swims ashore first,
+				// planning it from there (see Ashore)
+				TestLog.Count("Travel", "roads planned again from past their end");
+				if (OutInWater())
+				{
+					Plugin.Log.LogInfo(LogName() + " is past the end of its road in the water at " + transform.position.ToString("F0") + ", " + toVillage.ToString("F0") + "m from the village it's going to, and makes for the nearest boat or land");
+					StartSwim(zdo, Crossing.Wrecked, Vector3.zero);
+					return(true);
+				}
+				Plugin.Log.LogInfo(LogName() + " is past the end of its road at " + transform.position.ToString("F0") + ", " + toVillage.ToString("F0") + "m from the village it's going to, and plans its road again");
+				PlanRoadAgain(zdo);
+				return(true);
+			}
+			if (toVillage <= RoadArriveReach || roadLeg >= travelRoad.Count)
 			{
 				return(Reached(dt, zdo, destination));
 			}

@@ -236,6 +236,14 @@ namespace VikingVillages
 			{
 				return(SetSail(zdo));
 			}
+			// One whose road takes to the sea where it already is out in the water, like one whose road was planned while
+			// it swam, gets out first - onto the nearest boat or ashore - rather than build a boat in the water
+			if (crossing == Crossing.None && OutInWater())
+			{
+				Plugin.Log.LogInfo(LogName() + " reached the sea out in the water at " + transform.position.ToString("F0") + ", and makes for the nearest boat or land before it crosses");
+				StartSwim(zdo, Crossing.Wrecked, Vector3.zero);
+				return(true);
+			}
 			if (crossing == Crossing.None)
 			{
 				SetCrossing(zdo, Crossing.Gathering);
@@ -1267,6 +1275,26 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// How deep the water where a viking stands has to be for it to count as out in the water, swimming or not, in
+		/// meters
+		/// </summary>
+		private const float OutInWaterDepth = 1.5f;
+
+		/// <summary>
+		/// Checks whether the viking is out in the water - swimming, or standing where the water is OutInWaterDepth deep -
+		/// rather than at the shore
+		/// </summary>
+		/// <returns>True when it is</returns>
+		private bool OutInWater()
+		{
+			if (humanoid.IsSwimming())
+			{
+				return(true);
+			}
+			return(ZoneSystem.instance != null && ZoneSystem.instance.m_waterLevel - ZoneSystem.instance.GetGroundHeight(transform.position) >= OutInWaterDepth);
+		}
+
+		/// <summary>
 		/// Finds the loaded ship whose ladder is nearest the viking, within PassengerSwimReach - a player's or vikings',
 		/// any but one left out
 		/// </summary>
@@ -1509,7 +1537,7 @@ namespace VikingVillages
 			{
 				Plugin.Log.LogInfo(LogName() + " washed up at " + transform.position.ToString("F0") + ", and plans its road again");
 				myBoat = null;
-				AskRoad(true);
+				PlanRoadAgain(zdo);
 				return;
 			}
 			roadLeg = Mathf.Clamp(myBoat.Ashore, 0, travelRoad.Count);
