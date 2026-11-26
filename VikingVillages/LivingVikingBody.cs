@@ -359,6 +359,125 @@ namespace VikingVillages
 			{
 				m_maxAirAltitude = transform.position.y;
 			}
+			else if (m_nview != null && m_nview.IsValid())
+			{
+				RegainStamina(fixedDeltaTime);
+			}
+		}
+
+		/// <summary>
+		/// The viking's stamina, which it only uses swimming, or a negative number while it's full - kept on its owner
+		/// </summary>
+		private float stamina = -1f;
+
+		/// <summary>
+		/// When the viking last used stamina, in Time.time seconds, and how long it has been drowning since it last took
+		/// damage for it
+		/// </summary>
+		private float staminaUsedAt;
+		private float drownTimer;
+
+		/// <summary>
+		/// The most stamina the viking can have, as last worked out, and when it's next worked out, in Time.time seconds
+		/// </summary>
+		private float maxStamina;
+		private float nextMaxStamina;
+
+		/// <summary>
+		/// Seconds between workings out of how much stamina the viking can have, which its food changes slowly
+		/// </summary>
+		private const float MaxStaminaInterval = 1f;
+
+		/// <summary>
+		/// Gets the most stamina the viking can have - a player's base stamina and what its food gives, the way a
+		/// player's is (see Player.GetMaxStamina)
+		/// </summary>
+		/// <returns>The stamina</returns>
+		public float MaxStamina()
+		{
+			if (Time.time >= nextMaxStamina)
+			{
+				nextMaxStamina = Time.time + MaxStaminaInterval;
+				maxStamina = BoatRules.BaseStamina + ((Food != null) ? Food.FoodStamina() : 0f);
+			}
+			return(maxStamina);
+		}
+
+		/// <summary>
+		/// Gets the stamina the viking has left
+		/// </summary>
+		/// <returns>The stamina</returns>
+		public float Stamina()
+		{
+			return((stamina < 0f) ? MaxStamina() : Mathf.Min(stamina, MaxStamina()));
+		}
+
+		/// <summary>
+		/// Checks whether the viking is drowning - in the water with no stamina left
+		/// </summary>
+		/// <returns>True while it is</returns>
+		public bool Drowning()
+		{
+			return(IsSwimming() && Stamina() <= 0f);
+		}
+
+		/// <summary>
+		/// Uses the viking's stamina as it swims and drowns it once it has none left, the way the game does a player's
+		/// (see Player.OnSwimming) - stamina drains only while it swims somewhere, by its Swim skill and effects at the
+		/// world's stamina rate, and with none left it loses a share of its max health every second (see
+		/// BoatRules.DrownDamage)
+		/// </summary>
+		/// <param name="targetVel">Where it's swimming to</param>
+		/// <param name="dt">Seconds since the last physics update</param>
+		public override void OnSwimming(Vector3 targetVel, float dt)
+		{
+			base.OnSwimming(targetVel, dt);
+			if (targetVel.magnitude > 0.1f)
+			{
+				float drain = BoatRules.SwimDrain(GetSkillFactor(Skills.SkillType.Swim));
+				m_seman.ModifySwimStaminaUsage(drain, ref drain);
+				stamina = Mathf.Max(0f, Stamina() - dt * drain * Game.m_moveStaminaRate);
+				staminaUsedAt = Time.time;
+			}
+			if (Stamina() > 0f)
+			{
+				return;
+			}
+			drownTimer += dt;
+			if (drownTimer <= 1f)
+			{
+				return;
+			}
+			drownTimer = 0f;
+			HitData hit = new HitData();
+			hit.m_damage.m_damage = BoatRules.DrownDamage(GetMaxHealth());
+			hit.m_point = GetCenterPoint();
+			hit.m_dir = Vector3.down;
+			hit.m_pushForce = 10f;
+			hit.m_hitType = HitData.HitType.Drowning;
+			Damage(hit);
+		}
+
+		/// <summary>
+		/// Gives the viking its stamina back the way a player gets theirs (see Player.UpdateStats) - not while it's in the
+		/// water off the ground or carrying more than it can, and only StaminaRegenDelay seconds after it last used any,
+		/// by its effects and the world's stamina regen rate
+		/// </summary>
+		/// <param name="dt">Seconds since the last physics update</param>
+		private void RegainStamina(float dt)
+		{
+			if (stamina < 0f || (IsSwimming() && !IsOnGround()) || IsEncumbered() || Time.time - staminaUsedAt < BoatRules.StaminaRegenDelay)
+			{
+				return;
+			}
+			float max = MaxStamina();
+			float multiplier = 1f;
+			m_seman.ModifyStaminaRegen(ref multiplier);
+			stamina += BoatRules.StaminaRegain(stamina, max) * multiplier * dt * Game.m_staminaRegenRate;
+			if (stamina >= max)
+			{
+				stamina = -1f;
+			}
 		}
 
 		/// <summary>

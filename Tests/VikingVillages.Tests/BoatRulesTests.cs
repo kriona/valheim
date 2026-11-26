@@ -70,6 +70,25 @@ namespace VikingVillages.Tests
 		}
 
 		[Fact]
+		public void SwimmingDrainsLessStaminaWithMoreSkill()
+		{
+			Assert.Equal(5f, BoatRules.SwimDrain(0f), 3);
+			Assert.Equal(3.5f, BoatRules.SwimDrain(0.5f), 3);
+			Assert.Equal(2f, BoatRules.SwimDrain(1f), 3);
+			Assert.Equal(2f, BoatRules.SwimDrain(2f), 3);
+		}
+
+		[Fact]
+		public void StaminaComesBackFasterTheLessIsLeft()
+		{
+			// A player's regen - 5 a second when full, twice that when empty
+			Assert.Equal(10f, BoatRules.StaminaRegain(0f, 100f), 3);
+			Assert.Equal(7.5f, BoatRules.StaminaRegain(50f, 100f), 3);
+			Assert.Equal(5f, BoatRules.StaminaRegain(100f, 100f), 3);
+			Assert.Equal(0f, BoatRules.StaminaRegain(0f, 0f), 3);
+		}
+
+		[Fact]
 		public void SwimDistanceIsSwimTimeAtSwimSpeed()
 		{
 			// 15 seconds at 2 meters a second

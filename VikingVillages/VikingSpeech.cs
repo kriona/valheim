@@ -433,6 +433,13 @@ namespace VikingVillages
 			"Kind of busy here!",
 			"Later - fight first!"
 		};
+		private static readonly string[] SwimmingChat =
+		{
+			"Kind of busy here - swimming!",
+			"Blub... blub...",
+			"*gurgle* Later!",
+			"Can't talk - keeping my head above water!"
+		};
 
 		/// <summary>
 		/// On a living viking, the players it knows - having greeted them - by player ID, and the most it remembers
@@ -1286,6 +1293,15 @@ namespace VikingVillages
 		public static string Busy()
 		{
 			return(Pick(BusyChat));
+		}
+
+		/// <summary>
+		/// Picks what a viking says when a player talks to it while it's swimming - living and dvergr vikings alike
+		/// </summary>
+		/// <returns>The line</returns>
+		public static string Swimming()
+		{
+			return(Pick(SwimmingChat));
 		}
 
 		/// <summary>

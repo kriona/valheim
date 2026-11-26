@@ -16,10 +16,10 @@ namespace VikingVillages
 	/// jump on board from the shore, and swims to the boat's ladder when it misses; once VikingBoat.BoardTime seconds
 	/// have passed, those still off it are put on board. On board it sits where it's put until the boat reaches the far
 	/// shore, then jumps off and swims in, the one at the helm breaking the boat up once it's ashore. A viking in the water
-	/// - wrecked, or swimming in - swims as long as its stamina would last a player, by its food and Swim skill (see
-	/// BoatRules.SwimSeconds), and drowns after that the way a player does. One wrecked plans its road again once it's
-	/// ashore, building another boat when it still has sea to cross. Where there's no water deep enough for a boat by the
-	/// shore, its group sets sail out of the world the way it did before (see SetSail)
+	/// - wrecked, or swimming in - swims as long as its stamina lasts, by its food and Swim skill, and drowns after that
+	/// the way a player does, as any viking in the water does (see LivingVikingBody.OnSwimming). One wrecked plans its
+	/// road again once it's ashore, building another boat when it still has sea to cross. Where there's no water deep
+	/// enough for a boat by the shore, its group sets sail out of the world (see SetSail)
 	/// </remarks>
 	internal partial class VillageLife
 	{
@@ -118,10 +118,11 @@ namespace VikingVillages
 		private bool hasEdge;
 
 		/// <summary>
-		/// Its swim ashore - where it swims to, how long it can swim before it drowns, how long it has swum, when it next
-		/// takes drowning damage, and how long it has been out of the water
+		/// Its swim ashore - where it swims to, and how long it has been out of the water - drowning on the way as any
+		/// viking in the water does once its stamina runs out (see LivingVikingBody.OnSwimming)
 		/// </summary>
 		private Vector3 swimTo;
+		private float ashoreFor;
 
 		/// <summary>
 		/// How a player walking on the boat pushes a viking sitting on its boards - how near they have to come, how far from
@@ -136,10 +137,6 @@ namespace VikingVillages
 		/// For a viking sitting on the boards, the spot of its own it's held at, which a player can push about, or null
 		/// </summary>
 		private Transform pushedSpot;
-		private float swimFor;
-		private float swum;
-		private float nextDrown;
-		private float ashoreFor;
 
 		/// <summary>
 		/// Notes how far along crossing the sea the viking is, on it and its ZDO
@@ -774,8 +771,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Starts the viking swimming for the shore - to a spot given, or the nearest dry ground - working out how long it
-		/// can swim before it drowns
+		/// Starts the viking swimming for the shore - to a spot given, or the nearest dry ground
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
 		/// <param name="why">Landing at the far shore, or wrecked</param>
@@ -783,10 +779,7 @@ namespace VikingVillages
 		private void StartSwim(ZDO zdo, Crossing why, Vector3 to)
 		{
 			swimTo = ((to != Vector3.zero) ? to : NearestShore(transform.position));
-			swimFor = BoatRules.SwimSeconds(((body != null) ? body.Food.FoodStamina() : 0f), humanoid.GetSkillFactor(Skills.SkillType.Swim), Game.m_moveStaminaRate);
-			swum = 0f;
 			ashoreFor = 0f;
-			nextDrown = 0f;
 			SetCrossing(zdo, why);
 		}
 
@@ -818,9 +811,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Swims the viking for the shore - drowning the way a player does once it has swum longer than it can - and once
-		/// it has been out of the water a moment, goes on along its road from the far shore, or plans its road again from
-		/// where it washed up
+		/// Swims the viking for the shore - drowning on the way once its stamina runs out, as any viking in the water does
+		/// (see LivingVikingBody.OnSwimming) - and once it has been out of the water a moment, goes on along its road from
+		/// the far shore, or plans its road again from where it washed up
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="zdo">Its ZDO</param>
@@ -830,18 +823,7 @@ namespace VikingVillages
 			if (humanoid.InWater())
 			{
 				ashoreFor = 0f;
-				swum += dt;
-				if (swum > swimFor && Time.time >= nextDrown)
-				{
-					nextDrown = Time.time + 1f;
-					HitData hit = new HitData();
-					hit.m_damage.m_damage = BoatRules.DrownDamage(humanoid.GetMaxHealth());
-					hit.m_point = humanoid.GetCenterPoint();
-					hit.m_dir = Vector3.down;
-					hit.m_hitType = HitData.HitType.Drowning;
-					humanoid.Damage(hit);
-				}
-				mover = ((swum > swimFor) ? "drowning on its way to the shore" : "swimming for the shore");
+				mover = ((body != null && body.Drowning()) ? "drowning on its way to the shore" : "swimming for the shore");
 				Vector3 way = swimTo - transform.position;
 				way.y = 0f;
 				ai.MoveTowards(way.normalized, true);
@@ -942,7 +924,7 @@ namespace VikingVillages
 			}
 			if (crossing == Crossing.Landing || crossing == Crossing.Wrecked)
 			{
-				line += ", swum " + swum.ToString("F0") + "s of " + swimFor.ToString("F0") + "s to " + swimTo.ToString("F0");
+				line += ", swimming to " + swimTo.ToString("F0") + ((body != null) ? " with " + body.Stamina().ToString("F0") + " of " + body.MaxStamina().ToString("F0") + " stamina" : "");
 			}
 			return(line);
 		}

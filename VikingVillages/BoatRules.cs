@@ -5,8 +5,8 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// The rules of the boats vikings build to cross the sea in the world - how many boats a group takes and who sits
-	/// where, how they steer, and how long a viking swims before it starts to drown - worked out apart from the game so
-	/// they can be tested
+	/// where, how they steer - and of a viking's stamina in the water, how long it swims before it starts to drown and
+	/// how fast it gets its stamina back - worked out apart from the game so they can be tested
 	/// </summary>
 	internal static class BoatRules
 	{
@@ -29,6 +29,41 @@ namespace VikingVillages
 		/// does (see Player.OnSwimming)
 		/// </summary>
 		internal const float DrownShare = 20f;
+
+		/// <summary>
+		/// How much stamina a viking gets back each second at full stamina - twice that when it has none left - and how
+		/// long after it last used stamina it starts getting it back, in seconds, the same as a player (see
+		/// Player.m_staminaRegen and Player.m_staminaRegenDelay)
+		/// </summary>
+		internal const float StaminaRegen = 5f;
+		internal const float StaminaRegenDelay = 1f;
+
+		/// <summary>
+		/// Works out how much stamina a second swimming takes a viking, the way it does a player (see
+		/// Player.OnSwimming) - less the more Swim skill it has, before its effects and the world's stamina rate
+		/// </summary>
+		/// <param name="skillFactor">Its Swim skill, from 0 to 1</param>
+		/// <returns>The stamina a second takes</returns>
+		internal static float SwimDrain(float skillFactor)
+		{
+			return(Mathf.Lerp(SwimDrainUnskilled, SwimDrainSkilled, Mathf.Clamp01(skillFactor)));
+		}
+
+		/// <summary>
+		/// Works out how much stamina a viking gets back a second, the way a player does (see Player.UpdateStats) - faster
+		/// the less it has left, before its effects and the world's stamina regen rate
+		/// </summary>
+		/// <param name="stamina">The stamina it has</param>
+		/// <param name="maxStamina">The most it can have</param>
+		/// <returns>The stamina it gets back a second</returns>
+		internal static float StaminaRegain(float stamina, float maxStamina)
+		{
+			if (maxStamina <= 0f)
+			{
+				return(0f);
+			}
+			return(StaminaRegen + (1f - Mathf.Clamp01(stamina / maxStamina)) * StaminaRegen);
+		}
 
 		/// <summary>
 		/// Works out how many boats a group takes
@@ -117,7 +152,7 @@ namespace VikingVillages
 		/// <returns>How long, in seconds</returns>
 		internal static float SwimSeconds(float foodStamina, float skillFactor, float staminaRate)
 		{
-			float drain = Mathf.Lerp(SwimDrainUnskilled, SwimDrainSkilled, Mathf.Clamp01(skillFactor)) * Mathf.Max(0.01f, staminaRate);
+			float drain = SwimDrain(skillFactor) * Mathf.Max(0.01f, staminaRate);
 			return((BaseStamina + Mathf.Max(0f, foodStamina)) / drain);
 		}
 

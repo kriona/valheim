@@ -137,7 +137,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Answers a player talking to the viking, on its owner - in a fight it's busy, it greets a player it has never
+		/// Answers a player talking to the viking, on its owner - in a fight or swimming it's busy, it greets a player it has never
 		/// met as a stranger and remembers them, and chats with one it knows - now and then about being old friends or how
 		/// the player is doing (see VikingFriendSpeech), or a runestone of the biome it stands in or of someone with its
 		/// name (see VikingLoreSpeech) -
@@ -162,6 +162,11 @@ namespace VikingVillages
 			if (ai != null && ai.m_targetCreature != null)
 			{
 				VikingSpeech.Say(body, DvergrSpeech.Busy(), VikingSpeech.QuickTime, VikingSpeech.TalkCull);
+				return;
+			}
+			if (body.IsSwimming())
+			{
+				VikingSpeech.Say(body, VikingSpeech.Swimming(), VikingSpeech.QuickTime, VikingSpeech.TalkCull);
 				return;
 			}
 			playerLastNear[player.GetZDOID()] = Time.time;

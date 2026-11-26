@@ -65,6 +65,7 @@ namespace VikingVillages.Tests
 			{ "VillageClearedLines", new string[0] },
 			{ "SleepyChat", new string[0] },
 			{ "BusyChat", new string[0] },
+			{ "SwimmingChat", new string[0] },
 			{ "MournLines", new[] { "{fallen}" } },
 			{ "NamelessMournLines", new string[0] },
 			{ "RisingFarewells", new[] { "{fallen}" } },

@@ -87,6 +87,7 @@ What they say to you, and what they shout about danger, shows over their heads f
 | They keep watch in the Mountains or the Deep North - every 1.5-3 minutes, frost gear or not | Under the health bar, 6 s | "Cold watch tonight..." / "Can't feel my nose." / "Should've brought another cape." / "Even the wolves are hiding from this cold." / "Odin's beard, it's cold." / "Whoever picked me for the watch owes me a mead." / "My breath's freezing in my beard." (only with a beard) |
 | You talk to them while they're asleep in bed | 20 m, 6 s | "Mmph... five more minutes..." / "Let me sleep..." / "Is it morning already?" / "Zzz..." |
 | You talk to them in a fight | 20 m, 3 s | "Not now!" / "Kind of busy here!" / "Later - fight first!" |
+| You talk to them while they're swimming - Dvergr Vikings too | 20 m, 3 s | "Kind of busy here - swimming!" / "Blub... blub..." / "\*gurgle\* Later!" / "Can't talk - keeping my head above water!" |
 | You name them | 20 m, 6 s | "{name}? I like it." / "{name} it is!" / "{name}... yes, that suits me." / "{name}. A name worthy of a saga!" |
 | You rename them | 20 m, 6 s | "{name}? Fine, call me {name}." / "{name} now, is it? I'll get used to it." / "Make up your mind! {name}, then." |
 | You name them Viking, taking their name away | 20 m, 6 s | "Just Viking, then. Plain and simple." / "Viking it is - I'll go nameless again." / "Back to plain old Viking? Fine by me." |

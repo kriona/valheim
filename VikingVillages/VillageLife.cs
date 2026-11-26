@@ -2162,7 +2162,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Answers a player talking to the viking, on its owner - in a fight it's busy and asleep it's sleepy, it greets
+		/// Answers a player talking to the viking, on its owner - in a fight or swimming it's busy and asleep it's sleepy, it greets
 		/// a player it has never met as a stranger with a wave and remembers them, and chats with one it knows (see
 		/// VillageAnswer) or tells them its news of them (see VikingNewsStore), turning to them for TalkFaceTime seconds
 		/// either way, and noting the talk once it has said its piece (see VikingIdentity.Answered)
@@ -2185,6 +2185,11 @@ namespace VikingVillages
 			if (ai.m_targetCreature != null)
 			{
 				VikingSpeech.Say(humanoid, VikingSpeech.Busy(), VikingSpeech.QuickTime, VikingSpeech.TalkCull);
+				return;
+			}
+			if (humanoid.IsSwimming())
+			{
+				VikingSpeech.Say(humanoid, VikingSpeech.Swimming(), VikingSpeech.QuickTime, VikingSpeech.TalkCull);
 				return;
 			}
 			if (inBed)
