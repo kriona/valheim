@@ -1442,7 +1442,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out a piece's size from its colliders, around its own origin
+		/// Works out a piece's size from its solid colliders that are turned on, around its own origin - a collider
+		/// turned off, like the box the bellows carry beside their mesh, takes up no room
 		/// </summary>
 		/// <param name="prefabName">The piece's prefab</param>
 		/// <param name="size">Its size</param>
@@ -1461,7 +1462,7 @@ namespace VikingVillages
 				bool found = false;
 				foreach (Collider collider in prefab.GetComponentsInChildren<Collider>(true))
 				{
-					if (collider.isTrigger || !LocalBounds(collider, out Bounds local))
+					if (!collider.enabled || collider.isTrigger || !LocalBounds(collider, out Bounds local))
 					{
 						continue;
 					}
