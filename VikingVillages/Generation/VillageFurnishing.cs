@@ -1537,6 +1537,12 @@ namespace VikingVillages
 			private readonly List<List<Vector2Int>> stationFronts = new List<List<Vector2Int>>();
 
 			/// <summary>
+			/// The cells each bed already standing in the house takes, for each that could be walked up to before
+			/// anything was laid out, so nothing laid out shuts it off
+			/// </summary>
+			private readonly List<List<Vector2Int>> standingBeds = new List<List<Vector2Int>>();
+
+			/// <summary>
 			/// The spots tried for the last piece placed against a wall or near a point, and why each that didn't fit
 			/// didn't - its cells already taken, something already standing in its way, or the house left too hard to
 			/// get around - for the log (see DescribeMisses)
@@ -1683,11 +1689,13 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Marks each cell blocked where there's no floor or something stands, kept clear by a door, or free, and
-			/// notes where the way in from each door starts
+			/// Marks each cell blocked where there's no floor or something stands, kept clear by a door, or free, notes
+			/// where the way in from each door starts, and notes the cells of the beds already standing that can be
+			/// walked up to
 			/// </summary>
 			private void MarkCells()
 			{
+				Dictionary<Bed, List<Vector2Int>> beds = new Dictionary<Bed, List<Vector2Int>>();
 				foreach (Collider collider in Physics.OverlapSphere(House.Center, House.HalfSize + 2f, solidMask, QueryTriggerInteraction.Collide))
 				{
 					Door door = collider.GetComponentInParent<Door>();
@@ -1704,9 +1712,16 @@ namespace VikingVillages
 						Vector3 point = CellPoint(column, row);
 						bool floored = (Floor(point, out Vector3 floor) && Mathf.Abs(floor.y - origin.y) <= FloorTolerance);
 						Vector3 checkCenter = new Vector3(point.x, origin.y + FloorClearance + halfCell.y, point.z);
-						if (!floored || Physics.CheckBox(checkCenter, halfCell, facing, solidMask, QueryTriggerInteraction.Ignore))
+						if (!floored)
 						{
 							grid.Cells[column, row] = FloorGrid.Blocked;
+							continue;
+						}
+						Collider[] standing = Physics.OverlapBox(checkCenter, halfCell, facing, solidMask, QueryTriggerInteraction.Ignore);
+						if (standing.Length > 0)
+						{
+							grid.Cells[column, row] = FloorGrid.Blocked;
+							NoteBeds(standing, new Vector2Int(column, row), beds);
 							continue;
 						}
 						grid.Cells[column, row] = FloorGrid.Free;
@@ -1729,6 +1744,41 @@ namespace VikingVillages
 					}
 				}
 				grid.EnterAtMiddle();
+				bool[,] reached = grid.Reach(out int _);
+				foreach (List<Vector2Int> cells in beds.Values)
+				{
+					if (grid.Reachable(cells, reached))
+					{
+						standingBeds.Add(cells);
+					}
+				}
+			}
+
+			/// <summary>
+			/// Notes a cell as one a bed stands on, for each bed among what stands on it
+			/// </summary>
+			/// <param name="standing">The colliders standing on the cell</param>
+			/// <param name="cell">The cell</param>
+			/// <param name="beds">The cells each bed stands on, added to</param>
+			private static void NoteBeds(Collider[] standing, Vector2Int cell, Dictionary<Bed, List<Vector2Int>> beds)
+			{
+				foreach (Collider collider in standing)
+				{
+					Bed bed = collider.GetComponentInParent<Bed>();
+					if (bed == null)
+					{
+						continue;
+					}
+					if (!beds.TryGetValue(bed, out List<Vector2Int> cells))
+					{
+						cells = new List<Vector2Int>();
+						beds[bed] = cells;
+					}
+					if (!cells.Contains(cell))
+					{
+						cells.Add(cell);
+					}
+				}
 			}
 
 			/// <summary>
@@ -2035,6 +2085,8 @@ namespace VikingVillages
 				List<List<Vector2Int>> pieces = Placed.ConvertAll((Placement laid) => laid.Cells);
 				// The floor kept clear in front of each station has to stay reachable too, so the station can be used
 				pieces.AddRange(stationFronts);
+				// So do the beds the house came with, so the vikings can get into them
+				pieces.AddRange(standingBeds);
 				if (!grid.Roomy(pieces))
 				{
 					missCramped++;
@@ -2375,15 +2427,37 @@ namespace VikingVillages
 
 			/// <summary>
 			/// Checks whether the house is still easy to get around - at least FreeShareMin of the cells free to start
-			/// with can be walked to from the way in, and every piece is next to a cell that can be walked to
+			/// with can be walked to from the way in, and every piece can be walked up to (see Reachable)
 			/// </summary>
-			/// <param name="pieces">The cells each piece laid out takes</param>
+			/// <param name="pieces">The cells each piece that has to stay reachable takes</param>
 			/// <returns>True when it is</returns>
 			public bool Roomy(List<List<Vector2Int>> pieces)
 			{
+				bool[,] reached = Reach(out int reachedFree);
+				if (reachedFree < FreeAtStart * FreeShareMin)
+				{
+					return(false);
+				}
+				foreach (List<Vector2Int> piece in pieces)
+				{
+					if (!Reachable(piece, reached))
+					{
+						return(false);
+					}
+				}
+				return(true);
+			}
+
+			/// <summary>
+			/// Finds the cells that can be walked to from the way in
+			/// </summary>
+			/// <param name="reachedFree">How many of them are free</param>
+			/// <returns>Whether each cell can be walked to, by column and row</returns>
+			public bool[,] Reach(out int reachedFree)
+			{
 				bool[,] reached = new bool[Columns, Rows];
 				Queue<Vector2Int> open = new Queue<Vector2Int>();
-				int reachedFree = 0;
+				reachedFree = 0;
 				foreach (Vector2Int entry in Entries)
 				{
 					if (Walkable(entry) && !reached[entry.x, entry.y])
@@ -2409,30 +2483,32 @@ namespace VikingVillages
 						}
 					}
 				}
-				if (reachedFree < FreeAtStart * FreeShareMin)
+				return(reached);
+			}
+
+			/// <summary>
+			/// Checks whether a piece can be walked up to - one of its sides has a gap at least two cells deep out from
+			/// it, a meter, that can be walked to, since a viking needs about that much room to stand in, and a gap of
+			/// one cell is too narrow to get into
+			/// </summary>
+			/// <param name="piece">The cells the piece takes</param>
+			/// <param name="reached">Whether each cell can be walked to from the way in (see Reach)</param>
+			/// <returns>True when it can</returns>
+			public bool Reachable(List<Vector2Int> piece, bool[,] reached)
+			{
+				foreach (Vector2Int cell in piece)
 				{
-					return(false);
-				}
-				foreach (List<Vector2Int> piece in pieces)
-				{
-					bool reachable = false;
-					foreach (Vector2Int cell in piece)
+					foreach (Vector2Int step in Steps)
 					{
-						foreach (Vector2Int step in Steps)
+						Vector2Int next = cell + step;
+						Vector2Int beyond = next + step;
+						if (Walkable(next) && reached[next.x, next.y] && Walkable(beyond) && reached[beyond.x, beyond.y])
 						{
-							Vector2Int next = cell + step;
-							if (Walkable(next) && reached[next.x, next.y])
-							{
-								reachable = true;
-							}
+							return(true);
 						}
 					}
-					if (!reachable)
-					{
-						return(false);
-					}
 				}
-				return(true);
+				return(false);
 			}
 		}
 	}

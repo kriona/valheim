@@ -216,6 +216,92 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a piece is reached by a gap two cells deep out from it, and not by one cell between it and a wall
+		/// of blocked cells
+		/// </summary>
+		[Fact]
+		public void ReachableOnlyByAGapTwoCellsDeep()
+		{
+			List<Vector2Int> piece = new List<Vector2Int> { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0) };
+			VillageFurnishing.FloorGrid narrow = OpenGrid(3, 3, new Vector2Int(0, 1));
+			narrow.Take(piece);
+			for (int column = 0; column < 3; column++)
+			{
+				narrow.Cells[column, 2] = VillageFurnishing.FloorGrid.Blocked;
+			}
+			Assert.False(narrow.Reachable(piece, narrow.Reach(out int _)));
+			VillageFurnishing.FloorGrid wide = OpenGrid(3, 3, new Vector2Int(0, 1));
+			wide.Take(piece);
+			Assert.True(wide.Reachable(piece, wide.Reach(out int _)));
+		}
+
+		/// <summary>
+		/// Checks that a gap two cells deep beside a piece counts only when it can be walked to from the way in
+		/// </summary>
+		[Fact]
+		public void GapHasToBeReached()
+		{
+			List<Vector2Int> piece = new List<Vector2Int> { new Vector2Int(0, 0) };
+			VillageFurnishing.FloorGrid grid = OpenGrid(3, 4, new Vector2Int(2, 3));
+			grid.Take(piece);
+			grid.Cells[1, 0] = VillageFurnishing.FloorGrid.Blocked;
+			grid.Cells[1, 1] = VillageFurnishing.FloorGrid.Blocked;
+			grid.Cells[1, 2] = VillageFurnishing.FloorGrid.Blocked;
+			grid.Cells[0, 3] = VillageFurnishing.FloorGrid.Blocked;
+			grid.Cells[1, 3] = VillageFurnishing.FloorGrid.Blocked;
+			Assert.False(grid.Reachable(piece, grid.Reach(out int _)));
+		}
+
+		/// <summary>
+		/// Checks that counting the floor reached from the way in counts only its free cells, not those kept clear
+		/// </summary>
+		[Fact]
+		public void ReachCountsFreeCells()
+		{
+			VillageFurnishing.FloorGrid grid = OpenGrid(4, 1, new Vector2Int(0, 0));
+			grid.Cells[1, 0] = VillageFurnishing.FloorGrid.KeepClear;
+			grid.Cells[3, 0] = VillageFurnishing.FloorGrid.Blocked;
+			bool[,] reached = grid.Reach(out int reachedFree);
+			Assert.Equal(2, reachedFree);
+			Assert.True(reached[2, 0]);
+			Assert.False(reached[3, 0]);
+		}
+
+		/// <summary>
+		/// Checks that a bed laid alongside one already standing, leaving a one cell gap between them, leaves the house
+		/// too cramped while the standing bed has to stay reachable - with the wall at its head and a blocked corner
+		/// at its foot, the gap was its only way in
+		/// </summary>
+		[Fact]
+		public void BedAlongsideAStandingBedIsCramped()
+		{
+			VillageFurnishing.FloorGrid grid = OpenGrid(6, 6, new Vector2Int(5, 5));
+			List<Vector2Int> standing = new List<Vector2Int>();
+			for (int row = 0; row < 4; row++)
+			{
+				standing.Add(new Vector2Int(0, row));
+				standing.Add(new Vector2Int(1, row));
+				grid.Cells[0, row] = VillageFurnishing.FloorGrid.Blocked;
+				grid.Cells[1, row] = VillageFurnishing.FloorGrid.Blocked;
+			}
+			grid.Cells[0, 4] = VillageFurnishing.FloorGrid.Blocked;
+			grid.Cells[1, 4] = VillageFurnishing.FloorGrid.Blocked;
+			grid.Cells[0, 5] = VillageFurnishing.FloorGrid.Blocked;
+			grid.Cells[1, 5] = VillageFurnishing.FloorGrid.Blocked;
+			grid.FreeAtStart = 24;
+			Assert.True(grid.Roomy(new List<List<Vector2Int>> { standing }));
+			List<Vector2Int> laid = new List<Vector2Int>();
+			for (int row = 0; row < 4; row++)
+			{
+				laid.Add(new Vector2Int(3, row));
+				laid.Add(new Vector2Int(4, row));
+			}
+			grid.Take(laid);
+			Assert.False(grid.Roomy(new List<List<Vector2Int>> { laid, standing }));
+			Assert.True(grid.Roomy(new List<List<Vector2Int>> { laid }));
+		}
+
+		/// <summary>
 		/// Checks that pieces can take half the free floor but no more
 		/// </summary>
 		[Fact]
