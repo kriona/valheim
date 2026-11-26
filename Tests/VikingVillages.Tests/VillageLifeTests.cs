@@ -725,6 +725,29 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a viking only gets food as day work while food is low and it may hunt, hunting wild prey that drops
+		/// food when it can, and slaughtering livestock only with no such prey about for any of the village's hunters
+		/// </summary>
+		/// <param name="foodLow">Whether the chests hold too little food</param>
+		/// <param name="mayHunt">Whether the viking may hunt</param>
+		/// <param name="preyNear">Whether there's prey that drops food the viking hunts</param>
+		/// <param name="wildFoodNear">Whether there's prey that drops food for any of the village's hunters</param>
+		/// <param name="livestock">Whether there's livestock to slaughter</param>
+		/// <param name="expected">The name of what it does, since the test can't take the internal enum itself</param>
+		[Theory]
+		[InlineData(false, true, true, true, true, "None")]
+		[InlineData(true, false, true, true, true, "None")]
+		[InlineData(true, true, true, true, true, "Hunt")]
+		[InlineData(true, true, true, true, false, "Hunt")]
+		[InlineData(true, true, false, false, true, "Slaughter")]
+		[InlineData(true, true, false, true, true, "None")]
+		[InlineData(true, true, false, false, false, "None")]
+		public void FoodWorkHuntsFirstThenSlaughters(bool foodLow, bool mayHunt, bool preyNear, bool wildFoodNear, bool livestock, string expected)
+		{
+			Assert.Equal(expected, VillageLife.PickFoodWork(foodLow, mayHunt, preyNear, wildFoodNear, livestock).ToString());
+		}
+
+		/// <summary>
 		/// Checks that a viking 4m from a piece and 2m from its spot isn't within reach - the case that left vikings
 		/// standing still until they gave up on a repair
 		/// </summary>

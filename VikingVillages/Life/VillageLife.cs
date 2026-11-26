@@ -5345,6 +5345,70 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// What a viking does as day work to get food for a village short of it (see PickFoodWork)
+		/// </summary>
+		internal enum FoodWork
+		{
+			None,
+			Hunt,
+			Slaughter
+		}
+
+		/// <summary>
+		/// Picks what a viking does to get food for its village - nothing when the chests hold food enough or it may not
+		/// hunt, hunting wild prey near the village that drops food when it can go after some, or else slaughtering one
+		/// of the village's livestock, only when no wild prey that drops food is about for any of the village's hunters
+		/// </summary>
+		/// <param name="foodLow">Whether the chests hold too little food for the vikings to keep their foods up</param>
+		/// <param name="mayHunt">Whether the viking may hunt now - not wounded, with few enough of the village
+		/// hunting</param>
+		/// <param name="preyNear">Whether there's wild prey near that drops food that the viking itself hunts</param>
+		/// <param name="wildFoodNear">Whether there's wild prey near that drops food for any of the village's
+		/// hunters</param>
+		/// <param name="livestock">Whether the village has livestock that drops food to slaughter</param>
+		/// <returns>What it does</returns>
+		internal static FoodWork PickFoodWork(bool foodLow, bool mayHunt, bool preyNear, bool wildFoodNear, bool livestock)
+		{
+			if (!foodLow || !mayHunt)
+			{
+				return(FoodWork.None);
+			}
+			if (preyNear)
+			{
+				return(FoodWork.Hunt);
+			}
+			return((!wildFoodNear && livestock) ? FoodWork.Slaughter : FoodWork.None);
+		}
+
+		/// <summary>
+		/// Finds work getting food while the village's chests hold too little for its vikings to keep their foods up (see
+		/// FoodLow), ahead of the village's upkeep - hunting wild prey near it that drops food, or slaughtering one of its
+		/// livestock (see PickFoodWork). With neither, the viking goes on to the rest of its work, and getting food is
+		/// left to the rolled jobs, which favor foraging and hunting while food is low
+		/// </summary>
+		/// <returns>The job, or null when there's food enough, the viking may not hunt, or there's nothing to hunt or
+		/// slaughter</returns>
+		private Job FindFoodWork()
+		{
+			bool foodLow = FoodLow(village);
+			bool mayHunt = (foodLow && !Wounded() && !OtherDoing(HuntingKey));
+			bool archer = false;
+			bool preyNear = (mayHunt && MayHunt(out archer) && FindPrey(archer, null, false, false, true) != null);
+			bool wildFood = (mayHunt && !preyNear && WildFoodNear());
+			bool livestock = (mayHunt && !preyNear && !wildFood && FindPrey(HasBow(humanoid), null, true, false, true) != null);
+			FoodWork work = PickFoodWork(foodLow, mayHunt, preyNear, wildFood, livestock);
+			if (work == FoodWork.Hunt)
+			{
+				return(new HuntJob(this, archer, null, false, null, true));
+			}
+			if (work == FoodWork.Slaughter)
+			{
+				return(new HuntJob(this, HasBow(humanoid), null, true));
+			}
+			return(null);
+		}
+
+		/// <summary>
 		/// Finds work for the viking, most needed first - leaving on a quest of its village it's on (see
 		/// FindQuestWork), then when it's wounded, eating from a chest and then resting by the
 		/// fire until it's rested, then eating to keep its foods up while there's food enough to go around (see
@@ -5353,7 +5417,8 @@ namespace VikingVillages
 		/// village to put in a chest, then cooking the raw food it carries or the chests hold at a cooking station, then a
 		/// meal at the cauldron (see FindMealWork), then gear in the
 		/// village's chests better than its own to take up, then for an archer arrows in a chest while it's missing a
-		/// batch or better ones than its best, then a path for a house added for a player's bed (see FindPathWork), then
+		/// batch or better ones than its best, then while the village is short of food prey to hunt or livestock to
+		/// slaughter for it (see FindFoodWork), then a path for a house added for a player's bed (see FindPathWork), then
 		/// the nearest damaged piece of the village to repair, then
 		/// its own gear to repair at the
 		/// workbench or forge when a piece of it has worn down to GearWornShare, then the village's bonfire or campfire to
@@ -5439,6 +5504,13 @@ namespace VikingVillages
 			if (quiver != null)
 			{
 				return(new AmmoJob(this, quiver));
+			}
+			// Short of food, getting more comes ahead of the village's upkeep, so a village always being attacked and
+			// repaired still gets meat
+			Job food = FindFoodWork();
+			if (food != null)
+			{
+				return(food);
 			}
 			// A new house's path comes ahead of the village's upkeep - one viking at a time makes it, leaving the rest to
 			// the upkeep - and waits out a thunderstorm, while light rain doesn't put it off
@@ -14041,6 +14113,11 @@ namespace VikingVillages
 			private readonly bool archer;
 			private readonly string wanted;
 			private readonly bool livestock;
+
+			/// <summary>
+			/// Whether it only hunts wild prey that drops food, for a village short of it (see FindFoodWork)
+			/// </summary>
+			private readonly bool foodOnly;
 			private Character prey;
 			private Vector3 kill;
 			private bool engaged;
@@ -14095,11 +14172,13 @@ namespace VikingVillages
 			/// drop it are hunted (see GatherFor), or null for any prey</param>
 			/// <param name="slaughter">True to take one of the village's livestock instead of wild prey</param>
 			/// <param name="hunters">The hunting party the viking hunts with, or null to hunt alone</param>
-			public HuntJob(VillageLife owner, bool isArcher, string item, bool slaughter, HuntParty hunters = null) : base(owner)
+			/// <param name="forFood">True to only hunt wild prey that drops food, leaving birds alone</param>
+			public HuntJob(VillageLife owner, bool isArcher, string item, bool slaughter, HuntParty hunters = null, bool forFood = false) : base(owner)
 			{
 				archer = isArcher;
 				wanted = item;
 				livestock = slaughter;
+				foodOnly = forFood;
 				party = hunters;
 				prey = ((hunters != null) ? hunters.Prey : null);
 				NoteFood(prey);
@@ -14146,11 +14225,15 @@ namespace VikingVillages
 			/// <summary>
 			/// Describes the job for the debug hover text
 			/// </summary>
-			/// <returns>Its name, and what it's out for when it's after something to craft with</returns>
+			/// <returns>Its name, and what it's out for when it's after something to craft with or only food</returns>
 			public override string Describe()
 			{
 				string name = (livestock ? "Slaughter" : ((party != null) ? "Group hunt" : "Hunt"));
-				return((wanted != null) ? name + " (" + wanted + ")" : name);
+				if (wanted != null)
+				{
+					return(name + " (" + wanted + ")");
+				}
+				return(foodOnly ? name + " (food)" : name);
 			}
 
 			/// <summary>
@@ -14295,10 +14378,10 @@ namespace VikingVillages
 						hunts.Remove(life.humanoid);
 						return(false);
 					}
-					prey = life.FindPrey(archer, wanted, livestock);
+					prey = life.FindPrey(archer, wanted, livestock, false, foodOnly);
 					// An archer goes for a bird when it's nearer than any prey, when it drops what it's after, unless it's
-					// slaughtering livestock
-					RandomFlyingBird nearBird = ((archer && !livestock) ? life.FindBird(wanted) : null);
+					// slaughtering livestock or only after food, which birds don't drop
+					RandomFlyingBird nearBird = ((archer && !livestock && !foodOnly) ? life.FindBird(wanted) : null);
 					if (nearBird != null && (prey == null || Vector3.Distance(nearBird.transform.position, position) < Vector3.Distance(prey.transform.position, position)))
 					{
 						prey = null;

@@ -43,25 +43,26 @@ Everything a living Viking does, most important first. What's higher up stops wh
 | [Cook a meal](#cook-a-meal) | Day 8 | Make a meal at the cauldron |
 | [Take up better gear](#take-up-better-gear) | Day 9 | Put on better gear from the chests |
 | [Fill their quiver](#fill-their-quiver) | Day 10 | Take arrows from the chests |
-| [Make paths](#make-paths) | Day 11 | Hoe paths to new buildings, bridging water |
-| [Repair the village](#repair-the-village) | Day 12 | Fix damaged pieces |
-| [Clear snow](#clear-snow) | Day 13 | In the Deep North, knock heavy snow off pieces and the ground |
-| [Repair their gear](#repair-their-gear) | Day 14 | Fix worn gear at the workbench or forge |
-| [Rebuild the fire](#rebuild-the-fire) | Day 15 | Build back the village's fire |
-| [Take down a sitting log](#take-down-a-sitting-log) | Day 16 | Take down the logs by an old fire for their wood |
-| [Cut trees](#cut-trees) | Day 17 | Fell brush trees when the village is out of wood |
-| [Rebuild the village](#rebuild-the-village) | Day 18 | Build back destroyed pieces |
-| [Stack the fire](#stack-the-fire) | Day 19 | Put wood on the fire |
-| [Craft arrows](#craft-arrows) | Day 20 | Make the best arrows the village can |
-| [Craft a torch](#craft-a-torch) | Day 21 | Make a torch when theirs is missing or worn |
-| [Craft a second weapon](#craft-a-second-weapon) | Day 22 | Make a crude bow, or an axe or club |
-| [Craft better gear](#craft-better-gear) | Day 23 | Make a weapon, shield or armor better than their own |
-| [Upgrade their gear](#upgrade-their-gear) | Day 24 | Raise a piece of their gear one quality |
-| [Work toward the goal](#work-toward-the-goal) | Day 25 | Fuel and fill smelters, and craft materials for the village's goal |
-| [Stock tools](#stock-tools) | Day 26 | Make axes and pickaxes for the chests |
-| [Line a weapon with silver](#line-a-weapon-with-silver) | Day 27 | With Zombie Apocalypse, line a weapon with silver |
-| [Silver arrows](#silver-arrows) | Day 28 | With Zombie Apocalypse, take or craft silver arrows |
-| [Build a beehive](#build-a-beehive) | Day 29 | Build a hive with a queen bee |
+| [Get food](#get-food) | Day 11 | Short of food, hunt prey that drops it or slaughter livestock |
+| [Make paths](#make-paths) | Day 12 | Hoe paths to new buildings, bridging water |
+| [Repair the village](#repair-the-village) | Day 13 | Fix damaged pieces |
+| [Clear snow](#clear-snow) | Day 14 | In the Deep North, knock heavy snow off pieces and the ground |
+| [Repair their gear](#repair-their-gear) | Day 15 | Fix worn gear at the workbench or forge |
+| [Rebuild the fire](#rebuild-the-fire) | Day 16 | Build back the village's fire |
+| [Take down a sitting log](#take-down-a-sitting-log) | Day 17 | Take down the logs by an old fire for their wood |
+| [Cut trees](#cut-trees) | Day 18 | Fell brush trees when the village is out of wood |
+| [Rebuild the village](#rebuild-the-village) | Day 19 | Build back destroyed pieces |
+| [Stack the fire](#stack-the-fire) | Day 20 | Put wood on the fire |
+| [Craft arrows](#craft-arrows) | Day 21 | Make the best arrows the village can |
+| [Craft a torch](#craft-a-torch) | Day 22 | Make a torch when theirs is missing or worn |
+| [Craft a second weapon](#craft-a-second-weapon) | Day 23 | Make a crude bow, or an axe or club |
+| [Craft better gear](#craft-better-gear) | Day 24 | Make a weapon, shield or armor better than their own |
+| [Upgrade their gear](#upgrade-their-gear) | Day 25 | Raise a piece of their gear one quality |
+| [Work toward the goal](#work-toward-the-goal) | Day 26 | Fuel and fill smelters, and craft materials for the village's goal |
+| [Stock tools](#stock-tools) | Day 27 | Make axes and pickaxes for the chests |
+| [Line a weapon with silver](#line-a-weapon-with-silver) | Day 28 | With Zombie Apocalypse, line a weapon with silver |
+| [Silver arrows](#silver-arrows) | Day 29 | With Zombie Apocalypse, take or craft silver arrows |
+| [Build a beehive](#build-a-beehive) | Day 30 | Build a hive with a queen bee |
 | [Talk](#talk) | Day, weight 25 | Chat with another Viking |
 | [Pet a boar](#pet-a-boar) | Day, weight 10 | Pet one of the village's livestock |
 | [Stock the chests with wood](#stock-the-chests-with-wood) | Day, weight 15 | Gather wood from the ground into the chests |
@@ -425,6 +426,15 @@ A chest holding gear better than their own - never broken - they put on, carryin
 
 An archer missing at least a batch of their 100 arrows - 20 for wood arrows - with arrows for their bow in a chest, or with arrows in a chest better than their best, takes the 100 best of their own and the chest's, putting back their own that don't make the cut while the chest has room, and shoots their best first.
 
+### Get Food
+
+While the chests hold fewer than three foods for each Viking, getting more comes ahead of making paths and the village's upkeep, so a village kept busy repairing after attacks still gets meat. Not below three quarters of their health, and with fewer hunting than one for every 5 Vikings:
+
+1. They [hunt](#hunt) the nearest wild prey that drops food and that they hunt themselves - leaving alone prey that drops none, like a draugr or a leech, and birds
+2. With no wild prey about that drops food for any of the village's hunters, they [slaughter](#slaughter) one of the village's livestock
+
+With neither, they go on to the rest of their work, and foraging and hunting still come up four times as often among the [rolled jobs](#rolled-jobs).
+
 ### Make Paths
 
 A building of yours that grew the village with no path to the rest of it - while the village has a workbench, no other Viking is making paths and it isn't a thunderstorm - gets a path from its door to the nearest other house's. It comes ahead of the village's upkeep, since only one Viking makes paths at a time and the rest see to the upkeep.
@@ -579,7 +589,7 @@ They also forage, or hunt, for what crafting is short of - see [Craft Arrows](#c
 
 ### Hunt
 
-An archer, or anyone in a village with no archer, hunts. What counts as prey for them is their biome's, every earlier biome's and the next biome's, standing on ground no harder than their own biome's:
+An archer, or anyone in a village with no archer, hunts - and short of food, they hunt prey that drops it as day work too (see [Get Food](#get-food)). What counts as prey for them is their biome's, every earlier biome's and the next biome's, standing on ground no harder than their own biome's:
 
 | Biome | Prey | Only for archers |
 | --- | --- | --- |
@@ -615,7 +625,7 @@ The party breaks up below 3 before the fight, or when the prey gets away, and wi
 
 ### Slaughter
 
-Short of food, with no wild prey about that drops any - counting the prey only archers hunt when the village has an archer - they slaughter one of the village's livestock, the nearest, the way they hunt it, and cook its meat. Its pen brings another back once its spawner's wait is up (see [LOGIC.md](LOGIC.md#livestock)), so a farm with pens always has some meat.
+Short of food, with no wild prey about that drops any - counting the prey only archers hunt when the village has an archer - they slaughter one of the village's livestock, the nearest, the way they hunt it, and cook its meat. It's part of [getting food](#get-food), ahead of the village's upkeep, and among the rolled jobs for a Viking with no work. Its pen brings another back once its spawner's wait is up (see [LOGIC.md](LOGIC.md#livestock)), so a farm with pens always has some meat.
 
 ### Get Rested Again
 
