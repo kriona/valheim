@@ -216,6 +216,86 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a food raises a viking above its floor when a full set like it would add more than the floor
+		/// holds over the base - for a Black Forest floor of 115, more than 30
+		/// </summary>
+		/// <param name="health">The food's health</param>
+		/// <param name="expected">Whether it raises the viking above its floor</param>
+		[Theory]
+		[InlineData(25f, false)]
+		[InlineData(30f, false)]
+		[InlineData(35f, true)]
+		public void FoodBeatsTheFloorByAThirdOfItOverTheBase(float health, bool expected)
+		{
+			Assert.Equal(expected, VikingFood.BeatsFloor(health, 115f));
+		}
+
+		/// <summary>
+		/// Checks that keeping its foods up, a viking eats the weakest food that raises it above its floor before a
+		/// stronger one, either of them before one that doesn't, and of those that don't the strongest first
+		/// </summary>
+		[Fact]
+		public void TopsUpOnTheWeakestFoodAboveTheFloor()
+		{
+			Assert.True(VikingFood.TopUpOrder(35f, 1f, 45f, 1f, 115f) < 0);
+			Assert.True(VikingFood.TopUpOrder(45f, 1f, 25f, 1f, 115f) < 0);
+			Assert.True(VikingFood.TopUpOrder(25f, 1f, 8f, 1f, 115f) < 0);
+			Assert.True(VikingFood.TopUpOrder(35f, 1f, 35f, 3f, 115f) < 0);
+			Assert.Equal(0, VikingFood.TopUpOrder(35f, 2f, 35f, 2f, 115f));
+		}
+
+		/// <summary>
+		/// Checks that the strongest food comes first, and of two alike the one that heals faster
+		/// </summary>
+		[Fact]
+		public void StrongestFoodComesFirst()
+		{
+			Assert.True(VikingFood.StrongestOrder(45f, 1f, 35f, 3f) < 0);
+			Assert.True(VikingFood.StrongestOrder(35f, 3f, 35f, 1f) < 0);
+			Assert.True(VikingFood.StrongestOrder(35f, 1f, 45f, 1f) > 0);
+		}
+
+		/// <summary>
+		/// Checks that a food eaten to keep its foods up is eaten again only once it has nearly run out
+		/// </summary>
+		/// <param name="until">Until when the food eaten lasts, in ticks</param>
+		/// <param name="expected">Whether it's eaten again</param>
+		[Theory]
+		[InlineData(1099L, true)]
+		[InlineData(1100L, false)]
+		[InlineData(1499L, false)]
+		public void TopsUpTheSameFoodOnceNearlyGone(long until, bool expected)
+		{
+			// A food lasting 1000 ticks is eaten again with less than a tenth of it left
+			long again = (long)(1000L * VikingFood.TopUpShare);
+			Assert.Equal(expected, VikingFood.HasRoom(new List<VikingFood.Meal> { Meal(9, until) }, 9, 1000L, again));
+		}
+
+		/// <summary>
+		/// Checks that a viking fully fed on its biome's food has the next biome's floor, and in the Deep North 350
+		/// </summary>
+		[Fact]
+		public void FedHealthIsTheNextBiomesFloor()
+		{
+			Assert.Equal(115f, VikingFood.FedHealth(VikingGear.IndexOf(Heightmap.Biome.Meadows)));
+			Assert.Equal(155f, VikingFood.FedHealth(VikingGear.IndexOf(Heightmap.Biome.BlackForest)));
+			Assert.Equal(350f, VikingFood.FedHealth(VikingGear.IndexOf(Heightmap.Biome.DeepNorth)));
+			Assert.Equal(350f, VikingFood.FedHealth(99));
+		}
+
+		/// <summary>
+		/// Checks that the foods a viking comes home from a quest with last their time left past the quest's end, leaving
+		/// out those with none
+		/// </summary>
+		[Fact]
+		public void FoodsFromAQuestLastTheirTimeLeft()
+		{
+			List<QuestMeal> lasting = new List<QuestMeal> { new QuestMeal { Item = "Bread", Left = 2f }, new QuestMeal { Item = "Stew", Left = 0f } };
+			List<VikingFood.Meal> meals = VikingFood.MealsFrom(lasting, 1000L);
+			Assert.Equal(new List<VikingFood.Meal> { Meal("Bread".GetStableHashCode(), 1000L + 2L * System.TimeSpan.TicksPerSecond) }, meals);
+		}
+
+		/// <summary>
 		/// Checks that a viking's max health is the base and its food when that's above its floor, and the floor when
 		/// it isn't
 		/// </summary>

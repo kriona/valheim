@@ -490,7 +490,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Takes the viking out of the world as it leaves on a quest - noting the quest, how it goes for the viking (see
-		/// QuestGame.OutcomeFor), the village it left and the house it calls home on it, writing its inventory to its ZDO
+		/// QuestGame.OutcomeFor), the foods it comes home having eaten, the village it left and the house it calls home on it, writing its inventory to its ZDO
 		/// and handing it to the server to keep until the quest is due back (see VillageTravel)
 		/// </summary>
 		/// <param name="record">The quest</param>
@@ -499,7 +499,8 @@ namespace VikingVillages
 			ZDO zdo = nview.GetZDO();
 			string me = VikingIdentity.Get(zdo);
 			List<ItemDrop.ItemData> carried = humanoid.GetInventory().GetAllItems().FindAll((ItemDrop.ItemData item) => IsCarriedFor(item, CarryQuest) && item.m_dropPrefab != null);
-			QuestOutcome outcome = QuestGame.OutcomeFor(humanoid, viking, record, me, carried, VillageNames.Get(village));
+			QuestOutcome outcome = QuestGame.OutcomeFor(humanoid, viking, record, me, carried, VillageNames.Get(village), out List<QuestMeal> lasting);
+			VikingFood.Note(zdo, lasting, record.Due);
 			zdo.Set(VillageQuests.QuestOutcomeKey, outcome.Encode());
 			zdo.Set(VillageQuests.QuestIdKey, record.Id);
 			zdo.Set(VillageQuests.QuestGoneKey, true);
@@ -631,6 +632,8 @@ namespace VikingVillages
 				TestLog.Count("Brought home from quests", found.Key, carried);
 			}
 			inventory.Changed();
+			// Its max health follows the foods it came home with before its health is set as a share of it
+			body.Food.UpdateMaxHealth();
 			humanoid.SetHealth(humanoid.GetMaxHealth() * Mathf.Clamp01(outcome.HealthShare));
 			foreach (KeyValuePair<int, float> skill in outcome.Skills)
 			{
@@ -692,9 +695,23 @@ namespace VikingVillages
 			private float actAt = -1f;
 
 			/// <summary>
+			/// Whether the quest fights (see QuestLoot.Fights), so the viking packs its strongest food, the most of one
+			/// food it takes while there are others, and how many of each food it carries for the quest
+			/// </summary>
+			private readonly bool fights;
+			private readonly int foodPerKind;
+			private readonly Dictionary<string, int> foodCarried = new Dictionary<string, int>();
+
+			/// <summary>
+			/// How many of each food the viking takes from the chests it hasn't searched yet (see PlanFood)
+			/// </summary>
+			private Dictionary<string, int> foodPicks = new Dictionary<string, int>();
+
+			/// <summary>
 			/// Makes the job, working out what the viking takes along - a full set of foods for as long as the quest is
-			/// gone (see QuestSim.MealsWanted), up to QuestGame.FoodMax, up to QuestGame.PotionMax potions, and what it
-			/// spends there, like treasure to sell (see MemberPlan.Spend) - less what it already carries for the quest
+			/// gone (see QuestSim.MealsWanted), up to QuestGame.FoodMax, a third of them of each food, up to
+			/// QuestGame.PotionMax potions, and what it spends there, like treasure to sell (see MemberPlan.Spend) - less
+			/// what it already carries for the quest
 			/// </summary>
 			/// <param name="owner">The viking's life</param>
 			/// <param name="record">The quest</param>
@@ -716,10 +733,17 @@ namespace VikingVillages
 					{
 						continue;
 					}
-					food += (VikingFood.IsFood(item) ? item.m_stack : 0);
+					if (VikingFood.IsFood(item))
+					{
+						food += item.m_stack;
+						QuestSim.Add(foodCarried, item.m_dropPrefab.name, item.m_stack);
+					}
 					potions += (QuestGame.IsPotion(item) ? item.m_stack : 0);
 				}
-				foodWanted = Mathf.Max(0, Mathf.Min(QuestGame.FoodMax, QuestSim.MealsWanted(seconds, QuestSim.DefaultBurn)) - food);
+				int foodFull = Mathf.Min(QuestGame.FoodMax, QuestSim.MealsWanted(seconds, QuestSim.DefaultBurn));
+				foodWanted = Mathf.Max(0, foodFull - food);
+				foodPerKind = Mathf.CeilToInt(foodFull / (float)QuestSim.FoodsAtOnce);
+				fights = QuestLoot.Fights(record.Kind);
 				potionsWanted = Mathf.Max(0, QuestGame.PotionMax - potions);
 				foreach (KeyValuePair<string, int> spend in record.PlanOf(member).Spend)
 				{
@@ -846,8 +870,9 @@ namespace VikingVillages
 
 			/// <summary>
 			/// Walks to the nearest chest it hasn't looked in yet holding food, a healing potion or something to spend it
-			/// still wants, and takes what it wants of them - of food and potions no more than half of each stack, so the
-			/// village keeps some - going with what it has once no chest holds any more
+			/// still wants, and takes what it wants of them - of food the foods it picked (see PlanFood), and of food and
+			/// potions no more than half of each stack, so the village keeps some - going with what it has once no chest
+			/// holds any more
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
 			/// <returns>True once it has packed</returns>
@@ -855,7 +880,9 @@ namespace VikingVillages
 			{
 				if (chest == null || !life.Usable(chest))
 				{
-					chest = life.Nearest(life.UsableChests().FindAll((Container candidate) => !searched.Contains(candidate) && !life.Avoided(candidate.m_nview.GetZDO().m_uid) && candidate.GetInventory().GetAllItems().Exists(Wanted)));
+					List<Container> left = life.UsableChests().FindAll((Container candidate) => !searched.Contains(candidate) && !life.Avoided(candidate.m_nview.GetZDO().m_uid));
+					PlanFood(left);
+					chest = life.Nearest(left.FindAll((Container candidate) => candidate.GetInventory().GetAllItems().Exists(Wanted)));
 					actAt = -1f;
 					if (chest == null)
 					{
@@ -877,7 +904,7 @@ namespace VikingVillages
 						int spend = SpendLeft(name);
 						bool food = VikingFood.IsFood(item);
 						// What it spends it takes all of, and food and potions only half a stack
-						int wanted = ((spend > 0) ? Mathf.Min(spend, item.m_stack) : Mathf.Min((food ? foodWanted : potionsWanted), Mathf.Max(1, item.m_stack / 2)));
+						int wanted = ((spend > 0) ? Mathf.Min(spend, item.m_stack) : Mathf.Min((food ? FoodPicked(name) : potionsWanted), Mathf.Max(1, item.m_stack / 2)));
 						int took = life.Carry(item, wanted, CarryQuest);
 						if (took <= 0)
 						{
@@ -891,6 +918,8 @@ namespace VikingVillages
 						else if (food)
 						{
 							foodWanted -= took;
+							foodPicks[name] = FoodPicked(name) - took;
+							QuestSim.Add(foodCarried, name, took);
 						}
 						else
 						{
@@ -935,7 +964,35 @@ namespace VikingVillages
 				{
 					return(false);
 				}
-				return(SpendLeft(item.m_dropPrefab.name) > 0 || (foodWanted > 0 && VikingFood.IsFood(item)) || (potionsWanted > 0 && QuestGame.IsPotion(item)));
+				return(SpendLeft(item.m_dropPrefab.name) > 0 || (VikingFood.IsFood(item) && FoodPicked(item.m_dropPrefab.name) > 0) || (potionsWanted > 0 && QuestGame.IsPotion(item)));
+			}
+
+			/// <summary>
+			/// Picks the foods the viking takes from chests it hasn't searched yet - half of each stack at most, in the order
+			/// it wants them for the quest (see QuestSim.Rank), the strongest for a fight and otherwise the weakest that
+			/// still does it good, no more than foodPerKind of one while there are others (see QuestSim.Pack)
+			/// </summary>
+			/// <param name="chests">The chests it hasn't searched yet</param>
+			private void PlanFood(List<Container> chests)
+			{
+				List<ItemDrop.ItemData> stacks = new List<ItemDrop.ItemData>();
+				foreach (Container candidate in chests)
+				{
+					stacks.AddRange(candidate.GetInventory().GetAllItems().FindAll((ItemDrop.ItemData item) => item.m_dropPrefab != null && !VikingItems.IsCarried(item)));
+				}
+				List<QuestFood> foods = QuestGame.FoodsOf(stacks, (ItemDrop.ItemData item) => Mathf.Max(1, item.m_stack / 2));
+				QuestSim.Rank(foods, fights, life.body.Food.Floor());
+				foodPicks = QuestSim.Pack(foods, foodWanted, foodPerKind, foodCarried);
+			}
+
+			/// <summary>
+			/// Gets how many more of a food the viking takes (see PlanFood)
+			/// </summary>
+			/// <param name="name">The food's prefab name</param>
+			/// <returns>How many, or 0</returns>
+			private int FoodPicked(string name)
+			{
+				return(foodPicks.TryGetValue(name, out int picked) ? Mathf.Max(0, picked) : 0);
 			}
 
 			/// <summary>

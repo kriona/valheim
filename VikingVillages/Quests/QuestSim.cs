@@ -62,6 +62,56 @@ namespace VikingVillages
 	}
 
 	/// <summary>
+	/// A food a viking takes along on a quest - the item, the health it adds, how much it heals every 10 seconds, how
+	/// long it lasts at the world's food rate, in seconds, and how many of it
+	/// </summary>
+	internal class QuestFood
+	{
+		public string Item;
+		public float Health;
+		public float Regen;
+		public float Burn;
+		public int Count;
+	}
+
+	/// <summary>
+	/// A food a viking has eaten - the item, the health it adds, how long it lasts at the world's food rate and how long
+	/// it has left, in seconds
+	/// </summary>
+	internal class QuestMeal
+	{
+		public string Item;
+		public float Health;
+		public float Burn;
+		public float Left;
+	}
+
+	/// <summary>
+	/// What a viking eats on a quest (see QuestSim.Eat) - how many of each food, the share of the time its food was up,
+	/// its max health on average while it's out and as it comes home, and the foods it has eaten that still last then,
+	/// with the time each has left
+	/// </summary>
+	internal class QuestMeals
+	{
+		public Dictionary<string, int> Eaten = new Dictionary<string, int>();
+		public float FedShare;
+		public float MaxHealth;
+		public float EndMaxHealth;
+		public List<QuestMeal> Lasting = new List<QuestMeal>();
+
+		/// <summary>
+		/// Whether its food was up at least QuestSim.FedShare of the time, which keeps its health coming back
+		/// </summary>
+		public bool Fed
+		{
+			get
+			{
+				return(FedShare >= QuestSim.FedShare);
+			}
+		}
+	}
+
+	/// <summary>
 	/// Works out what happens to vikings out on a quest, where no one can see them - what their tools get done, what
 	/// they find, what they can carry home, how hurt they come back, and what they eat and drink - apart from the game,
 	/// so it can be tested
@@ -138,6 +188,18 @@ namespace VikingVillages
 		/// </summary>
 		public const int FoodsAtOnce = 3;
 		public const float DefaultBurn = 1800f;
+
+		/// <summary>
+		/// The share of the time a viking's food has to be up on a quest for it to count as fed (see QuestMeals.Fed)
+		/// </summary>
+		public const float FedShare = 0.5f;
+
+		/// <summary>
+		/// How often a viking's max health is looked at to work out its average on a quest, in seconds, and the most
+		/// times it's looked at, for a long quest
+		/// </summary>
+		private const float HealthSampleSeconds = 10f;
+		private const int HealthSamplesMost = 2000;
 
 		/// <summary>
 		/// The most a viking's skill raises what it finds, as a share of it
@@ -412,8 +474,9 @@ namespace VikingVillages
 		/// <summary>
 		/// Works out the harm a viking takes on a quest - the quest's danger for as long as it's at it, twice as much for
 		/// each biome the quest is harder than the one its gear comes from and half for each easier, however many, and
-		/// less with more of them than the quest takes, more with fewer - rounded down to a whole share of its health in
-		/// hundredths, so a quest far easier than its gear does it no harm
+		/// less with more of them than the quest takes, more with fewer - rounded down to a whole share in hundredths, so
+		/// a quest far easier than its gear does it no harm, of the health a viking fully fed on its gear's biome's food
+		/// has. A viking fed better than that takes a smaller share of its health, and one fed worse a bigger one
 		/// </summary>
 		/// <param name="kind">The quest</param>
 		/// <param name="questBiome">The quest's biome, by VikingGear's order</param>
@@ -421,11 +484,12 @@ namespace VikingVillages
 		/// <param name="group">How many went</param>
 		/// <param name="wanted">How many the quest takes</param>
 		/// <param name="activeSeconds">How long they were at it, in seconds</param>
-		/// <param name="maxHealth">The viking's most health</param>
+		/// <param name="fedHealth">The health a viking fully fed on its gear's biome's food has (see
+		/// VikingFood.FedHealth)</param>
 		/// <returns>The harm, in health</returns>
-		public static float Harm(QuestKind kind, int questBiome, int gearBiome, int group, int wanted, float activeSeconds, float maxHealth)
+		public static float Harm(QuestKind kind, int questBiome, int gearBiome, int group, int wanted, float activeSeconds, float fedHealth)
 		{
-			return(maxHealth * HarmShare(Danger(kind), questBiome - gearBiome, group, wanted, activeSeconds));
+			return(fedHealth * HarmShare(Danger(kind), questBiome - gearBiome, group, wanted, activeSeconds));
 		}
 
 		/// <summary>
@@ -474,16 +538,209 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out how many foods a viking eats on a quest - a full set of FoodsAtOnce, again each time they wear off -
-		/// out of what it carries
+		/// A food a viking eats on a quest, from when it's eaten - before the quest, for one it set out with - until it
+		/// wears off, in seconds from when the quest sets out
 		/// </summary>
-		/// <param name="seconds">How long the quest is gone, in seconds</param>
-		/// <param name="burnSeconds">How long a food lasts, in seconds</param>
-		/// <param name="carried">How many foods it carries</param>
-		/// <returns>How many it eats</returns>
-		public static int MealsEaten(float seconds, float burnSeconds, int carried)
+		private class Bite
 		{
-			return(System.Math.Min(System.Math.Max(0, carried), MealsWanted(seconds, burnSeconds)));
+			public string Item;
+			public float Health;
+			public float Burn;
+			public float Start;
+			public float End;
+		}
+
+		/// <summary>
+		/// Puts foods in the order a viking wants them on a quest - for a fight, the strongest first (see
+		/// VikingFood.StrongestOrder), and otherwise the way it keeps its foods up at home (see VikingFood.TopUpOrder), so
+		/// it travels on the weakest food that still does it good and leaves the strongest for the wounded - with foods
+		/// alike in order of their names
+		/// </summary>
+		/// <param name="foods">The foods, sorted</param>
+		/// <param name="fight">Whether the quest fights (see QuestLoot.Fights)</param>
+		/// <param name="floor">The viking's floor (see VikingFood.HealthFloor)</param>
+		public static void Rank(List<QuestFood> foods, bool fight, float floor)
+		{
+			foods.Sort((QuestFood a, QuestFood b) =>
+			{
+				int order = (fight ? VikingFood.StrongestOrder(a.Health, a.Regen, b.Health, b.Regen) : VikingFood.TopUpOrder(a.Health, a.Regen, b.Health, b.Regen, floor));
+				return((order != 0) ? order : string.CompareOrdinal(a.Item, b.Item));
+			});
+		}
+
+		/// <summary>
+		/// Works out which foods a viking takes along on a quest - going down the foods it may take in the order it wants
+		/// them, no more than perKind of one so it has different foods to eat side by side, until it has as many as it
+		/// wants, then more of those it wants most when there aren't enough different foods
+		/// </summary>
+		/// <param name="ranked">The foods it may take, one of each item, in the order it wants them, each with how many
+		/// it may take</param>
+		/// <param name="wanted">How many more foods it wants</param>
+		/// <param name="perKind">The most of one food it takes while there are others, counting what it carries</param>
+		/// <param name="carried">How many of each food it already carries for the quest, by item</param>
+		/// <returns>How many more of each food it takes, by item</returns>
+		public static Dictionary<string, int> Pack(List<QuestFood> ranked, int wanted, int perKind, Dictionary<string, int> carried)
+		{
+			Dictionary<string, int> picks = new Dictionary<string, int>();
+			int left = System.Math.Max(0, wanted);
+			foreach (bool capped in new bool[] { true, false })
+			{
+				foreach (QuestFood food in ranked)
+				{
+					if (left <= 0)
+					{
+						break;
+					}
+					int picked = (picks.TryGetValue(food.Item, out int known) ? known : 0);
+					int had = (carried.TryGetValue(food.Item, out int held) ? held : 0);
+					int room = (capped ? System.Math.Min(food.Count, System.Math.Max(1, perKind) - had) : food.Count) - picked;
+					int take = System.Math.Min(left, room);
+					if (take > 0)
+					{
+						picks[food.Item] = picked + take;
+						left -= take;
+					}
+				}
+			}
+			return(picks);
+		}
+
+		/// <summary>
+		/// Works out what a viking eats on a quest - going on with the foods it set out with, and eating what it carries,
+		/// in the order given, whenever one of its FoodsAtOnce places is free, never two of one food at once, the way a
+		/// player's foods work - and its max health from them as they wear off (see VikingFood.MaxHealth), on average
+		/// while it's gone and as it comes home
+		/// </summary>
+		/// <param name="eating">The foods it has eaten as it sets out, with the time each has left</param>
+		/// <param name="carried">The foods it carries, in the order it eats them, left as they are</param>
+		/// <param name="seconds">How long the quest is gone, in seconds</param>
+		/// <param name="floor">The viking's floor (see VikingFood.HealthFloor)</param>
+		/// <returns>What it eats</returns>
+		public static QuestMeals Eat(List<QuestMeal> eating, List<QuestFood> carried, float seconds, float floor)
+		{
+			QuestMeals result = new QuestMeals();
+			float length = System.Math.Max(0f, seconds);
+			List<Bite> bites = new List<Bite>();
+			List<Bite> up = new List<Bite>();
+			foreach (QuestMeal meal in eating)
+			{
+				if (meal.Left > 0f && meal.Burn > 0f && up.Count < FoodsAtOnce && !up.Exists((Bite bite) => bite.Item == meal.Item))
+				{
+					Bite bite = new Bite { Item = meal.Item, Health = meal.Health, Burn = meal.Burn, Start = meal.Left - meal.Burn, End = meal.Left };
+					bites.Add(bite);
+					up.Add(bite);
+				}
+			}
+			int[] counts = new int[carried.Count];
+			for (int i = 0; i < carried.Count; i++)
+			{
+				counts[i] = System.Math.Max(0, carried[i].Count);
+			}
+			float now = 0f;
+			while (true)
+			{
+				up.RemoveAll((Bite bite) => bite.End <= now);
+				while (up.Count < FoodsAtOnce)
+				{
+					int next = NextFood(carried, counts, up);
+					if (next < 0)
+					{
+						break;
+					}
+					QuestFood food = carried[next];
+					counts[next]--;
+					Bite bite = new Bite { Item = food.Item, Health = food.Health, Burn = food.Burn, Start = now, End = now + food.Burn };
+					bites.Add(bite);
+					up.Add(bite);
+					Add(result.Eaten, food.Item, 1);
+				}
+				if (up.Count == 0)
+				{
+					break;
+				}
+				float wearsOff = float.MaxValue;
+				foreach (Bite bite in up)
+				{
+					wearsOff = System.Math.Min(wearsOff, bite.End);
+				}
+				if (wearsOff >= length)
+				{
+					break;
+				}
+				now = wearsOff;
+			}
+			result.EndMaxHealth = MaxHealthAt(bites, length, floor);
+			if (length <= 0f)
+			{
+				result.MaxHealth = result.EndMaxHealth;
+				result.FedShare = 1f;
+			}
+			else
+			{
+				int samples = (int)System.Math.Min(HealthSamplesMost, System.Math.Max(1.0, System.Math.Ceiling(length / HealthSampleSeconds)));
+				float total = 0f;
+				for (int i = 0; i < samples; i++)
+				{
+					total += MaxHealthAt(bites, (i + 0.5f) * length / samples, floor);
+				}
+				result.MaxHealth = total / samples;
+				float upTime = 0f;
+				foreach (Bite bite in bites)
+				{
+					upTime += System.Math.Max(0f, System.Math.Min(bite.End, length) - System.Math.Max(bite.Start, 0f));
+				}
+				result.FedShare = System.Math.Min(1f, upTime / (FoodsAtOnce * length));
+			}
+			foreach (Bite bite in bites)
+			{
+				if (bite.End > length)
+				{
+					result.Lasting.Add(new QuestMeal { Item = bite.Item, Health = bite.Health, Burn = bite.Burn, Left = bite.End - length });
+				}
+			}
+			return(result);
+		}
+
+		/// <summary>
+		/// Finds the next food a viking eats of what it carries - the first, in the order given, it has any of left and
+		/// isn't eating already
+		/// </summary>
+		/// <param name="carried">The foods it carries, in the order it eats them</param>
+		/// <param name="counts">How many of each it has left, by the same index</param>
+		/// <param name="up">The foods it's eating</param>
+		/// <returns>The food's index, or -1 when there's none</returns>
+		private static int NextFood(List<QuestFood> carried, int[] counts, List<Bite> up)
+		{
+			for (int i = 0; i < carried.Count; i++)
+			{
+				string item = carried[i].Item;
+				if (counts[i] > 0 && carried[i].Burn > 0f && !up.Exists((Bite bite) => bite.Item == item))
+				{
+					return(i);
+				}
+			}
+			return(-1);
+		}
+
+		/// <summary>
+		/// Works out a viking's max health at a moment on a quest from the foods it has eaten up then, each fading as it
+		/// wears off (see VikingFood.HealthShare)
+		/// </summary>
+		/// <param name="bites">The foods it eats</param>
+		/// <param name="at">The moment, in seconds from when the quest sets out</param>
+		/// <param name="floor">The viking's floor (see VikingFood.HealthFloor)</param>
+		/// <returns>The max health</returns>
+		private static float MaxHealthAt(List<Bite> bites, float at, float floor)
+		{
+			float food = 0f;
+			foreach (Bite bite in bites)
+			{
+				if (bite.Start <= at && at < bite.End)
+				{
+					food += bite.Health * VikingFood.HealthShare(bite.End - at, bite.Burn);
+				}
+			}
+			return(VikingFood.MaxHealth(floor, food));
 		}
 
 		/// <summary>
@@ -504,7 +761,7 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="maxHealth">Its most health</param>
 		/// <param name="harm">The harm it took (see Harm)</param>
-		/// <param name="fed">Whether it ate at least half the foods it wanted</param>
+		/// <param name="fed">Whether it was fed (see QuestMeals.Fed)</param>
 		/// <param name="potions">How many healing potions it carries</param>
 		/// <param name="potionHeal">How much one heals</param>
 		/// <param name="drunk">Set to how many it drinks</param>

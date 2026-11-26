@@ -413,7 +413,7 @@ namespace VikingVillages
 				return;
 			}
 			logFoodCheckAt = Time.time + LogFoodInterval;
-			bool hungry = (body.Food.FoodHealth() <= 0f && FindFoodChest() == null);
+			bool hungry = (body.Food.FoodHealth() <= 0f && FindFoodChest(false) == null);
 			if (hungry == logHungry)
 			{
 				return;

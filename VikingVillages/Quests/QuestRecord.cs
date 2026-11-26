@@ -18,8 +18,8 @@ namespace VikingVillages
 	/// <summary>
 	/// What one viking does on a quest, worked out as the quest sets out (see QuestGame.Prepare) - what it brings home,
 	/// the tool it works with and the durability that tool has left after, how many times it swings it, the enemies it
-	/// kills, what it takes along to spend there, like treasure to sell, and on a quest that kills creatures, the share of
-	/// its health the fight harms it by (see QuestFight), or -1 on one whose danger harms it (see QuestSim.Harm)
+	/// kills, what it takes along to spend there, like treasure to sell, and on a quest that kills creatures, the health
+	/// the fight harms it by (see QuestFight), or -1 on one whose danger harms it (see QuestSim.Harm)
 	/// </summary>
 	internal class MemberPlan
 	{

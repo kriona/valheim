@@ -337,7 +337,7 @@ By day, a Viking does the first of these they can, in this order - but for light
 A quest of their village setting out with them on it - between 0.24 and 0.6 of the day, with no enemy within 30 meters of the village - drops whatever they're doing. Only lightening their load comes first. They:
 
 1. Take the quest's tool from the nearest chest that has it, or go without
-2. Pack food for as long as they're gone - 3 foods for each half hour, up to 9 - up to 2 healing potions, and what the quest spends, like treasure to sell. They take no more than half of any stack of food or potions, from each chest once
+2. Pack food for as long as they're gone - 3 foods for each half hour, up to 9, no more than a third of them of one kind while there are others - up to 2 healing potions, and what the quest spends, like treasure to sell. For a quest that kills creatures they take their strongest food, and for the rest the food they'd keep their foods up on (see [Keep Their Foods Up](#keep-their-foods-up)). They take no more than half of any stack of food or potions, from each chest once
 3. The first of them says when they'll be back
 4. Run out of the village to a spot outside it, and are gone
 
@@ -357,7 +357,7 @@ Below half their health with nothing to fight, they use the Elder's power, when 
 
 ### Keep Their Foods Up
 
-While the chests hold three foods for each Viking or more, they eat the way they do when hurt, to keep their foods up for the health they add - with less, the food is left for the wounded.
+While the chests hold three foods for each Viking or more, they keep their foods up for the health they add - with less, the food is left for the wounded. They eat a food once one of their three places is free, or one of theirs has a tenth of it left. Of all the chests' food they can eat, they eat the weakest that still raises them above their least max health (see [LOGIC.md](LOGIC.md#eating)) - a food adding more than a third of what that holds over the base 25 - from the nearest chest that has it, so the strongest food is left for the wounded and for fights. With none that does, they eat the strongest of the rest.
 
 ### Keep Warm
 

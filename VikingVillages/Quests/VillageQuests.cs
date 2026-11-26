@@ -1172,7 +1172,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Describes what a viking does on a quest - the tool it takes from a chest, and once the quest has set out, the
-		/// tool it works with, the enemies it kills, the share of its health the quest's fight harms it by, what it brings home
+		/// tool it works with, the enemies it kills, the health the quest's fight harms it by, what it brings home
 		/// and what it spends
 		/// </summary>
 		/// <param name="record">The quest</param>
@@ -1185,7 +1185,7 @@ namespace VikingVillages
 			string tool = ((index < record.Tools.Count) ? record.Tools[index] : "");
 			string loot = string.Join(", ", plan.Loot.ConvertAll((KeyValuePair<string, int> entry) => entry.Value + " " + entry.Key));
 			string spend = string.Join(", ", plan.Spend.ConvertAll((KeyValuePair<string, int> entry) => entry.Value + " " + entry.Key));
-			return(name + ((tool.Length > 0) ? ", taking " + tool + " from a chest" : "") + ((plan.Tool.Length > 0) ? ", working with " + plan.Tool + " (" + plan.Hits + " hits, " + plan.ToolLeft.ToString("F0") + " durability left)" : "") + ((plan.Kills > 0) ? ", " + plan.Kills + " kills" : "") + ((plan.FightHarm >= 0f) ? ", harmed by " + (plan.FightHarm * 100f).ToString("F0") + "% in the fight" : "") + ", bringing home " + ((loot.Length > 0) ? loot : "nothing") + ((spend.Length > 0) ? ", spending " + spend : ""));
+			return(name + ((tool.Length > 0) ? ", taking " + tool + " from a chest" : "") + ((plan.Tool.Length > 0) ? ", working with " + plan.Tool + " (" + plan.Hits + " hits, " + plan.ToolLeft.ToString("F0") + " durability left)" : "") + ((plan.Kills > 0) ? ", " + plan.Kills + " kills" : "") + ((plan.FightHarm >= 0f) ? ", harmed by " + plan.FightHarm.ToString("F0") + " health in the fight" : "") + ", bringing home " + ((loot.Length > 0) ? loot : "nothing") + ((spend.Length > 0) ? ", spending " + spend : ""));
 		}
 
 		/// <summary>

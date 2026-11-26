@@ -8,7 +8,8 @@ namespace VikingVillages
 	/// What a living viking has eaten, the way a player's foods work - up to MaxMeals different foods at once, each
 	/// lasting its burn time at the world's food rate, adding its health to the viking's max health, fading as it
 	/// wears off, and healing its food regen every TickTime seconds, boosted by resting and being rested the same as a
-	/// player's, and eaten again once half of it has worn off
+	/// player's, and eaten again once half of it has worn off while it's wounded, or once it has nearly run out to keep
+	/// its foods up (see TopUpShare)
 	/// </summary>
 	/// <remarks>
 	/// The meals are noted in the viking's ZDO, so they carry over to whichever client owns it next. The food adds to
@@ -28,6 +29,18 @@ namespace VikingVillages
 		/// </summary>
 		private const int MaxMeals = 3;
 		private const float TickTime = 10f;
+
+		/// <summary>
+		/// The share of a food's burn time left at which a viking that isn't wounded eats it again to keep its foods up -
+		/// once it has nearly run out, so the village's food lasts
+		/// </summary>
+		internal const float TopUpShare = 0.1f;
+
+		/// <summary>
+		/// The health a viking fully fed on the three best foods of the Deep North has, the last biome its gear can come
+		/// from (see FedHealth)
+		/// </summary>
+		private const float DeepNorthFed = 350f;
 
 		/// <summary>
 		/// A food a viking has eaten
@@ -113,34 +126,112 @@ namespace VikingVillages
 		/// <returns>True when it can</returns>
 		public bool CanEat(ItemDrop.ItemData item)
 		{
+			return(Fits(item, 0.5f));
+		}
+
+		/// <summary>
+		/// Checks whether the viking eats a food to keep its foods up when it isn't wounded - a food it hasn't eaten that
+		/// fits beside the others, or one it has eaten that has nearly run out (see TopUpShare)
+		/// </summary>
+		/// <param name="item">The food</param>
+		/// <returns>True when it does</returns>
+		public bool CanTopUp(ItemDrop.ItemData item)
+		{
+			return(Fits(item, TopUpShare));
+		}
+
+		/// <summary>
+		/// Checks whether a food fits beside the meals the viking has eaten, eating one it has eaten again once a share of
+		/// it is left (see HasRoom)
+		/// </summary>
+		/// <param name="item">The food</param>
+		/// <param name="againShare">The share of its burn time left at which a food it has eaten is eaten again</param>
+		/// <returns>True when it fits</returns>
+		private bool Fits(ItemDrop.ItemData item, float againShare)
+		{
 			if (!IsFood(item) || viking.m_nview == null || !viking.m_nview.IsValid())
 			{
 				return(false);
 			}
 			List<Meal> meals = Read(viking.m_nview.GetZDO());
 			int prefab = item.m_dropPrefab.name.GetStableHashCode();
-			return(HasRoom(meals, prefab, NetTime.Now(), NetTime.Ticks(BurnTime(item) / 2f)));
+			return(HasRoom(meals, prefab, NetTime.Now(), NetTime.Ticks(BurnTime(item) * againShare)));
 		}
 
 		/// <summary>
-		/// Checks whether a food fits beside the meals a viking has eaten - one it has eaten when less than half of it is
-		/// left, or one it hasn't when it has eaten fewer than MaxMeals foods
+		/// Checks whether a food fits beside the meals a viking has eaten - one it has eaten when less than a share of it
+		/// is left, or one it hasn't when it has eaten fewer than MaxMeals foods
 		/// </summary>
 		/// <param name="meals">The meals that still last</param>
 		/// <param name="prefab">The food's prefab hash</param>
 		/// <param name="now">The time now, in ZNet time ticks</param>
-		/// <param name="halfBurn">Half the food's burn time, in ticks</param>
+		/// <param name="eatAgain">How much of a food it has eaten is left when it eats it again, in ticks</param>
 		/// <returns>True when it fits</returns>
-		internal static bool HasRoom(List<Meal> meals, int prefab, long now, long halfBurn)
+		internal static bool HasRoom(List<Meal> meals, int prefab, long now, long eatAgain)
 		{
 			foreach (Meal meal in meals)
 			{
 				if (meal.Prefab == prefab)
 				{
-					return(meal.Until - now < halfBurn);
+					return(meal.Until - now < eatAgain);
 				}
 			}
 			return(meals.Count < MaxMeals);
+		}
+
+		/// <summary>
+		/// Checks whether a food raises a viking's max health above its floor - one adding more than a third of what the
+		/// floor holds over the base health, so a full set of foods like it would add more than the floor gives
+		/// </summary>
+		/// <param name="health">The food's health</param>
+		/// <param name="floor">The viking's floor (see HealthFloor)</param>
+		/// <returns>True when it does</returns>
+		internal static bool BeatsFloor(float health, float floor)
+		{
+			return(health > (floor - BaseHealth) / MaxMeals);
+		}
+
+		/// <summary>
+		/// Orders foods for a viking keeping its foods up, or packing for a trip - those that raise it above its floor
+		/// before those that don't (see BeatsFloor), the weakest of the first first, so the strongest food is left for the
+		/// wounded and fights, and the strongest of the rest first - by health, then by how fast it heals
+		/// </summary>
+		/// <param name="healthA">The first food's health</param>
+		/// <param name="regenA">How much the first food heals every TickTime seconds</param>
+		/// <param name="healthB">The second food's health</param>
+		/// <param name="regenB">How much the second food heals every TickTime seconds</param>
+		/// <param name="floor">The viking's floor (see HealthFloor)</param>
+		/// <returns>Less than 0 when the first comes first, more than 0 when the second does, and 0 when they're alike</returns>
+		internal static int TopUpOrder(float healthA, float regenA, float healthB, float regenB, float floor)
+		{
+			bool beatsA = BeatsFloor(healthA, floor);
+			bool beatsB = BeatsFloor(healthB, floor);
+			if (beatsA != beatsB)
+			{
+				return(beatsA ? -1 : 1);
+			}
+			return(beatsA ? -StrongestOrder(healthA, regenA, healthB, regenB) : StrongestOrder(healthA, regenA, healthB, regenB));
+		}
+
+		/// <summary>
+		/// Orders foods strongest first - by health, then by how fast it heals - for a viking packing for a fight
+		/// </summary>
+		/// <param name="healthA">The first food's health</param>
+		/// <param name="regenA">How much the first food heals every TickTime seconds</param>
+		/// <param name="healthB">The second food's health</param>
+		/// <param name="regenB">How much the second food heals every TickTime seconds</param>
+		/// <returns>Less than 0 when the first comes first, more than 0 when the second does, and 0 when they're alike</returns>
+		internal static int StrongestOrder(float healthA, float regenA, float healthB, float regenB)
+		{
+			if (healthA != healthB)
+			{
+				return((healthA > healthB) ? -1 : 1);
+			}
+			if (regenA != regenB)
+			{
+				return((regenA > regenB) ? -1 : 1);
+			}
+			return(0);
 		}
 
 		/// <summary>
@@ -262,6 +353,83 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Gets the max health a viking has fully fed on the three best foods of the biome its gear comes from - the next
+		/// biome's floor, or DeepNorthFed for the last
+		/// </summary>
+		/// <param name="biome">The biome's index in VikingGear's tables, kept within HealthFloors</param>
+		/// <returns>The health</returns>
+		internal static float FedHealth(int biome)
+		{
+			int next = Mathf.Clamp(biome, 0, HealthFloors.Length - 1) + 1;
+			return((next < HealthFloors.Length) ? HealthFloors[next] : DeepNorthFed);
+		}
+
+		/// <summary>
+		/// Gets the viking's floor, by the biome its gear comes from (see HealthFloor)
+		/// </summary>
+		/// <returns>The floor, or the first biome's before its data is read</returns>
+		public float Floor()
+		{
+			VikingCore core = viking.GetComponent<VikingCore>();
+			return(HealthFloor((core != null && core.GetData() != null) ? core.BiomeIndex() : 0));
+		}
+
+		/// <summary>
+		/// Lists the foods the viking has eaten that still last, with their health, how long each lasts and how long it
+		/// has left, for working out what it eats on a quest (see QuestSim.Eat)
+		/// </summary>
+		/// <returns>The foods</returns>
+		public List<QuestMeal> Eating()
+		{
+			List<QuestMeal> eating = new List<QuestMeal>();
+			if (viking.m_nview == null || !viking.m_nview.IsValid() || ObjectDB.instance == null)
+			{
+				return(eating);
+			}
+			long now = NetTime.Now();
+			foreach (Meal meal in Read(viking.m_nview.GetZDO()))
+			{
+				ItemDrop.ItemData food = FoodOf(meal);
+				if (food != null && food.m_shared.m_foodBurnTime > 0f)
+				{
+					eating.Add(new QuestMeal { Item = food.m_dropPrefab.name, Health = food.m_shared.m_food, Burn = BurnTime(food), Left = (float)(meal.Until - now) / System.TimeSpan.TicksPerSecond });
+				}
+			}
+			return(eating);
+		}
+
+		/// <summary>
+		/// Notes the foods a viking still has eaten as it comes home from a quest (see QuestSim.Eat), so its max health
+		/// follows them once it's back
+		/// </summary>
+		/// <param name="zdo">The viking's ZDO, owned by this client</param>
+		/// <param name="lasting">The foods it still has eaten at the quest's end, each with the time it has left</param>
+		/// <param name="end">When the quest ends, in ZNet time ticks</param>
+		public static void Note(ZDO zdo, List<QuestMeal> lasting, long end)
+		{
+			Write(zdo, MealsFrom(lasting, end));
+		}
+
+		/// <summary>
+		/// Works out the meals a viking has from foods it has eaten, each lasting the time it has left past a moment
+		/// </summary>
+		/// <param name="eating">The foods, each with the time it has left</param>
+		/// <param name="from">The moment, in ZNet time ticks</param>
+		/// <returns>The meals, leaving out those with no time left</returns>
+		internal static List<Meal> MealsFrom(List<QuestMeal> eating, long from)
+		{
+			List<Meal> meals = new List<Meal>();
+			foreach (QuestMeal meal in eating)
+			{
+				if (meal.Left > 0f)
+				{
+					meals.Add(new Meal { Prefab = meal.Item.GetStableHashCode(), Until = from + (long)(meal.Left * System.TimeSpan.TicksPerSecond) });
+				}
+			}
+			return(meals);
+		}
+
+		/// <summary>
 		/// Works out a viking's max health - the base health and what its food adds, the way a player's is, or its
 		/// biome's floor when that's more
 		/// </summary>
@@ -291,7 +459,7 @@ namespace VikingVillages
 		/// Sets the viking's max health from its biome and food, the way a player's follows its food - its health drops
 		/// with the max as food wears off, while a higher max fills in as it heals - on its owner
 		/// </summary>
-		private void UpdateMaxHealth()
+		public void UpdateMaxHealth()
 		{
 			float max = MaxHealth();
 			if (max <= 0f || viking.m_nview == null || !viking.m_nview.IsOwner())

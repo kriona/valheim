@@ -50,12 +50,13 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// How a quest's fight goes - how long it takes, in seconds, and the share of each viking's health it harms them
-	/// by, in the order of the fighters
+	/// How a quest's fight goes - how long it takes, in seconds, and the health it harms each viking by and the share of
+	/// its health as it set out that is, in the order of the fighters
 	/// </summary>
 	internal class FightResult
 	{
 		public float Seconds;
+		public List<float> Harms = new List<float>();
 		public List<float> HarmShares = new List<float>();
 	}
 
@@ -138,6 +139,7 @@ namespace VikingVillages
 					List<Blow> blows = ((k < fighter.Blows.Count) ? fighter.Blows[k] : new List<Blow>());
 					harm += HarmFrom(kinds[k], blows, alive[i], fighters.Count, fighter.Armor, fighter.BlockPower);
 				}
+				result.Harms.Add(harm);
 				result.HarmShares.Add(Share(harm, fighter.Health));
 			}
 			return(result);

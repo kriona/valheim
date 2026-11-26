@@ -5290,24 +5290,24 @@ namespace VikingVillages
 			}
 			if (Wounded())
 			{
-				Container pantry = ((Time.time >= eatAgainAt) ? FindFoodChest() : null);
+				Container pantry = ((Time.time >= eatAgainAt) ? FindFoodChest(false) : null);
 				if (pantry != null)
 				{
-					return(new EatJob(this, pantry));
+					return(new EatJob(this, pantry, false));
 				}
 				if (!body.Rest.IsRested() && Time.time >= restAgainAt && village.GatherFires().Count > 0)
 				{
 					return(new GatherJob(this, true));
 				}
 			}
-			// With food enough in the chests to go around, it keeps its foods up the way a player does, for the health they
-			// add - otherwise the food is left for the wounded
+			// With food enough in the chests to go around, it keeps its foods up for the health they add, eating each again
+			// once it has nearly run out, on the weakest food that does it good - otherwise the food is left for the wounded
 			if (Time.time >= eatAgainAt && FoodToSpare())
 			{
-				Container pantry = FindFoodChest();
+				Container pantry = FindFoodChest(true);
 				if (pantry != null)
 				{
-					return(new EatJob(this, pantry));
+					return(new EatJob(this, pantry, true));
 				}
 			}
 			// In freezing weather it keeps out of the cold, rather than working out in it until it freezes
@@ -9010,25 +9010,41 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the best food in a chest the viking can eat now - the one that heals it fastest
+		/// Finds the food in a chest the viking eats now - wounded, the one that heals it fastest, and keeping its foods
+		/// up, the weakest that raises it above its floor, or with none, the strongest of the rest (see
+		/// VikingFood.TopUpOrder), so the strongest food is left for the wounded
 		/// </summary>
 		/// <param name="chest">The chest</param>
+		/// <param name="topUp">True when it's keeping its foods up rather than eating for its wounds</param>
 		/// <returns>The food, or null when there's none</returns>
-		private ItemDrop.ItemData FoodIn(Container chest)
+		private ItemDrop.ItemData FoodIn(Container chest, bool topUp)
 		{
 			ItemDrop.ItemData best = null;
+			float floor = body.Food.Floor();
 			foreach (ItemDrop.ItemData item in chest.GetInventory().GetAllItems())
 			{
-				if (!body.Food.CanEat(item))
+				if (!(topUp ? body.Food.CanTopUp(item) : body.Food.CanEat(item)))
 				{
 					continue;
 				}
-				if (best == null || item.m_shared.m_foodRegen > best.m_shared.m_foodRegen || (item.m_shared.m_foodRegen == best.m_shared.m_foodRegen && item.m_shared.m_food > best.m_shared.m_food))
+				if (best == null || (topUp ? EatsBefore(item, best, floor) : (item.m_shared.m_foodRegen > best.m_shared.m_foodRegen || (item.m_shared.m_foodRegen == best.m_shared.m_foodRegen && item.m_shared.m_food > best.m_shared.m_food))))
 				{
 					best = item;
 				}
 			}
 			return(best);
+		}
+
+		/// <summary>
+		/// Checks whether a viking keeping its foods up eats one food before another (see VikingFood.TopUpOrder)
+		/// </summary>
+		/// <param name="item">The food</param>
+		/// <param name="other">The other food</param>
+		/// <param name="floor">The viking's floor</param>
+		/// <returns>True when it eats the first first</returns>
+		private static bool EatsBefore(ItemDrop.ItemData item, ItemDrop.ItemData other, float floor)
+		{
+			return(VikingFood.TopUpOrder(item.m_shared.m_food, item.m_shared.m_foodRegen, other.m_shared.m_food, other.m_shared.m_foodRegen, floor) < 0);
 		}
 
 		/// <summary>
@@ -9064,26 +9080,45 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the nearest of the village's chests the viking may use with food in it that it can eat now
+		/// Finds the chest the viking eats from - wounded, the nearest of the village's chests it may use with food in it
+		/// it can eat now, and keeping its foods up, the one holding the food it eats first of all of them (see FoodIn),
+		/// the nearest of those alike
 		/// </summary>
+		/// <param name="topUp">True when it's keeping its foods up rather than eating for its wounds</param>
 		/// <returns>The chest, or null when there's none</returns>
-		private Container FindFoodChest()
+		private Container FindFoodChest(bool topUp)
 		{
-			return(Nearest(UsableChests().FindAll((Container chest) => FoodIn(chest) != null)));
+			List<Container> pantries = UsableChests().FindAll((Container chest) => FoodIn(chest, topUp) != null);
+			if (!topUp || pantries.Count == 0)
+			{
+				return(Nearest(pantries));
+			}
+			float floor = body.Food.Floor();
+			ItemDrop.ItemData first = null;
+			foreach (Container chest in pantries)
+			{
+				ItemDrop.ItemData food = FoodIn(chest, true);
+				if (first == null || EatsBefore(food, first, floor))
+				{
+					first = food;
+				}
+			}
+			return(Nearest(pantries.FindAll((Container chest) => !EatsBefore(first, FoodIn(chest, true), floor))));
 		}
 
 		/// <summary>
-		/// Eats the best food in a chest the viking has reached, the way a player eats
+		/// Eats the food in a chest the viking has reached that it eats now (see FoodIn), the way a player eats
 		/// </summary>
 		/// <param name="chest">The chest</param>
+		/// <param name="topUp">True when it's keeping its foods up rather than eating for its wounds</param>
 		/// <returns>False when there was no food in it it could eat, or it couldn't be used</returns>
-		private bool EatFrom(Container chest)
+		private bool EatFrom(Container chest, bool topUp)
 		{
 			if (!OpenChest(chest))
 			{
 				return(false);
 			}
-			ItemDrop.ItemData food = FoodIn(chest);
+			ItemDrop.ItemData food = FoodIn(chest, topUp);
 			if (food == null || !body.Food.Eat(food))
 			{
 				return(false);
@@ -10149,10 +10184,10 @@ namespace VikingVillages
 			}
 			if (Wounded())
 			{
-				Container pantry = ((Time.time >= eatAgainAt) ? FindFoodChest() : null);
+				Container pantry = ((Time.time >= eatAgainAt) ? FindFoodChest(false) : null);
 				if (pantry != null)
 				{
-					return(new EatJob(this, pantry));
+					return(new EatJob(this, pantry, false));
 				}
 				if (!body.Rest.IsRested() && Time.time >= restAgainAt && village.GatherFires().Count > 0)
 				{
@@ -14755,22 +14790,25 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Eating from a chest when wounded, or to keep its foods up while there's food enough to go around (see
-		/// FoodToSpare) - walking to the nearest chest with food it can eat, opening it and eating the food there that
-		/// heals it fastest
+		/// FoodToSpare) - walking to the chest it eats from (see FindFoodChest), opening it and eating the food there it
+		/// eats now (see FoodIn)
 		/// </summary>
 		private class EatJob : Job
 		{
 			private Container chest;
 			private float eatAt = -1f;
+			private readonly bool topUp;
 
 			/// <summary>
 			/// Makes the job
 			/// </summary>
 			/// <param name="owner">The viking's life</param>
 			/// <param name="pantry">The chest, with food in it the viking can eat</param>
-			public EatJob(VillageLife owner, Container pantry) : base(owner)
+			/// <param name="topUp">True when it's keeping its foods up rather than eating for its wounds</param>
+			public EatJob(VillageLife owner, Container pantry, bool topUp) : base(owner)
 			{
 				chest = pantry;
+				this.topUp = topUp;
 			}
 
 			/// <summary>
@@ -14781,9 +14819,9 @@ namespace VikingVillages
 			/// <returns>True once it has eaten, or there's no food it can eat</returns>
 			public override bool Tick(float dt)
 			{
-				if (chest == null || !life.Usable(chest) || life.FoodIn(chest) == null)
+				if (chest == null || !life.Usable(chest) || life.FoodIn(chest, topUp) == null)
 				{
-					chest = life.FindFoodChest();
+					chest = life.FindFoodChest(topUp);
 					eatAt = -1f;
 					if (chest == null)
 					{
@@ -14798,7 +14836,7 @@ namespace VikingVillages
 						return(false);
 					}
 					eatAt = -1f;
-					if (life.EatFrom(chest))
+					if (life.EatFrom(chest, topUp))
 					{
 						return(true);
 					}

@@ -180,6 +180,17 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Checks whether a quest fights - kills creatures it meets there (see Sources), which its vikings pack their
+		/// strongest food for
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <returns>True when it does</returns>
+		internal static bool Fights(QuestKind kind)
+		{
+			return(Sources(kind).Exists((LootSource source) => source.Kill));
+		}
+
+		/// <summary>
 		/// Works out how many plants one of a quest's vikings picks besides foraging (see PickedPlants) - each plant's
 		/// count shared out among them, the first of them picking one more of what doesn't share out evenly
 		/// </summary>

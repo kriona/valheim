@@ -230,7 +230,7 @@ namespace VikingVillages
 				active = Mathf.Max(active, fight.Seconds);
 				for (int i = 0; i < members.Count; i++)
 				{
-					record.Plans[i].FightHarm = fight.HarmShares[i];
+					record.Plans[i].FightHarm = fight.Harms[i];
 				}
 				LogFight(record, members, fight, active);
 			}
@@ -694,10 +694,10 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out how a quest goes for one of its vikings as it leaves - what it brings home and its tool's wear from
-		/// the quest's plan, then the harm it takes - the fight's on a quest that kills creatures (see QuestFight), and
-		/// otherwise the quest's danger for its gear - whether it dies of it (see
-		/// QuestSim.DeathChance), the foods it eats and potions it drinks of what it took along, how its skills rise, and
-		/// what it spends
+		/// the quest's plan, the foods it eats of what it took along (see QuestSim.Eat), whose health sets its max health
+		/// while it's out and as it comes home, then the harm it takes - the fight's on a quest that kills creatures (see
+		/// QuestFight), and otherwise the quest's danger for its gear - whether it dies of it (see QuestSim.DeathChance),
+		/// the potions it drinks, how its skills rise, and what it spends
 		/// </summary>
 		/// <param name="humanoid">The viking</param>
 		/// <param name="core">Its core</param>
@@ -705,8 +705,9 @@ namespace VikingVillages
 		/// <param name="member">Its GUID</param>
 		/// <param name="carried">What it takes along for the quest - food, potions and what it spends</param>
 		/// <param name="village">The name of the village it sets out from</param>
+		/// <param name="lasting">Set to the foods it still has eaten as it comes home, with the time each has left</param>
 		/// <returns>How it goes</returns>
-		public static QuestOutcome OutcomeFor(Humanoid humanoid, VikingCore core, QuestRecord record, string member, List<ItemDrop.ItemData> carried, string village)
+		public static QuestOutcome OutcomeFor(Humanoid humanoid, VikingCore core, QuestRecord record, string member, List<ItemDrop.ItemData> carried, string village, out List<QuestMeal> lasting)
 		{
 			MemberPlan plan = record.PlanOf(member);
 			QuestOutcome outcome = new QuestOutcome();
@@ -720,19 +721,18 @@ namespace VikingVillages
 			outcome.SetOutAt = record.SetOutAt;
 			outcome.Village = village;
 			float seconds = Mathf.Max(0f, (record.Due - record.SetOutAt) / (float)NetTime.Ticks(1f));
-			List<ItemDrop.ItemData> foods = carried.FindAll((ItemDrop.ItemData item) => VikingFood.IsFood(item));
 			List<ItemDrop.ItemData> potions = carried.FindAll((ItemDrop.ItemData item) => IsPotion(item));
-			int foodCount = 0;
-			float burn = 0f;
-			foreach (ItemDrop.ItemData food in foods)
+			int gearBiome = ((core != null) ? core.BiomeIndex() : 0);
+			LivingVikingBody body = humanoid as LivingVikingBody;
+			float floor = ((body != null) ? body.Food.Floor() : VikingFood.HealthFloor(gearBiome));
+			List<QuestFood> foods = FoodsOf(carried, (ItemDrop.ItemData item) => item.m_stack);
+			QuestSim.Rank(foods, QuestLoot.Fights(record.Kind), floor);
+			QuestMeals meals = QuestSim.Eat(((body != null) ? body.Food.Eating() : new List<QuestMeal>()), foods, seconds, floor);
+			foreach (KeyValuePair<string, int> eaten in meals.Eaten)
 			{
-				foodCount += food.m_stack;
-				burn += food.m_shared.m_foodBurnTime * food.m_stack;
+				outcome.Used.Add(eaten);
 			}
-			burn = ((foodCount > 0) ? burn / foodCount / Mathf.Max(0.01f, Game.m_foodRate) : QuestSim.DefaultBurn);
-			int meals = QuestSim.MealsEaten(seconds, burn, foodCount);
-			bool fed = (meals * 2 >= QuestSim.MealsWanted(seconds, burn));
-			UseUp(foods, meals, outcome.Used);
+			lasting = meals.Lasting;
 			int potionCount = 0;
 			float heal = 0f;
 			foreach (ItemDrop.ItemData potion in potions)
@@ -740,11 +740,13 @@ namespace VikingVillages
 				potionCount += potion.m_stack;
 				heal = Mathf.Max(heal, PotionHeal(potion));
 			}
-			float max = humanoid.GetMaxHealth();
-			float harm = ((plan.FightHarm >= 0f) ? plan.FightHarm * max : QuestSim.Harm(record.Kind, record.QuestBiome, ((core != null) ? core.BiomeIndex() : 0), record.Members.Count, record.Wanted, record.ActiveSeconds, max));
-			float health = QuestSim.EndHealth(max, harm, fed, potionCount, heal, out int drunk);
+			// Its food sets its health while it's out, and the foods it still has eaten its health as it comes home
+			float max = meals.MaxHealth;
+			float endMax = meals.EndMaxHealth;
+			float harm = ((plan.FightHarm >= 0f) ? plan.FightHarm : QuestSim.Harm(record.Kind, record.QuestBiome, gearBiome, record.Members.Count, record.Wanted, record.ActiveSeconds, VikingFood.FedHealth(gearBiome)));
+			float health = QuestSim.EndHealth(endMax, harm, meals.Fed, potionCount, heal, out int drunk);
 			UseUp(potions, drunk, outcome.Used);
-			outcome.HealthShare = ((max > 0f) ? health / max : 1f);
+			outcome.HealthShare = ((endMax > 0f) ? health / endMax : 1f);
 			// The worse a quest harms it, the likelier it dies there, which leaves it out when the others come home
 			if (max > 0f && Random.value < QuestSim.DeathChance(harm / max))
 			{
@@ -918,6 +920,34 @@ namespace VikingVillages
 				return(first);
 			}
 			return((second != Skills.SkillType.None) ? second : Skills.SkillType.Unarmed);
+		}
+
+		/// <summary>
+		/// Gathers the food among stacks of items into one food of each item - its health, how much it heals, how long it
+		/// lasts at the world's food rate, and how many of it there are, counting each stack its own way
+		/// </summary>
+		/// <param name="stacks">The stacks, food or not</param>
+		/// <param name="count">How many of a stack count</param>
+		/// <returns>The foods, in the order first found</returns>
+		public static List<QuestFood> FoodsOf(List<ItemDrop.ItemData> stacks, System.Func<ItemDrop.ItemData, int> count)
+		{
+			List<QuestFood> foods = new List<QuestFood>();
+			foreach (ItemDrop.ItemData item in stacks)
+			{
+				if (!VikingFood.IsFood(item))
+				{
+					continue;
+				}
+				string name = item.m_dropPrefab.name;
+				QuestFood food = foods.Find((QuestFood known) => known.Item == name);
+				if (food == null)
+				{
+					food = new QuestFood { Item = name, Health = item.m_shared.m_food, Regen = item.m_shared.m_foodRegen, Burn = VikingFood.Lasts(item.m_shared.m_foodBurnTime, Game.m_foodRate) };
+					foods.Add(food);
+				}
+				food.Count += count(item);
+			}
+			return(foods);
 		}
 
 		/// <summary>

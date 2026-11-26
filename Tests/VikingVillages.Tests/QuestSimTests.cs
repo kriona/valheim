@@ -220,12 +220,147 @@ namespace VikingVillages.Tests
 		}
 
 		[Fact]
-		public void VikingsEatAFullSetEachTimeTheirFoodWearsOff()
+		public void VikingsWantAFullSetEachTimeTheirFoodWearsOff()
 		{
 			Assert.Equal(3, QuestSim.MealsWanted(1000f, 1800f));
 			Assert.Equal(6, QuestSim.MealsWanted(2000f, 1800f));
-			Assert.Equal(4, QuestSim.MealsEaten(2000f, 1800f, 4));
 			Assert.Equal(0, QuestSim.MealsWanted(0f, 1800f));
+		}
+
+		/// <summary>
+		/// Makes a food a viking carries on a quest
+		/// </summary>
+		/// <param name="item">The item</param>
+		/// <param name="health">The health it adds</param>
+		/// <param name="burn">How long it lasts, in seconds</param>
+		/// <param name="count">How many of it</param>
+		/// <returns>The food</returns>
+		private static QuestFood Food(string item, float health, float burn, int count)
+		{
+			return(new QuestFood { Item = item, Health = health, Burn = burn, Count = count });
+		}
+
+		[Fact]
+		public void VikingsGoOnWithTheirFoodAndEatWhenAPlaceIsFree()
+		{
+			// Bread has 100 seconds left as they set out, so the stew and the berries fill the other two places; once
+			// the bread wears off there's nothing new to eat, so the second stew waits for the first to wear off
+			List<QuestMeal> eating = new List<QuestMeal> { new QuestMeal { Item = "Bread", Health = 30f, Burn = 1000f, Left = 100f } };
+			List<QuestFood> carried = new List<QuestFood> { Food("Stew", 20f, 500f, 2), Food("Berries", 10f, 500f, 1) };
+			QuestMeals meals = QuestSim.Eat(eating, carried, 1200f, 0f);
+			Assert.Equal(2, meals.Eaten["Stew"]);
+			Assert.Equal(1, meals.Eaten["Berries"]);
+			Assert.False(meals.Eaten.ContainsKey("Bread"));
+			Assert.Empty(meals.Lasting);
+			// Food was up for 100 + 500 + 500 + 500 of 3 places' 1200 seconds
+			Assert.Equal(1600f / 3600f, meals.FedShare, 3);
+			Assert.False(meals.Fed);
+			Assert.Equal(2, carried[0].Count);
+		}
+
+		[Fact]
+		public void VikingsNeverEatTwoOfAFoodAtOnce()
+		{
+			QuestMeals meals = QuestSim.Eat(new List<QuestMeal>(), new List<QuestFood> { Food("Stew", 20f, 1000f, 3) }, 2500f, 0f);
+			Assert.Equal(3, meals.Eaten["Stew"]);
+			Assert.Single(meals.Lasting);
+			Assert.Equal(500f, meals.Lasting[0].Left, 3);
+			Assert.Equal(1f / 3f, meals.FedShare, 3);
+		}
+
+		[Fact]
+		public void VikingsWithAFullSetOfFoodCountAsFed()
+		{
+			List<QuestFood> carried = new List<QuestFood> { Food("A", 20f, 1000f, 2), Food("B", 20f, 1000f, 2), Food("C", 20f, 1000f, 2) };
+			QuestMeals meals = QuestSim.Eat(new List<QuestMeal>(), carried, 1500f, 0f);
+			Assert.Equal(1f, meals.FedShare, 3);
+			Assert.True(meals.Fed);
+			Assert.Equal(3, meals.Lasting.Count);
+		}
+
+		[Fact]
+		public void FoodSetsVikingsMaxHealthWhileTheyreOut()
+		{
+			List<QuestFood> carried = new List<QuestFood> { Food("A", 60f, 1000f, 1), Food("B", 60f, 1000f, 1), Food("C", 60f, 1000f, 1) };
+			// Just eaten, three foods of 60 add 180 to the base 25
+			Assert.Equal(205f, QuestSim.Eat(new List<QuestMeal>(), carried, 0f, 50f).EndMaxHealth, 3);
+			// Fading as they wear off, they add 180 / 1.3 on average, and once worn off leave the floor
+			QuestMeals meals = QuestSim.Eat(new List<QuestMeal>(), carried, 1000f, 50f);
+			Assert.InRange(meals.MaxHealth, 160f, 167f);
+			Assert.Equal(50f, meals.EndMaxHealth, 3);
+			Assert.Empty(meals.Lasting);
+		}
+
+		[Fact]
+		public void BetterFoodRaisesVikingsMaxHealthOnAQuest()
+		{
+			List<QuestFood> plain = new List<QuestFood> { Food("A", 20f, 1800f, 1), Food("B", 20f, 1800f, 1), Food("C", 20f, 1800f, 1) };
+			List<QuestFood> rich = new List<QuestFood> { Food("A", 80f, 1800f, 1), Food("B", 80f, 1800f, 1), Food("C", 80f, 1800f, 1) };
+			QuestMeals plainMeals = QuestSim.Eat(new List<QuestMeal>(), plain, 900f, 115f);
+			QuestMeals richMeals = QuestSim.Eat(new List<QuestMeal>(), rich, 900f, 115f);
+			// Food below the floor leaves the viking at it
+			Assert.Equal(115f, plainMeals.MaxHealth, 3);
+			Assert.True(richMeals.MaxHealth > 200f);
+			Assert.True(richMeals.EndMaxHealth > 200f);
+		}
+
+		[Fact]
+		public void FoodsLastingAtTheEndKeepTheirTimeLeft()
+		{
+			List<QuestMeal> eating = new List<QuestMeal> { new QuestMeal { Item = "Bread", Health = 30f, Burn = 1000f, Left = 900f } };
+			QuestMeals meals = QuestSim.Eat(eating, new List<QuestFood>(), 300f, 0f);
+			Assert.Single(meals.Lasting);
+			Assert.Equal("Bread", meals.Lasting[0].Item);
+			Assert.Equal(600f, meals.Lasting[0].Left, 3);
+		}
+
+		[Fact]
+		public void VikingsPackDifferentFoodsInTheOrderTheyWantThem()
+		{
+			List<QuestFood> ranked = new List<QuestFood> { Food("A", 0f, 0f, 10), Food("B", 0f, 0f, 10), Food("C", 0f, 0f, 10) };
+			Dictionary<string, int> picks = QuestSim.Pack(ranked, 9, 3, new Dictionary<string, int>());
+			Assert.Equal(3, picks["A"]);
+			Assert.Equal(3, picks["B"]);
+			Assert.Equal(3, picks["C"]);
+			Dictionary<string, int> few = QuestSim.Pack(ranked, 2, 3, new Dictionary<string, int>());
+			Assert.Equal(2, few["A"]);
+			Assert.False(few.ContainsKey("B"));
+		}
+
+		[Fact]
+		public void VikingsPackMoreOfTheFoodTheyWantMostWhenThereArentEnoughOthers()
+		{
+			List<QuestFood> ranked = new List<QuestFood> { Food("A", 0f, 0f, 10), Food("B", 0f, 0f, 1) };
+			Dictionary<string, int> picks = QuestSim.Pack(ranked, 6, 2, new Dictionary<string, int>());
+			Assert.Equal(5, picks["A"]);
+			Assert.Equal(1, picks["B"]);
+		}
+
+		[Fact]
+		public void VikingsPackCountingTheFoodTheyCarry()
+		{
+			List<QuestFood> ranked = new List<QuestFood> { Food("A", 0f, 0f, 10), Food("B", 0f, 0f, 10) };
+			Dictionary<string, int> picks = QuestSim.Pack(ranked, 3, 3, new Dictionary<string, int> { { "A", 2 } });
+			Assert.Equal(1, picks["A"]);
+			Assert.Equal(2, picks["B"]);
+		}
+
+		[Fact]
+		public void VikingsPackTheirStrongestFoodForAFight()
+		{
+			List<QuestFood> foods = new List<QuestFood> { Food("Neck", 25f, 0f, 1), Food("Deer", 35f, 0f, 1), Food("Stew", 45f, 0f, 1), Food("Berries", 8f, 0f, 1) };
+			QuestSim.Rank(foods, true, 115f);
+			Assert.Equal(new[] { "Stew", "Deer", "Neck", "Berries" }, foods.ConvertAll((QuestFood food) => food.Item));
+		}
+
+		[Fact]
+		public void VikingsTravelOnTheWeakestFoodThatDoesThemGood()
+		{
+			// A Black Forest viking's floor of 115 holds 30 a food over the base, so deer meat and stew raise it and the
+			// rest don't
+			List<QuestFood> foods = new List<QuestFood> { Food("Neck", 25f, 0f, 1), Food("Deer", 35f, 0f, 1), Food("Stew", 45f, 0f, 1), Food("Berries", 8f, 0f, 1) };
+			QuestSim.Rank(foods, false, 115f);
+			Assert.Equal(new[] { "Deer", "Stew", "Neck", "Berries" }, foods.ConvertAll((QuestFood food) => food.Item));
 		}
 
 		[Fact]

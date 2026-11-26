@@ -192,6 +192,8 @@ namespace VikingVillages.Tests
 			Assert.Equal(33.33f, result.Seconds, 1);
 			Assert.Equal(0.6f, result.HarmShares[0], 3);
 			Assert.Equal(0.6f, result.HarmShares[1], 3);
+			Assert.Equal(36.1f, result.Harms[0], 0);
+			Assert.Equal(36.1f, result.Harms[1], 0);
 		}
 
 		[Fact]
