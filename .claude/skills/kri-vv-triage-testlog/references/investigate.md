@@ -23,6 +23,7 @@ The run's file is <full path to the log>, <N> lines - too big to read whole, so 
   - bug - you can point at the code that's wrong (file:line) and show how it produces the lines in the log
   - needs logging - the log can't tell the possible causes apart; name them, and the logging that would show which it is
   - not a bug - the code does what it's meant to; say why the log looks the way it does
+- Whatever the verdict, suggest a fix. For needs logging, give the fix each possible cause would take and which cause looks likeliest, so the next run's logging leads straight to one. For not a bug that still turns out badly - a rule working as written that lets the village die out - give the change that would make it turn out better, for the user to decide on. Say "none" only when nothing about it should change
 - Report other bugs you come across separately, each with its own evidence, rather than folding them into this one
 
 Then stop and report in this layout, without changing anything:
@@ -31,6 +32,7 @@ Verdict: bug | needs logging | not a bug
 Cause: what's wrong and where (file:line), or why it's fine
 Evidence: the log lines and code that show it
 Plan: the change, file by file - for needs logging, what's logged, where, and what it will tell apart
+Suggested fix: for bug, the same as Plan; for needs logging, the fix for each possible cause, the likeliest first; for not a bug, the change that would make it turn out better, or none
 Tests: the unit tests to add or change, or why none fit (engine glue, Harmony patches)
 README: what VikingVillages\README.md, LOGIC.md or JOBS.md says that the change alters, or nothing
 Other bugs: each with its evidence and a one-line plan, or none
