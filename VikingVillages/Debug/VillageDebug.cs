@@ -148,6 +148,7 @@ namespace VikingVillages
 				text.Append("Setup: " + string.Join(", ", todo) + "\n");
 			}
 			text.Append(VillageLife.DescribePaths(village));
+			text.Append(VillageCarts.Describe(village));
 			string goal = village.Zdo.GetString(VillageLife.GoalKey, "");
 			if (goal.Length > 0)
 			{

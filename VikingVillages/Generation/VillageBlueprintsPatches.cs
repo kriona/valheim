@@ -4,7 +4,7 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// Adds the kri_vv_blueprints, kri_vv_spawnvillage, kri_vv_testlog, kri_vv_quest, kri_vv_serverrun, kri_vv_travel,
-	/// kri_vv_spawnboat and kri_vv_yule commands when the console sets up its commands
+	/// kri_vv_spawnboat, kri_vv_destroyboats, kri_vv_cart and kri_vv_yule commands when the console sets up its commands
 	/// </summary>
 	[HarmonyPatch(typeof(Terminal), nameof(Terminal.InitTerminal))]
 	public static class VillageBlueprintsCommandPatch
@@ -22,6 +22,7 @@ namespace VikingVillages
 			TravelCommand.Register();
 			BoatSpawnCommand.Register();
 			BoatDestroyCommand.Register();
+			CartCommand.Register();
 			YuleHats.Register();
 		}
 	}

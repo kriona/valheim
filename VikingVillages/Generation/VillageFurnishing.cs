@@ -197,7 +197,7 @@ namespace VikingVillages
 		/// Furnishes a village's houses the first time everything across it has loaded, giving it each crafting station
 		/// it doesn't have in one of them - then, once, gives it each station it's still missing (see AddStations), so
 		/// every village has them and none appears later on, and once more, upgrades its stations for its biome (see
-		/// AddUpgrades)
+		/// AddUpgrades) - then parks its cart beside a house, once (see VillageCarts.PlaceGenerated)
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns, with everything across it loaded</param>
 		public static void TryFurnish(Village village)
@@ -223,11 +223,13 @@ namespace VikingVillages
 				village.Zdo.Set(UpgradesDoneKey, true);
 				AddUpgrades(village);
 			}
+			VillageCarts.PlaceGenerated(village);
 		}
 
 		/// <summary>
-		/// Notes a village a player started as furnished and given its crafting stations and their upgrades, so nothing
-		/// is put in the buildings players put up for it - the vikings use the beds, chests and stations players build
+		/// Notes a village a player started as furnished and given its crafting stations, their upgrades and its cart, so
+		/// nothing is put in the buildings players put up for it - the vikings use the beds, chests and stations players
+		/// build, and build their cart themselves
 		/// </summary>
 		/// <param name="anchor">The village's anchor's ZDO, owned by this client</param>
 		public static void MarkFurnished(ZDO anchor)
@@ -235,6 +237,7 @@ namespace VikingVillages
 			anchor.Set(FurnishedKey, true);
 			anchor.Set(StationsDoneKey, true);
 			anchor.Set(UpgradesDoneKey, true);
+			anchor.Set(VillageCarts.PlacedKey, true);
 		}
 
 		/// <summary>
@@ -1262,6 +1265,26 @@ namespace VikingVillages
 				AddOnce(room.Blockers, name);
 			}
 			return(room);
+		}
+
+		/// <summary>
+		/// Checks whether a piece can stand on the open ground at a spot as it is - outside every house, on ground that
+		/// rises no more than a distance under it, with nothing in its way, not even what could be cleared
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="spot">Where the piece's origin would be</param>
+		/// <param name="rotation">Which way it would face</param>
+		/// <param name="size">Its size, around its origin</param>
+		/// <param name="flatness">How far the ground under it can rise, in meters</param>
+		/// <param name="painted">True when painted ground like a path is fine</param>
+		/// <param name="ground">Set to the highest ground under it</param>
+		/// <returns>True when it can</returns>
+		internal static bool OpenGround(Village village, Vector3 spot, Quaternion rotation, Bounds size, float flatness, bool painted, out float ground)
+		{
+			Prepare();
+			Room room = OutsideRoom(village, spot, rotation, size, false);
+			ground = room.Highest;
+			return(room.Fits(flatness, false) || (painted && !room.InHouse && room.Rise() <= flatness && room.Blockers.Count == 0 && room.Clearable.Count == 0));
 		}
 
 		/// <summary>

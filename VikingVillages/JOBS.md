@@ -50,19 +50,20 @@ Everything a living Viking does, most important first. What's higher up stops wh
 | [Repair their gear](#repair-their-gear) | Day 15 | Fix worn gear at the workbench or forge |
 | [Rebuild the fire](#rebuild-the-fire) | Day 16 | Build back the village's fire |
 | [Take down a sitting log](#take-down-a-sitting-log) | Day 17 | Take down the logs by an old fire for their wood |
-| [Cut trees](#cut-trees) | Day 18 | Fell brush trees when the village is out of wood |
-| [Rebuild the village](#rebuild-the-village) | Day 19 | Build back destroyed pieces |
-| [Stack the fire](#stack-the-fire) | Day 20 | Put wood on the fire |
-| [Craft arrows](#craft-arrows) | Day 21 | Make the best arrows the village can |
-| [Craft a torch](#craft-a-torch) | Day 22 | Make a torch when theirs is missing or worn |
-| [Craft a second weapon](#craft-a-second-weapon) | Day 23 | Make a crude bow, or an axe or club |
-| [Craft better gear](#craft-better-gear) | Day 24 | Make a weapon, shield or armor better than their own |
-| [Upgrade their gear](#upgrade-their-gear) | Day 25 | Raise a piece of their gear one quality |
-| [Work toward the goal](#work-toward-the-goal) | Day 26 | Fuel and fill smelters, and craft materials for the village's goal |
-| [Stock tools](#stock-tools) | Day 27 | Make axes and pickaxes for the chests |
-| [Line a weapon with silver](#line-a-weapon-with-silver) | Day 28 | With Zombie Apocalypse, line a weapon with silver |
-| [Silver arrows](#silver-arrows) | Day 29 | With Zombie Apocalypse, take or craft silver arrows |
-| [Build a beehive](#build-a-beehive) | Day 30 | Build a hive with a queen bee |
+| [Look after the cart](#look-after-the-cart) | Day 18 | Take down an old cart, fetch the village's cart back or build one |
+| [Cut trees](#cut-trees) | Day 19 | Fell brush trees when the village is out of wood |
+| [Rebuild the village](#rebuild-the-village) | Day 20 | Build back destroyed pieces |
+| [Stack the fire](#stack-the-fire) | Day 21 | Put wood on the fire |
+| [Craft arrows](#craft-arrows) | Day 22 | Make the best arrows the village can |
+| [Craft a torch](#craft-a-torch) | Day 23 | Make a torch when theirs is missing or worn |
+| [Craft a second weapon](#craft-a-second-weapon) | Day 24 | Make a crude bow, or an axe or club |
+| [Craft better gear](#craft-better-gear) | Day 25 | Make a weapon, shield or armor better than their own |
+| [Upgrade their gear](#upgrade-their-gear) | Day 26 | Raise a piece of their gear one quality |
+| [Work toward the goal](#work-toward-the-goal) | Day 27 | Fuel and fill smelters, and craft materials for the village's goal |
+| [Stock tools](#stock-tools) | Day 28 | Make axes and pickaxes for the chests |
+| [Line a weapon with silver](#line-a-weapon-with-silver) | Day 29 | With Zombie Apocalypse, line a weapon with silver |
+| [Silver arrows](#silver-arrows) | Day 30 | With Zombie Apocalypse, take or craft silver arrows |
+| [Build a beehive](#build-a-beehive) | Day 31 | Build a hive with a queen bee |
 | [Talk](#talk) | Day, weight 25 | Chat with another Viking |
 | [Pet a boar](#pet-a-boar) | Day, weight 10 | Pet one of the village's livestock |
 | [Stock the chests with wood](#stock-the-chests-with-wood) | Day, weight 15 | Gather wood from the ground into the chests |
@@ -465,6 +466,16 @@ The village's bonfire or campfire, destroyed, is built back with one swing, taki
 ### Take Down a Sitting Log
 
 The village took up a new fire, and one of the sitting logs it built by the old one still stands - they knock it down with one swing and keep its wood, which builds it back around the new fire.
+
+### Look After the Cart
+
+Every village from the Black Forest on keeps a cart, but not in the Ashlands (see [The Cart](LOGIC.md#the-cart) in LOGIC.md). One Viking at a time, each looking every 10 seconds:
+
+1. Takes down an old cart of the village's that turned up again after it built another, within 40 meters of the village's edge - one swing, dropping its wood, nails and whatever it held for the Vikings to put away
+2. Fetches the village's cart back when it stands outside the village - walking to its handle, hooking it up the way you do and pulling it home to a spot beside a house, nearest where it stood. When it snags on something, its handle left more than 1.6 meters behind, or comes loose, for 3 seconds, it's set down on their way behind them and hooked up again
+3. Builds a cart when the village has none - taking the nails it takes from the chests, gathering its 20 wood like any piece's, then putting it up with one swing beside a house. Not without the 10 bronze nails a cart takes in the chests
+
+A cart you're pulling or have open is left alone. Each job ends at dusk, and a fight unhooks the cart where it stands.
 
 ### Cut Trees
 
