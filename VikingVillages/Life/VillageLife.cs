@@ -2223,11 +2223,12 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Names the viking, on its owner, and has it answer to its new name - or takes its name away for "Viking" or
-		/// nothing, and turns down a creature's, a legend's, a player's or a fellow viking's name (see VikingNames.Judge)
+		/// Names the viking, on its owner, and has it answer to its new name - turning down "Viking" or nothing, which
+		/// would take its name away, and a creature's, a legend's, a player's or a fellow viking's name (see
+		/// VikingNames.Judge)
 		/// </summary>
 		/// <param name="sender">The client that sent it</param>
-		/// <param name="name">The name, or "" to take it away</param>
+		/// <param name="name">The name</param>
 		/// <param name="author">Who named it</param>
 		private void RPC_Name(long sender, string name, string author)
 		{
@@ -2237,18 +2238,7 @@ namespace VikingVillages
 			}
 			bool renamed = (VikingNames.Get(humanoid).Length > 0);
 			string plain = VikingNames.Plain(name);
-			if (plain.Length == 0)
-			{
-				VikingNames.Set(humanoid, "", author);
-				return;
-			}
 			VikingNames.Verdict verdict = VikingNames.Judge(humanoid, village, plain);
-			if (verdict == VikingNames.Verdict.Cleared)
-			{
-				VikingNames.Set(humanoid, "", author);
-				VikingSpeech.Say(humanoid, VikingSpeech.Cleared(renamed), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
-				return;
-			}
 			if (verdict != VikingNames.Verdict.Taken)
 			{
 				// Markup is said as it was typed, so the line shows what was wrong with it. It's said even in its sleep, so the

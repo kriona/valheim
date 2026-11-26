@@ -238,20 +238,14 @@ namespace VikingVillages
 		};
 
 		/// <summary>
-		/// What a viking says when a player names it Viking, which takes its name away - when it had one, and when it
-		/// didn't
+		/// What a viking says when a player tries to name it Viking or clear its name, which it keeps
 		/// </summary>
-		private static readonly string[] ClearedLines =
+		private static readonly string[] NamelessRefusals =
 		{
-			"Just Viking, then. Plain and simple.",
-			"Viking it is - I'll go nameless again.",
-			"Back to plain old Viking? Fine by me."
-		};
-		private static readonly string[] AlreadyVikingLines =
-		{
-			"Viking? That's what I already am!",
-			"I'm a Viking, yes. Well spotted.",
-			"Viking? You'll have to do better than that."
+			"Viking? That's what I am, not who I am. I'll keep my name.",
+			"I already have a name, and I'm keeping it!",
+			"Go nameless? Not a chance.",
+			"A Viking with no name? Not this one."
 		};
 
 		/// <summary>
@@ -1047,25 +1041,20 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks what a viking says when a player names it Viking, which takes its name away
-		/// </summary>
-		/// <param name="hadName">Whether it had a name before</param>
-		/// <returns>The line</returns>
-		public static string Cleared(bool hadName)
-		{
-			return(Pick(hadName ? ClearedLines : AlreadyVikingLines));
-		}
-
-		/// <summary>
 		/// Picks what a viking says when it turns a name down
 		/// </summary>
-		/// <param name="verdict">Why - a creature's, a legend's, a place's, someone else's or text markup</param>
+		/// <param name="verdict">Why - no name at all, a creature's, a legend's, a place's, someone else's or text
+		/// markup</param>
 		/// <param name="name">The name, with any markup made literal (see VikingNames.Literal)</param>
 		/// <returns>The line</returns>
 		public static string Refused(VikingNames.Verdict verdict, string name)
 		{
 			string[] lines;
-			if (verdict == VikingNames.Verdict.Creature)
+			if (verdict == VikingNames.Verdict.Nameless)
+			{
+				lines = NamelessRefusals;
+			}
+			else if (verdict == VikingNames.Verdict.Creature)
 			{
 				lines = CreatureRefusals;
 			}

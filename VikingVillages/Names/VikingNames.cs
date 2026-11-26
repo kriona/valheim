@@ -26,15 +26,15 @@ namespace VikingVillages
 		public const int MaxLength = 24;
 
 		/// <summary>
-		/// What a viking makes of a name it's given - it takes it, it's "Viking" so it goes back to having none, or it
-		/// turns it down as a creature's, a legend's - a god's, a boss's or someone the players meet - a place's - a
-		/// biome or somewhere from the lore - someone else's in the world or the village, or text markup rather than a
-		/// name
+		/// What a viking makes of a name it's given - it takes it, or it turns it down as no name at all, for "Viking" or
+		/// nothing, which would take its own name away, a creature's, a legend's - a god's, a boss's or someone the
+		/// players meet - a place's - a biome or somewhere from the lore - someone else's in the world or the village, or
+		/// text markup rather than a name
 		/// </summary>
 		public enum Verdict
 		{
 			Taken,
-			Cleared,
+			Nameless,
 			Creature,
 			Legend,
 			Place,
@@ -644,7 +644,7 @@ namespace VikingVillages
 		/// <param name="viking">The viking</param>
 		/// <param name="village">Its village, or null</param>
 		/// <param name="name">The name, without its "$"</param>
-		/// <returns>Whether it takes it, goes back to having none or turns it down, and why</returns>
+		/// <returns>Whether it takes it or turns it down, and why</returns>
 		public static Verdict Judge(Character viking, Village village, string name)
 		{
 			Verdict verdict = JudgeText(name, ZombieLink.ZombieName());
@@ -677,8 +677,7 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="name">The name, without its "$"</param>
 		/// <param name="zombie">The word a zombie's name starts with (see ZombieLink.ZombieName), or ""</param>
-		/// <returns>Whether it goes back to having none or turns it down, and why, or Taken when the name alone doesn't
-		/// rule it out</returns>
+		/// <returns>Why it turns it down, or Taken when the name alone doesn't rule it out</returns>
 		internal static Verdict JudgeText(string name, string zombie)
 		{
 			string lower = Kept(name).ToLowerInvariant();
@@ -688,7 +687,7 @@ namespace VikingVillages
 			}
 			if (lower.Length == 0 || lower == "viking")
 			{
-				return(Verdict.Cleared);
+				return(Verdict.Nameless);
 			}
 			LoadNames();
 			if (legendNames.Contains(lower))
