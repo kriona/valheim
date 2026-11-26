@@ -5458,7 +5458,8 @@ namespace VikingVillages
 		/// workbench or forge when a piece of it has worn down to GearWornShare, then the village's bonfire or campfire to
 		/// build back when it's been destroyed, which takes nothing, then a sitting log left by the village's old fire to
 		/// take down for its wood, then the village's cart to take down an old one of, fetch back or build (see
-		/// FindCartWork), then a missing piece to rebuild, then the fire to
+		/// FindCartWork), then another chest to build when the chests run low on room (see FindChestWork), then a missing
+		/// piece to rebuild, then the fire to
 		/// stack when it isn't full and no other viking is on it, then arrows to craft at the workbench when it has a bow
 		/// and is missing a batch, then a torch or a missing weapon to craft, then a weapon, armor or a shield better than
 		/// its own to craft (see FindGearCraftWork), then a piece of its gear to upgrade, each when the village has
@@ -5609,6 +5610,11 @@ namespace VikingVillages
 			if (cart != null)
 			{
 				return(cart);
+			}
+			Job chest = FindChestWork();
+			if (chest != null)
+			{
+				return(chest);
 			}
 			Job lumber = FindLumberWork();
 			if (lumber != null)

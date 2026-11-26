@@ -26,12 +26,12 @@ namespace VikingVillages.Tests
 
 		[Theory]
 		[InlineData(0f, (int)VillageDisband.Phase.Gathering)]
-		[InlineData(119f, (int)VillageDisband.Phase.Gathering)]
-		[InlineData(121f, (int)VillageDisband.Phase.Remaining)]
-		[InlineData(144f, (int)VillageDisband.Phase.Remaining)]
-		[InlineData(146f, (int)VillageDisband.Phase.Announcing)]
-		[InlineData(148f, (int)VillageDisband.Phase.SetOut)]
-		public void GatheringGivesUpWaitingAfterTwoMinutes(float seconds, int expected)
+		[InlineData(239f, (int)VillageDisband.Phase.Gathering)]
+		[InlineData(241f, (int)VillageDisband.Phase.Remaining)]
+		[InlineData(264f, (int)VillageDisband.Phase.Remaining)]
+		[InlineData(266f, (int)VillageDisband.Phase.Announcing)]
+		[InlineData(268f, (int)VillageDisband.Phase.SetOut)]
+		public void GatheringGivesUpWaitingAfterFourMinutes(float seconds, int expected)
 		{
 			Assert.Equal(expected, (int)At(seconds, -1f));
 		}
@@ -49,7 +49,7 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void AnnouncementWaitsForTheServersAnswer()
 		{
-			long now = 160L * Second;
+			long now = 280L * Second;
 			Assert.Equal(VillageDisband.Phase.Remaining, VillageDisband.PhaseAt(now, 1L, 0L, 25f, false, Second, out long announceAt, out long _));
 			Assert.True(announceAt > now);
 		}
@@ -57,9 +57,9 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void AnnouncementWaitsNoLongerThanTheAnswerWait()
 		{
-			long now = 200L * Second;
+			long now = 320L * Second;
 			Assert.Equal(VillageDisband.Phase.SetOut, VillageDisband.PhaseAt(now, 1L, 0L, 25f, false, Second, out long announceAt, out long setOutAt));
-			Assert.Equal(1L + (120L + 25L + 30L) * Second, announceAt);
+			Assert.Equal(1L + (240L + 25L + 30L) * Second, announceAt);
 			Assert.Equal(announceAt + 2L * Second, setOutAt);
 		}
 

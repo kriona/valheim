@@ -608,6 +608,7 @@ namespace VikingVillages
 			{
 				inventory.Changed();
 				zdo.Set(QuestLootKey, true);
+				NoteChestCheck(village);
 			}
 		}
 

@@ -50,20 +50,21 @@ Everything a living Viking does, most important first. What's higher up stops wh
 | [Repair their gear](#repair-their-gear) | Day 15 | Fix worn gear at the workbench or forge |
 | [Rebuild the fire](#rebuild-the-fire) | Day 16 | Build back the village's fire |
 | [Take down a sitting log](#take-down-a-sitting-log) | Day 17 | Take down the logs by an old fire for their wood |
-| [Look after the cart](#look-after-the-cart) | Day 18 | Take down an old cart, fetch the village's cart back or build one |
-| [Cut trees](#cut-trees) | Day 19 | Fell brush trees when the village is out of wood |
-| [Rebuild the village](#rebuild-the-village) | Day 20 | Build back destroyed pieces |
-| [Stack the fire](#stack-the-fire) | Day 21 | Put wood on the fire |
-| [Craft arrows](#craft-arrows) | Day 22 | Make the best arrows the village can |
-| [Craft a torch](#craft-a-torch) | Day 23 | Make a torch when theirs is missing or worn |
-| [Craft a second weapon](#craft-a-second-weapon) | Day 24 | Make a crude bow, or an axe or club |
-| [Craft better gear](#craft-better-gear) | Day 25 | Make a weapon, shield or armor better than their own |
-| [Upgrade their gear](#upgrade-their-gear) | Day 26 | Raise a piece of their gear one quality |
-| [Work toward the goal](#work-toward-the-goal) | Day 27 | Fuel and fill smelters, and craft materials for the village's goal |
-| [Stock tools](#stock-tools) | Day 28 | Make axes and pickaxes for the chests |
-| [Line a weapon with silver](#line-a-weapon-with-silver) | Day 29 | With Zombie Apocalypse, line a weapon with silver |
-| [Silver arrows](#silver-arrows) | Day 30 | With Zombie Apocalypse, take or craft silver arrows |
-| [Build a beehive](#build-a-beehive) | Day 31 | Build a hive with a queen bee |
+| [Look after the cart](#look-after-the-cart) | Day 18 | Unload, take down, fetch back or build the village's cart |
+| [Build more chests](#build-more-chests) | Day 19 | Build a chest when the chests run low on room |
+| [Cut trees](#cut-trees) | Day 20 | Fell brush trees when the village is out of wood |
+| [Rebuild the village](#rebuild-the-village) | Day 21 | Build back destroyed pieces |
+| [Stack the fire](#stack-the-fire) | Day 22 | Put wood on the fire |
+| [Craft arrows](#craft-arrows) | Day 23 | Make the best arrows the village can |
+| [Craft a torch](#craft-a-torch) | Day 24 | Make a torch when theirs is missing or worn |
+| [Craft a second weapon](#craft-a-second-weapon) | Day 25 | Make a crude bow, or an axe or club |
+| [Craft better gear](#craft-better-gear) | Day 26 | Make a weapon, shield or armor better than their own |
+| [Upgrade their gear](#upgrade-their-gear) | Day 27 | Raise a piece of their gear one quality |
+| [Work toward the goal](#work-toward-the-goal) | Day 28 | Fuel and fill smelters, and craft materials for the village's goal |
+| [Stock tools](#stock-tools) | Day 29 | Make axes and pickaxes for the chests |
+| [Line a weapon with silver](#line-a-weapon-with-silver) | Day 30 | With Zombie Apocalypse, line a weapon with silver |
+| [Silver arrows](#silver-arrows) | Day 31 | With Zombie Apocalypse, take or craft silver arrows |
+| [Build a beehive](#build-a-beehive) | Day 32 | Build a hive with a queen bee |
 | [Talk](#talk) | Day, weight 25 | Chat with another Viking |
 | [Pet a boar](#pet-a-boar) | Day, weight 10 | Pet one of the village's livestock |
 | [Stock the chests with wood](#stock-the-chests-with-wood) | Day, weight 15 | Gather wood from the ground into the chests |
@@ -478,6 +479,10 @@ Every village from the Black Forest on keeps a cart, but not in the Ashlands (se
 4. Builds a cart when the village has none - taking the nails it takes from the chests, gathering its 20 wood like any piece's, then putting it up with one swing beside a house. Not without the 10 bronze nails a cart takes in the chests
 
 A cart you're pulling or have open is left alone. Building, fetching and taking one down end at dusk, and a fight unhooks the cart where it stands. A Viking who came home from a quest pulling the cart brings it into the village before anything else, even at night, as part of [putting away what a quest brought home](#put-away-what-a-quest-brought-home).
+
+### Build More Chests
+
+For 10 minutes after a lot comes into the village at once - Vikings coming home from a quest, travelers arriving, or a cart being emptied - one Viking at a time looks every 15 seconds at the village's own chests, those it was furnished with or its Vikings built. When they have fewer than 4 free slots between them, they build a wood chest - gathering its 10 wood like any piece's, then putting it up with one swing - in a house of the village's core holding fewer than 4 chests, the two it was furnished with and two more: against a wall as near one of its chests as fits, within 4 meters, or in a house with none, as near its middle, keeping the way from a door to every bed and piece clear, the way the house was furnished, houses holding a chest first and then the nearest. The chest is one of the village's own pieces, which they build back like the rest. With no room in any house, they don't look again until more comes in. It ends at dusk.
 
 ### Cut Trees
 

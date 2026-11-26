@@ -207,6 +207,18 @@ namespace VikingVillages.Tests
 		}
 
 		[Fact]
+		public void FoodComesFirstAndTrophiesLast()
+		{
+			int food = CartRules.LootRank(true, false, false);
+			int wood = CartRules.LootRank(false, true, false);
+			int other = CartRules.LootRank(false, false, false);
+			int trophy = CartRules.LootRank(false, false, true);
+			Assert.True(food < wood);
+			Assert.True(wood < other);
+			Assert.True(other < trophy);
+		}
+
+		[Fact]
 		public void TheCartRunsOutOfSlots()
 		{
 			List<KeyValuePair<string, int>> found = new List<KeyValuePair<string, int>> { new KeyValuePair<string, int>("Wood", 500) };

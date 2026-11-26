@@ -1268,6 +1268,42 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Finds where another chest goes in a house - against a wall as near a point as fits, within ChestNearReach of it,
+		/// keeping the way from a door to every bed and piece in the house clear, the way the house was furnished (see
+		/// Layout.PlaceNear)
+		/// </summary>
+		/// <param name="house">The house</param>
+		/// <param name="near">The point - a chest already there, or the house's middle</param>
+		/// <param name="position">Set to where the chest stands</param>
+		/// <param name="rotation">Set to which way it faces</param>
+		/// <returns>False when the house has no room for one</returns>
+		internal static bool ChestSpotNear(VillagePaths.House house, Vector3 near, out Vector3 position, out Quaternion rotation)
+		{
+			position = Vector3.zero;
+			rotation = Quaternion.identity;
+			Prepare();
+			Layout layout = Layout.Measure(house);
+			if (layout == null || !layout.PlaceNear(ChestPrefab, near, ChestNearReach))
+			{
+				return(false);
+			}
+			Placement placed = layout.Placed[layout.Placed.Count - 1];
+			position = placed.Position;
+			rotation = placed.Rotation;
+			return(true);
+		}
+
+		/// <summary>
+		/// How far from the chest it goes beside another chest is put at most, in meters
+		/// </summary>
+		private const float ChestNearReach = 4f;
+
+		/// <summary>
+		/// The chest the vikings build more of when their chests run out of room
+		/// </summary>
+		internal const string ChestPiece = ChestPrefab;
+
+		/// <summary>
 		/// Checks whether a piece can stand on the open ground at a spot as it is - outside every house, on ground that
 		/// rises no more than a distance under it, with nothing in its way, not even what could be cleared
 		/// </summary>

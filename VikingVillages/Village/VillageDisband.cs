@@ -42,11 +42,12 @@ namespace VikingVillages
 		public const int SearchNone = 2;
 
 		/// <summary>
-		/// The most seconds the vikings wait for each other at the fire, how long they stay once they're all there, picked
-		/// at random, how long after one says where they're going they set out, and the most seconds they wait on the
-		/// server's answer past when they'd say it
+		/// The most seconds the vikings wait for each other at the fire - long enough for them to empty the village's
+		/// chests first (see VillageLife.UpdateDisbandLoot) - how long they stay once they're all there, picked at random,
+		/// how long after one says where they're going they set out, and the most seconds they wait on the server's
+		/// answer past when they'd say it
 		/// </summary>
-		public const float GatherMax = 120f;
+		public const float GatherMax = 240f;
 		private const float RemainMin = 20f;
 		private const float RemainMax = 30f;
 		public const float SetOutDelay = 2f;

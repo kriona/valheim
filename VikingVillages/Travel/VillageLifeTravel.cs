@@ -410,6 +410,8 @@ namespace VikingVillages
 			Character target = ai.m_targetCreature;
 			if (target != null)
 			{
+				// It lets go of its cart before it fights or runs, and goes back for it after
+				ReleaseRoadCart();
 				if (Fights(target))
 				{
 					fleeingFrom = null;
@@ -787,12 +789,12 @@ namespace VikingVillages
 			{
 				return(EnterPortal(dt, zdo));
 			}
-			if (UpdateNeeds(dt, false) || WaitForGroup(zdo))
+			if (UpdateNeeds(dt, false) || WaitForGroup(zdo) || UpdateRoadCart(dt, zdo))
 			{
 				return(true);
 			}
 			SayOnRoad(() => VikingRoadSpeech.Travelling(VillageTravel.DestinationName(zdo)));
-			if (!Go(dt, travelRoad.Points[roadLeg], WaypointReach, true))
+			if (!RoadGo(dt, travelRoad.Points[roadLeg], WaypointReach))
 			{
 				mover = "on the road";
 				return(true);
@@ -865,6 +867,14 @@ namespace VikingVillages
 				TripStory.Arrive(zdo);
 				here.Adopt(zdo, house);
 				zdo.Set(ArrivingKey, !here.Contains(transform.position));
+				// A cart it brought becomes the village's, which it pulls in, and what came with it may need more chests
+				ReleaseRoadCart();
+				Vagon brought = RoadCarts.Arrive(zdo, here);
+				if (brought != null)
+				{
+					zdo.Set(QuestCartKey, brought.m_nview.GetZDO().m_uid);
+				}
+				NoteChestCheck(here);
 				village = here;
 				road = Road.None;
 				Plugin.Log.LogInfo(LogName() + " came off the road into the village at " + here.Farm.ToString("F0"));
@@ -1504,9 +1514,10 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gathers a viking of a disbanded village at its fire with the rest - talking about the village as they come, then
+		/// Gathers a viking of a disbanded village at its fire with the rest - emptying the village's own chests first, once
+		/// they know where they're going (see UpdateDisbandLoot), talking about the village as they come, then
 		/// wondering where to go once they're all there - until one of them says where they're going and they set out
-		/// together, the ones near a player saying goodbye first
+		/// together, the ones near a player saying goodbye first, taking along the carts they loaded
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="zdo">Its ZDO</param>
@@ -1529,11 +1540,20 @@ namespace VikingVillages
 						VikingSpeech.Say(humanoid, line, VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 					}
 				}
+				// While they gather, they empty the village's chests, when there's a village to take it to
+				if (phase == VillageDisband.Phase.Gathering && answer.Found && UpdateDisbandLoot(dt, zdo, fire))
+				{
+					return(true);
+				}
 				return(GatherAt(dt, zdo, middle));
 			}
 			if (!answer.Found)
 			{
 				return(false);
+			}
+			if (!disbandLootDone)
+			{
+				FinishDisbandLoot(zdo);
 			}
 			if (phase == VillageDisband.Phase.Announcing)
 			{

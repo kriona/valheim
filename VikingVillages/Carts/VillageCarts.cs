@@ -468,6 +468,24 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Makes a cart that came to a village one of its own - marked to have what it holds put away, and noted as the
+		/// village's cart when the village keeps one and has none, or else an old one, taken down once it's emptied
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="cart">The cart</param>
+		public static void Adopt(Village village, Vagon cart)
+		{
+			ZDO zdo = cart.m_nview.GetZDO();
+			zdo.Set(VillageKey, village.Farm);
+			zdo.Set(UnloadKey, HoldsAnything(cart));
+			if (village.Zdo.GetZDOID(CartKey).IsNone() && village.Zdo.GetLong(OnQuestUntilKey, 0L) == 0L && Allowed(village))
+			{
+				Record(village, zdo);
+			}
+			Refresh(village);
+		}
+
+		/// <summary>
 		/// Parks a cart beside a house of a village as it's generated, once, when it keeps one - its vikings build any
 		/// later one themselves
 		/// </summary>

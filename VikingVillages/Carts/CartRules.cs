@@ -166,6 +166,27 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Ranks an item by how much vikings leaving a disbanded village want it, or picking up what their broken cart
+		/// dropped - food first, then wood and stone, then everything else, then trophies last
+		/// </summary>
+		/// <param name="food">Whether it's food</param>
+		/// <param name="woodOrStone">Whether it's wood or stone</param>
+		/// <param name="trophy">Whether it's a trophy</param>
+		/// <returns>The rank, lowest first</returns>
+		internal static int LootRank(bool food, bool woodOrStone, bool trophy)
+		{
+			if (food)
+			{
+				return(0);
+			}
+			if (woodOrStone)
+			{
+				return(1);
+			}
+			return(trophy ? 3 : 2);
+		}
+
+		/// <summary>
 		/// Weighs up what's in a load
 		/// </summary>
 		/// <param name="load">Each item and how many</param>

@@ -63,13 +63,25 @@ namespace VikingVillages
 		private const float CartLeaveExtra = 60f;
 
 		/// <summary>
-		/// Finds the job pulling the village's cart into the village, for a viking that came home from a quest pulling it
-		/// - until the cart stands in the village, or is gone
+		/// Finds the job pulling the village's cart into the village, for a viking that came home from a quest or the road
+		/// pulling it - until the cart stands in the village, or is gone
 		/// </summary>
 		/// <returns>The job, or null when it brought no cart home or the cart is home</returns>
 		private Job FindQuestCartWork()
 		{
 			ZDO zdo = nview.GetZDO();
+			// One that came off the road straight into the village has the cart it took along put back behind it
+			if (zdo.GetBool(RoadCarts.KeptKey) && village != null)
+			{
+				Vagon kept = RoadCarts.PutBack(humanoid, village);
+				RoadCarts.Forget(zdo);
+				if (kept != null)
+				{
+					VillageCarts.Adopt(village, kept);
+					zdo.Set(QuestCartKey, kept.m_nview.GetZDO().m_uid);
+					NoteChestCheck(village);
+				}
+			}
 			ZDOID id = zdo.GetZDOID(QuestCartKey);
 			if (id.IsNone())
 			{
@@ -238,6 +250,16 @@ namespace VikingVillages
 			{
 				life = owner;
 				cart = pulled;
+			}
+
+			/// <summary>
+			/// Checks whether this is the pull of a cart
+			/// </summary>
+			/// <param name="other">The cart</param>
+			/// <returns>True when it is</returns>
+			public bool Pulls(Vagon other)
+			{
+				return(cart == other);
 			}
 
 			/// <summary>
@@ -782,6 +804,8 @@ namespace VikingVillages
 					// With no room to carry anything, it leaves the cart for a while
 					life.Avoid(cart.m_nview);
 				}
+				// What it takes out may fill the chests
+				NoteChestCheck(life.village);
 				TestLog.Count("Work done", "items taken out of carts", took);
 				return(true);
 			}

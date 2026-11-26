@@ -940,6 +940,8 @@ namespace VikingVillages
 					how = "stepped through a portal";
 					counted = "through a portal";
 				}
+				// A cart it takes along goes off the road with it, what it holds kept on the viking
+				RoadCarts.Stow(zdo);
 				entry.Vikings.Add(VillageDeparted.SnapshotOf(zdo));
 			}
 			entry.Spent = Mathf.Max(0f, total - entry.Remaining);
