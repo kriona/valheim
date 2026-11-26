@@ -3565,8 +3565,8 @@ namespace VikingVillages
 		/// twitching - stopping and starting, or turning one way then the other, over and over - shows in its debug
 		/// hover text and, with debug mode on, is written to the log with what it was doing, and a viking twitching on
 		/// top of something it's stuck on climbs down (see ClimbDown) - frees a viking that has tried to walk somewhere
-		/// for a long time without getting anywhere (see FreeIfTrapped), and notes which forsaken powers it's under, for
-		/// other clients' vikings to tell
+		/// for a long time without getting anywhere (see FreeIfTrapped), writes it getting onto a roof (see LogOnRoof),
+		/// and notes which forsaken powers it's under, for other clients' vikings to tell
 		/// </summary>
 		public void AfterAI()
 		{
@@ -3596,6 +3596,7 @@ namespace VikingVillages
 			stillCheckedAt = Time.time;
 			LogIfStuck();
 			FreeIfTrapped();
+			LogOnRoof(mover);
 			Vector3 move = humanoid.GetMoveDir();
 			MoveSample sample = new MoveSample();
 			sample.Time = Time.time;

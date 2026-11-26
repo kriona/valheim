@@ -71,6 +71,19 @@ namespace VikingVillages
 		private float logEscapeAt;
 
 		/// <summary>
+		/// Seconds between checks on whether the viking has got onto a roof, and how many seconds back a hit counts as
+		/// having hurt it just now, for the line about it (see LogOnRoof)
+		/// </summary>
+		private const float LogRoofInterval = 1f;
+		private const float LogRoofHurtTime = 10f;
+
+		/// <summary>
+		/// Whether the viking stood on a roof at the last check, and when it next checks
+		/// </summary>
+		private bool logOnRoof;
+		private float logRoofCheckAt;
+
+		/// <summary>
 		/// The viking's equipped gear that was broken at the last check
 		/// </summary>
 		private HashSet<ItemDrop.ItemData> logBroken = new HashSet<ItemDrop.ItemData>();
@@ -309,6 +322,38 @@ namespace VikingVillages
 			logEscapeAt = Time.time + LogEscapeInterval;
 			float below = transform.position.y - toward.y;
 			Plugin.Log.LogInfo("Escape: " + TestLog.Name(humanoid, "F1") + " drops its job: " + job.Describe() + ", for " + (Time.time - job.StartedAt).ToString("F0") + "s, to get " + what + ", walking to " + toward.ToString("F1") + ", " + Utils.DistanceXZ(transform.position, toward).ToString("F1") + "m away and " + Mathf.Abs(below).ToString("F1") + "m " + ((below >= 0f) ? "lower" : "higher"));
+		}
+
+		/// <summary>
+		/// Writes the viking getting onto a roof, checked every LogRoofInterval while the test log or debug mode is on -
+		/// once each time it newly stands on one, with its job, what moved it there, its target, whether it's alerted and
+		/// whether it was hurt in the last LogRoofHurtTime seconds - and counts it by whether it was fighting, alerted,
+		/// hurt or calm, and what moved it
+		/// </summary>
+		/// <param name="moved">What moved the viking this AI update</param>
+		private void LogOnRoof(string moved)
+		{
+			if (!(TestLog.On || Player.m_debugMode) || Time.time < logRoofCheckAt || ai == null)
+			{
+				return;
+			}
+			logRoofCheckAt = Time.time + LogRoofInterval;
+			bool onRoof = (attachPoint == null && NavmeshRoofs.OnRoof(transform.position));
+			if (onRoof == logOnRoof)
+			{
+				return;
+			}
+			logOnRoof = onRoof;
+			if (!onRoof)
+			{
+				return;
+			}
+			Character target = ai.GetTargetCreature();
+			bool alerted = ai.IsAlerted();
+			bool hurt = (ai.m_timeSinceHurt < LogRoofHurtTime);
+			string state = ((target != null) ? "fighting" : (alerted ? "alerted" : (hurt ? "hurt" : "calm")));
+			TestLog.Count("Got onto a roof, by how", state + ", " + moved);
+			Plugin.Log.LogInfo("Roof: " + TestLog.Name(humanoid, "F1") + " got onto " + RoofPiece(transform.position) + " - job: " + ((job != null) ? job.Describe() : "none") + ", moved by " + moved + ", target: " + ((target != null) ? TestLog.Label(target) + " at " + target.transform.position.ToString("F0") : "none") + ", alerted " + alerted + ", " + (hurt ? "hurt " + ai.m_timeSinceHurt.ToString("F0") + "s ago" : "not hurt in the last " + LogRoofHurtTime.ToString("F0") + "s"));
 		}
 
 		/// <summary>
