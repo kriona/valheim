@@ -78,7 +78,7 @@ namespace VikingVillages
 		};
 
 		/// <summary>
-		/// The names a new living viking is given, picked at random for whether it's a man or a woman (see GiveName) -
+		/// The names a new living viking is given, picked at random for whether it's a woman or a man (see GiveName) -
 		/// among them the names carved on the game's runestones, which a viking talks about having (see
 		/// VikingLoreSpeech.NamesakeLines)
 		/// </summary>
@@ -128,7 +128,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// The names the first vikings of a village are given, in the order they come, by the village's name - each one of
-		/// MaleNames or FemaleNames, so it's rolled as a man or a woman to suit (see PresetModel)
+		/// FemaleNames or MaleNames, so it's rolled as a woman or a man to suit (see PresetModel)
 		/// </summary>
 		internal static readonly Dictionary<string, string[]> FirstVikings = new Dictionary<string, string[]>(System.StringComparer.OrdinalIgnoreCase)
 		{
@@ -373,7 +373,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Names a new viking of a village before it's rolled, the name its place among the village's first vikings gives
-		/// it (see FirstVikingName), noted as given by no player - it's rolled as a man or a woman to suit (see
+		/// it (see FirstVikingName), noted as given by no player - it's rolled as a woman or a man to suit (see
 		/// PresetModel), and GiveName keeps it, adding a byname as it would to any other
 		/// </summary>
 		/// <param name="viking">The viking's ZDO, owned by this client, not rolled yet</param>
@@ -391,10 +391,10 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets whether a new viking named before it's rolled (see PresetFirst) is to be a man or a woman
+		/// Gets whether a new viking named before it's rolled (see PresetFirst) is to be a woman or a man
 		/// </summary>
 		/// <param name="viking">The viking's ZDO</param>
-		/// <returns>Its model - 0 for a man, 1 for a woman - or -1 when its name doesn't say</returns>
+		/// <returns>Its model - 1 for a woman, 0 for a man - or -1 when its name doesn't say</returns>
 		public static int PresetModel(ZDO viking)
 		{
 			ReadRaw(viking, out string name, out string author);
@@ -440,10 +440,10 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets whether a name is a man's or a woman's, by which of MaleNames and FemaleNames lists it
+		/// Gets whether a name is a woman's or a man's, by which of FemaleNames and MaleNames lists it
 		/// </summary>
 		/// <param name="name">The name, without a byname</param>
-		/// <returns>0 for a man's, 1 for a woman's, or -1 when neither lists it</returns>
+		/// <returns>1 for a woman's, 0 for a man's, or -1 when neither lists it</returns>
 		internal static int ModelFor(string name)
 		{
 			if (System.Array.Exists(FemaleNames, (string female) => string.Equals(female, name, System.StringComparison.OrdinalIgnoreCase)))
@@ -458,7 +458,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks a name for a viking at random for whether it's a man or a woman, that no other viking of its village goes
+		/// Picks a name for a viking at random for whether it's a woman or a man, that no other viking of its village goes
 		/// by, with or without a byname, and that it wouldn't turn down (see Judge)
 		/// </summary>
 		/// <param name="data">Its looks, for whether it's a woman</param>

@@ -28,10 +28,10 @@ namespace VikingVillages
 		private static readonly string[] BjornLines =
 		{
 			"I heard another Bjorn lost a beard duel to Otho, and had to carve it in stone himself. I'd have demanded a rematch, {0}.",
-			"A lovesick fool on a stone begged Freya for a beard like Bjorn's. I like to think he meant mine, {0}.",
+			"A lovesick fool on a stone begged Freya for a beard like Bjorn's. Not this Bjorn's, I'd guess, {0}.",
 			"That other Bjorn swore Thor could tear his beard off if he lied about Otho's. An honest man, {0}. Or a frightened one.",
 			"A Bjorn who was once a farmer carved a stone in the Ashlands, watching warriors lose their will one death at a time. Grim, {0}.",
-			"Otho's beard is bright as a corn-field in summer, the other Bjorn carved. Look at mine, {0}, and tell me that's fair."
+			"Otho's beard is bright as a corn-field in summer, the other Bjorn carved. Sore loser, that one, {0}."
 		};
 
 		/// <summary>

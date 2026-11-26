@@ -83,7 +83,7 @@ namespace Kriona.Vikings
 		/// <summary>
 		/// Rolls a new living viking's look, health, skill, power and gear for the biome it's in, or the hardest biome
 		/// within HardBiomeVikingReach of its village's farm when that's harder (see VillageFarmhouses.HardestBiomeNear),
-		/// as a man or a woman to suit a name it was given before it was rolled (see VikingNames.PresetFirst), and names
+		/// as a woman or a man to suit a name it was given before it was rolled (see VikingNames.PresetFirst), and names
 		/// it, with the looks its name comes with (see StyleAfterName) - or a dvergr viking's for the Mistlands (see
 		/// GenerateDvergr)
 		/// </summary>
@@ -97,7 +97,7 @@ namespace Kriona.Vikings
 			int index = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(transform.position));
 			index = Mathf.Max(index, VillageFarmhouses.HardestBiomeNear(VillageFarm(), VillageFarmhouses.HardBiomeVikingReach));
 			VikingData rolled = VikingGear.RollData(index);
-			// One of its village's first vikings named before it's rolled is a man or a woman to suit the name
+			// One of its village's first vikings named before it's rolled is a woman or a man to suit the name
 			int model = VikingNames.PresetModel(nview.GetZDO());
 			if (model >= 0 && model != rolled.Model)
 			{
@@ -117,7 +117,7 @@ namespace Kriona.Vikings
 			{
 				VikingGear.AddWisp(gear);
 			}
-			// It's named for whether it's a man or a woman - model 1 is a woman's - before its looks are saved, since some
+			// It's named for whether it's a woman or a man - model 1 is a woman's - before its looks are saved, since some
 			// names come with looks of their own
 			ZDO zdo = nview.GetZDO();
 			VikingNames.GiveName(zdo, rolled, false);

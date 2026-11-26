@@ -281,10 +281,10 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Makes a viking being rolled a man or a woman, rolling a man's beard or taking a woman's away
+		/// Makes a viking being rolled a woman or a man, taking a woman's beard away or rolling a man's
 		/// </summary>
 		/// <param name="data">Its data, before its gear is rolled</param>
-		/// <param name="model">0 for a man, 1 for a woman</param>
+		/// <param name="model">1 for a woman, 0 for a man</param>
 		public static void SetModel(VikingData data, int model)
 		{
 			data.Model = model;

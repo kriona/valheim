@@ -1,6 +1,6 @@
 # Viking Villages - Names
 
-Every name the Vikings and villages of [Viking Villages](README.md) are given. A new Viking gets one of the male or female names, one no other Viking of their village goes by. The leader of each village has one of the leaders' bynames after their name, and other Vikings sometimes have one of the other bynames - see the [README](README.md). A village no player has named gets one of the village names, one no other village in the world goes by. The first four Vikings of Arendelle are Elsa, Anna, Kristoff and Olaf.
+Every name the Vikings and villages of [Viking Villages](README.md) are given. A new Viking gets one of the female or male names, one no other Viking of their village goes by. The leader of each village has one of the leaders' bynames after their name, and other Vikings sometimes have one of the other bynames - see the [README](README.md). A village no player has named gets one of the village names, one no other village in the world goes by. The first four Vikings of Arendelle are Elsa, Anna, Kristoff and Olaf.
 
 ## Male Names
 

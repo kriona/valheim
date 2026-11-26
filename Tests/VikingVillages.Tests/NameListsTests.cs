@@ -10,7 +10,7 @@ namespace VikingVillages.Tests
 	public class NameListsTests
 	{
 		/// <summary>
-		/// Checks that no viking name is listed twice, for a man or a woman, whatever its case, and that each fits in
+		/// Checks that no viking name is listed twice, for a woman or a man, whatever its case, and that each fits in
 		/// MaxLength and is one a viking would take
 		/// </summary>
 		[Fact]
@@ -65,7 +65,7 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that every village's first vikings have names of the lists, so each is rolled as a man or a woman to
+		/// Checks that every village's first vikings have names of the lists, so each is rolled as a woman or a man to
 		/// suit - Elsa and Anna as women, Kristoff and Olaf as men
 		/// </summary>
 		[Fact]
@@ -75,7 +75,7 @@ namespace VikingVillages.Tests
 			{
 				foreach (string name in village.Value)
 				{
-					Assert.True(VikingNames.ModelFor(name) >= 0, name + " of " + village.Key + " isn't a man's or a woman's name");
+					Assert.True(VikingNames.ModelFor(name) >= 0, name + " of " + village.Key + " isn't a woman's or a man's name");
 				}
 			}
 			Assert.Equal(1, VikingNames.ModelFor("Elsa"));
