@@ -21,7 +21,21 @@ namespace VikingVillages
 		/// <summary>
 		/// On a living viking, the foods it has eaten - each food's prefab and until when in ZNet time ticks it lasts
 		/// </summary>
-		private static readonly int MealsKey = "kriona.VikingVillages.vikingMeals".GetStableHashCode();
+		internal static readonly int MealsKey = "kriona.VikingVillages.vikingMeals".GetStableHashCode();
+
+		/// <summary>
+		/// On a living viking, when its owner last noted it was loaded, in ZNet time ticks - so its food doesn't wear off
+		/// while it's out of every player's reach, when it does nothing (see CatchUp)
+		/// </summary>
+		internal static readonly int SeenKey = "kriona.VikingVillages.vikingFoodSeen".GetStableHashCode();
+
+		/// <summary>
+		/// How often a viking's owner notes it's loaded, and how long it goes unnoted before its food counts as having
+		/// been put away the while, in seconds - longer than the first, so the moment ownership passes to another client
+		/// doesn't count
+		/// </summary>
+		private const float SeenInterval = 10f;
+		private const float UnseenGap = 30f;
 
 		/// <summary>
 		/// How many foods a viking can have eaten at once, and how often its food heals it, in seconds - the same as a
@@ -98,6 +112,13 @@ namespace VikingVillages
 		/// </summary>
 		private float sinceTick;
 		private float sinceMaxHealth;
+
+		/// <summary>
+		/// Whether the viking's food has caught up with the time it was out of reach since this client began owning it
+		/// (see CatchUp), and how long since this client last noted it's loaded, in seconds
+		/// </summary>
+		private bool caughtUp;
+		private float sinceSeen;
 
 		/// <summary>
 		/// Starts a living viking's food
@@ -381,18 +402,34 @@ namespace VikingVillages
 		/// <returns>The foods</returns>
 		public List<QuestMeal> Eating()
 		{
+			if (viking.m_nview == null || !viking.m_nview.IsValid())
+			{
+				return(new List<QuestMeal>());
+			}
+			return(Eating(Read(viking.m_nview.GetZDO()), NetTime.Now()));
+		}
+
+		/// <summary>
+		/// Lists meals as the foods a viking has eaten, with their health, healing, how long each lasts and how long it
+		/// has left at a moment, for working out what it eats on a quest or trip (see QuestSim.Eat)
+		/// </summary>
+		/// <param name="meals">The meals</param>
+		/// <param name="at">The moment, in ZNet time ticks</param>
+		/// <returns>The foods, leaving out those that can't be found or have worn off by then</returns>
+		public static List<QuestMeal> Eating(List<Meal> meals, long at)
+		{
 			List<QuestMeal> eating = new List<QuestMeal>();
-			if (viking.m_nview == null || !viking.m_nview.IsValid() || ObjectDB.instance == null)
+			if (ObjectDB.instance == null)
 			{
 				return(eating);
 			}
-			long now = NetTime.Now();
-			foreach (Meal meal in Read(viking.m_nview.GetZDO()))
+			foreach (Meal meal in meals)
 			{
 				ItemDrop.ItemData food = FoodOf(meal);
-				if (food != null && food.m_shared.m_foodBurnTime > 0f)
+				float left = (float)(meal.Until - at) / System.TimeSpan.TicksPerSecond;
+				if (food != null && food.m_shared.m_foodBurnTime > 0f && left > 0f)
 				{
-					eating.Add(new QuestMeal { Item = food.m_dropPrefab.name, Health = food.m_shared.m_food, Burn = BurnTime(food), Left = (float)(meal.Until - now) / System.TimeSpan.TicksPerSecond });
+					eating.Add(new QuestMeal { Item = food.m_dropPrefab.name, Health = food.m_shared.m_food, Regen = food.m_shared.m_foodRegen, Burn = BurnTime(food), Left = left });
 				}
 			}
 			return(eating);
@@ -400,7 +437,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Notes the foods a viking still has eaten as it comes home from a quest (see QuestSim.Eat), so its max health
-		/// follows them once it's back
+		/// follows them once it's back, and that it was last seen as it got there, so the time it's away doesn't put
+		/// them off (see CatchUp)
 		/// </summary>
 		/// <param name="zdo">The viking's ZDO, owned by this client</param>
 		/// <param name="lasting">The foods it still has eaten at the quest's end, each with the time it has left</param>
@@ -408,6 +446,7 @@ namespace VikingVillages
 		public static void Note(ZDO zdo, List<QuestMeal> lasting, long end)
 		{
 			Write(zdo, MealsFrom(lasting, end));
+			zdo.Set(SeenKey, end);
 		}
 
 		/// <summary>
@@ -474,12 +513,27 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Heals the viking by its foods' regen every TickTime seconds while they last, boosted by a multiplier, and
-		/// keeps its max health following its food every MaxHealthInterval seconds - call it while this client owns it
+		/// keeps its max health following its food every MaxHealthInterval seconds, first catching its food up with the
+		/// time it was out of every player's reach (see CatchUp) - call it while this client owns it
 		/// </summary>
 		/// <param name="dt">Seconds since the last update</param>
 		/// <param name="multiplier">How much faster it heals, from resting and being rested</param>
 		public void Update(float dt, float multiplier)
 		{
+			if (viking.m_nview != null && viking.m_nview.IsValid())
+			{
+				if (!caughtUp)
+				{
+					caughtUp = true;
+					CatchUp(viking.m_nview.GetZDO());
+				}
+				sinceSeen += dt;
+				if (sinceSeen >= SeenInterval)
+				{
+					sinceSeen = 0f;
+					viking.m_nview.GetZDO().Set(SeenKey, NetTime.Now());
+				}
+			}
 			sinceMaxHealth += dt;
 			if (sinceMaxHealth >= MaxHealthInterval)
 			{
@@ -645,6 +699,36 @@ namespace VikingVillages
 				pkg.Write(meal.Until);
 			}
 			return(pkg.GetArray());
+		}
+
+		/// <summary>
+		/// Puts off the end of each food a viking has eaten by the time it went unnoted as loaded (see Unseen) - out of
+		/// every player's reach, where it does nothing, so its food lasts as long as it would have had no time passed -
+		/// and notes it's loaded now
+		/// </summary>
+		/// <param name="zdo">The viking's ZDO, owned by this client</param>
+		private static void CatchUp(ZDO zdo)
+		{
+			long now = NetTime.Now();
+			long unseen = Unseen(zdo.GetLong(SeenKey, 0L), now, NetTime.Ticks(UnseenGap));
+			if (unseen > 0L)
+			{
+				Postpone(zdo, unseen);
+			}
+			zdo.Set(SeenKey, now);
+		}
+
+		/// <summary>
+		/// Works out how long a viking went unnoted as loaded - from when it was last noted until now, when that's longer
+		/// than a gap, and otherwise none, as for a viking never noted
+		/// </summary>
+		/// <param name="seen">When it was last noted as loaded, in ZNet time ticks, or 0 when it never was</param>
+		/// <param name="now">The time now, in ticks</param>
+		/// <param name="gap">The longest it goes unnoted while loaded, in ticks</param>
+		/// <returns>How long it went unnoted, in ticks</returns>
+		internal static long Unseen(long seen, long now, long gap)
+		{
+			return((seen > 0L && now - seen > gap) ? now - seen : 0L);
 		}
 
 		/// <summary>

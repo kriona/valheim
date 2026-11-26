@@ -697,7 +697,8 @@ namespace VikingVillages
 		/// the quest's plan, the foods it eats of what it took along (see QuestSim.Eat), whose health sets its max health
 		/// while it's out and as it comes home, then the harm it takes - the fight's on a quest that kills creatures (see
 		/// QuestFight), and otherwise the quest's danger for its gear - whether it dies of it (see QuestSim.DeathChance),
-		/// the potions it drinks, how its skills rise, and what it spends
+		/// its health through it as its foods heal it and the potions it drinks (see QuestSim.Health), how its skills
+		/// rise, and what it spends
 		/// </summary>
 		/// <param name="humanoid">The viking</param>
 		/// <param name="core">Its core</param>
@@ -744,7 +745,9 @@ namespace VikingVillages
 			float max = meals.MaxHealth;
 			float endMax = meals.EndMaxHealth;
 			float harm = ((plan.FightHarm >= 0f) ? plan.FightHarm : QuestSim.Harm(record.Kind, record.QuestBiome, gearBiome, record.Members.Count, record.Wanted, record.ActiveSeconds, VikingFood.FedHealth(gearBiome)));
-			float health = QuestSim.EndHealth(endMax, harm, meals.Fed, potionCount, heal, out int drunk);
+			// The work is between the road there and back, taken as alike
+			float workFrom = Mathf.Max(0f, (seconds - record.ActiveSeconds) / 2f);
+			float health = QuestSim.Health(meals, floor, humanoid.GetHealth(), harm, workFrom, workFrom + record.ActiveSeconds, seconds, potionCount, heal, out int drunk);
 			UseUp(potions, drunk, outcome.Used);
 			outcome.HealthShare = ((endMax > 0f) ? health / endMax : 1f);
 			// The worse a quest harms it, the likelier it dies there, which leaves it out when the others come home
@@ -942,12 +945,23 @@ namespace VikingVillages
 				QuestFood food = foods.Find((QuestFood known) => known.Item == name);
 				if (food == null)
 				{
-					food = new QuestFood { Item = name, Health = item.m_shared.m_food, Regen = item.m_shared.m_foodRegen, Burn = VikingFood.Lasts(item.m_shared.m_foodBurnTime, Game.m_foodRate) };
+					food = FoodOf(item);
 					foods.Add(food);
 				}
 				food.Count += count(item);
 			}
 			return(foods);
+		}
+
+		/// <summary>
+		/// Gets a food as a viking carries it on a quest or trip - its health, how much it heals, and how long it lasts at
+		/// the world's food rate - with none of it counted yet
+		/// </summary>
+		/// <param name="item">The food</param>
+		/// <returns>The food</returns>
+		public static QuestFood FoodOf(ItemDrop.ItemData item)
+		{
+			return(new QuestFood { Item = item.m_dropPrefab.name, Health = item.m_shared.m_food, Regen = item.m_shared.m_foodRegen, Burn = VikingFood.Lasts(item.m_shared.m_foodBurnTime, Game.m_foodRate) });
 		}
 
 		/// <summary>

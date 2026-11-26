@@ -20,17 +20,6 @@ namespace VikingVillages.Tests
 			Assert.Equal(expected, TripForage.Found(seconds));
 		}
 
-		[Theory]
-		[InlineData(5, 0f, 0)]
-		[InlineData(5, 899f, 0)]
-		[InlineData(5, 1800f, 2)]
-		[InlineData(2, 100000f, 2)]
-		[InlineData(0, 100000f, 0)]
-		public void EatsOneForEveryWhileOnTheRoad(int edible, float seconds, int expected)
-		{
-			Assert.Equal(expected, TripForage.Eaten(edible, seconds));
-		}
-
 		[Fact]
 		public void NothingGrowsWhereNothingGrows()
 		{
@@ -111,11 +100,19 @@ namespace VikingVillages.Tests
 		}
 
 		[Fact]
-		public void WhatsEatenComesOffWhatCanBeEaten()
+		public void WhatsFoundIsCountedInTheOrderItsFirstFound()
 		{
 			List<string> found = new List<string> { "Raspberry", "Thistle", "Raspberry", "Mushroom" };
-			List<KeyValuePair<string, int>> left = TripForage.Left(found, (string item) => item != "Thistle", 1800f);
-			Assert.Equal(new List<KeyValuePair<string, int>> { new KeyValuePair<string, int>("Thistle", 1), new KeyValuePair<string, int>("Mushroom", 1) }, left);
+			List<KeyValuePair<string, int>> counted = TripForage.Counted(found);
+			Assert.Equal(new List<KeyValuePair<string, int>> { new KeyValuePair<string, int>("Raspberry", 2), new KeyValuePair<string, int>("Thistle", 1), new KeyValuePair<string, int>("Mushroom", 1) }, counted);
+		}
+
+		[Fact]
+		public void WhatsFoundIsSpreadEvenlyOverTheRoad()
+		{
+			Assert.Equal(300f, TripFood.FoundAt(0, 2, 900f), 3);
+			Assert.Equal(600f, TripFood.FoundAt(1, 2, 900f), 3);
+			Assert.Equal(0f, TripFood.FoundAt(0, 1, -5f), 3);
 		}
 
 		[Fact]

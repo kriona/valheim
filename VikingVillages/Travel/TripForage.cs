@@ -6,27 +6,26 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// What vikings out of every player's reach pick along their road - a few of what grows in the biomes they walk
-	/// through, more the longer they walk through them, less what they eat on the way, and for hunters, a prey or two -
-	/// put in their inventory as they arrive, on the server, which keeps them on the road (see VillageTravel)
+	/// through, more the longer they walk through them, and for hunters, a prey or two - put in their inventory as they
+	/// arrive, on the server, which keeps them on the road (see VillageTravel). What they eat of it on the way is worked
+	/// out with the rest of their food (see TripFood)
 	/// </summary>
 	/// <remarks>
 	/// A viking finds one thing for every SecondsPerFind seconds on foot through a biome where something grows, up to
-	/// MostFound, picked by how long it spent in each biome, and eats one of what it found that it can eat for every
-	/// EatEvery seconds of the trip, before any food of its own - so a long trip often brings back only one or two. A
-	/// viking out hunting also takes a prey for every SecondsPerPrey seconds on foot through a biome with prey, up to
-	/// MostPrey. Only the biomes no harder than the viking's own count - a Meadows viking crossing the Plains finds
-	/// nothing there. Vikings out to mine or raid only pick on the way home, once they have what they went for. The
-	/// numbers are small on purpose: a trip brings back a handful, never stacks
+	/// MostFound, picked by how long it spent in each biome. A viking out hunting also takes a prey for every
+	/// SecondsPerPrey seconds on foot through a biome with prey, up to MostPrey. Only the biomes no harder than the
+	/// viking's own count - a Meadows viking crossing the Plains finds nothing there. Vikings out to mine or raid only
+	/// pick on the way home, once they have what they went for. The numbers are small on purpose: a trip brings back a
+	/// handful, never stacks
 	/// </remarks>
 	internal static class TripForage
 	{
 		/// <summary>
-		/// How many seconds on foot through a biome where something grows a viking takes to find one thing, the most it
-		/// finds on one trip, and how many seconds of the trip it eats one of what it found in
+		/// How many seconds on foot through a biome where something grows a viking takes to find one thing, and the most
+		/// it finds on one trip
 		/// </summary>
 		internal const float SecondsPerFind = 180f;
 		internal const int MostFound = 5;
-		internal const float EatEvery = 900f;
 
 		/// <summary>
 		/// How many seconds on foot through a biome with prey a hunter takes to take one on its road, and the most it takes
@@ -68,17 +67,6 @@ namespace VikingVillages
 		internal static int Found(float seconds)
 		{
 			return(Mathf.Clamp(Mathf.FloorToInt(Mathf.Max(0f, seconds) / SecondsPerFind), 0, MostFound));
-		}
-
-		/// <summary>
-		/// Works out how many of what a viking found it eats on the way
-		/// </summary>
-		/// <param name="edible">How many of what it found it can eat</param>
-		/// <param name="tripSeconds">How long the trip took, in seconds</param>
-		/// <returns>How many it eats</returns>
-		internal static int Eaten(int edible, float tripSeconds)
-		{
-			return(Mathf.Clamp(Mathf.FloorToInt(Mathf.Max(0f, tripSeconds) / EatEvery), 0, Mathf.Max(0, edible)));
 		}
 
 		/// <summary>
@@ -163,24 +151,16 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Takes away what a viking eats of what it found - the things it can eat, in the order it found them
+		/// Counts what a viking found, each thing in the order it first found one
 		/// </summary>
 		/// <param name="found">What it found, a prefab name for each thing</param>
-		/// <param name="edible">Checks whether a thing can be eaten</param>
-		/// <param name="tripSeconds">How long the trip took, in seconds</param>
-		/// <returns>What it has left, by prefab name, with how many of each</returns>
-		internal static List<KeyValuePair<string, int>> Left(List<string> found, System.Func<string, bool> edible, float tripSeconds)
+		/// <returns>What it found, by prefab name, with how many of each</returns>
+		internal static List<KeyValuePair<string, int>> Counted(List<string> found)
 		{
-			int eat = Eaten(found.FindAll((string item) => edible(item)).Count, tripSeconds);
 			Dictionary<string, int> left = new Dictionary<string, int>();
 			List<string> order = new List<string>();
 			foreach (string item in found)
 			{
-				if (eat > 0 && edible(item))
-				{
-					eat--;
-					continue;
-				}
 				if (!left.ContainsKey(item))
 				{
 					left[item] = 0;
@@ -218,10 +198,17 @@ namespace VikingVillages
 		/// group is due at the end of its trip - on the server, which has the world's plan and its items
 		/// </summary>
 		/// <param name="entry">The group</param>
+		/// <param name="found">Set to what each viking found growing, a prefab name for each thing in the order it found
+		/// them, in the order of the group's vikings</param>
 		/// <returns>How many things each viking was given, in the order of the group's vikings</returns>
-		public static int[] Give(TravelEntry entry)
+		public static int[] Give(TravelEntry entry, out List<string>[] found)
 		{
 			int[] given = new int[entry.Vikings.Count];
+			found = new List<string>[entry.Vikings.Count];
+			for (int i = 0; i < found.Length; i++)
+			{
+				found[i] = new List<string>();
+			}
 			TravelJourney journey = entry.Journey;
 			if (entry.Foraged || journey == null || WorldGenerator.instance == null || ObjectDB.instance == null)
 			{
@@ -235,14 +222,14 @@ namespace VikingVillages
 				int biome = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(middle));
 				seconds[biome] = (seconds.TryGetValue(biome, out float before) ? before : 0f) + legSeconds;
 			});
-			float tripSeconds = entry.Spent + entry.Remaining;
 			bool hunting = (entry.OnQuest && (QuestKind)entry.QuestKind == QuestKind.Hunt);
 			System.Random rng = new System.Random();
 			int total = 0;
 			for (int i = 0; i < entry.Vikings.Count; i++)
 			{
 				int own = OwnBiome(entry.Vikings[i], entry.Biome);
-				List<KeyValuePair<string, int>> left = Left(Pick(seconds, own, () => Random.value), Edible, tripSeconds);
+				found[i] = Pick(seconds, own, () => Random.value);
+				List<KeyValuePair<string, int>> left = Counted(found[i]);
 				if (hunting)
 				{
 					Dictionary<string, int> drops = new Dictionary<string, int>();

@@ -337,7 +337,7 @@ By day, a Viking does the first of these they can, in this order - but for light
 A quest of their village setting out with them on it - between 0.24 and 0.6 of the day, with no enemy within 30 meters of the village - drops whatever they're doing. Only lightening their load comes first. They:
 
 1. Take the quest's tool from the nearest chest that has it, or go without
-2. Pack food for as long as they're gone - 3 foods for each half hour, up to 9, no more than a third of them of one kind while there are others - up to 2 healing potions, and what the quest spends, like treasure to sell. For a quest that kills creatures they take their strongest food, and for the rest the food they'd keep their foods up on (see [Keep Their Foods Up](#keep-their-foods-up)). They take no more than half of any stack of food or potions, from each chest once
+2. Pack the food they'd eat for as long as they're gone - by how long each food lasts, going on with what they've eaten already, up to 9 - up to 2 healing potions, and what the quest spends, like treasure to sell. For a quest that kills creatures they take their strongest food, and for the rest the food they'd keep their foods up on (see [Keep Their Foods Up](#keep-their-foods-up)). They take no more than half of any stack of food or potions, from each chest once
 3. The first of them says when they'll be back
 4. Run out of the village to a spot outside it, and are gone
 

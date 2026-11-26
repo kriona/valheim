@@ -1074,8 +1074,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Has a viking away from any village look after itself - eating the best food it carries when it can eat, going
-		/// for food growing near it when it carries none it can eat, and for a wanderer, picking up loot lying near it out
+		/// Has a viking away from any village look after itself - eating the food it carries when it eats (see
+		/// EatCarried), going for food growing near it when it carries none it eats, and for a wanderer, picking up loot lying near it out
 		/// of any player's base
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
@@ -1144,7 +1144,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Eats the best food the viking carries that it can eat now, the way a player eats
+		/// Eats the food the viking carries that it eats now, the way it eats from a chest at home (see FoodIn) - wounded,
+		/// the one that heals it fastest, and otherwise keeping its foods up on the weakest that does it good
 		/// </summary>
 		/// <returns>True when it ate</returns>
 		private bool EatCarried()
@@ -1153,10 +1154,16 @@ namespace VikingVillages
 			{
 				return(false);
 			}
+			bool topUp = !Wounded();
+			float floor = body.Food.Floor();
 			ItemDrop.ItemData best = null;
 			foreach (ItemDrop.ItemData item in humanoid.GetInventory().GetAllItems())
 			{
-				if (body.Food.CanEat(item) && (best == null || item.m_shared.m_foodRegen > best.m_shared.m_foodRegen))
+				if (!(topUp ? body.Food.CanTopUp(item) : body.Food.CanEat(item)))
+				{
+					continue;
+				}
+				if (best == null || (topUp ? EatsBefore(item, best, floor) : item.m_shared.m_foodRegen > best.m_shared.m_foodRegen))
 				{
 					best = item;
 				}
@@ -1173,8 +1180,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the nearest food growing within RoadForageReach that the viking can eat now, with no monster it can't
-		/// take on near it
+		/// Finds the nearest food growing within RoadForageReach that the viking eats now (see EatCarried), with no monster
+		/// it can't take on near it
 		/// </summary>
 		/// <returns>The food, or null</returns>
 		private Pickable FindRoadForage()
@@ -1183,6 +1190,7 @@ namespace VikingVillages
 			{
 				return(null);
 			}
+			bool topUp = !Wounded();
 			Pickable nearest = null;
 			float nearestDistance = RoadForageReach;
 			foreach (Pickable pickable in LoadedPickables())
@@ -1192,7 +1200,8 @@ namespace VikingVillages
 					continue;
 				}
 				float distance = Utils.DistanceXZ(pickable.transform.position, transform.position);
-				if (distance < nearestDistance && body.Food.CanEat(ForageFood(pickable)) && !DifficultNear(pickable.transform.position, WanderClear))
+				ItemDrop.ItemData food = ForageFood(pickable);
+				if (distance < nearestDistance && (topUp ? body.Food.CanTopUp(food) : body.Food.CanEat(food)) && !DifficultNear(pickable.transform.position, WanderClear))
 				{
 					nearest = pickable;
 					nearestDistance = distance;

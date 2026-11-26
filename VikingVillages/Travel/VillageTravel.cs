@@ -1042,7 +1042,8 @@ namespace VikingVillages
 		/// whose village was started again at its bonfire meanwhile turn around for home once they've got where they were
 		/// going. A group due at a farm not generated or loaded yet waits for it, and a group out on a quest waits for
 		/// the rest of its vikings to leave the village and join it, so they all come home together (see
-		/// TravelEntry.QuestWaiting). Each group is given what it picked along its road as it's due (see TripForage)
+		/// TravelEntry.QuestWaiting). Each group is given what it picked along its road as it's due (see TripForage), and
+		/// fed for the road (see TripFood)
 		/// </summary>
 		private static void Deliver()
 		{
@@ -1078,7 +1079,8 @@ namespace VikingVillages
 				}
 				if (!entry.Foraged)
 				{
-					NoteTrip(entry, TripForage.Give(entry), now);
+					NoteTrip(entry, TripForage.Give(entry, out List<string>[] found), now);
+					TripFood.Feed(entry, found, now);
 					changed = true;
 				}
 				queue.RemoveAt(i);

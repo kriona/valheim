@@ -272,6 +272,23 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a viking unnoted as loaded for longer than the gap counts as away the whole while, one noted within
+		/// it or never noted not at all
+		/// </summary>
+		/// <param name="seen">When it was last noted, in ticks</param>
+		/// <param name="expected">How long it counts as away, in ticks</param>
+		[Theory]
+		[InlineData(0L, 0L)]
+		[InlineData(9800L, 0L)]
+		[InlineData(9700L, 0L)]
+		[InlineData(9699L, 301L)]
+		[InlineData(1000L, 9000L)]
+		public void FoodIsPutAwayWhileTheVikingIsOutOfReach(long seen, long expected)
+		{
+			Assert.Equal(expected, VikingFood.Unseen(seen, 10000L, 300L));
+		}
+
+		/// <summary>
 		/// Checks that a viking fully fed on its biome's food has the next biome's floor, and in the Deep North 350
 		/// </summary>
 		[Fact]
