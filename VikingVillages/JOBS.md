@@ -359,7 +359,7 @@ Below half their health with nothing to fight, they use the Elder's power, when 
 
 ### Keep Their Foods Up
 
-While the chests hold three foods for each Viking or more, they keep their foods up for the health they add - with less, the food is left for the wounded. They eat a food once one of their three places is free, or one of theirs has a tenth of it left. Of all the chests' food they can eat, they eat the weakest that still raises them above their least max health (see [LOGIC.md](LOGIC.md#eating)) - a food adding more than a third of what that holds over the base 25 - from the nearest chest that has it, so the strongest food is left for the wounded and for fights. With none that does, they eat the strongest of the rest.
+While the chests hold three foods for each Viking or more, they keep their foods up for the health they add - with less, the food is left for the wounded. They eat a food once one of their three places is free, or one of theirs has a tenth of it left. Of all the chests' food they can eat, they eat the weakest that still raises them above their least max health (see [LOGIC.md](LOGIC.md#eating)) - a food adding more than a third of what that holds over the base 25 - from the nearest chest that has it, so the strongest food is left for the wounded and for fights. With none that does, they eat the strongest of the rest. They only eat a food that does them good: one that raises their max health by a point or more, counting what they've eaten already, or any food while they're below their max health, to heal. At full health, food too weak to lift them past their least max health is left in the chests.
 
 ### Keep Warm
 

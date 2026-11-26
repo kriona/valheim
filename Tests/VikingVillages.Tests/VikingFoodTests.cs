@@ -245,6 +245,35 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a food raises a viking's max health only when what it adds lifts it past its floor, by at least a
+		/// point - a Mountains viking at a floor of 175, eating 110 already, gains from a wolf meat of 45 only past 150
+		/// </summary>
+		[Fact]
+		public void FoodRaisesMaxHealthOnlyPastTheFloor()
+		{
+			// 25 + 110 + 45 = 180, above 175
+			Assert.True(VikingFood.RaisesMaxHealth(175f, 110f, 0f, 45f));
+			// 25 + 90 + 45 = 160, still below the floor
+			Assert.False(VikingFood.RaisesMaxHealth(175f, 90f, 0f, 45f));
+			// 25 + 105.5 + 45 = 175.5, under a point above the floor
+			Assert.False(VikingFood.RaisesMaxHealth(175f, 105.5f, 0f, 45f));
+			// With no floor in the way, any food raises it
+			Assert.True(VikingFood.RaisesMaxHealth(50f, 60f, 0f, 8f));
+		}
+
+		/// <summary>
+		/// Checks that eating a food again counts only what it adds over what's left of it
+		/// </summary>
+		[Fact]
+		public void EatingAFoodAgainRaisesOnlyWhatsWornOff()
+		{
+			// 25 + 100 + 30 = 155 now; eaten again, its 30 left becomes 35, 160
+			Assert.True(VikingFood.RaisesMaxHealth(50f, 130f, 30f, 35f));
+			// What's left of it is all of it, so eating it again adds nothing
+			Assert.False(VikingFood.RaisesMaxHealth(50f, 130f, 35f, 35f));
+		}
+
+		/// <summary>
 		/// Checks that the strongest food comes first, and of two alike the one that heals faster
 		/// </summary>
 		[Fact]

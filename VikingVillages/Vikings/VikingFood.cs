@@ -51,6 +51,12 @@ namespace VikingVillages
 		internal const float TopUpShare = 0.1f;
 
 		/// <summary>
+		/// The least a food has to raise a viking's max health by for it to eat the food to keep its foods up at full
+		/// health (see CanTopUp)
+		/// </summary>
+		internal const float RaiseLeast = 1f;
+
+		/// <summary>
 		/// The health a viking fully fed on the three best foods of the Deep North has, the last biome its gear can come
 		/// from (see FedHealth)
 		/// </summary>
@@ -152,13 +158,56 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Checks whether the viking eats a food to keep its foods up when it isn't wounded - a food it hasn't eaten that
-		/// fits beside the others, or one it has eaten that has nearly run out (see TopUpShare)
+		/// fits beside the others, or one it has eaten that has nearly run out (see TopUpShare) - when it does the viking
+		/// good: raising its max health, or healing it while it's below its max health. A food that does neither, like
+		/// one too weak to lift it above its floor at full health, is left for the wounded
 		/// </summary>
 		/// <param name="item">The food</param>
 		/// <returns>True when it does</returns>
 		public bool CanTopUp(ItemDrop.ItemData item)
 		{
-			return(Fits(item, TopUpShare));
+			if (!Fits(item, TopUpShare))
+			{
+				return(false);
+			}
+			return(viking.GetHealth() < viking.GetMaxHealth() || RaisesMaxHealth(item));
+		}
+
+		/// <summary>
+		/// Checks whether eating a food raises the viking's max health, by what it has eaten - the food's health in place
+		/// of what's left of it, for one it has eaten already (see RaisesMaxHealth)
+		/// </summary>
+		/// <param name="item">The food</param>
+		/// <returns>True when it does</returns>
+		private bool RaisesMaxHealth(ItemDrop.ItemData item)
+		{
+			long now = NetTime.Now();
+			int prefab = item.m_dropPrefab.name.GetStableHashCode();
+			float replaced = 0f;
+			foreach (Meal meal in Read(viking.m_nview.GetZDO()))
+			{
+				ItemDrop.ItemData food = ((meal.Prefab == prefab) ? FoodOf(meal) : null);
+				if (food != null && food.m_shared.m_foodBurnTime > 0f)
+				{
+					replaced = food.m_shared.m_food * HealthShare((float)(meal.Until - now) / System.TimeSpan.TicksPerSecond, BurnTime(food));
+				}
+			}
+			return(RaisesMaxHealth(Floor(), FoodHealth(), replaced, item.m_shared.m_food));
+		}
+
+		/// <summary>
+		/// Checks whether eating a food raises a viking's max health by at least RaiseLeast - its max health with the
+		/// food's health on top of what its foods add, less what's left of the same food eaten already, against its max
+		/// health now (see MaxHealth)
+		/// </summary>
+		/// <param name="floor">The viking's floor (see HealthFloor)</param>
+		/// <param name="foodHealth">What its foods add now (see FoodHealth)</param>
+		/// <param name="replaced">What's left of the same food eaten already, which the food takes the place of</param>
+		/// <param name="added">The food's health</param>
+		/// <returns>True when it does</returns>
+		internal static bool RaisesMaxHealth(float floor, float foodHealth, float replaced, float added)
+		{
+			return(MaxHealth(floor, foodHealth - replaced + added) >= MaxHealth(floor, foodHealth) + RaiseLeast);
 		}
 
 		/// <summary>
