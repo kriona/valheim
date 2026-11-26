@@ -536,6 +536,13 @@ namespace Kriona.Vikings
 		public static partial bool Rises(Character dying);
 
 		/// <summary>
+		/// Checks whether this mod's vikings wear their armor the way a player does, to the whole of a hit - poison, fire
+		/// and spirit included - rather than only to the damage it deals at once (see VikingPlayerArmorPatch)
+		/// </summary>
+		/// <returns>True when they do</returns>
+		public static partial bool WearsArmorLikePlayer();
+
+		/// <summary>
 		/// Gets the name of the viking prefab this mod adds
 		/// </summary>
 		/// <returns>Its name, or "" before it's built</returns>

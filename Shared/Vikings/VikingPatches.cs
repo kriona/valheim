@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
 using HarmonyLib;
 
 namespace Kriona.Vikings
@@ -158,11 +161,12 @@ namespace Kriona.Vikings
 	}
 
 	/// <summary>
-	/// Notes the zombie viking a hit is being dealt to, so its armor is applied as the damage lands
+	/// Notes the viking a hit is being dealt to, so its armor is applied as the damage lands
 	/// </summary>
 	/// <remarks>
-	/// The game only applies a player's armor, partway through this RPC, so the viking's is applied by VikingArmorPatch
-	/// at the same point
+	/// The game only applies a player's armor, partway through this RPC. A viking that wears its armor the way a player
+	/// does has it applied there by VikingPlayerArmorPatch, which takes it off Target, and any other has it applied by
+	/// VikingArmorPatch as the damage lands
 	/// </remarks>
 	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
 	internal static class VikingHitPatch
@@ -202,8 +206,13 @@ namespace Kriona.Vikings
 
 	/// <summary>
 	/// Reduces a hit on a viking by its armor and wears its armor down, through the same GetBodyArmor and
-	/// DamageArmorDurability the game calls for a player's (see VikingBody)
+	/// DamageArmorDurability the game calls for a player's (see VikingBody), for a viking VikingPlayerArmorPatch hasn't
+	/// already applied it to
 	/// </summary>
+	/// <remarks>
+	/// The damage lands after RPC_Damage has split the poison, fire and spirit off to be dealt over time, so the armor
+	/// applied here doesn't reduce them
+	/// </remarks>
 	[HarmonyPatch(typeof(Character), nameof(Character.ApplyDamage))]
 	internal static class VikingArmorPatch
 	{
@@ -224,6 +233,68 @@ namespace Kriona.Vikings
 				hit.ApplyArmor(viking.GetBodyArmor());
 				viking.DamageArmorDurability(hit);
 			}
+		}
+	}
+
+	/// <summary>
+	/// Applies the armor of a viking that wears it the way a player does (see VikingCore.WearsArmorLikePlayer) where
+	/// RPC_Damage applies a player's - to the whole hit, poison, fire and spirit included, before they're split off to
+	/// be dealt over time - with the game's own GetBodyArmor and DamageArmorDurability (see VikingBody)
+	/// </summary>
+	/// <remarks>
+	/// It adds the viking to the condition the game checks before applying a player's armor rather than taking the
+	/// place of the IsPlayer call, so the other mod's copy of this patch adds its own vikings to it too. The viking
+	/// then skips the world level's armor for enemies, as a player does. A viking given its armor here is taken off
+	/// VikingHitPatch.Target, so VikingArmorPatch doesn't apply it again - and when this patch can't find its place,
+	/// VikingArmorPatch still applies it
+	/// </remarks>
+	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
+	internal static class VikingPlayerArmorPatch
+	{
+		/// <summary>
+		/// Adds a call to WearsArmor between the IsPlayer check before the game applies a player's armor and its branch,
+		/// leaving the method as it is when the armor isn't applied behind a branch
+		/// </summary>
+		/// <param name="instructions">The method's instructions</param>
+		/// <returns>The instructions with the call added</returns>
+		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		{
+			MethodInfo bodyArmor = AccessTools.Method(typeof(Character), nameof(Character.GetBodyArmor));
+			List<CodeInstruction> result = new List<CodeInstruction>(instructions);
+			int armor = result.FindIndex((CodeInstruction instruction) => instruction.Calls(bodyArmor));
+			int branch = -1;
+			for (int i = armor - 1; i >= 0; i--)
+			{
+				if (result[i].opcode == OpCodes.Brfalse || result[i].opcode == OpCodes.Brfalse_S)
+				{
+					branch = i;
+					break;
+				}
+			}
+			if (armor < 0 || branch < 0)
+			{
+				VikingMod.Log.LogWarning("Couldn't find where Character.RPC_Damage applies a player's armor - vikings' armor won't reduce poison, fire or spirit damage");
+				return(result);
+			}
+			result.InsertRange(branch, new[] { new CodeInstruction(OpCodes.Ldarg_0), CodeInstruction.Call(typeof(VikingPlayerArmorPatch), nameof(WearsArmor)) });
+			return(result);
+		}
+
+		/// <summary>
+		/// Checks whether the game applies a player's armor to a creature being hit - a player, or one of this mod's
+		/// vikings that wears its armor the way a player does, which it then takes off VikingHitPatch.Target
+		/// </summary>
+		/// <param name="player">What the game's check, and any other mod's patch of it, found</param>
+		/// <param name="character">The creature being hit</param>
+		/// <returns>True when its armor is applied</returns>
+		private static bool WearsArmor(bool player, Character character)
+		{
+			if (player || !VikingCore.WearsArmorLikePlayer() || VikingHitPatch.Target != character)
+			{
+				return(player);
+			}
+			VikingHitPatch.Target = null;
+			return(true);
 		}
 	}
 

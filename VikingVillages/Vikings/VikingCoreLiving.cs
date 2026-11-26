@@ -58,6 +58,16 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
+		/// Checks whether a living viking wears its armor the way a player does, which it does, so its armor reduces
+		/// poison, fire and spirit damage too
+		/// </summary>
+		/// <returns>True</returns>
+		public static partial bool WearsArmorLikePlayer()
+		{
+			return(true);
+		}
+
+		/// <summary>
 		/// Gives the living viking its life in its village, or a dvergr viking its life with the dvergr
 		/// </summary>
 		partial void AddParts()

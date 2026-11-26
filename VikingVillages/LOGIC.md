@@ -155,7 +155,8 @@ Everything Viking Villages does, in full. The [README](README.md) has the short 
 
 - They're armed for their biome and always wear armor (the set's chest and legs) and wield a weapon - the set's helmet and cape (50% each) and a shield (40%, unless their weapon takes both hands) are left to chance, but for the helmet and cape from the Mountains on, and everything they have is fully repaired. From the Mountains on, every Viking wears a cape - the set's, or else the biome's own (a wolf fur cape in the Mountains, a lox cape in the Plains, a feather cape in the Mistlands, an Asksvin cloak in the Ashlands and a moose hide cape in the Deep North). Every cape of the Mountains and the Deep North resists frost, so their Vikings don't freeze there
 - A Viking with a bow or crossbow carries 100 arrows or bolts of their biome, and never carries weapons or ammo that deal spirit damage, or Dyrnwyn in the Deep North. They carry no coins, so a living Viking who dies for good drops none
-- Their armor protects them as well as yours does you and wears down the same way, and their weapons and shield wear down as they use them
+- Their armor protects them as well as yours does you and wears down the same way, taking the edge off poison, fire and spirit damage along with the rest of a hit, and their weapons and shield wear down as they use them
+- Poison works on them the way it works on you, wearing off as slowly, so a blob's or leech's poison hurts them no more each second than it hurts you
 - Every village starts with a Viking who carries a bow and arrows from their biome, and when no Viking in the village can shoot, the next to come back brings a bow too. What else they start with depends on the biome:
   - In the Meadows, the Viking with the bow also carries a melee weapon, and the rest carry one weapon of any kind
   - In the Black Forest, a third of the Vikings start with only a bow and arrows, a third with only a melee weapon and a third with both. The Viking with the bow starts with only the bow or with both, half the time each
@@ -194,6 +195,7 @@ Everything Viking Villages does, in full. The [README](README.md) has the short 
 ### Hurting a Viking
 
 - Like the dvergr, they fight zombies and monsters and leave you alone - until you hurt one, which turns every Viking and dvergr nearby against you. Unlike the dvergr, a Viking calms down again once they've slept on it - one angered by day forgives you the next morning, and one angered at night as the next night falls, as long as no player has hurt them since
+- Like you, they never take a critical hit: a staggered Viking takes no more damage than one on their feet, where the game doubles the damage to any other staggered creature
 - You can only hurt a living Viking with PvP on (the PvP toggle on your inventory screen), the same as hurting another player, so a stray swing or arrow with PvP off won't turn the village against you. The first time a hit of yours does nothing because PvP is off, Hugin flies in to explain, once per character. A Viking that's already hostile can always be fought back
 - The console's kill commands, and the K key in `debugmode`, only kill the living Vikings who are angry at you while your PvP is off, and every living Viking with it on - they say how many they spared, and the first time they spare any, Hugin flies in to explain. This covers kill commands other mods put in place of the game's too, like Server Devcommands'
 

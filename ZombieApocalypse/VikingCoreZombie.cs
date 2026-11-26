@@ -82,6 +82,16 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
+		/// Checks whether a zombie viking wears its armor the way a player does, which it doesn't - its armor only
+		/// reduces the damage a hit deals at once, not its fire or spirit, so fire and silver hurt it in full
+		/// </summary>
+		/// <returns>False</returns>
+		public static partial bool WearsArmorLikePlayer()
+		{
+			return(false);
+		}
+
+		/// <summary>
 		/// Rolls a new zombie viking of the world's look, health, skill, power and gear for the biome it's in, worn and
 		/// left to chance, and marks it as a zombie
 		/// </summary>

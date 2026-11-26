@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
 using HarmonyLib;
 using Kriona.Vikings;
 using UnityEngine;
@@ -525,6 +527,78 @@ namespace VikingVillages
 			if (__instance is LivingVikingBody body && body.FrostImmune())
 			{
 				__result.m_frost = HitData.DamageModifier.Immune;
+			}
+		}
+	}
+
+	/// <summary>
+	/// Keeps a living viking from taking a critical hit while staggered, the same as a player - the game doubles the
+	/// damage to any staggered character but a player
+	/// </summary>
+	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
+	public static class VikingNoCriticalPatch
+	{
+		/// <summary>
+		/// Swaps the damage's Character.IsStaggering call for Crits, leaving the method as it is when the call isn't there
+		/// </summary>
+		/// <param name="instructions">The method's instructions</param>
+		/// <returns>The instructions with the call swapped</returns>
+		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		{
+			MethodInfo staggering = AccessTools.Method(typeof(Character), nameof(Character.IsStaggering));
+			MethodInfo crits = AccessTools.Method(typeof(VikingNoCriticalPatch), nameof(Crits));
+			List<CodeInstruction> result = new List<CodeInstruction>(instructions);
+			int found = 0;
+			foreach (CodeInstruction instruction in result)
+			{
+				if (staggering != null && instruction.Calls(staggering))
+				{
+					found++;
+				}
+			}
+			if (found != 1)
+			{
+				Plugin.Log.LogWarning("Expected one Character.IsStaggering call in Character.RPC_Damage but found " + found + " - living vikings will take critical hits while staggered");
+				return(result);
+			}
+			foreach (CodeInstruction instruction in result)
+			{
+				if (instruction.Calls(staggering))
+				{
+					instruction.opcode = OpCodes.Call;
+					instruction.operand = crits;
+				}
+			}
+			return(result);
+		}
+
+		/// <summary>
+		/// Checks whether a hit on a character is a critical hit for its staggering - never on a living viking
+		/// </summary>
+		/// <param name="character">The character hit</param>
+		/// <returns>True when it's staggering and isn't a living viking</returns>
+		public static bool Crits(Character character)
+		{
+			return(character.IsStaggering() && !(character is LivingVikingBody));
+		}
+	}
+
+	/// <summary>
+	/// Spreads the poison a living viking takes over as long as a player's, so it deals as much each second as it does
+	/// to a player - the game only gives a player the longer time (see SE_Poison.AddDamage)
+	/// </summary>
+	[HarmonyPatch(typeof(SE_Poison), nameof(SE_Poison.AddDamage))]
+	public static class VikingPoisonPatch
+	{
+		/// <summary>
+		/// Gives a living viking's poison effect, its own copy, the time a player's takes for each point of damage
+		/// </summary>
+		/// <param name="__instance">The poison effect</param>
+		private static void Prefix(SE_Poison __instance)
+		{
+			if (__instance.m_character is LivingVikingBody)
+			{
+				__instance.m_TTLPerDamage = __instance.m_TTLPerDamagePlayer;
 			}
 		}
 	}
