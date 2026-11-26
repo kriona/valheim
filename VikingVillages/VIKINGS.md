@@ -30,7 +30,7 @@ There are three kinds of Viking across Viking Villages and Zombie Apocalypse. Th
 | Forsaken powers | Their biome's and every earlier one's, learning and teaching others, used in fights and for work | Up to Yagluth's, learning the ones they're given, used in fights and when badly hurt | 10% chance of their biome's the first time they spot an enemy - a tombstone zombie 50% of your last one - with a 30 second cooldown between zombies |
 | Coins dropped on death | None | 100-140, multiplied by stars | By biome, multiplied by stars |
 | Gear dropped on death | Everything, where they fall | Each piece 5%, at most 2 | Each piece 5%, at most 2 - a tombstone zombie drops everything |
-| Comes back after dying | Yes - the village gets them back after a day, or three if a player killed them | No - an outpost never hires again | No |
+| Comes back after dying | No - a new Viking, with a new name and fresh skills, takes their place after a day, or three if a player killed them | No - an outpost never hires again | No |
 | Rises as a zombie Viking (with Zombie Apocalypse) | Yes, with their looks, gear and skills, dropping their silver | Yes | No |
 | Silver-lined weapons (with Zombie Apocalypse) | From the Mountains on, 25% of the time rising to always from the Ashlands | 75% of the time | Never - no spirit weapons or ammo |
 | Flees at dawn | No | No | Night spawns do |
