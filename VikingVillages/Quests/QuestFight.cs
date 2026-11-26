@@ -93,6 +93,13 @@ namespace VikingVillages
 		public const float BlockShare = 0.5f;
 
 		/// <summary>
+		/// How strongly an enemy's attacks that strike one viking go to the toughest - each viking draws them by how many
+		/// of its hits it could take, raised to this power (see Draws), so the toughest steps in front of the others and
+		/// takes more than its share, and the weaker lose less of their health than it does
+		/// </summary>
+		public const double ToughDraw = 2.0;
+
+		/// <summary>
 		/// The least time one of an enemy's attacks takes, start to finish, in seconds, so it never attacks more often
 		/// than that whatever its intervals
 		/// </summary>
@@ -107,7 +114,7 @@ namespace VikingVillages
 		/// Works out a fight - the enemies coming at the vikings pack by pack, in the order given, and the vikings
 		/// bringing down each pack's one at a time while the rest of it keeps attacking. Each enemy's attacks that strike
 		/// all around land on every viking, and the rest are shared out among them by how well each stands up to them
-		/// (see Draws), the strongest stepping in front of the others
+		/// (see Draws), the strongest stepping in front of the others to spare them
 		/// </summary>
 		/// <param name="kinds">The kinds of enemy</param>
 		/// <param name="foes">The enemies, in the order they come, each by its kind's index</param>
@@ -160,8 +167,9 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out how an enemy's attack that strikes one viking is shared out among them - by how many of its hits each
-		/// could take, its health over what a hit deals it through its shield and armor (see Taken), so a stronger viking
-		/// draws more of them and every viking loses about the same share of its health. One that a hit can't hurt draws
+		/// could take, its health over what a hit deals it through its shield and armor (see Taken), raised to ToughDraw,
+		/// so a stronger viking draws more of them than its health alone would have it take, losing a bigger share of its
+		/// health than the weaker, who are spared. Alike vikings share them evenly, and one that a hit can't hurt draws
 		/// them all, shared evenly with any others like it
 		/// </summary>
 		/// <param name="fighters">The vikings</param>
@@ -183,7 +191,7 @@ namespace VikingVillages
 					toughness.Add(-1f);
 					continue;
 				}
-				toughness.Add(System.Math.Max(0f, fighter.Health) / taken);
+				toughness.Add((float)System.Math.Pow(System.Math.Max(0f, fighter.Health) / taken, ToughDraw));
 			}
 			List<float> draws = new List<float>();
 			if (unhurt > 0)

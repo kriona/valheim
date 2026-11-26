@@ -177,19 +177,29 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void AStrongerVikingDrawsMoreOfAnEnemysAttacks()
 		{
-			// The first takes 20 of a hit to its 100 health, 5 hits, and the second 10 to its 200, 20 hits - 4 times as many
+			// The first takes 20 of a hit to its 100 health, 5 hits, and the second 10 to its 200, 20 hits - 4 times as
+			// many, drawing 16 times as many of the attacks, squared
 			List<Fighter> fighters = new List<Fighter> { Viking(10f, 100f, 0f, 0f, 20f), Viking(10f, 200f, 0f, 0f, 10f) };
 			List<float> draws = QuestFight.Draws(fighters, 0, 0);
-			Assert.Equal(0.2f, draws[0], 3);
-			Assert.Equal(0.8f, draws[1], 3);
+			Assert.Equal(1f / 17f, draws[0], 3);
+			Assert.Equal(16f / 17f, draws[1], 3);
 		}
 
 		[Fact]
-		public void StrongAndWeakLoseTheSameShareOfTheirHealth()
+		public void TheStrongerLosesMoreOfTheirHealthToSpareTheWeaker()
 		{
 			FightResult result = FightOne(OneAttack(500f, 5f, false), new List<Fighter> { Viking(10f, 100f, 0f, 0f, 20f), Viking(10f, 200f, 0f, 0f, 10f) });
-			Assert.Equal(result.HarmShares[0], result.HarmShares[1], 2);
+			Assert.True(result.HarmShares[1] > result.HarmShares[0]);
 			Assert.True(result.Harms[1] > result.Harms[0]);
+		}
+
+		[Fact]
+		public void AStrongerFellowSparesTheWeaker()
+		{
+			Enemy enemy = OneAttack(500f, 5f, false);
+			float withAlike = FightOne(enemy, Alike(2, () => Viking(10f, 100f, 0f, 0f, 20f))).HarmShares[0];
+			float withStronger = FightOne(enemy, new List<Fighter> { Viking(10f, 100f, 0f, 0f, 20f), Viking(10f, 200f, 0f, 0f, 10f) }).HarmShares[0];
+			Assert.True(withStronger < withAlike);
 		}
 
 		[Fact]
