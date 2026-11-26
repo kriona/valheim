@@ -1,0 +1,37 @@
+# Vikings
+
+There are three kinds of Viking across Viking Villages and Zombie Apocalypse. This compares them - each mod's README has the full details.
+
+| | Living | Dvergr | Zombie |
+| --- | --- | --- | --- |
+| Mod | Viking Villages | Viking Villages | Zombie Apocalypse |
+| Where they're found | The Meadows' farms, in villages of their own, and on the road between villages | The Dvergr's outposts in the Mistlands, and half of the Dvergr's patrols | Spawned in the world - by day in the Dark Meadows, Ruin Black Forest, Swamp and Ashlands, at night everywhere - in abandoned houses, from draugr body piles and in raids. Also risen from your body, and from dead living and Dvergr Vikings |
+| Console command | `spawn Viking` | | `spawn ZombieViking` |
+| Biome of their gear and stats | Their village's | The Mistlands | Where they spawn |
+| Can be starred | No | Yes - one star, as often as the game stars the Mistlands' creatures | Yes - up to 1 by day and 2 at night, each star upgrading their gear a level |
+| Named | Yes | Yes | No - a tombstone zombie has your name |
+| Shows as "Viking (?)" until they know you | Yes | Yes | No |
+| Can be renamed (Shift + E) | Yes | No | No |
+| Can be talked to (E) | Yes | Yes | No |
+| Greets you and passes on your news | Yes | Yes | No |
+| Inventory can be opened (I) | Yes | No | No |
+| Hostile to you | Only after you hurt one, until they've slept on it | Only after you hurt one or a Dvergr, and they stay angry | Always |
+| Can be hurt with PvP off | No | Yes | Yes |
+| Killed by the console's kill commands | Only those angry at you, or all with PvP on | Yes | Yes |
+| Health and skills | Rolled from their biome's range | A Mistlands zombie Viking's health | Rolled from their biome's range, health multiplied by stars |
+| Skills rise as they're used | Yes | Yes | No |
+| Armor protects them | Fully | Fully | Half as well |
+| Gear | Always armor and a weapon, fully repaired | The Mistlands' gear, fully repaired | 65% armor and 85% a weapon, worn to 50-95% |
+| How fast they swing | As fast as you, stringing combos | With a pause between swings | Every 2 seconds, as monsters do |
+| Light at night | A torch or Dverger circlet, and a wisp light in the Mistlands | A Dverger circlet and a wisp light | None |
+| Sees 10 meters in the Mistlands' mist | Yes | Yes | Yes |
+| Takes fall damage | Yes | No | As the game's creatures do |
+| Eats, rests and gets wet and cold | Yes | No | No |
+| Forsaken powers | Their biome's and every earlier one's, learning and teaching others, used in fights and for work | Up to Yagluth's, learning the ones they're given, used in fights and when badly hurt | 10% chance of their biome's the first time they spot an enemy - a tombstone zombie 50% of your last one - with a 30 second cooldown between zombies |
+| Coins dropped on death | None | 100-140, multiplied by stars | By biome, multiplied by stars |
+| Gear dropped on death | Everything, where they fall | Each piece 5%, at most 2 | Each piece 5%, at most 2 - a tombstone zombie drops everything |
+| Comes back after dying | Yes - the village gets them back after a day, or three if a player killed them | No - an outpost never hires again | No |
+| Rises as a zombie Viking (with Zombie Apocalypse) | Yes, with their looks, gear and skills, dropping their silver | Yes | No |
+| Silver-lined weapons (with Zombie Apocalypse) | From the Mountains on, 25% of the time rising to always from the Ashlands | 75% of the time | Never - no spirit weapons or ammo |
+| Flees at dawn | No | No | Night spawns do |
+| Zombie looks - tint, red eyes, flies and a lurch | No | No | Yes |
