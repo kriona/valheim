@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace VikingVillages.Tests
 {
 	/// <summary>
@@ -35,6 +37,25 @@ namespace VikingVillages.Tests
 		{
 			Assert.Equal("Due at 12:30", VillageDebug.GrayHeaders("Due at 12:30"));
 			Assert.Equal("<color=#8C8C8C>Setup:</color>", VillageDebug.GrayHeaders("Setup:"));
+		}
+
+		/// <summary>
+		/// Checks that kinds are counted most first, ties by name
+		/// </summary>
+		[Fact]
+		public void CountsKindsMostFirst()
+		{
+			List<string> kinds = new List<string> { "Leech", "ZombieViking", "Draugr", "ZombieViking", "Abomination", "ZombieViking" };
+			Assert.Equal("ZombieViking 3, Abomination 1, Draugr 1, Leech 1", VillageDebug.KindCounts(kinds));
+		}
+
+		/// <summary>
+		/// Checks that no kinds count as nothing
+		/// </summary>
+		[Fact]
+		public void CountsNoKindsAsNothing()
+		{
+			Assert.Equal("", VillageDebug.KindCounts(new List<string>()));
 		}
 	}
 }

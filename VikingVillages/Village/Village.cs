@@ -1660,6 +1660,34 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Finds every hostile creature within a reach of the village (see EnemyNear)
+		/// </summary>
+		/// <param name="reach">How far outside the village counts, in meters</param>
+		/// <returns>The creatures</returns>
+		public List<Character> FindEnemies(float reach)
+		{
+			List<Character> enemies = new List<Character>();
+			foreach (Character character in Character.GetAllCharacters())
+			{
+				if (IsHostile(character) && DistanceOutside(character.transform.position) <= reach)
+				{
+					enemies.Add(character);
+				}
+			}
+			return(enemies);
+		}
+
+		/// <summary>
+		/// Counts the hostile creatures within a reach of the village (see EnemyNear)
+		/// </summary>
+		/// <param name="reach">How far outside the village counts, in meters</param>
+		/// <returns>How many there are</returns>
+		public int CountEnemies(float reach)
+		{
+			return(FindEnemies(reach).Count);
+		}
+
+		/// <summary>
 		/// Finds a hostile creature within a range of a point (see IsHostile)
 		/// </summary>
 		/// <param name="point">The point</param>

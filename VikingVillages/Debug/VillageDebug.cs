@@ -159,11 +159,31 @@ namespace VikingVillages
 			text.Append(VillageQuests.Describe(village, arrivals, now));
 			QuestRecord quest = VillageQuests.Read(village);
 			VillageArrivals.Describe(arrivals, ((quest != null) ? quest.Id : ""), now, text);
-			if (village.EnemyNear(VillageRespawn.EnemyReach))
+			List<Character> enemies = village.FindEnemies(VillageRespawn.EnemyReach);
+			if (enemies.Count > 0)
 			{
-				text.Append("Enemies within " + VillageRespawn.EnemyReach.ToString("F0") + "m\n");
+				float heldFor = VillageRespawn.EnemyWaitedFor(village.Zdo.m_uid);
+				text.Append("Enemies within " + VillageRespawn.EnemyReach.ToString("F0") + "m: " + enemies.Count + " - " + KindCounts(enemies.ConvertAll((Character enemy) => Utils.GetPrefabName(enemy.gameObject))) + ((heldFor >= 0f) ? ", holding back the vikings due for " + (heldFor / 60f).ToString("F1") + " minutes" : "") + "\n");
 			}
 			return(text.ToString());
+		}
+
+		/// <summary>
+		/// Counts how many there are of each kind, most first and then by name
+		/// </summary>
+		/// <param name="kinds">The kind of each, like "ZombieViking"</param>
+		/// <returns>The counts, like "ZombieViking 3, Leech 1"</returns>
+		internal static string KindCounts(List<string> kinds)
+		{
+			Dictionary<string, int> counts = new Dictionary<string, int>();
+			foreach (string kind in kinds)
+			{
+				counts.TryGetValue(kind, out int count);
+				counts[kind] = count + 1;
+			}
+			List<KeyValuePair<string, int>> sorted = new List<KeyValuePair<string, int>>(counts);
+			sorted.Sort((KeyValuePair<string, int> a, KeyValuePair<string, int> b) => ((a.Value != b.Value) ? b.Value.CompareTo(a.Value) : string.CompareOrdinal(a.Key, b.Key)));
+			return(string.Join(", ", sorted.ConvertAll((KeyValuePair<string, int> pair) => pair.Key + " " + pair.Value)));
 		}
 
 		/// <summary>

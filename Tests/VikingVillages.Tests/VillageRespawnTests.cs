@@ -99,6 +99,76 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that no death is due before a day has passed since it, or since the last viking came back
+		/// </summary>
+		[Fact]
+		public void NoneDueBeforeADay()
+		{
+			List<VillageRespawn.Death> deaths = new List<VillageRespawn.Death> { Death(5000000000L, false), Death(5500000000L, false) };
+			Assert.Equal(0, VillageRespawn.DueCount(0L, deaths, Day, 5900000000L, 8));
+			Assert.Equal(0, VillageRespawn.DueCount(5500000000L, deaths, Day, 6400000000L, 8));
+		}
+
+		/// <summary>
+		/// Checks that deaths waiting together come due a day apart, each a day after the one before it was due
+		/// </summary>
+		[Fact]
+		public void DeathsComeDueADayApart()
+		{
+			List<VillageRespawn.Death> deaths = new List<VillageRespawn.Death> { Death(5000000000L, false), Death(5000000000L, false), Death(5000000000L, false) };
+			Assert.Equal(1, VillageRespawn.DueCount(0L, deaths, Day, 6000000000L, 8));
+			Assert.Equal(1, VillageRespawn.DueCount(0L, deaths, Day, 6999999999L, 8));
+			Assert.Equal(2, VillageRespawn.DueCount(0L, deaths, Day, 7000000000L, 8));
+			Assert.Equal(3, VillageRespawn.DueCount(0L, deaths, Day, 20000000000L, 8));
+		}
+
+		/// <summary>
+		/// Checks that a death after the one before it came due is due a day after it happened, and one a player caused
+		/// three days after
+		/// </summary>
+		[Fact]
+		public void LaterDeathsComeDueADayAfterThey()
+		{
+			List<VillageRespawn.Death> deaths = new List<VillageRespawn.Death> { Death(5000000000L, false), Death(9000000000L, false), Death(9000000000L, true) };
+			Assert.Equal(1, VillageRespawn.DueCount(0L, deaths, Day, 9999999999L, 8));
+			Assert.Equal(2, VillageRespawn.DueCount(0L, deaths, Day, 10000000000L, 8));
+			Assert.Equal(2, VillageRespawn.DueCount(0L, deaths, Day, 12999999999L, 8));
+			Assert.Equal(3, VillageRespawn.DueCount(0L, deaths, Day, 13000000000L, 8));
+		}
+
+		/// <summary>
+		/// Checks that no more are counted due than asked for, or than are waiting
+		/// </summary>
+		[Fact]
+		public void DueCountsNoMoreThanTheMost()
+		{
+			List<VillageRespawn.Death> deaths = new List<VillageRespawn.Death> { Death(1000000000L, false), Death(1000000000L, false), Death(1000000000L, false) };
+			Assert.Equal(2, VillageRespawn.DueCount(0L, deaths, Day, 90000000000L, 2));
+			Assert.Equal(3, VillageRespawn.DueCount(0L, deaths, Day, 90000000000L, 8));
+			Assert.Equal(0, VillageRespawn.DueCount(0L, new List<VillageRespawn.Death>(), Day, 90000000000L, 8));
+		}
+
+		/// <summary>
+		/// Checks how many vikings have to be due before they come back to a village enemies hold
+		/// </summary>
+		/// <param name="enemies">The enemies there</param>
+		/// <param name="home">The vikings at home</param>
+		/// <param name="waiting">The vikings waiting to come back</param>
+		/// <param name="expected">How many have to be due</param>
+		[Theory]
+		[InlineData(0, 0, 8, 1)]
+		[InlineData(0, 5, 3, 1)]
+		[InlineData(1, 7, 1, 1)]
+		[InlineData(3, 2, 6, 2)]
+		[InlineData(4, 0, 8, 5)]
+		[InlineData(12, 0, 8, 8)]
+		[InlineData(12, 3, 5, 5)]
+		public void GroupOutnumbersTheEnemies(int enemies, int home, int waiting, int expected)
+		{
+			Assert.Equal(expected, VillageRespawn.GroupNeeded(enemies, home, waiting));
+		}
+
+		/// <summary>
 		/// Checks that a village with no wait noted starts one now
 		/// </summary>
 		[Fact]
