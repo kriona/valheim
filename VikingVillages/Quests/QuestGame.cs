@@ -744,7 +744,7 @@ namespace VikingVillages
 			// Its food sets its health while it's out, and the foods it still has eaten its health as it comes home
 			float max = meals.MaxHealth;
 			float endMax = meals.EndMaxHealth;
-			float harm = ((plan.FightHarm >= 0f) ? plan.FightHarm : QuestSim.Harm(record.Kind, record.QuestBiome, gearBiome, record.Members.Count, record.Wanted, record.ActiveSeconds, VikingFood.FedHealth(gearBiome)));
+			float harm = ((plan.FightHarm >= 0f) ? plan.FightHarm : QuestSim.Harm(record.Kind, record.QuestBiome, gearBiome, record.Members.Count, record.Wanted, record.ActiveSeconds, floor));
 			// The work is between the road there and back, taken as alike
 			float workFrom = Mathf.Max(0f, (seconds - record.ActiveSeconds) / 2f);
 			float health = QuestSim.Health(meals, floor, humanoid.GetHealth(), harm, workFrom, workFrom + record.ActiveSeconds, seconds, potionCount, heal, out int drunk);

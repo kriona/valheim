@@ -318,18 +318,6 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that a viking fully fed on its biome's food has the next biome's floor, and in the Deep North 350
-		/// </summary>
-		[Fact]
-		public void FedHealthIsTheNextBiomesFloor()
-		{
-			Assert.Equal(115f, VikingFood.FedHealth(VikingGear.IndexOf(Heightmap.Biome.Meadows)));
-			Assert.Equal(155f, VikingFood.FedHealth(VikingGear.IndexOf(Heightmap.Biome.BlackForest)));
-			Assert.Equal(350f, VikingFood.FedHealth(VikingGear.IndexOf(Heightmap.Biome.DeepNorth)));
-			Assert.Equal(350f, VikingFood.FedHealth(99));
-		}
-
-		/// <summary>
 		/// Checks that the foods a viking comes home from a quest with last their time left past the quest's end, leaving
 		/// out those with none
 		/// </summary>

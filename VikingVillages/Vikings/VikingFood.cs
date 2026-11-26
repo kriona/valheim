@@ -57,12 +57,6 @@ namespace VikingVillages
 		internal const float RaiseLeast = 1f;
 
 		/// <summary>
-		/// The health a viking fully fed on the three best foods of the Deep North has, the last biome its gear can come
-		/// from (see FedHealth)
-		/// </summary>
-		private const float DeepNorthFed = 350f;
-
-		/// <summary>
 		/// A food a viking has eaten
 		/// </summary>
 		internal struct Meal
@@ -420,18 +414,6 @@ namespace VikingVillages
 		internal static float HealthFloor(int biome)
 		{
 			return(HealthFloors[Mathf.Clamp(biome, 0, HealthFloors.Length - 1)]);
-		}
-
-		/// <summary>
-		/// Gets the max health a viking has fully fed on the three best foods of the biome its gear comes from - the next
-		/// biome's floor, or DeepNorthFed for the last
-		/// </summary>
-		/// <param name="biome">The biome's index in VikingGear's tables, kept within HealthFloors</param>
-		/// <returns>The health</returns>
-		internal static float FedHealth(int biome)
-		{
-			int next = Mathf.Clamp(biome, 0, HealthFloors.Length - 1) + 1;
-			return((next < HealthFloors.Length) ? HealthFloors[next] : DeepNorthFed);
 		}
 
 		/// <summary>

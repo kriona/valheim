@@ -474,8 +474,8 @@ namespace VikingVillages
 		/// Works out the harm a viking takes on a quest - the quest's danger for as long as it's at it, twice as much for
 		/// each biome the quest is harder than the one its gear comes from and half for each easier, however many, and
 		/// less with more of them than the quest takes, more with fewer - rounded down to a whole share in hundredths, so
-		/// a quest far easier than its gear does it no harm, of the health a viking fully fed on its gear's biome's food
-		/// has. A viking fed better than that takes a smaller share of its health, and one fed worse a bigger one
+		/// a quest far easier than its gear does it no harm, of the viking's floor, the least max health its biome gives
+		/// it. A viking fed better than its floor takes a smaller share of its health
 		/// </summary>
 		/// <param name="kind">The quest</param>
 		/// <param name="questBiome">The quest's biome, by VikingGear's order</param>
@@ -483,12 +483,11 @@ namespace VikingVillages
 		/// <param name="group">How many went</param>
 		/// <param name="wanted">How many the quest takes</param>
 		/// <param name="activeSeconds">How long they were at it, in seconds</param>
-		/// <param name="fedHealth">The health a viking fully fed on its gear's biome's food has (see
-		/// VikingFood.FedHealth)</param>
+		/// <param name="floor">The viking's floor (see VikingFood.HealthFloor)</param>
 		/// <returns>The harm, in health</returns>
-		public static float Harm(QuestKind kind, int questBiome, int gearBiome, int group, int wanted, float activeSeconds, float fedHealth)
+		public static float Harm(QuestKind kind, int questBiome, int gearBiome, int group, int wanted, float activeSeconds, float floor)
 		{
-			return(fedHealth * HarmShare(Danger(kind), questBiome - gearBiome, group, wanted, activeSeconds));
+			return(floor * HarmShare(Danger(kind), questBiome - gearBiome, group, wanted, activeSeconds));
 		}
 
 		/// <summary>
