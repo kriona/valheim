@@ -37,10 +37,10 @@ Everything a living Viking does, most important first. What's higher up stops wh
 | [Rest by the fire](#rest-by-the-fire) | Day 2 | Sit by the fire when hurt until rested |
 | [Keep their foods up](#keep-their-foods-up) | Day 3 | Eat while there's food to spare |
 | [Keep warm](#keep-warm) | Day 4 | Sit by a fire or go inside in freezing weather |
-| [Cook](#cook) | Day 5 | Cook raw meat at the cooking stations |
-| [Cook a meal](#cook-a-meal) | Day 6 | Make a meal at the cauldron |
-| [Put away loot](#put-away-loot) | Day 7 | Put what they carry in the chests |
-| [Pick up loot](#pick-up-loot) | Day 8 | Gather items lying around the village |
+| [Put away loot](#put-away-loot) | Day 5 | Put what they carry in the chests |
+| [Pick up loot](#pick-up-loot) | Day 6 | Gather items lying around the village |
+| [Cook](#cook) | Day 7 | Cook raw meat at the cooking stations |
+| [Cook a meal](#cook-a-meal) | Day 8 | Make a meal at the cauldron |
 | [Take up better gear](#take-up-better-gear) | Day 9 | Put on better gear from the chests |
 | [Fill their quiver](#fill-their-quiver) | Day 10 | Take arrows from the chests |
 | [Make paths](#make-paths) | Day 11 | Hoe paths to new buildings, bridging water |
@@ -127,7 +127,7 @@ They keep their chests tidy:
 - Each chest keeps a slot free for wood until it holds some, and one for food until it holds some
 - Wood fills at most half of a chest's slots
 - Anything else only tops up its stacks, or goes in as a new stack when the chest has none of it and the village's chests hold fewer than 2 stacks of it. They keep 3 axes and 4 pickaxes
-- What doesn't fit anywhere is dropped outside the village to despawn - see [Pick up loot](#pick-up-loot)
+- What doesn't fit anywhere is dropped outside the village to despawn, on the village's pile - see [Put away loot](#put-away-loot)
 
 ### Wood
 
@@ -363,6 +363,23 @@ While the chests hold three foods for each Viking or more, they eat the way they
 
 In freezing weather, unless their gear resists frost, they sit in the warmth of the gathering fire nearest their home with room, until the weather clears. With no fire burning, still freezing 10 seconds after they get to it, or within a minute of failing to warm up there, they stand inside their house instead. They stop at dusk.
 
+### Put Away Loot
+
+Loot they carry goes to the chest that takes it best - one whose part-stacks take all of it, then one with a part-stack, then one that has some, then the nearest. With no chest with room:
+
+- Wood or food is put down where they stand
+- Anything else is carried out of the village and dropped there to despawn, marked so no Viking puts it away again - on the village's pile, beside what its Vikings dropped outside before while any of it is still there, or else 3-50 meters past its edge. Either way it's at least 3 meters from any of your bases, with no enemy within 50 meters. In a village they can't leave yet, or with nowhere to drop it - an enemy by the pile, say - they hold on to it and try again 15 seconds later, and after 3 minutes with nowhere to drop it, put it down where they stand
+
+Better gear among it is put on at once.
+
+Loot comes ahead of cooking, so it doesn't lie about while the cooks are busy. Done food is still taken off a cooking station before it burns, by a Viking at loot work too.
+
+### Pick Up Loot
+
+An item that's come to rest within 10 meters past the village's edge - and lain there 2 seconds, or 30 for one a player dropped - is picked up when a chest has room for it, or it's something the Vikings don't use and they can carry it out. Not arrows, bolts, fish, food set out as a piece, or what a Viking dropped outside. They take as much as they can carry, then the next within 15 meters, then put it away.
+
+For 2 minutes after a fight, picking up loot also comes before standing about, strolling, petting a boar, talking, gathering at the fire and resting for the night - and before repairing, rebuilding, stacking the fire, stocking wood, crafting arrows and repairing gear, which the Viking drops for it - going on through dusk and night. Not for a Viking below three quarters of their health or keeping watch.
+
 ### Cook
 
 They cook at the village's cooking stations - within 12 meters past its edge or inside a house - nearest first, one Viking at a station and the other stations within 4 meters of it, the same fire:
@@ -378,21 +395,6 @@ From dusk, they finish what's on the stations without fetching more - see [How a
 ### Cook a Meal
 
 Every 15 seconds, by day, they look at the village's cauldron - usable the way it is for you, under a roof - for the meal it can make from what the chests hold that adds the most health and stamina, among those the chests hold fewer than 10 of. They fetch what it takes, work at the cauldron for 3 seconds, and put the meal away. What the meals need of the raw food in the chests - one cauldron's worth for each - is kept back from the cooking stations.
-
-### Put Away Loot
-
-Loot they carry goes to the chest that takes it best - one whose part-stacks take all of it, then one with a part-stack, then one that has some, then the nearest. With no chest with room:
-
-- Wood or food is put down where they stand
-- Anything else is carried out of the village - 3-50 meters past its edge, at least 3 meters from any of your bases, with no enemy within 50 meters - and dropped there to despawn, marked so no Viking puts it away again. In a village they can't leave yet, they hold on to it and try again 15 seconds later
-
-Better gear among it is put on at once.
-
-### Pick Up Loot
-
-An item that's come to rest within 10 meters past the village's edge - and lain there 2 seconds, or 30 for one a player dropped - is picked up when a chest has room for it, or it's something the Vikings don't use and they can carry it out. Not arrows, bolts, fish, food set out as a piece, or what a Viking dropped outside. They take as much as they can carry, then the next within 15 meters, then put it away.
-
-For 2 minutes after a fight, picking up loot also comes before standing about, strolling, petting a boar, talking, gathering at the fire and resting for the night - and before repairing, rebuilding, stacking the fire, stocking wood, crafting arrows and repairing gear, which the Viking drops for it - going on through dusk and night. Not for a Viking below three quarters of their health or keeping watch.
 
 ### Pick Up Kill Loot
 

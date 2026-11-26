@@ -594,14 +594,24 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Where a viking drops an item the chests hold enough of - how far past the village's edge it looks, how far
-		/// from a player's base it keeps, so the item despawns as usual, in meters, how many directions it tries, and how
-		/// long it holds on to the item before trying again when it may not leave the village, in seconds
+		/// from a player's base it keeps, so the item despawns as usual, in meters, how many directions it tries, how
+		/// long it holds on to the item before trying again when it may not leave the village or finds nowhere to drop
+		/// it, and how long it keeps trying before it puts it down where it stands, in seconds
 		/// </summary>
 		private const float DumpReach = 50f;
 		private const float DumpBaseMargin = 3f;
 		private const int DumpTries = 12;
 		private const float DumpRetryTime = 15f;
+		private const float DumpGiveUpTime = 180f;
 		private const float DumpArrive = 1.5f;
+
+		/// <summary>
+		/// How near what the village's vikings dropped outside it before an item is dropped, so it all lies in one pile,
+		/// and how much farther than DumpReach from the village's edge a pile can lie and still be the village's, in
+		/// meters
+		/// </summary>
+		private const float DumpPileReach = 2f;
+		private const float DumpPileSlack = 5f;
 
 		/// <summary>
 		/// How far from a viking gathering loot the next item can lie for it to pick that up too before taking them to
@@ -1640,9 +1650,11 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Until when the viking holds on to an item the chests hold enough of, when it may not leave the village to drop
-		/// it outside
+		/// it outside or found nowhere to drop it, and since when it has found nowhere, or a negative number while it
+		/// hasn't
 		/// </summary>
 		private float dumpAgainAt;
+		private float dumpNowhereSince = -1f;
 
 		/// <summary>
 		/// Whether the viking is running back to its village's core for help in a fight, and why - set by a foraging
@@ -5242,8 +5254,9 @@ namespace VikingVillages
 		/// FindQuestWork), then when it's wounded, eating from a chest and then resting by the
 		/// fire until it's rested, then eating to keep its foods up while there's food enough to go around (see
 		/// FoodToSpare), then in freezing weather keeping warm by a lit fire, or inside its house when none is
-		/// burning, until the weather clears, then cooking the raw food it carries or the chests hold at a cooking station, then
-		/// putting away loot it already carries, then loot lying around the village to put in a chest, then gear in the
+		/// burning, until the weather clears, then putting away loot it already carries, then loot lying around the
+		/// village to put in a chest, then cooking the raw food it carries or the chests hold at a cooking station, then a
+		/// meal at the cauldron (see FindMealWork), then gear in the
 		/// village's chests better than its own to take up, then for an archer arrows in a chest while it's missing a
 		/// batch or better ones than its best, then a path for a house added for a player's bed (see FindPathWork), then
 		/// the nearest damaged piece of the village to repair, then
@@ -5302,7 +5315,14 @@ namespace VikingVillages
 			{
 				return(new GatherJob(this, false, true));
 			}
-			// Raw meat is cooked before anything else is put away, so a hunter back with meat goes straight to the fire
+			// Loot comes ahead of cooking, so it doesn't lie about while the cooks are busy - done food on a station is
+			// still taken off before it burns, by a viking at loot work too (see Idle), and raw meat picked up as loot goes
+			// straight to a cooking station
+			Job lootWork = FindLootWork(false);
+			if (lootWork != null)
+			{
+				return(lootWork);
+			}
 			Job cook = FindCookWork();
 			if (cook != null)
 			{
@@ -5313,11 +5333,6 @@ namespace VikingVillages
 			if (meal != null)
 			{
 				return(meal);
-			}
-			Job lootWork = FindLootWork(false);
-			if (lootWork != null)
-			{
-				return(lootWork);
 			}
 			bool carrying = (CarriedLoot() != null);
 			Container armory = (carrying ? null : FindUpgradeChest());
@@ -7744,14 +7759,28 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds where to drop an item the chests hold enough of - outside the village, in the direction the viking is
-		/// from its middle where it can, on ground a viking can stand on, away from enemies and far enough from every
-		/// player's base that the item despawns as usual
+		/// Finds where to drop an item the chests hold enough of - beside what the village's vikings dropped outside it
+		/// before while any of it is still there (see FindDumpPile), so it all lies in one pile; or else outside the
+		/// village, in the direction the viking is from its middle where it can - on ground a viking can stand on, away
+		/// from enemies and far enough from every player's base that the item despawns as usual
 		/// </summary>
 		/// <param name="spot">The spot</param>
-		/// <returns>False when there's none within DumpReach of the village's edge</returns>
+		/// <returns>False when there's none within DumpReach of the village's edge, or the pile has an enemy near it</returns>
 		private bool FindDumpSpot(out Vector3 spot)
 		{
+			spot = Vector3.zero;
+			if (FindDumpPile(out Vector3 pile))
+			{
+				if (Pathfinding.instance != null && NavmeshPoints.FindValidPoint(out Vector3 beside, pile, DumpPileReach, Pathfinding.AgentType.Humanoid))
+				{
+					if (EnemyNear(beside, ForageSafety))
+					{
+						return(false);
+					}
+					spot = beside;
+					return(true);
+				}
+			}
 			Vector3 away = transform.position - village.Middle;
 			away.y = 0f;
 			away = ((away.sqrMagnitude > 0.01f) ? away.normalized : Vector3.forward);
@@ -7778,8 +7807,59 @@ namespace VikingVillages
 					return(true);
 				}
 			}
-			spot = Vector3.zero;
 			return(false);
+		}
+
+		/// <summary>
+		/// Finds the pile of what the village's vikings dropped outside it because the chests hold enough of it - the
+		/// dropped item nearest the village's middle that's still lying outside every player's base, within DumpReach of
+		/// the village's edge give or take DumpPileSlack - so every viking of the village drops on the same pile
+		/// </summary>
+		/// <param name="pile">Where the item lies</param>
+		/// <returns>True when there's one</returns>
+		private bool FindDumpPile(out Vector3 pile)
+		{
+			pile = Vector3.zero;
+			float nearest = village.Radius + DumpReach + DumpPileSlack;
+			bool found = false;
+			foreach (ItemDrop drop in LoadedDrops())
+			{
+				ZNetView view = ((drop != null) ? drop.m_nview : null);
+				if (view == null || !view.IsValid() || !view.GetZDO().GetBool(DiscardKey))
+				{
+					continue;
+				}
+				Vector3 at = drop.transform.position;
+				float distance = Utils.DistanceXZ(at, village.Middle);
+				if (distance > nearest || EffectArea.IsPointInsideArea(at, EffectArea.Type.PlayerBase, DumpBaseMargin) != null)
+				{
+					continue;
+				}
+				nearest = distance;
+				pile = at;
+				found = true;
+			}
+			return(found);
+		}
+
+		/// <summary>
+		/// Notes the viking finding nowhere outside the village to drop an item the chests hold enough of, so it holds
+		/// on to it and tries again in DumpRetryTime seconds - for DumpGiveUpTime seconds in all
+		/// </summary>
+		/// <returns>True while it keeps trying, false once it has tried for long enough</returns>
+		private bool DumpLater()
+		{
+			if (dumpNowhereSince < 0f)
+			{
+				dumpNowhereSince = Time.time;
+			}
+			if (Time.time - dumpNowhereSince >= DumpGiveUpTime)
+			{
+				dumpNowhereSince = -1f;
+				return(false);
+			}
+			dumpAgainAt = Time.time + DumpRetryTime;
+			return(true);
 		}
 
 		/// <summary>
@@ -7796,6 +7876,7 @@ namespace VikingVillages
 				// A viking holding on to something it can't drop outside yet doesn't pick up more
 				return((Time.time >= dumpAgainAt) ? new LootJob(this, null, fight) : null);
 			}
+			dumpNowhereSince = -1f;
 			ZNetView loot = FindLoot();
 			if (loot != null && ClaimWork(loot.GetZDO().m_uid))
 			{
@@ -15071,8 +15152,9 @@ namespace VikingVillages
 			/// <summary>
 			/// Walks to the nearest chest with room for what it carries, opens it and puts it in - leaving a chest it
 			/// can't get to alone and trying another. Something the vikings don't use that no chest takes, because the
-			/// chests hold enough of it, it carries out of the village and drops there instead, and anything else no chest
-			/// has room for it puts down where it stands
+			/// chests hold enough of it, it carries out of the village and drops on the village's pile there instead (see
+			/// FindDumpSpot) - holding on to it while there's nowhere to drop it, for DumpGiveUpTime seconds before it
+			/// puts it down where it stands - and anything else no chest has room for it puts down where it stands
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
 			/// <param name="carried">The loot it carries</param>
@@ -15106,9 +15188,13 @@ namespace VikingVillages
 						}
 						if (!life.FindDumpSpot(out dumpSpot))
 						{
-							life.PutDownLoot(true, "the chests hold enough of it, and there's nowhere outside the village to drop it");
+							if (!life.DumpLater())
+							{
+								life.PutDownLoot(true, "the chests hold enough of it, and there's been nowhere outside the village to drop it for " + DumpGiveUpTime.ToString("F0") + "s");
+							}
 							return(true);
 						}
+						life.dumpNowhereSince = -1f;
 						dumping = true;
 						life.UpdateOuting(true);
 						return(false);
