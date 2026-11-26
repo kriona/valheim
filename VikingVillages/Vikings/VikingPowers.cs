@@ -402,6 +402,7 @@ namespace VikingVillages
 				line = VikingSpeech.PowerUsed(name);
 			}
 			VikingSpeech.SayFirst(viking, line, VikingSpeech.TalkTime, VikingSpeech.CallCull);
+			PowerGivers.Announce(viking, Hashes[power]);
 			own.StartPower(Hashes[power]);
 			return(true);
 		}

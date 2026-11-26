@@ -19,13 +19,18 @@ namespace VikingVillages
 		private const float PowerReach = 10f;
 
 		/// <summary>
-		/// Notes whether the power is about to be used - it's ready and the player has one
+		/// Notes whether the power is about to be used - it's ready and the player has one - and announces it before the
+		/// game gives it to the players near them, so those it reaches see who activated it (see PowerGivers)
 		/// </summary>
 		/// <param name="__instance">The player</param>
 		/// <param name="__state">Whether it's used</param>
 		private static void Prefix(Player __instance, out bool __state)
 		{
 			__state = (__instance.m_guardianPowerCooldown <= 0f && __instance.m_guardianSE != null);
+			if (__state && ServerCheck.Active)
+			{
+				PowerGivers.Announce(__instance, __instance.m_guardianSE.NameHash());
+			}
 		}
 
 		/// <summary>
