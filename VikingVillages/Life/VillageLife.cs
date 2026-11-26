@@ -7219,7 +7219,8 @@ namespace VikingVillages
 			list[thing] = Time.time + seconds;
 			string name = Utils.GetPrefabName(view.gameObject);
 			bool chest = (view.GetComponent<Container>() != null);
-			TestLog.Count("Couldn't reach, by job", LogJobName());
+			// With no job, it's looking for one - like FindLootWork leaving loot it can't reach for the next nearest
+			TestLog.Count("Couldn't reach, by job", ((job != null) ? LogJobName() : "choosing a job"));
 			// A chest is counted with its place, since a village has several and the one out of reach is worth knowing
 			TestLog.Count("Couldn't reach, by thing", (chest ? name + " at " + view.transform.position.ToString("F0") : name));
 			if (Time.time >= nextGiveUpPrune)
