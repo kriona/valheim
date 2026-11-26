@@ -1416,7 +1416,7 @@ namespace VikingVillages
 				return;
 			}
 			Vector3 from = transform.position;
-			if (!FreeSpot(from, village.RallyPoint(), out Vector3 spot))
+			if (!FreeSpot(from, village.RallyPoint(), FreeReach, out Vector3 spot))
 			{
 				return;
 			}
@@ -1435,20 +1435,21 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Finds the nearest spot around a trapped viking it can walk to the village's open ground from - on the navmesh,
-		/// out of any pen, off the roofs and clear of fires, looking further out a FreeStep at a time, up to FreeReach -
+		/// out of any pen, off the roofs and clear of fires, looking further out a FreeStep at a time, up to a reach -
 		/// or else the open ground itself
 		/// </summary>
 		/// <param name="from">Where the viking stands</param>
 		/// <param name="open">The spot on the village's open ground (see Village.RallyPoint)</param>
+		/// <param name="reach">How far out it looks, in meters</param>
 		/// <param name="spot">The spot found</param>
 		/// <returns>False when the open ground isn't on the navmesh either</returns>
-		private static bool FreeSpot(Vector3 from, Vector3 open, out Vector3 spot)
+		private static bool FreeSpot(Vector3 from, Vector3 open, float reach, out Vector3 spot)
 		{
-			for (float reach = FreeStep; reach <= FreeReach; reach += FreeStep)
+			for (float step = FreeStep; step <= reach; step += FreeStep)
 			{
 				for (int i = 0; i < FreeSides; i++)
 				{
-					Vector3 point = from + Quaternion.Euler(0f, i * 360f / FreeSides, 0f) * Vector3.forward * reach;
+					Vector3 point = from + Quaternion.Euler(0f, i * 360f / FreeSides, 0f) * Vector3.forward * step;
 					if (!NavmeshPoints.FindValidPoint(out Vector3 valid, point, FreeStep, Pathfinding.AgentType.Humanoid))
 					{
 						continue;
@@ -1509,7 +1510,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// How the viking gets off a roof it finds itself on - seconds between checks, how far it looks for ground that
-		/// isn't a roof, in meters, and seconds it leaves it after it can't get off
+		/// isn't a roof, in meters, and seconds it leaves it after finding none
 		/// </summary>
 		private const float RoofCheckInterval = 1f;
 
@@ -10432,9 +10433,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets the viking off a roof it finds itself on with no danger near - it stops what it's doing and walks to the
-		/// nearest ground that isn't a roof, giving up for a while when it can't
+		/// Gets the viking off a roof it finds itself on with no danger near, to the nearest ground within RoofExitSearch
+		/// with a way to the village's open ground (see FreeSpot) - climbing straight down when that's right below it or
+		/// beside it, or else stopping what it's doing and walking there, and climbing down to it when walking doesn't
+		/// get it off. With no such ground, it gives up for a while
 		/// </summary>
+		/// <remarks>
+		/// A roof that comes down to the ground, like a farmhouse's, can be walked up, but the ground a viking stands
+		/// over up there - the house's floor under the roof, or the ground at its edge - often can't be walked down to
+		/// </remarks>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <returns>True while it's getting off, so the AI's own update is skipped</returns>
 		private bool UpdateOffRoof(float dt)
@@ -10455,27 +10462,70 @@ namespace VikingVillages
 				{
 					return(false);
 				}
-				// Roofs are left out of the viking's navmesh here, so the nearest valid point is off the roof
-				if (!NavmeshPoints.FindValidPoint(out roofExit, transform.position, RoofExitSearch, Pathfinding.AgentType.Humanoid))
+				// Roofs are left out of the viking's navmesh here, so the spots found are off the roof
+				if (!FreeSpot(transform.position, village.RallyPoint(), RoofExitSearch, out roofExit) || Utils.DistanceXZ(roofExit, transform.position) > RoofExitSearch)
 				{
 					nextRoofCheck = Time.time + RoofGiveUpTime;
+					return(false);
+				}
+				if (ClimbsOffRoof(transform.position, roofExit))
+				{
+					ClimbOffRoof("stood right over it");
 					return(false);
 				}
 				Interrupt();
 				gettingOffRoof = true;
 				ResetStuck();
 			}
-			if (!NavmeshRoofs.OnRoof(transform.position) || Go(dt, roofExit, 0.5f, false))
+			if (!NavmeshRoofs.OnRoof(transform.position))
 			{
 				gettingOffRoof = false;
-				if (moveFailed)
-				{
-					moveFailed = false;
-					nextRoofCheck = Time.time + RoofGiveUpTime;
-				}
+				return(false);
+			}
+			// Go is done when the viking is above the spot or gave up walking, either way still up on the roof
+			if (Go(dt, roofExit, 0.5f, false))
+			{
+				gettingOffRoof = false;
+				moveFailed = false;
+				ClimbOffRoof("couldn't walk there");
 				return(false);
 			}
 			return(true);
+		}
+
+		/// <summary>
+		/// Climbs the viking down from the roof it's on to the ground found for it (see UpdateOffRoof)
+		/// </summary>
+		/// <param name="why">Why it climbs rather than walks, for the log</param>
+		private void ClimbOffRoof(string why)
+		{
+			Vector3 from = transform.position;
+			Vector3 down = roofExit + Vector3.up * 0.1f;
+			transform.position = down;
+			humanoid.m_body.position = down;
+			humanoid.m_body.linearVelocity = Vector3.zero;
+			ai.StopMoving();
+			ResetStuck();
+			TestLog.Count("Troubles", "climbed down off a roof");
+			if (TestLog.On || Player.m_debugMode)
+			{
+				Plugin.Log.LogInfo("Climb: " + TestLog.Name(humanoid, "F1") + " was on a roof " + (from.y - roofExit.y).ToString("F1") + "m above the ground found for it and " + why + ", so it climbs down to " + down.ToString("F1") + ", " + Utils.DistanceXZ(from, down).ToString("F1") + "m away, at its job: " + ((job != null) ? job.Describe() : "none"));
+			}
+		}
+
+		/// <summary>
+		/// Checks whether a viking on a roof climbs straight down to the ground found for it rather than walking there -
+		/// when the ground is within ArriveReach of it seen from above, which walking would take for there already, or
+		/// well below it close by (see Stranded)
+		/// </summary>
+		/// <param name="at">Where it stands</param>
+		/// <param name="exit">The ground found for it</param>
+		/// <returns>True when it climbs</returns>
+		internal static bool ClimbsOffRoof(Vector3 at, Vector3 exit)
+		{
+			float dx = at.x - exit.x;
+			float dz = at.z - exit.z;
+			return(dx * dx + dz * dz <= ArriveReach * ArriveReach || Stranded(at, exit));
 		}
 
 		/// <summary>

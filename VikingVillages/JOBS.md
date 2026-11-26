@@ -18,7 +18,7 @@ Everything a living Viking does, most important first. What's higher up stops wh
 | [Run home](#run-home) | Always | Run to the village's core when losing a fight or in danger outside |
 | [Fight](#fight) | Always | Go after threats and help fellows who are attacked |
 | [Wait for the dead](#wait-for-the-dead) | Always | Stand ready by a corpse about to rise |
-| [Get off a roof](#get-off-a-roof) | Always | Walk down to the ground |
+| [Get off a roof](#get-off-a-roof) | Always | Walk or climb down to the ground |
 | [Get out of a pen](#get-out-of-a-pen) | Always | Leave a pen they have no work in |
 | [Get out of the water](#get-out-of-the-water) | Always | Walk to dry ground |
 | [Walk back](#walk-back) | Always | Return when more than 75 m past the village's edge |
@@ -231,7 +231,7 @@ With nothing to fight and awake, a corpse about to rise within 25 meters - and n
 
 ### Get Off a Roof
 
-With no danger near - not alerted, not waiting for the dead and not hurt in the last 10 seconds - a Viking on a roof walks to the nearest ground within 10 meters, checked every second. With none, they give up for 15 seconds.
+With no danger near - not alerted, not waiting for the dead and not hurt in the last 10 seconds - a Viking on a roof heads for the nearest ground within 10 meters that's out of any pen, clear of fires and has a way to the village's open ground, checked every second. When it's within a meter of them seen from above, or 1.5 meters or more below them within 3 meters, they climb straight down to it; otherwise they stop what they're doing and walk there, climbing down to it when walking leaves them still on the roof - standing over it, or getting no nearer for 10 seconds. With no such ground, they give up for 15 seconds.
 
 ### Get Out of a Pen
 

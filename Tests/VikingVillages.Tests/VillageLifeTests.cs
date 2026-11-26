@@ -843,5 +843,21 @@ namespace VikingVillages.Tests
 		{
 			Assert.Equal(expected, VillageLife.Stranded(new Vector3(atX, atY, atZ), new Vector3(nextX, nextY, nextZ)));
 		}
+
+		/// <summary>
+		/// Checks that a viking on a roof climbs straight down when the ground found for it is right beside it seen from
+		/// above, as on the low edge of the Swamp farmhouse's roof, or well below it close by, as on its ridge over the
+		/// floor inside, and walks when the ground is further off
+		/// </summary>
+		[Theory]
+		[InlineData(5279.5f, 31.9f, 1642.0f, 5279.5f, 31.1f, 1641.2f, true)]
+		[InlineData(5277.5f, 35.0f, 1646.5f, 5276.6f, 31.3f, 1645.6f, true)]
+		[InlineData(5280.0f, 34.7f, 1644.7f, 5279.5f, 31.3f, 1646.4f, true)]
+		[InlineData(5277.5f, 35.0f, 1646.5f, 5273.0f, 31.1f, 1646.0f, false)]
+		[InlineData(5284.0f, 32.5f, 1648.0f, 5284.0f, 31.1f, 1650.5f, false)]
+		public void ClimbsOffRoofOnlyRightOverOrWellAboveTheGround(float atX, float atY, float atZ, float exitX, float exitY, float exitZ, bool expected)
+		{
+			Assert.Equal(expected, VillageLife.ClimbsOffRoof(new Vector3(atX, atY, atZ), new Vector3(exitX, exitY, exitZ)));
+		}
 	}
 }
