@@ -13345,6 +13345,48 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// How far from a viking giving up on hammer work flames are looked for, for the log, in meters
+		/// </summary>
+		private const float GiveUpFlameReach = 10f;
+
+		/// <summary>
+		/// Counts the viking giving up on a piece it was to repair or clear the snow off, and in a test run or debug mode
+		/// logs why - its walk there stuck or its time up - where it aimed and stood to work, how far it is from each,
+		/// how near a fire's flames it is and what moved it last
+		/// </summary>
+		/// <param name="work">The kind of work, like "Repair"</param>
+		/// <param name="piece">The piece</param>
+		/// <param name="stuck">True when its walk there got stuck, false when its time ran out</param>
+		/// <param name="hasAim">Whether it had picked where to aim and stand</param>
+		/// <param name="aim">The part of the piece it worked on</param>
+		/// <param name="stand">Where it walked to reach it</param>
+		/// <param name="onMesh">Whether that spot was found on the navmesh, rather than being the ground under the aim</param>
+		private void LogHammerGiveUp(string work, WearNTear piece, bool stuck, bool hasAim, Vector3 aim, Vector3 stand, bool onMesh)
+		{
+			TestLog.Count("Hammer work given up", work + ", " + (stuck ? "stuck" : "out of time"));
+			if ((!TestLog.On && !Player.m_debugMode) || piece == null)
+			{
+				return;
+			}
+			string why = (stuck ? "its walk there got stuck" : "it didn't get within reach in " + RepairGiveUpTime.ToString("F0") + "s");
+			string spots = "no spot picked to work from";
+			if (hasAim)
+			{
+				spots = "aiming at " + aim.ToString("F1") + ", " + Utils.DistanceXZ(aim, transform.position).ToString("F1") + "m off, from " + stand.ToString("F1") + (onMesh ? " on the navmesh" : " off the navmesh") + ", " + Utils.DistanceXZ(stand, transform.position).ToString("F1") + "m off";
+			}
+			string flames = "no flames within " + GiveUpFlameReach.ToString("F0") + "m";
+			if (FireSafety.FlamesNear(humanoid.GetCenterPoint(), GiveUpFlameReach, out Vector3 middle, out float reach))
+			{
+				flames = "the flames of the fire at " + middle.ToString("F1") + " " + Mathf.Max(0f, Utils.DistanceXZ(middle, transform.position) - reach).ToString("F1") + "m off";
+				if (hasAim)
+				{
+					flames += ", " + Mathf.Max(0f, Utils.DistanceXZ(middle, aim) - reach).ToString("F1") + "m from the aim";
+				}
+			}
+			Plugin.Log.LogInfo(work + ": " + TestLog.Name(humanoid, "F1") + " gives up on " + Utils.GetPrefabName(piece.gameObject) + " at " + piece.transform.position.ToString("F1") + " as " + why + ", leaving it alone for " + RepairAvoidTime.ToString("F0") + "s - " + spots + ", " + flames + ", moved by " + mover);
+		}
+
+		/// <summary>
 		/// Repairing a damaged piece of the village - walking to it and swinging at it, which takes no wood
 		/// </summary>
 		private class RepairJob : Job
@@ -13359,6 +13401,11 @@ namespace VikingVillages
 			private Vector3 aim;
 			private Vector3 stand;
 			private bool hasAim;
+
+			/// <summary>
+			/// Whether the spot it walks to was found on the navmesh, rather than being the ground under the aim
+			/// </summary>
+			private bool standOnMesh;
 
 			/// <summary>
 			/// When it gives up on the piece if it hasn't got within reach of it
@@ -13393,10 +13440,7 @@ namespace VikingVillages
 				// It can keep moving without ever getting within reach, which never counts as stuck, so it gives up in time
 				if (!work.Started && Time.time >= giveUpAt)
 				{
-					if (Player.m_debugMode)
-					{
-						Plugin.Log.LogInfo("Repair: " + TestLog.Name(life.humanoid, "F1") + " gives up on " + Utils.GetPrefabName(piece.gameObject) + " at " + piece.transform.position.ToString("F1") + " after " + RepairGiveUpTime.ToString("F0") + "s without reaching it, leaving it alone for " + RepairAvoidTime.ToString("F0") + "s");
-					}
+					life.LogHammerGiveUp("Repair", piece, false, hasAim, aim, stand, standOnMesh);
 					life.ai.StopMoving();
 					life.Avoid(piece.m_nview, RepairAvoidTime);
 					return(true);
@@ -13409,7 +13453,8 @@ namespace VikingVillages
 					aim = NearestPoint(piece, life.transform.position);
 					Vector3 ground = aim;
 					ground.y = ZoneSystem.instance.GetGroundHeight(aim);
-					stand = (NavmeshPoints.FindValidPoint(out Vector3 valid, ground, WorkReach, Pathfinding.AgentType.Humanoid) ? valid : ground);
+					standOnMesh = NavmeshPoints.FindValidPoint(out Vector3 valid, ground, WorkReach, Pathfinding.AgentType.Humanoid);
+					stand = (standOnMesh ? valid : ground);
 					hasAim = true;
 				}
 				if (!work.Tick(dt, aim, stand))
@@ -13417,6 +13462,7 @@ namespace VikingVillages
 					if (life.moveFailed)
 					{
 						// It can't get to this piece, so it leaves it alone for a while rather than trying it again
+						life.LogHammerGiveUp("Repair", piece, true, hasAim, aim, stand, standOnMesh);
 						life.Avoid(piece.m_nview, RepairAvoidTime);
 						return(true);
 					}
@@ -13455,6 +13501,11 @@ namespace VikingVillages
 			private Vector3 aim;
 			private Vector3 stand;
 			private bool hasAim;
+
+			/// <summary>
+			/// Whether the spot it walks to was found on the navmesh, rather than being the ground under the aim
+			/// </summary>
+			private bool standOnMesh;
 
 			/// <summary>
 			/// When it gives up on the piece if it hasn't got within reach of it
@@ -13497,6 +13548,7 @@ namespace VikingVillages
 				}
 				if (!work.Started && Time.time >= giveUpAt)
 				{
+					life.LogHammerGiveUp("Snow", piece, false, hasAim, aim, stand, standOnMesh);
 					life.ai.StopMoving();
 					life.Avoid(piece.m_nview, RepairAvoidTime);
 					return(true);
@@ -13507,13 +13559,15 @@ namespace VikingVillages
 					aim = NearestPoint(piece, life.transform.position);
 					Vector3 ground = aim;
 					ground.y = ZoneSystem.instance.GetGroundHeight(aim);
-					stand = (NavmeshPoints.FindValidPoint(out Vector3 valid, ground, WorkReach, Pathfinding.AgentType.Humanoid) ? valid : ground);
+					standOnMesh = NavmeshPoints.FindValidPoint(out Vector3 valid, ground, WorkReach, Pathfinding.AgentType.Humanoid);
+					stand = (standOnMesh ? valid : ground);
 					hasAim = true;
 				}
 				if (!work.Tick(dt, aim, stand))
 				{
 					if (life.moveFailed)
 					{
+						life.LogHammerGiveUp("Snow", piece, true, hasAim, aim, stand, standOnMesh);
 						life.Avoid(piece.m_nview, RepairAvoidTime);
 						return(true);
 					}
