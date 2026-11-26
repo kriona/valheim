@@ -608,7 +608,7 @@ Some Vikings have taken work with the Dvergr in the Mistlands. A Dvergr Viking i
 - Like living Vikings, they have the Mistlands' gear, fully repaired, with a Dverger circlet they light at night and a wisp light against the mist, and a name of their own - they're plain Viking to you until they know you. Their skills rise as they use them, and they see no farther in the mist than living Vikings, but for the wisp light they carry
 - They have words of their own, about working for the Dvergr and how they came to be hired - greeting you as you arrive and when you talk to them, calling out the enemies they go after, shouting for help when they're badly hurt, and passing on your news the way living Vikings do, sharing only the living Vikings' lines about the Mistlands, about old friends and how you're doing, and about the runestones where they stand and of someone with their name (see [DIALOG.md](DIALOG.md)). They stand facing you for 4 seconds when you talk to them, and remember when they met you and how many times you've talked, the way living Vikings do
 - You can talk to them, but can't name them or open their inventory
-- They know the forsaken powers up to Yagluth's, learn the ones they're given, and use them in fights and when badly hurt (see [Forsaken Powers](#forsaken-powers))
+- They know the forsaken powers up to Yagluth's and the Queen's too, learn the ones they're given, and use them in fights and when badly hurt (see [Forsaken Powers](#forsaken-powers))
 - When they die they drop 100-140 coins and 0-2 entrails, multiplied by their stars, and each piece of their gear has a chance to drop (see [Configuration](README.md#configuration))
 
 ## With Zombie Apocalypse

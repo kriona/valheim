@@ -27,7 +27,7 @@ There are three kinds of Viking across Viking Villages and Zombie Apocalypse. Th
 | Sees 10 meters in the Mistlands' mist | Yes | Yes | Yes |
 | Takes fall damage | Yes | No | No, like the game's creatures |
 | Eats, rests and gets wet and cold | Yes | No | No |
-| Forsaken powers | Their biome's and every earlier one's, learning and teaching others, used in fights and for work | Up to Yagluth's, learning the ones they're given, used in fights and when badly hurt | 10% chance of their biome's the first time they spot an enemy - a tombstone zombie 50% of your last one - with a 30 second cooldown between zombies |
+| Forsaken powers | Their biome's and every earlier one's, learning and teaching others, used in fights and for work | Up to Yagluth's, and the Queen's, learning the ones they're given, used in fights and when badly hurt | 10% chance of their biome's the first time they spot an enemy - a tombstone zombie 50% of your last one - with a 30 second cooldown between zombies |
 | Coins dropped on death | None | 100-140, multiplied by stars | By biome, multiplied by stars |
 | Gear dropped on death | Everything, where they fall | Each piece 5%, at most 2 | Each piece 5%, at most 2 - a tombstone zombie drops everything |
 | Comes back after dying | No - a new Viking, with a new name and fresh skills, takes their place after a day, or three if a player killed them | No - an outpost never hires again | No |

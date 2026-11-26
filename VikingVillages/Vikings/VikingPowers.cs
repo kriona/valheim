@@ -194,6 +194,18 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Works out the powers a viking knows from the start - its biome's and those before (see BiomeMask), and for a
+		/// dvergr viking the Queen's too, which the dvergr they work for have taught them
+		/// </summary>
+		/// <param name="biome">The biome's index in VikingGear.Biomes</param>
+		/// <param name="dvergr">Whether it's a dvergr viking</param>
+		/// <returns>The powers, one bit for each in the order of Names</returns>
+		internal static int StartMask(int biome, bool dvergr)
+		{
+			return(BiomeMask(biome) | (dvergr ? 1 << Queen : 0));
+		}
+
+		/// <summary>
 		/// Gets the viking's ZDO
 		/// </summary>
 		/// <returns>The ZDO, or null while it has none</returns>
@@ -216,7 +228,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets the powers the viking knows - its biome's and those before, and any it has learned
+		/// Gets the powers the viking knows - those it knows from the start (see StartMask), and any it has learned
 		/// </summary>
 		/// <returns>The powers, one bit for each in the order of Names</returns>
 		public int Known()
@@ -227,7 +239,7 @@ namespace VikingVillages
 			{
 				return(0);
 			}
-			return(zdo.GetInt(LearnedKey) | BiomeMask(own.BiomeIndex()));
+			return(zdo.GetInt(LearnedKey) | StartMask(own.BiomeIndex(), VikingCore.IsDvergrViking(viking)));
 		}
 
 		/// <summary>

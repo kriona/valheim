@@ -43,6 +43,19 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a dvergr viking of the Mistlands knows the Queen's power along with every power up to Yagluth's,
+		/// and a living viking of the Mistlands doesn't
+		/// </summary>
+		[Fact]
+		public void DvergrVikingsKnowTheQueensPower()
+		{
+			int mistlands = VikingGear.IndexOf(Heightmap.Biome.Mistlands);
+			Assert.Equal(VikingPowers.BiomeMask(mistlands), VikingPowers.StartMask(mistlands, false));
+			Assert.Equal(VikingPowers.BiomeMask(mistlands) | (1 << VikingPowers.Queen), VikingPowers.StartMask(mistlands, true));
+			Assert.Equal(0, VikingPowers.BiomeMask(mistlands) & (1 << VikingPowers.Queen));
+		}
+
+		/// <summary>
 		/// Checks that a power is found by its status effect's name hash, and anything else isn't
 		/// </summary>
 		[Fact]
