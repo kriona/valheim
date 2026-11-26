@@ -2372,13 +2372,13 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Greets a player it doesn't know yet as they open its inventory or the box to name it, so it gets to know them
-		/// - unless it's asleep or in a fight, the same as it wouldn't greet them on sight
+		/// - unless it's asleep, in a fight or swimming, the same as it wouldn't greet them on sight
 		/// </summary>
 		/// <param name="player">The player</param>
 		/// <returns>True when it greeted them</returns>
 		public bool GreetIfStranger(Player player)
 		{
-			if (player == null || VikingSpeech.Knows(humanoid, player.GetPlayerID()) || inBed || (job != null && job.Resting()) || ai.m_targetCreature != null)
+			if (player == null || VikingSpeech.Knows(humanoid, player.GetPlayerID()) || inBed || (job != null && job.Resting()) || ai.m_targetCreature != null || humanoid.IsSwimming())
 			{
 				return(false);
 			}
@@ -2812,13 +2812,15 @@ namespace VikingVillages
 		/// <summary>
 		/// Has the viking greet a player arriving - one within GreetRange it can see, who hadn't been near any viking on
 		/// this client for GreetAwayTime seconds - so only the first viking to see them greets them (see Greet). A
-		/// viking resting at night doesn't. Turns it to the player it greeted for GreetFaceTime seconds, or was talked to
-		/// by for TalkFaceTime
+		/// viking resting at night doesn't, nor one swimming, which still notes the players near it, so it doesn't greet
+		/// them once it's out of the water either. Turns it to the player it greeted for GreetFaceTime seconds, or was
+		/// talked to by for TalkFaceTime
 		/// </summary>
 		/// <returns>True while it stands facing the player it greeted, so the AI's own update is skipped</returns>
 		private bool UpdateGreeting()
 		{
-			if (greeting != null && Time.time < greetUntil)
+			bool swimming = humanoid.IsSwimming();
+			if (greeting != null && Time.time < greetUntil && !swimming)
 			{
 				// A cook doesn't let its food burn while it faces a player - it takes done food off where it stands, or
 				// leaves them to go and take it off
@@ -2851,7 +2853,7 @@ namespace VikingVillages
 					continue;
 				}
 				playerLastNear[id] = Time.time;
-				if (!away)
+				if (!away || swimming)
 				{
 					continue;
 				}
