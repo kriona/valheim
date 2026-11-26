@@ -7,7 +7,7 @@ Puts a colored arrow above nearby creatures, traders, fish, birds, leviathans, o
 - Marks traders like Haldor, Hildir and the Bog Witch, and their pets like Halstein, including through portals with [PortalPreview](#portalpreview)
 - Marks leviathans and lava leviathans, so they're easy to find when you want their chitin or flametal ore
 - Marks other players who are sharing their position on the map, unless they're sneaking
-- Can mark every item lying on the ground, so dropped loot is easy to spot
+- Can mark every item lying on the ground, so dropped loot is easy to spot, with items of the same kind lying together farther off sharing one marker, like "Wood (x5)"
 - Can mark every portal, labeled with its tag, so you can find your way back to the one you came through
 - Marks tombstones, labeled with whose they are, so you can find your way back to your things after dying
 - Marks map pings in the game's ping color, and shouts like a player's "I have arrived!" when they join in yellow, while the game shows them, however far away they are. When one is off-screen, the game's text moves behind its arrow at the screen edge
@@ -71,6 +71,7 @@ Support for Portal Preview ([Nexus](https://www.nexusmods.com/valheim/mods/3977)
 | All Leviathans | true | Marks every leviathan and lava leviathan. A leviathan's marker goes away once it starts diving after being hit |
 | All Players | true | Marks every other player who is sharing their position on the map, except while they're sneaking |
 | Items On Ground | false | Marks every item lying on the ground. A stack's name shows how many items are in it, like "Wood x5". Food placed on a table and fish, which follow All Fish, aren't included |
+| Item Group Distance | 15 | How far away, in meters, items on the ground have to be for those of the same kind lying within 3 meters of each other to share one marker at their middle, named with how many there are, like "Wood (x5)" (0 - 500). 0 never groups them |
 | All Portals | false | Marks every portal. Its name is the portal's tag, or the kind of portal when it has no tag |
 | All Tombstones | true | Marks every tombstone, yours and other players'. Its name is the name of the player who died there |
 | Min Creature Level | 0 | Lowest level a creature needs to get a marker, which is its number of stars (0 - 9). 0 marks every creature, and 1 marks only creatures with stars. Traders, their pets and leviathans aren't affected |

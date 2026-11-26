@@ -85,15 +85,16 @@ namespace CreatureMarker
 			public string nameToken;
 
 			/// <summary>
-			/// The target's localized name, followed by the stack size for a stack of items, looked up when the marker is
-			/// given a new target or the stack size changes
+			/// The target's localized name, followed by the stack size for a stack of items or how many items share it for
+			/// a group, looked up when the marker is given a new target or either of those changes
 			/// </summary>
 			public string name;
 
 			/// <summary>
-			/// The stack size in the name
+			/// The stack size and the group's size in the name
 			/// </summary>
 			public int count;
+			public int grouped;
 
 			/// <summary>
 			/// The name, level, star color and distance in the label's text, so the text is only rebuilt when one of
@@ -291,13 +292,18 @@ namespace CreatureMarker
 					SetActive(marker.label.gameObject, showText);
 					if (showText)
 					{
-						if (marker.source != target.source || marker.nameToken != target.nameToken || marker.count != target.count)
+						if (marker.source != target.source || marker.nameToken != target.nameToken || marker.count != target.count || marker.grouped != target.grouped)
 						{
 							marker.source = target.source;
 							marker.nameToken = target.nameToken;
 							marker.count = target.count;
+							marker.grouped = target.grouped;
 							marker.name = Localization.instance.Localize(target.nameToken);
-							if (target.count > 1)
+							if (target.grouped > 1)
+							{
+								marker.name += " (x" + target.grouped + ")";
+							}
+							else if (target.count > 1)
 							{
 								// The game shows a stack's size the same way when it lies on the ground
 								marker.name += " x" + target.count;

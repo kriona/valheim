@@ -49,6 +49,12 @@ namespace CreatureMarker
 		public int count;
 
 		/// <summary>
+		/// How many items of the same kind lying together share this marker, shown after the name like Wood (x5) when it
+		/// is more than 1 - 0 for a target that isn't a group
+		/// </summary>
+		public int grouped;
+
+		/// <summary>
 		/// The creature's level, which is its star count plus one, or the fish's level - both start at 1, and birds are
 		/// always level 1
 		/// </summary>

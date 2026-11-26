@@ -67,6 +67,7 @@ namespace CreatureMarker
 		private const string AllLeviathansKey = "All Leviathans";
 		private const string AllPlayersKey = "All Players";
 		private const string ItemsOnGroundKey = "Items On Ground";
+		private const string ItemGroupDistanceKey = "Item Group Distance";
 		private const string AllPortalsKey = "All Portals";
 		private const string AllTombstonesKey = "All Tombstones";
 		private const string MinCreatureLevelKey = "Min Creature Level";
@@ -80,6 +81,7 @@ namespace CreatureMarker
 		private const float MinFarScale = 0.2f;
 		private const float DefaultBobHeight = 0f;
 		private const float MaxBobHeight = 30f;
+		private const float DefaultItemGroupDistance = 15f;
 
 		/// <summary>
 		/// The ZDO flag Zombie Apocalypse sets on the creatures it raises as zombies
@@ -137,7 +139,8 @@ namespace CreatureMarker
 		private static readonly string maxDistanceNote = "Meters, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultMaxDistance;
 		private static readonly string farDistanceNote = "Meters beyond which a marker is drawn at Far Scale, from " + MinMaxDistance + " to " + MaxMaxDistance + ", default " + DefaultFarDistance;
 		private static readonly string farScaleNote = "Size of a marker beyond Far Distance, from " + MinFarScale.ToString(CultureInfo.InvariantCulture) + " to 1 (no shrinking), default " + DefaultFarScale.ToString(CultureInfo.InvariantCulture);
-		private static readonly string bobHeightNote = "Pixels an on-screen arrow bobs up and down, from 0 (disables bobbing) to " + MaxBobHeight + ", default " + DefaultBobHeight;
+		private static readonly string itemGroupDistanceNote = "Meters beyond which items of the same kind lying within " + ItemGroups.Reach.ToString(CultureInfo.InvariantCulture) + " meters of each other share one marker, like Wood (x5), from 0 (never grouped) to " + MaxMaxDistance + ", default " + DefaultItemGroupDistance;
+		private static readonly string bobHeightNote ="Pixels an on-screen arrow bobs up and down, from 0 (disables bobbing) to " + MaxBobHeight + ", default " + DefaultBobHeight;
 		private static readonly string passiveColorNote = "Creatures that won't attack you, including birds, default " + DefaultPassiveColor;
 		private static readonly string hostileColorNote = "Creatures that will attack you, default " + DefaultHostileColor;
 		private static readonly string angryColorNote = "Hostile creatures that are after you right now, default " + DefaultAngryColor;
@@ -195,6 +198,7 @@ namespace CreatureMarker
 		private static ConfigEntry<bool> allLeviathansEntry;
 		private static ConfigEntry<bool> allPlayersEntry;
 		private static ConfigEntry<bool> itemsOnGroundEntry;
+		private static ConfigEntry<float> itemGroupDistanceEntry;
 		private static ConfigEntry<bool> allPortalsEntry;
 		private static ConfigEntry<bool> allTombstonesEntry;
 		private static ConfigEntry<int> minCreatureLevelEntry;
@@ -325,6 +329,12 @@ namespace CreatureMarker
 		private static bool allLeviathans = true;
 		private static bool allPlayers = true;
 		private static bool itemsOnGround;
+
+		/// <summary>
+		/// Distance from the player, in meters, beyond which items of the same kind near each other share one marker, 0
+		/// for never
+		/// </summary>
+		private static float itemGroupDistance = DefaultItemGroupDistance;
 		private static bool allPortals;
 		private static bool allTombstones = true;
 
@@ -596,6 +606,7 @@ namespace CreatureMarker
 			allLeviathansEntry = BindSetting(CreaturesSection, AllLeviathansKey, true, "Mark every leviathan", null, order--);
 			allPlayersEntry = BindSetting(CreaturesSection, AllPlayersKey, true, "Mark every other player who is sharing their position on the map and isn't sneaking", null, order--);
 			itemsOnGroundEntry = BindSetting(CreaturesSection, ItemsOnGroundKey, false, "Mark every item lying on the ground", null, order--);
+			itemGroupDistanceEntry = BindSetting(CreaturesSection, ItemGroupDistanceKey, DefaultItemGroupDistance, itemGroupDistanceNote, new AcceptableValueRange<float>(0f, MaxMaxDistance), order--);
 			allPortalsEntry = BindSetting(CreaturesSection, AllPortalsKey, false, "Mark every portal", null, order--);
 			allTombstonesEntry = BindSetting(CreaturesSection, AllTombstonesKey, true, "Mark every tombstone", null, order--);
 			minCreatureLevelEntry = BindSetting(CreaturesSection, MinCreatureLevelKey, DefaultMinCreatureLevel, minCreatureLevelNote, new AcceptableValueRange<int>(0, MaxMinCreatureLevel), order--);
@@ -658,6 +669,7 @@ namespace CreatureMarker
 				allLeviathansEntry.Value = allLeviathans;
 				allPlayersEntry.Value = allPlayers;
 				itemsOnGroundEntry.Value = itemsOnGround;
+				itemGroupDistanceEntry.Value = itemGroupDistance;
 				allPortalsEntry.Value = allPortals;
 				allTombstonesEntry.Value = allTombstones;
 				minCreatureLevelEntry.Value = minCreatureLevel;
@@ -703,6 +715,7 @@ namespace CreatureMarker
 			allLeviathans = allLeviathansEntry.Value;
 			allPlayers = allPlayersEntry.Value;
 			itemsOnGround = itemsOnGroundEntry.Value;
+			itemGroupDistance = itemGroupDistanceEntry.Value;
 			allPortals = allPortalsEntry.Value;
 			allTombstones = allTombstonesEntry.Value;
 			minCreatureLevel = minCreatureLevelEntry.Value;
@@ -1028,6 +1041,9 @@ namespace CreatureMarker
 		/// <param name="marked">The list to add to</param>
 		private static void GetMarkedItems(Vector3 playerPosition, float maxDistanceSquared, List<Target> marked)
 		{
+			itemTargets.Clear();
+			itemPositions.Clear();
+			itemKinds.Clear();
 			foreach (ItemDrop item in ItemDrop.s_instances)
 			{
 				if (item == null || item.m_nview == null || !item.m_nview.IsValid())
@@ -1053,9 +1069,32 @@ namespace CreatureMarker
 				target.count = item.m_itemData.m_stack;
 				target.level = 1;
 				target.color = itemColor;
+				itemTargets.Add(target);
+				itemPositions.Add(position);
+				itemKinds.Add(target.nameToken);
+			}
+			// Farther off, items of the same kind lying together share a marker at their middle
+			foreach (List<int> group in ItemGroups.Group(itemPositions, itemKinds, playerPosition, itemGroupDistance))
+			{
+				Target target = itemTargets[group[0]];
+				if (group.Count > 1)
+				{
+					Vector3 middle = ItemGroups.Middle(itemPositions, group);
+					target.position = middle;
+					target.top = middle;
+					target.count = 0;
+					target.grouped = group.Count;
+				}
 				marked.Add(target);
 			}
 		}
+
+		/// <summary>
+		/// The items GetMarkedItems finds, with where each lies and its kind, kept between frames so they aren't made anew
+		/// </summary>
+		private static readonly List<Target> itemTargets = new List<Target>();
+		private static readonly List<Vector3> itemPositions = new List<Vector3>();
+		private static readonly List<string> itemKinds = new List<string>();
 
 		/// <summary>
 		/// The name token of a bird in the world, worked out from its prefab name the first time a bird of that prefab
@@ -1313,6 +1352,7 @@ namespace CreatureMarker
 			allLeviathans = (ParseState(TakeValue(values, AllLeviathansKey)) ?? true);
 			allPlayers = (ParseState(TakeValue(values, AllPlayersKey)) ?? true);
 			itemsOnGround = (ParseState(TakeValue(values, ItemsOnGroundKey)) ?? false);
+			itemGroupDistance = TakeFloat(values, ItemGroupDistanceKey, DefaultItemGroupDistance, 0f, MaxMaxDistance);
 			allPortals = (ParseState(TakeValue(values, AllPortalsKey)) ?? false);
 			allTombstones = (ParseState(TakeValue(values, AllTombstonesKey)) ?? true);
 			string oldAllCreaturesText = TakeValue(values, OldAllCreaturesKey);
@@ -1574,6 +1614,7 @@ namespace CreatureMarker
 			builder.Append("\r\n");
 			builder.Append("## Items On Ground marks every item lying on the ground\r\n");
 			AppendLine(builder, ItemsOnGroundKey, StateEntries.Format(itemsOnGround), "");
+			AppendLine(builder, ItemGroupDistanceKey, itemGroupDistance.ToString(CultureInfo.InvariantCulture), itemGroupDistanceNote);
 			AppendLine(builder, ItemColorKey, itemColorText, itemColorNote);
 			builder.Append("\r\n");
 			builder.Append("## All Portals marks every portal, with its tag as its name\r\n");
