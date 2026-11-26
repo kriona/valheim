@@ -1315,6 +1315,23 @@ namespace VikingVillages
 		private float stillRestedAt;
 
 		/// <summary>
+		/// Whether the viking tried to walk somewhere this AI update (see Go), and for how many seconds it has tried
+		/// while standing still, for FreeIfTrapped
+		/// </summary>
+		private bool walkedThisUpdate;
+		private float walkingStill;
+
+		/// <summary>
+		/// How many seconds a viking tries to walk somewhere without getting anywhere before it's freed (see
+		/// FreeIfTrapped), and how far around it a spot to put it is looked for, in steps of FreeStep, in meters, with
+		/// FreeSides spots at each step
+		/// </summary>
+		private const float FreeAfter = 90f;
+		private const float FreeReach = 9f;
+		private const float FreeStep = 1.5f;
+		private const int FreeSides = 8;
+
+		/// <summary>
 		/// Writes to the log when the viking has stood still for StuckLogTime at a job that shouldn't keep it still that
 		/// long - anything but resting, sitting, lying, in bed or sitting on something, or gathering at a fire, counting
 		/// only from when it last stopped doing those, so a night in bed isn't taken for being stuck the morning after -
@@ -1341,6 +1358,75 @@ namespace VikingVillages
 			TestLog.Count("Troubles", "stuck at a job");
 			TestLog.Count("Stuck, by job", LogJobName());
 			Plugin.Log.LogWarning("Stuck: " + LogName() + " of the village at " + ((village != null) ? village.Farm.ToString("F0") : "none") + " has stood still for " + still.ToString("F0") + "s at its job: " + job.Describe() + ", for " + (Time.time - job.StartedAt).ToString("F0") + "s, moved by " + mover + (VillageRaids.On(village) ? ", with a raid on" : "") + (IsNight() ? ", at night" : ""));
+		}
+
+		/// <summary>
+		/// Frees a viking in its village that has tried to walk somewhere for FreeAfter seconds without getting
+		/// anywhere - shut in beside its bed by the furniture, at the far side of a pen too big to tell from open ground,
+		/// or anywhere else it has no way out of - putting it at the nearest spot with a way to the village's open ground
+		/// (see FreeSpot), rather than leaving it there to go hungry
+		/// </summary>
+		private void FreeIfTrapped()
+		{
+			if (walkingStill < FreeAfter)
+			{
+				return;
+			}
+			walkingStill = 0f;
+			if (village == null || attachPoint != null || inBed || road != Road.None || !village.Contains(transform.position) || Pathfinding.instance == null)
+			{
+				return;
+			}
+			Vector3 from = transform.position;
+			if (!FreeSpot(from, village.RallyPoint(), out Vector3 spot))
+			{
+				return;
+			}
+			Vector3 freed = spot + Vector3.up * 0.1f;
+			transform.position = freed;
+			humanoid.m_body.position = freed;
+			humanoid.m_body.linearVelocity = Vector3.zero;
+			ai.StopMoving();
+			ResetStuck();
+			TestLog.Count("Troubles", "freed after walking without getting anywhere");
+			if (TestLog.On || Player.m_debugMode)
+			{
+				Plugin.Log.LogInfo("Freed: " + TestLog.Name(humanoid, "F1") + " tried to walk for " + FreeAfter.ToString("F0") + "s without getting anywhere, moved by " + mover + ", at its job: " + ((job != null) ? job.Describe() : "none") + ", so it's put at " + freed.ToString("F1") + ", " + Utils.DistanceXZ(from, freed).ToString("F1") + "m away");
+			}
+		}
+
+		/// <summary>
+		/// Finds the nearest spot around a trapped viking it can walk to the village's open ground from - on the navmesh,
+		/// out of any pen, off the roofs and clear of fires, looking further out a FreeStep at a time, up to FreeReach -
+		/// or else the open ground itself
+		/// </summary>
+		/// <param name="from">Where the viking stands</param>
+		/// <param name="open">The spot on the village's open ground (see Village.RallyPoint)</param>
+		/// <param name="spot">The spot found</param>
+		/// <returns>False when the open ground isn't on the navmesh either</returns>
+		private static bool FreeSpot(Vector3 from, Vector3 open, out Vector3 spot)
+		{
+			for (float reach = FreeStep; reach <= FreeReach; reach += FreeStep)
+			{
+				for (int i = 0; i < FreeSides; i++)
+				{
+					Vector3 point = from + Quaternion.Euler(0f, i * 360f / FreeSides, 0f) * Vector3.forward * reach;
+					if (!NavmeshPoints.FindValidPoint(out Vector3 valid, point, FreeStep, Pathfinding.AgentType.Humanoid))
+					{
+						continue;
+					}
+					if (Village.FencedIn(valid) || NavmeshRoofs.OnRoof(valid) || Village.NearFlames(valid))
+					{
+						continue;
+					}
+					if (Pathfinding.instance.HavePath(valid, open, Pathfinding.AgentType.Humanoid))
+					{
+						spot = valid;
+						return(true);
+					}
+				}
+			}
+			return(NavmeshPoints.FindValidPoint(out spot, open, FreeStep, Pathfinding.AgentType.Humanoid));
 		}
 
 		/// <summary>
@@ -3423,7 +3509,8 @@ namespace VikingVillages
 		/// Notes how the viking moved this AI update, after its AI and village life have both had their say, so its
 		/// twitching - stopping and starting, or turning one way then the other, over and over - shows in its debug
 		/// hover text and, with debug mode on, is written to the log with what it was doing, and a viking twitching on
-		/// top of something it's stuck on climbs down (see ClimbDown) - and notes which forsaken powers it's under, for
+		/// top of something it's stuck on climbs down (see ClimbDown) - frees a viking that has tried to walk somewhere
+		/// for a long time without getting anywhere (see FreeIfTrapped), and notes which forsaken powers it's under, for
 		/// other clients' vikings to tell
 		/// </summary>
 		public void AfterAI()
@@ -3444,9 +3531,16 @@ namespace VikingVillages
 			{
 				stillAt = transform.position;
 				stillSince = Time.time;
+				walkingStill = 0f;
 			}
+			else if (walkedThisUpdate)
+			{
+				walkingStill += Time.time - stillCheckedAt;
+			}
+			walkedThisUpdate = false;
 			stillCheckedAt = Time.time;
 			LogIfStuck();
+			FreeIfTrapped();
 			Vector3 move = humanoid.GetMoveDir();
 			MoveSample sample = new MoveSample();
 			sample.Time = Time.time;
@@ -9336,6 +9430,7 @@ namespace VikingVillages
 			mover = (direct ? "straight through a door" : (viaDoor ? "path to a door" : "path")) + " for " + ((job != null) ? job.GetType().Name : "village life");
 			if (direct)
 			{
+				walkedThisUpdate = true;
 				ai.MoveTowards(waypoint - transform.position, run);
 				bool gaveUp = CheckStuck(target);
 				AskWayWhenHeldUp(waypoint);
@@ -9349,6 +9444,7 @@ namespace VikingVillages
 				ResetStuck();
 				return(true);
 			}
+			walkedThisUpdate = true;
 			// Waiting its turn at a door isn't being stuck, though it asks whoever stands about in the doorway to make way
 			if (viaDoor && VikingDoors.IsWaiting(humanoid))
 			{
