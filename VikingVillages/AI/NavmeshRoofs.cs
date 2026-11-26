@@ -151,19 +151,33 @@ namespace VikingVillages
 		/// <returns>True when the first thing below it is part of a roof</returns>
 		public static bool OnRoof(Vector3 point)
 		{
+			return(RoofUnder(point) != null);
+		}
+
+		/// <summary>
+		/// Finds the roof piece under a point (see OnRoof)
+		/// </summary>
+		/// <param name="point">The point, at or a little above where something stands</param>
+		/// <returns>The roof piece, or null when the first thing below the point isn't part of a roof</returns>
+		public static WearNTear RoofUnder(Vector3 point)
+		{
 			if (groundMask == 0)
 			{
 				groundMask = LayerMask.GetMask("Default", "static_solid", "Default_small", "piece", "terrain");
 			}
 			if (!Physics.Raycast(point + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, GroundCheck, groundMask, QueryTriggerInteraction.Ignore))
 			{
-				return(false);
+				return(null);
 			}
 			if (pieceLayer < 0)
 			{
 				pieceLayer = LayerMask.NameToLayer("piece");
 			}
-			return(hit.collider != null && hit.collider.gameObject.layer == pieceLayer && IsRoof(hit.collider));
+			if (hit.collider == null || hit.collider.gameObject.layer != pieceLayer || !IsRoof(hit.collider))
+			{
+				return(null);
+			}
+			return(hit.collider.GetComponentInParent<WearNTear>());
 		}
 
 		/// <summary>

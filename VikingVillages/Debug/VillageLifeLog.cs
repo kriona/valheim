@@ -40,6 +40,12 @@ namespace VikingVillages
 		private const float LogFoodInterval = 10f;
 
 		/// <summary>
+		/// The fewest seconds between lines about the viking dropping its job to get off a roof or out of a pen (see
+		/// LogEscape)
+		/// </summary>
+		private const float LogEscapeInterval = 30f;
+
+		/// <summary>
 		/// The viking's last hits, each with when it was taken, by Time.time
 		/// </summary>
 		private readonly List<KeyValuePair<float, string>> logHits = new List<KeyValuePair<float, string>>();
@@ -58,6 +64,11 @@ namespace VikingVillages
 		private bool logHungry;
 		private float logHungrySince;
 		private float logFoodCheckAt;
+
+		/// <summary>
+		/// When the viking may next be written as dropping its job to get off a roof or out of a pen, by Time.time
+		/// </summary>
+		private float logEscapeAt;
 
 		/// <summary>
 		/// The viking's equipped gear that was broken at the last check
@@ -271,6 +282,47 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Counts the viking's job as interrupted, by the job and why, as it's interrupted (see Interrupt)
+		/// </summary>
+		/// <param name="why">Why it's interrupted, like "a pen"</param>
+		private void LogInterrupt(string why)
+		{
+			if (job == null || !TestLog.On)
+			{
+				return;
+			}
+			TestLog.Count("Jobs interrupted, by why", JobName(job) + " - " + why);
+		}
+
+		/// <summary>
+		/// Writes the viking dropping its job to get off a roof or out of a pen, just before it does - once every
+		/// LogEscapeInterval at most, and only when it has a job to drop
+		/// </summary>
+		/// <param name="what">What it gets off or out of, like "out of a pen"</param>
+		/// <param name="toward">Where it walks to get there</param>
+		private void LogEscape(string what, Vector3 toward)
+		{
+			if (job == null || !(TestLog.On || Player.m_debugMode) || Time.time < logEscapeAt)
+			{
+				return;
+			}
+			logEscapeAt = Time.time + LogEscapeInterval;
+			float below = transform.position.y - toward.y;
+			Plugin.Log.LogInfo("Escape: " + TestLog.Name(humanoid, "F1") + " drops its job: " + job.Describe() + ", for " + (Time.time - job.StartedAt).ToString("F0") + "s, to get " + what + ", walking to " + toward.ToString("F1") + ", " + Utils.DistanceXZ(transform.position, toward).ToString("F1") + "m away and " + Mathf.Abs(below).ToString("F1") + "m " + ((below >= 0f) ? "lower" : "higher"));
+		}
+
+		/// <summary>
+		/// Names the roof piece under a point, with where it stands, for the log
+		/// </summary>
+		/// <param name="point">The point</param>
+		/// <returns>The piece, like "wood_roof at (5280.0, 33.5, 1642.0)", or "a roof" when none is found</returns>
+		private static string RoofPiece(Vector3 point)
+		{
+			WearNTear roof = NavmeshRoofs.RoofUnder(point);
+			return((roof != null) ? Utils.GetPrefabName(roof.gameObject) + " at " + roof.transform.position.ToString("F1") : "a roof");
+		}
+
+		/// <summary>
 		/// Notes a hit the viking took, keeping the last LogHitsKept
 		/// </summary>
 		/// <param name="line">What hit it and how much it took</param>
@@ -423,13 +475,88 @@ namespace VikingVillages
 			{
 				logHungrySince = Time.time;
 				TestLog.Count("Troubles", "hungry with no food");
-				Plugin.Log.LogWarning("Hungry: " + LogName() + " has eaten nothing, and none of the " + UsableChests().Count + " chests it can use holds food it can eat - " + LogDoing());
+				Plugin.Log.LogWarning("Hungry: " + LogName() + " has eaten nothing, and none of the " + UsableChests().Count + " chests it can use holds food it can eat" + LeftFood() + " - " + LogDoing());
 			}
 			else
 			{
 				TestLog.Count("Minutes", "hungry with no food", (Time.time - logHungrySince) / 60f);
 				Plugin.Log.LogInfo("Hungry: " + LogName() + " has food again after " + (Time.time - logHungrySince).ToString("F0") + "s - eaten: " + body.Food.Describe());
 			}
+		}
+
+		/// <summary>
+		/// Describes the village's chests holding food the viking can eat now that it leaves out of the chests it uses
+		/// (see Usable) - left alone after it couldn't get to them, held by a player, or open for another viking - with
+		/// the nearest of them, counting each kind for the test log
+		/// </summary>
+		/// <returns>The description, starting " - ", or an empty string when there are none</returns>
+		private string LeftFood()
+		{
+			int avoidedChests = 0;
+			int heldChests = 0;
+			int openChests = 0;
+			Container nearest = null;
+			float nearestDistance = float.MaxValue;
+			foreach (Container chest in LoadedChests())
+			{
+				if (chest == null || !IsVillageChest(village, chest) || Usable(chest) || FoodIn(chest, false) == null)
+				{
+					continue;
+				}
+				if (Avoided(chest.m_nview.GetZDO().m_uid))
+				{
+					avoidedChests++;
+					TestLog.Count("Food left alone while hungry", "couldn't get to it");
+				}
+				else if (HeldByPlayer(chest))
+				{
+					heldChests++;
+					TestLog.Count("Food left alone while hungry", "held by a player");
+				}
+				else
+				{
+					openChests++;
+					TestLog.Count("Food left alone while hungry", "open for another viking");
+				}
+				float distance = Vector3.Distance(chest.transform.position, transform.position);
+				if (distance < nearestDistance)
+				{
+					nearestDistance = distance;
+					nearest = chest;
+				}
+			}
+			return(DescribeLeftFood(avoidedChests, heldChests, openChests, ((nearest != null) ? nearest.transform.position.ToString("F0") : "")));
+		}
+
+		/// <summary>
+		/// Describes the chests holding food a hungry viking can eat that it leaves alone, for the log (see LeftFood)
+		/// </summary>
+		/// <param name="avoidedChests">How many it couldn't get to lately</param>
+		/// <param name="heldChests">How many a player holds</param>
+		/// <param name="openChests">How many are open for another viking</param>
+		/// <param name="nearest">Where the nearest of them stands</param>
+		/// <returns>The description, starting " - ", or an empty string when there are none</returns>
+		internal static string DescribeLeftFood(int avoidedChests, int heldChests, int openChests, string nearest)
+		{
+			int total = avoidedChests + heldChests + openChests;
+			if (total == 0)
+			{
+				return("");
+			}
+			List<string> kinds = new List<string>();
+			if (avoidedChests > 0)
+			{
+				kinds.Add(avoidedChests + " it couldn't get to lately");
+			}
+			if (heldChests > 0)
+			{
+				kinds.Add(heldChests + " held by a player");
+			}
+			if (openChests > 0)
+			{
+				kinds.Add(openChests + " open for another viking");
+			}
+			return(" - " + total + " more " + ((total == 1) ? "does" : "do") + ", which it leaves alone (" + string.Join(", ", kinds) + "), " + ((total == 1) ? "at " : "the nearest at ") + nearest);
 		}
 
 		/// <summary>

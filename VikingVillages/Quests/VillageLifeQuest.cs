@@ -454,7 +454,7 @@ namespace VikingVillages
 			{
 				if (life != null && life.active && life.village == village && life.nview != null && life.nview.IsValid() && life.nview.IsOwner() && record.Members.Contains(VikingIdentity.Get(life.nview.GetZDO())))
 				{
-					life.Interrupt();
+					life.Interrupt("called to a quest");
 				}
 			}
 		}

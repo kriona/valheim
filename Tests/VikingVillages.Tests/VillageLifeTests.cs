@@ -859,5 +859,23 @@ namespace VikingVillages.Tests
 		{
 			Assert.Equal(expected, VillageLife.ClimbsOffRoof(new Vector3(atX, atY, atZ), new Vector3(exitX, exitY, exitZ)));
 		}
+
+		/// <summary>
+		/// Checks that the Hungry line names the chests with food a viking leaves alone, by why, with the nearest - and
+		/// says nothing more when there are none
+		/// </summary>
+		/// <param name="avoidedChests">How many it couldn't get to lately</param>
+		/// <param name="heldChests">How many a player holds</param>
+		/// <param name="openChests">How many are open for another viking</param>
+		/// <param name="expected">The description</param>
+		[Theory]
+		[InlineData(0, 0, 0, "")]
+		[InlineData(1, 0, 0, " - 1 more does, which it leaves alone (1 it couldn't get to lately), at (5284, 31, 1648)")]
+		[InlineData(2, 0, 1, " - 3 more do, which it leaves alone (2 it couldn't get to lately, 1 open for another viking), the nearest at (5284, 31, 1648)")]
+		[InlineData(0, 1, 1, " - 2 more do, which it leaves alone (1 held by a player, 1 open for another viking), the nearest at (5284, 31, 1648)")]
+		public void DescribesFoodLeftAloneByWhy(int avoidedChests, int heldChests, int openChests, string expected)
+		{
+			Assert.Equal(expected, VillageLife.DescribeLeftFood(avoidedChests, heldChests, openChests, "(5284, 31, 1648)"));
+		}
 	}
 }

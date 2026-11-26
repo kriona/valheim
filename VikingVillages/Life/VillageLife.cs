@@ -2584,7 +2584,7 @@ namespace VikingVillages
 				leaving = true;
 				if (active)
 				{
-					Interrupt();
+					Interrupt("its village disbanded");
 					SetDulled(false);
 				}
 				active = false;
@@ -2700,7 +2700,7 @@ namespace VikingVillages
 				// A hunter keeps its hunt through the fight with its prey and the greylings it meets
 				if (!(job is HuntJob hunt && hunt.Allows(target)))
 				{
-					Interrupt();
+					Interrupt("a fight");
 				}
 				SetDulled(false);
 				returning = false;
@@ -2744,13 +2744,13 @@ namespace VikingVillages
 				nview.GetZDO().Set(ArrivingKey, false);
 				if (!village.Contains(transform.position))
 				{
-					Interrupt();
+					Interrupt("walking in from outside the village");
 					returning = true;
 				}
 			}
 			if (!returning && village.DistanceOutside(transform.position) > StrayRange)
 			{
-				Interrupt();
+				Interrupt("straying out of the village");
 				returning = true;
 			}
 			if (returning)
@@ -2909,7 +2909,7 @@ namespace VikingVillages
 					{
 						ai.m_targetCreature = null;
 					}
-					Interrupt();
+					Interrupt("giving up a hunt");
 					if (!home)
 					{
 						Flee(FleeReason.Wounded);
@@ -2937,7 +2937,7 @@ namespace VikingVillages
 			{
 				if (job != null)
 				{
-					Interrupt();
+					Interrupt("fleeing");
 				}
 				SetDulled(false);
 				mover = "running home";
@@ -4197,7 +4197,7 @@ namespace VikingVillages
 			{
 				return;
 			}
-			Interrupt();
+			Interrupt("joining a fight");
 			grudge = joined;
 			grudgeUntil = Time.time + GrudgeTime;
 			Engage(joined);
@@ -4747,7 +4747,7 @@ namespace VikingVillages
 				Job mourn = FindMourning();
 				if (mourn != null)
 				{
-					Interrupt();
+					Interrupt("mourning");
 					job = mourn;
 					job.Begin();
 				}
@@ -4756,7 +4756,7 @@ namespace VikingVillages
 			{
 				// Freezing out in the cold, it drops what it's doing to warm up
 				nextWorkCheck = Time.time + WorkCheckInterval;
-				Interrupt();
+				Interrupt("freezing");
 				job = new GatherJob(this, false, true);
 				job.Begin();
 			}
@@ -4960,7 +4960,7 @@ namespace VikingVillages
 			{
 				return;
 			}
-			Interrupt();
+			Interrupt("being hurt");
 			if (attacker != null && !attacker.IsDead() && BaseAI.IsEnemy(humanoid, attacker))
 			{
 				grudge = attacker;
@@ -4989,7 +4989,7 @@ namespace VikingVillages
 			{
 				return;
 			}
-			Interrupt();
+			Interrupt("helping one attacked");
 			grudge = attacker;
 			grudgeUntil = Time.time + GrudgeTime;
 			Engage(attacker);
@@ -5021,7 +5021,7 @@ namespace VikingVillages
 			{
 				return;
 			}
-			Interrupt();
+			Interrupt("an alarm");
 			SetDulled(false);
 			Character enemy = NearestEnemy(AlarmRange);
 			if (enemy != null)
@@ -5072,14 +5072,14 @@ namespace VikingVillages
 				// A viking moving to another village drops what it was doing for its old one
 				if (village != null && found != null && found != village)
 				{
-					Interrupt();
+					Interrupt("moving to another village");
 				}
 				village = found;
 			}
 			wanted = (wanted && village != null);
 			if (!wanted && active)
 			{
-				Interrupt();
+				Interrupt("leaving village life");
 				SetDulled(false);
 			}
 			active = wanted;
@@ -5681,7 +5681,7 @@ namespace VikingVillages
 				return(false);
 			}
 			holder.noWoodUntil = Mathf.Max(holder.noWoodUntil, noWoodUntil);
-			holder.Interrupt();
+			holder.Interrupt("cutting trees handed to it");
 			return(true);
 		}
 
@@ -7080,8 +7080,10 @@ namespace VikingVillages
 			ZDOID thing = view.GetZDO().m_uid;
 			avoided[thing] = Time.time + seconds;
 			string name = Utils.GetPrefabName(view.gameObject);
+			bool chest = (view.GetComponent<Container>() != null);
 			TestLog.Count("Couldn't reach, by job", LogJobName());
-			TestLog.Count("Couldn't reach, by thing", name);
+			// A chest is counted with its place, since a village has several and the one out of reach is worth knowing
+			TestLog.Count("Couldn't reach, by thing", (chest ? name + " at " + view.transform.position.ToString("F0") : name));
 			if (Time.time >= nextGiveUpPrune)
 			{
 				nextGiveUpPrune = Time.time + GiveUpPruneInterval;
@@ -7089,7 +7091,7 @@ namespace VikingVillages
 			}
 			// A chest is never given up on by the whole village - without it the vikings would have nowhere to put away
 			// what they find or eat from - only by the viking that couldn't get to it, for a while
-			if (view.GetComponent<Container>() != null)
+			if (chest)
 			{
 				return;
 			}
@@ -9327,12 +9329,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Stops what the viking is doing for a fight - it gets up, puts away what it holds and lets go of its claims
+		/// Stops what the viking is doing for something that comes first, like a fight or getting out of a pen - it gets
+		/// up, puts away what it holds and lets go of its claims - counting why for the test log (see LogInterrupt)
 		/// </summary>
-		private void Interrupt()
+		/// <param name="why">Why it stops, for the test log, like "a fight"</param>
+		private void Interrupt(string why)
 		{
 			if (job != null || attachPoint != null)
 			{
+				LogInterrupt(why);
 				StopJob();
 				VikingPoses.StopAll(humanoid);
 			}
@@ -9905,7 +9910,7 @@ namespace VikingVillages
 			{
 				ai.m_targetCreature = null;
 			}
-			Interrupt();
+			Interrupt("keeping clear of a root");
 			mover = (archer ? "backing off from a root to shoot it" : "keeping clear of a root");
 			ai.MoveTowards(away.normalized, true);
 			return(true);
@@ -10004,7 +10009,7 @@ namespace VikingVillages
 				away = -transform.forward;
 			}
 			escapingFlames = true;
-			Interrupt();
+			Interrupt("flames");
 			mover = "running out of the flames";
 			ai.MoveTowards(away.normalized, true);
 			return(true);
@@ -10027,7 +10032,7 @@ namespace VikingVillages
 			{
 				away = -transform.forward;
 			}
-			Interrupt();
+			Interrupt("poison");
 			mover = "stepping away from poison";
 			ai.MoveTowards(away.normalized, true);
 			return(true);
@@ -10256,7 +10261,7 @@ namespace VikingVillages
 			}
 			if (job != null && !RaidCritical())
 			{
-				Interrupt();
+				Interrupt("a raid");
 			}
 		}
 
@@ -10322,7 +10327,7 @@ namespace VikingVillages
 			}
 			if (job != null || attachPoint != null)
 			{
-				Interrupt();
+				Interrupt("a corpse about to rise");
 			}
 			waitingFor = corpse.Id;
 			float distance = Utils.DistanceXZ(transform.position, corpse.Position);
@@ -10418,7 +10423,8 @@ namespace VikingVillages
 				{
 					return(false);
 				}
-				Interrupt();
+				LogEscape("out of a pen", village.RallyPoint());
+				Interrupt("a pen");
 				gettingOutOfPen = true;
 				ResetStuck();
 			}
@@ -10473,7 +10479,8 @@ namespace VikingVillages
 					ClimbOffRoof("stood right over it");
 					return(false);
 				}
-				Interrupt();
+				LogEscape("off " + RoofPiece(transform.position), roofExit);
+				Interrupt("a roof");
 				gettingOffRoof = true;
 				ResetStuck();
 			}
@@ -10564,7 +10571,7 @@ namespace VikingVillages
 					nextWaterCheck = Time.time + WaterGiveUpTime;
 					return(false);
 				}
-				Interrupt();
+				Interrupt("standing in water");
 				gettingOutOfWater = true;
 				ResetStuck();
 			}
@@ -10605,7 +10612,7 @@ namespace VikingVillages
 				{
 					return(false);
 				}
-				Interrupt();
+				Interrupt("on fire");
 				dousing = true;
 				ResetStuck();
 			}
