@@ -46,11 +46,17 @@ namespace VikingVillages
 		private static readonly int CauldronKey = "kriona.VikingVillages.villageCauldron".GetStableHashCode();
 
 		/// <summary>
-		/// How far from the cauldron its extensions stand, the most they can be (the game's 5 meters) less a margin, and
-		/// how far apart around it the spots tried for them are, in degrees
+		/// Where a cauldron's extensions stand around it, on rings from ExtensionNearest out to the extension's own reach
+		/// of the cauldron less ExtensionReachSlack - the nearest past where a viking or a player stands to use the
+		/// cauldron, so an extension never stands in the way of it - ExtensionRingStep apart, with the spots on each ring
+		/// ExtensionAngleStep apart, and how far every part of an extension keeps out of the fire's flames, in meters and
+		/// degrees
 		/// </summary>
-		private const float ExtensionDistance = 2.2f;
+		private const float ExtensionNearest = 2.5f;
+		private const float ExtensionReachSlack = 0.5f;
+		private const float ExtensionRingStep = 0.5f;
 		private const float ExtensionAngleStep = 20f;
+		private const float ExtensionFlameClearance = 0.5f;
 
 		/// <summary>
 		/// The loaded villages' burning bonfires as last found, and how often they're looked for again, in seconds
@@ -349,7 +355,7 @@ namespace VikingVillages
 				}
 			}
 			int wanted = Mathf.Min(biome - forest, CauldronExtensions.Length);
-			int placed = PlaceExtensions(cauldron, fire, wanted, built);
+			int placed = PlaceExtensions(village, cauldron, wanted, built);
 			VillageRecords.Add(village, built);
 			Plugin.Log.LogInfo("Gave the village at " + village.Farm.ToString("F0") + " a cauldron with " + placed + " of the " + wanted + " extensions its biome calls for, " + built.Count + " pieces in all");
 		}
@@ -421,41 +427,104 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Places a cauldron's extensions around it, facing it, within ExtensionDistance of it and out of the fire's
-		/// flames, clear of everything already standing there
+		/// Places a cauldron's extensions around it, facing it, at the nearest spot within their reach of it, past where
+		/// it's used from (see ExtensionNearest), with every part of them out of the fire's flames and clear of everything
+		/// already standing there - writing to the log why the spots tried for each that has no room didn't fit
 		/// </summary>
+		/// <param name="village">The village, for the log</param>
 		/// <param name="cauldron">Where the cauldron stands</param>
-		/// <param name="fire">The fire it stands over</param>
 		/// <param name="count">How many of CauldronExtensions it gets, the first ones first</param>
 		/// <param name="built">The pieces placed, as they'd be noted among the village's pieces, added to</param>
 		/// <returns>How many were placed</returns>
-		private static int PlaceExtensions(Vector3 cauldron, Fireplace fire, int count, List<PieceRecord> built)
+		private static int PlaceExtensions(Village village, Vector3 cauldron, int count, List<PieceRecord> built)
 		{
 			int placed = 0;
 			for (int i = 0; i < count; i++)
 			{
-				GameObject prefab = ZNetScene.instance.GetPrefab(CauldronExtensions[i]);
-				if (prefab == null)
+				string name = CauldronExtensions[i];
+				GameObject prefab = ZNetScene.instance.GetPrefab(name);
+				StationExtension extension = ((prefab != null) ? prefab.GetComponent<StationExtension>() : null);
+				if (extension == null)
 				{
+					Plugin.Log.LogWarning("Couldn't find the " + name + " prefab to give the cauldron of the village at " + village.Farm.ToString("F0"));
 					continue;
 				}
-				Bounds size = (VillageFurnishing.Footprint(CauldronExtensions[i], out Bounds measured) ? measured : new Bounds(Vector3.up * 0.5f, Vector3.one));
-				for (float angle = 0f; angle < 360f; angle += ExtensionAngleStep)
+				Bounds size = (VillageFurnishing.Footprint(name, out Bounds measured) ? measured : new Bounds(Vector3.up * 0.5f, Vector3.one));
+				// The spot's check reaches as far as the piece's farthest corner from its origin, so none of it is in the flames
+				float spread = new Vector2(Mathf.Max(Mathf.Abs(size.min.x), Mathf.Abs(size.max.x)), Mathf.Max(Mathf.Abs(size.min.z), Mathf.Abs(size.max.z))).magnitude;
+				float reach = extension.m_maxStationDistance - ExtensionReachSlack;
+				int tried = 0;
+				int burning = 0;
+				int far = 0;
+				int blocked = 0;
+				bool fits = false;
+				foreach (float distance in RingDistances(ExtensionNearest, reach, ExtensionRingStep))
 				{
-					Vector3 outward = Quaternion.Euler(0f, angle + i * 47f, 0f) * Vector3.forward;
-					Vector3 spot = OnGround(cauldron + outward * ExtensionDistance);
-					Quaternion facing = Quaternion.LookRotation(-outward);
-					if (EffectArea.IsPointInsideArea(spot, EffectArea.Type.Burning, 0.5f) != null || !Clear(spot, facing, size, null))
+					for (float angle = 0f; angle < 360f && !fits; angle += ExtensionAngleStep)
 					{
-						continue;
+						tried++;
+						Vector3 outward = Quaternion.Euler(0f, angle + i * 47f, 0f) * Vector3.forward;
+						Vector3 spot = OnGround(cauldron + outward * distance);
+						Quaternion facing = Quaternion.LookRotation(-outward);
+						if (EffectArea.IsPointInsideArea(spot, EffectArea.Type.Burning, ExtensionFlameClearance + spread) != null)
+						{
+							burning++;
+							continue;
+						}
+						// The game counts an extension's reach in three dimensions, so ground that rises or falls can put it out
+						if (Vector3.Distance(spot, cauldron) > reach)
+						{
+							far++;
+							continue;
+						}
+						if (!Clear(spot, facing, size, null))
+						{
+							blocked++;
+							continue;
+						}
+						built.Add(Build(prefab, spot, facing));
+						Physics.SyncTransforms();
+						fits = true;
 					}
-					built.Add(Build(prefab, spot, facing));
-					Physics.SyncTransforms();
+					if (fits)
+					{
+						break;
+					}
+				}
+				if (fits)
+				{
 					placed++;
-					break;
+				}
+				else
+				{
+					Plugin.Log.LogWarning("Found no room for a " + name + " within " + reach.ToString("F1") + "m of the cauldron at " + cauldron.ToString("F1") + " in the village at " + village.Farm.ToString("F0") + ": " + tried + " spots tried - " + burning + " in the fire's flames, " + far + " out of its reach where the ground rises or falls, " + blocked + " with something already standing in the way");
 				}
 			}
 			return(placed);
+		}
+
+		/// <summary>
+		/// Lists the distances of the rings a piece is tried on around a point, nearest first, a step apart from the
+		/// nearest out to the farthest, which is always tried even when the step doesn't land on it
+		/// </summary>
+		/// <param name="nearest">The nearest ring's distance</param>
+		/// <param name="farthest">The farthest ring's distance</param>
+		/// <param name="step">How far apart the rings are</param>
+		/// <returns>The distances, none when the farthest is nearer than the nearest</returns>
+		internal static List<float> RingDistances(float nearest, float farthest, float step)
+		{
+			List<float> distances = new List<float>();
+			if (farthest < nearest || step <= 0f)
+			{
+				return(distances);
+			}
+			// Stepping out by a float step can land a hair past the farthest, so that's left to the last ring
+			for (float distance = nearest; distance < farthest - step / 2f; distance += step)
+			{
+				distances.Add(distance);
+			}
+			distances.Add(farthest);
+			return(distances);
 		}
 
 		/// <summary>
