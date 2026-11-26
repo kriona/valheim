@@ -131,10 +131,10 @@ namespace VikingVillages
 		private const float GroupSpread = 2f;
 
 		/// <summary>
-		/// What each village held by enemies is waiting for before its vikings come back together, by its generator's
-		/// ZDO, for the debug hover text (see TryRespawn)
+		/// Why each village's vikings due back haven't come yet - no spot for them to come from, or enough of them still to
+		/// be due to come back together - by its generator's ZDO, for the debug hover text (see TryRespawn)
 		/// </summary>
-		private static readonly Dictionary<ZDOID, string> groupWaits = new Dictionary<ZDOID, string>();
+		private static readonly Dictionary<ZDOID, string> dueWaits = new Dictionary<ZDOID, string>();
 
 		/// <summary>
 		/// How far from the spot a viking notes as its village the generator can stand, and how far from a house's
@@ -394,9 +394,9 @@ namespace VikingVillages
 			{
 				when = "next due, waiting for enemies to leave";
 			}
-			else if (groupWaits.TryGetValue(zdo.m_uid, out string group))
+			else if (dueWaits.TryGetValue(zdo.m_uid, out string wait))
 			{
-				when = "next due, coming back together once enough are due - " + group;
+				when = "next due, " + wait;
 			}
 			text.Append("Respawns: " + deaths.Count + " waiting" + ((byPlayers > 0) ? " (" + byPlayers + " killed by players)" : "") + ", " + when + "\n");
 		}
@@ -638,13 +638,13 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Forgets the zones, head count mismatches and group waits noted in the world being left
+		/// Forgets the zones, head count mismatches and waits for vikings due back noted in the world being left
 		/// </summary>
 		public static void Forget()
 		{
 			zoneLoadedSince.Clear();
 			generatedHere.Clear();
-			groupWaits.Clear();
+			dueWaits.Clear();
 			FarmSupport.Forget();
 			VillageSnow.Forget();
 			mismatches.Clear();
@@ -1003,7 +1003,7 @@ namespace VikingVillages
 			List<Death> deaths = ReadDeaths(village.Zdo);
 			if (deaths.Count == 0 || EnvMan.instance == null)
 			{
-				groupWaits.Remove(id);
+				dueWaits.Remove(id);
 				return;
 			}
 			// A village with none of its core standing gets no one back until a house of it is rebuilt, and its vikings out
@@ -1011,15 +1011,20 @@ namespace VikingVillages
 			int room = village.Zdo.GetInt(HeadCountKey) - vikings.Count - VillageQuests.AwayCount(village, vikings);
 			if (room <= 0 || VillageRecords.StandingCore(village).Count == 0)
 			{
-				groupWaits.Remove(id);
+				dueWaits.Remove(id);
 				return;
 			}
 			long now = NetTime.Now();
 			int waiting = Mathf.Min(deaths.Count, room);
 			int due = DueCount(village.Zdo.GetLong(LastRespawnKey, 0L), deaths, EnvMan.instance.m_dayLengthSec, now, waiting);
-			if (due == 0 || !ReadyToArrive(village, out Vector3 spot, out bool outside, out string _))
+			if (due == 0)
 			{
-				groupWaits.Remove(id);
+				dueWaits.Remove(id);
+				return;
+			}
+			if (!ReadyToArrive(village, out Vector3 spot, out bool outside, out string why))
+			{
+				dueWaits[id] = why;
 				return;
 			}
 			// Past ReadyToArrive, an enemy still here has held the village past EnemyPatience
@@ -1027,10 +1032,10 @@ namespace VikingVillages
 			int needed = GroupNeeded(enemies, vikings.Count, waiting);
 			if (due < needed)
 			{
-				groupWaits[id] = due + " of the " + needed + " needed due, against " + enemies + " hostiles";
+				dueWaits[id] = "coming back together once enough are due - " + due + " of the " + needed + " needed due, against " + enemies + " hostiles";
 				return;
 			}
-			groupWaits.Remove(id);
+			dueWaits.Remove(id);
 			float heldFor = EnemyWaitedFor(id);
 			int coming = ((enemies > 0) ? due : 1);
 			int came = 0;
