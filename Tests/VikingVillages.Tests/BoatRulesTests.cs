@@ -322,5 +322,34 @@ namespace VikingVillages.Tests
 			Assert.Equal(Ship.Speed.Stop, BoatRules.RescueSpeed(BoatRules.RescueStop));
 			Assert.Equal(Ship.Speed.Stop, BoatRules.RescueSpeed(2f));
 		}
+
+		[Fact]
+		public void ASailCatchesTheWindTheWayTheGameWorksItOut()
+		{
+			Assert.Equal(1f, BoatRules.WindAngle(0f), 3);
+			Assert.Equal(0.7f, BoatRules.WindAngle(-1f), 3);
+			Assert.Equal(0f, BoatRules.WindAngle(1f), 3);
+			Assert.Equal(0f, BoatRules.WindAngle(0.8f), 3);
+		}
+
+		[Fact]
+		public void AVikingsBoatFollowsTheWindButNeverStopsDead()
+		{
+			Assert.Equal(1f, BoatRules.SailWind(0f, 1f), 3);
+			Assert.Equal(0.25f, BoatRules.SailWind(0f, 0f), 3);
+			Assert.Equal(BoatRules.HeadwindFloor, BoatRules.SailWind(1f, 1f), 3);
+			Assert.True(BoatRules.SailWind(1f, 1f) < BoatRules.SailWind(-1f, 1f));
+			Assert.True(BoatRules.SailWind(-1f, 0.2f) < BoatRules.SailWind(-1f, 0.9f));
+		}
+
+		[Fact]
+		public void ModerHelpsOnlyIntoTheWind()
+		{
+			Assert.True(BoatRules.ModerHelps(1f));
+			Assert.True(BoatRules.ModerHelps(0.78f));
+			Assert.False(BoatRules.ModerHelps(0.5f));
+			Assert.False(BoatRules.ModerHelps(0f));
+			Assert.False(BoatRules.ModerHelps(-1f));
+		}
 	}
 }

@@ -371,7 +371,7 @@ namespace VikingVillages
 		/// <param name="other">The viking</param>
 		/// <param name="power">The power's index in Names</param>
 		/// <returns>True when it is</returns>
-		private static bool Under(Character other, int power)
+		internal static bool Under(Character other, int power)
 		{
 			if (other.m_nview == null || !other.m_nview.IsValid())
 			{
@@ -411,13 +411,24 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether the viking can use a power now, the way a player could - alive, awake, standing and not in the
-		/// middle of an attack
+		/// Checks whether the viking can use a power now, the way a player could - alive, awake, not in the middle of an
+		/// attack, and standing unless it's seated on a boat, where a player can use one too
 		/// </summary>
+		/// <param name="seated">True when it may be seated on a boat</param>
 		/// <returns>True when it can</returns>
-		private bool Able()
+		private bool Able(bool seated)
 		{
-			return(!viking.IsDead() && !viking.InAttack() && !viking.IsAttached() && !VikingSpeech.Asleep(viking) && !ZombieState.IsRising(viking));
+			return(!viking.IsDead() && !viking.InAttack() && (seated || !viking.IsAttached()) && !VikingSpeech.Asleep(viking) && !ZombieState.IsRising(viking));
+		}
+
+		/// <summary>
+		/// Uses Moder's power on the boat the viking sits on, turning the wind to blow from behind it, when it knows the
+		/// power and may use it (see Use)
+		/// </summary>
+		/// <returns>True when it uses it</returns>
+		public bool UseForWind()
+		{
+			return(Knows(Moder) && Use(Moder, null, true));
 		}
 
 		/// <summary>
@@ -430,12 +441,13 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="power">The power's index in Names</param>
 		/// <param name="pupil">The viking it's teaching the power to, or null</param>
+		/// <param name="seated">True when it may use it seated on a boat</param>
 		/// <returns>True when it uses it</returns>
-		public bool Use(int power, Character pupil = null)
+		public bool Use(int power, Character pupil = null, bool seated = false)
 		{
 			ZDO zdo = Zdo();
 			VikingCore own = Core();
-			if (zdo == null || own == null || !viking.m_nview.IsOwner() || !Ready() || !Knows(power) || !Able() || ObjectDB.instance == null)
+			if (zdo == null || own == null || !viking.m_nview.IsOwner() || !Ready() || !Knows(power) || !Able(seated) || ObjectDB.instance == null)
 			{
 				return(false);
 			}

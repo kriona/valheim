@@ -1086,6 +1086,7 @@ namespace VikingVillages
 					VikingPoses.SetShipPose(humanoid, seatPose, true);
 				}
 				UpdatePush(dt);
+				UpdateWindPower();
 			}
 			int leg = Mathf.Clamp(myBoat.SeaStart + myBoat.Leg - 1, 0, travelRoad.Count);
 			if (leg != roadLeg)
@@ -1103,6 +1104,35 @@ namespace VikingVillages
 				StartSwim(zdo, Crossing.Landing, myBoat.Land);
 			}
 			return(true);
+		}
+
+		/// <summary>
+		/// How often a viking sitting on its boat looks at whether to use Moder's power for the wind, in seconds
+		/// </summary>
+		private const float WindPowerInterval = 2f;
+
+		/// <summary>
+		/// When the viking next looks at whether to use Moder's power for its boat's wind, in Time.time seconds
+		/// </summary>
+		private float nextWindPower;
+
+		/// <summary>
+		/// Uses Moder's power for the boat, every WindPowerInterval seconds, while it sails into a wind the power would turn
+		/// (see VikingBoat.WindAgainst) with nobody on board under it - as it sets off, and again once the last use wears
+		/// off, by whichever of the crew who know the power is first ready (see VikingPowers.UseForWind)
+		/// </summary>
+		private void UpdateWindPower()
+		{
+			if (Time.time < nextWindPower)
+			{
+				return;
+			}
+			nextWindPower = Time.time + WindPowerInterval;
+			if (body != null && body.Powers != null && myBoat.Sails() && !myBoat.ModerWind() && myBoat.WindAgainst() && body.Powers.UseForWind())
+			{
+				Plugin.Log.LogInfo(LogName() + " used Moder's power to turn the wind for " + myBoat.Key);
+				TestLog.Count("Boats", "winds turned");
+			}
 		}
 
 		/// <summary>

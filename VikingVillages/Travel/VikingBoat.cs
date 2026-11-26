@@ -1010,6 +1010,54 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// How often the boat looks again at whether anyone on board is under Moder's power, in seconds
+		/// </summary>
+		private const float ModerCheckInterval = 1f;
+
+		/// <summary>
+		/// Whether anyone on board was under Moder's power when the boat last looked, and when it looks next, in Time.time
+		/// seconds
+		/// </summary>
+		private bool moderWind;
+		private float nextModerCheck;
+
+		/// <summary>
+		/// Checks whether anyone on board is under Moder's power, turning the wind to blow from behind the boat - one of
+		/// its crew sitting on board, on any client, or a player on it, the way the game tells for a player's ship (see
+		/// Ship.IsWindControllActive) - looking again every ModerCheckInterval seconds
+		/// </summary>
+		/// <returns>True when someone is</returns>
+		public bool ModerWind()
+		{
+			if (Time.time < nextModerCheck)
+			{
+				return(moderWind);
+			}
+			nextModerCheck = Time.time + ModerCheckInterval;
+			moderWind = (Ship != null && Ship.IsWindControllActive());
+			string key = Key;
+			foreach (Character character in Character.GetAllCharacters())
+			{
+				if (moderWind)
+				{
+					break;
+				}
+				ZDO zdo = ((character != null && character.m_nview != null && character.m_nview.IsValid()) ? character.m_nview.GetZDO() : null);
+				moderWind = (zdo != null && !character.IsDead() && zdo.GetString(BoatKey, "") == key && BoardOf(zdo) == Crossing.Aboard && VikingPowers.Under(character, VikingPowers.Moder));
+			}
+			return(moderWind);
+		}
+
+		/// <summary>
+		/// Checks whether the boat is sailing into a wind that Moder's power would turn for it (see BoatRules.ModerHelps)
+		/// </summary>
+		/// <returns>True when it is</returns>
+		public bool WindAgainst()
+		{
+			return(EnvMan.instance != null && BoatRules.ModerHelps(Vector3.Dot(EnvMan.instance.GetWindDir(), -transform.forward)));
+		}
+
+		/// <summary>
 		/// Checks whether the boat's view is there
 		/// </summary>
 		/// <returns>True when it is</returns>

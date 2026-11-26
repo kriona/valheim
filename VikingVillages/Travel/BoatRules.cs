@@ -363,6 +363,52 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// The least share of the sail's push a vikings' boat keeps sailing into the wind, as if it tacked - half what a
+		/// wind from straight behind gives, where a player's stops dead (see SailWind)
+		/// </summary>
+		internal const float HeadwindFloor = 0.35f;
+
+		/// <summary>
+		/// Works out how much of the wind a sail catches by where the wind comes from, the way the game does (see
+		/// Ship.GetWindAngleFactor) - most with it from the side, 0.7 of that from straight behind, and none heading into
+		/// it
+		/// </summary>
+		/// <param name="windDot">How much the wind blows from straight ahead of the boat - the dot of the way it blows
+		/// with the boat's back, 1 straight ahead and -1 straight behind</param>
+		/// <returns>The share, from 0 to 1</returns>
+		internal static float WindAngle(float windDot)
+		{
+			float across = Mathf.Lerp(0.7f, 1f, 1f - Mathf.Abs(windDot));
+			float ahead = 1f - Mathf.Clamp01((windDot - 0.75f) / 0.05f);
+			return(across * ahead);
+		}
+
+		/// <summary>
+		/// Works out the share of the sail's push a vikings' boat gets from the wind - the game's, by where the wind comes
+		/// from and how strong it is (see Ship.GetSailForce), but never less than HeadwindFloor of it for where it comes
+		/// from, so the boat makes its way into the wind too
+		/// </summary>
+		/// <param name="windDot">How much the wind blows from straight ahead (see WindAngle), -1 with Moder's power on
+		/// board</param>
+		/// <param name="intensity">How strong the wind is, from 0 to 1 (see EnvMan.GetWindIntensity)</param>
+		/// <returns>The share</returns>
+		internal static float SailWind(float windDot, float intensity)
+		{
+			return(Mathf.Max(WindAngle(windDot), HeadwindFloor) * Mathf.Lerp(0.25f, 1f, Mathf.Clamp01(intensity)));
+		}
+
+		/// <summary>
+		/// Checks whether Moder's power would help a boat - the wind from behind it, as the power turns it, filling its
+		/// sail more than the wind it has
+		/// </summary>
+		/// <param name="windDot">How much the wind blows from straight ahead (see WindAngle)</param>
+		/// <returns>True when it would</returns>
+		internal static bool ModerHelps(float windDot)
+		{
+			return(WindAngle(windDot) < WindAngle(-1f));
+		}
+
+		/// <summary>
 		/// Works out how much a viking drowning loses each second
 		/// </summary>
 		/// <param name="maxHealth">Its max health</param>

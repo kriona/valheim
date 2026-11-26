@@ -107,19 +107,21 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Gives a vikings' boat a fair wind of its own, from straight behind it, whatever the world's wind (see
-	/// Ship.GetSailForce)
+	/// Sails a vikings' boat by the world's wind, the way the game does a player's (see Ship.GetSailForce) - its strength
+	/// and where it comes from, with the wind from behind while anyone on board is under Moder's power - but always
+	/// pushing it straight ahead, since it steers itself along its road, and never stopping it dead heading into the
+	/// wind (see BoatRules.SailWind)
 	/// </summary>
 	[HarmonyPatch(typeof(Ship), "GetSailForce")]
 	public static class VikingBoatWindPatch
 	{
 		/// <summary>
-		/// How strong the boat's own wind is, from 0 to 1 (see EnvMan.GetWindIntensity)
+		/// How strong the wind is with no weather to go by, from 0 to 1 (see EnvMan.GetWindIntensity)
 		/// </summary>
-		private const float Wind = 0.8f;
+		private const float NoWeatherWind = 0.5f;
 
 		/// <summary>
-		/// Works out the sail's push from a wind behind the boat, the way the game does from the world's wind
+		/// Works out the sail's push from the world's wind
 		/// </summary>
 		/// <param name="__instance">The ship</param>
 		/// <param name="sailSize">How much sail is up, from 0 to 1</param>
@@ -127,13 +129,23 @@ namespace VikingVillages
 		/// <returns>False to skip the game's own for a vikings' boat</returns>
 		private static bool Prefix(Ship __instance, float sailSize, ref Vector3 __result)
 		{
-			if (VikingBoat.Of(__instance) == null)
+			VikingBoat boat = VikingBoat.Of(__instance);
+			if (boat == null)
 			{
 				return(true);
 			}
 			Vector3 forward = __instance.transform.forward;
-			// Straight behind, the game's wind angle factor is at its least, 0.7
-			float factor = 0.7f * Mathf.Lerp(0.25f, 1f, Wind);
+			float windDot = -1f;
+			float intensity = NoWeatherWind;
+			if (EnvMan.instance != null)
+			{
+				intensity = EnvMan.instance.GetWindIntensity();
+				if (!boat.ModerWind())
+				{
+					windDot = Vector3.Dot(EnvMan.instance.GetWindDir(), -forward);
+				}
+			}
+			float factor = BoatRules.SailWind(windDot, intensity);
 			Vector3 target = forward * (factor * __instance.m_sailForceFactor * sailSize);
 			__instance.m_sailForce = Vector3.SmoothDamp(__instance.m_sailForce, target, ref __instance.m_windChangeVelocity, 1f, 99f);
 			__result = __instance.m_sailForce;
