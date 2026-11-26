@@ -12,8 +12,8 @@ Everything that changes with a Viking's or a village's biome, in one place - fir
 ## Which Biome Counts
 
 - **A Viking's biome** is rolled when they first appear and kept for life - the harder of the biome they appear in and their village's biome. Everything in [Vikings by Biome](#vikings-by-biome) and [Viking Features](#viking-features) goes by it, so a Viking who moves to an easier village keeps their gear, skills and odds
-- **A village's biome** is the hardest biome within 50 meters of its farm's middle - checked at the middle and in 16 directions 25 and 50 meters out, the sea counting as the Meadows - so a Meadows farm by the Black Forest has Black Forest Vikings. Its cooking stations, cauldron, cart, tools and quests go by it
-- **The farm's own biome**, at its very middle, sets its station upgrades, starter food and pickaxes, shore boat, raised ground, grausten bridges, wisp lights, portal home and snow clearing - so a Meadows farm by the Black Forest has Black Forest Vikings but a Meadows village's workbench, food and boat
+- **A village's biome** is the hardest biome within 50 meters of its farm's middle - checked at the middle and in 16 directions 25 and 50 meters out, the sea counting as the Meadows - so a Meadows farm by the Black Forest has Black Forest Vikings. Its station upgrades, cooking stations, cauldron, cart, tools and quests go by it, so its stations always repair its Vikings' gear
+- **The farm's own biome**, at its very middle, sets its starter food and pickaxes, shore boat, raised ground, grausten bridges, wisp lights, portal home and snow clearing - so a Meadows farm by the Black Forest has Black Forest Vikings but a Meadows village's food and boat
 - A farm in or within 150 meters of any biome harder than the Meadows is built bigger
 
 ## Vikings by Biome
@@ -387,7 +387,7 @@ What a village of each biome is built and stocked with. Every village has a work
 
 ### Crafting Stations
 
-Upgraded far enough to repair the gear of the farm's biome and every biome before it, by the farm's own biome. A black forge or galdr table is only upgraded when the village's houses came with one.
+Upgraded far enough to repair the gear of the village's biome and every biome before it, by the village's biome, which its Vikings are of. A black forge or galdr table is only upgraded when the village's houses came with one.
 
 | Biome | Workbench | Forge | Black forge | Galdr table |
 | --- | --- | --- | --- | --- |

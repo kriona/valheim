@@ -549,7 +549,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Upgrades each workbench, forge, black forge and galdr table of a village's own - in its houses or out on its
 		/// ground, built by no player - to the level its biome needs to repair the gear of that biome and those before it
-		/// (see StationUpgrades), putting each upgrade it's missing within the upgrade's reach of it: against a wall of
+		/// (see StationUpgrades), by the village's biome its vikings are of (see VillageCooking.VillageBiome), so the
+		/// stations repair their gear, putting each upgrade it's missing within the upgrade's reach of it: against a wall of
 		/// the house it stands in, or on the open ground around it out of the way of its front when it stands outside -
 		/// and notes them among the village's pieces so its vikings build them back too
 		/// </summary>
@@ -561,7 +562,7 @@ namespace VikingVillages
 				return;
 			}
 			Prepare();
-			int biome = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(village.Farm));
+			int biome = VillageCooking.VillageBiome(village);
 			List<CraftingStation> stations = new List<CraftingStation>();
 			foreach (KeyValuePair<ZDO, ZNetView> instance in ZNetScene.instance.m_instances)
 			{
