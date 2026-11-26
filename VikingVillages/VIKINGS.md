@@ -25,7 +25,7 @@ There are three kinds of Viking across Viking Villages and Zombie Apocalypse. Th
 | How fast they swing | As fast as you, stringing combos | With a pause between swings | Every 2 seconds, as monsters do |
 | Light at night | A torch or Dverger circlet, and a wisp light in the Mistlands | A Dverger circlet and a wisp light | None |
 | Sees 10 meters in the Mistlands' mist | Yes | Yes | Yes |
-| Takes fall damage | Yes | No | As the game's creatures do |
+| Takes fall damage | Yes | No | No, like the game's creatures |
 | Eats, rests and gets wet and cold | Yes | No | No |
 | Forsaken powers | Their biome's and every earlier one's, learning and teaching others, used in fights and for work | Up to Yagluth's, learning the ones they're given, used in fights and when badly hurt | 10% chance of their biome's the first time they spot an enemy - a tombstone zombie 50% of your last one - with a 30 second cooldown between zombies |
 | Coins dropped on death | None | 100-140, multiplied by stars | By biome, multiplied by stars |
