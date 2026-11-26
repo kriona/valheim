@@ -5,7 +5,8 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// What a viking named Elsa, Anna, Kristoff, Olaf or Hans says now and then to a player it knows - a nod to the
-	/// film Frozen and the one of its folk who shares the viking's name
+	/// film Frozen and the one of its folk who shares the viking's name - and how a viking named Elsa scolds a stone
+	/// golem she fights as if it were Marshmallow, the snow giant she made in the film
 	/// </summary>
 	internal static class VikingFrozenSpeech
 	{
@@ -13,6 +14,34 @@ namespace VikingVillages
 		/// How likely a viking with one of the names talks about it when a player it knows talks to it
 		/// </summary>
 		private const float ChatChance = 0.25f;
+
+		/// <summary>
+		/// The name of the viking who scolds a stone golem, and the golem's prefab
+		/// </summary>
+		private const string ScolderName = "Elsa";
+		private const string GolemPrefab = "StoneGolem";
+
+		/// <summary>
+		/// The fewest and most seconds a viking fighting a stone golem waits before scolding it again, picked at random
+		/// between the two
+		/// </summary>
+		internal const float ScoldMin = 10f;
+		internal const float ScoldMax = 20f;
+
+		/// <summary>
+		/// What a viking named Elsa scolds a stone golem with as she fights it
+		/// </summary>
+		internal static readonly string[] MarshmallowLines =
+		{
+			"Marshmallow! No!",
+			"Bad Marshmallow!",
+			"Marshmallow, put that down this instant!",
+			"Marshmallow! What did I tell you about chasing people?",
+			"Sit, Marshmallow! Sit!",
+			"Back to the mountain, Marshmallow! Now!",
+			"Marshmallow! We do not stomp on Vikings!",
+			"When did you turn to stone, Marshmallow? I'm very disappointed in you."
+		};
 
 		/// <summary>
 		/// What a viking says by its name, with {0} for the player's name
@@ -109,6 +138,34 @@ namespace VikingVillages
 				return(null);
 			}
 			return(string.Format(lines[pick(lines.Length)], player));
+		}
+
+		/// <summary>
+		/// Checks whether a viking scolds an enemy it fights as Marshmallow - a viking named Elsa, by her first name,
+		/// fighting a stone golem
+		/// </summary>
+		/// <param name="viking">The viking's name, with any byname after it, or null</param>
+		/// <param name="enemyPrefab">The enemy's prefab's name</param>
+		/// <returns>True when it does</returns>
+		internal static bool Scolds(string viking, string enemyPrefab)
+		{
+			return(enemyPrefab == GolemPrefab && string.Equals(VikingLoreSpeech.FirstName(viking), ScolderName, System.StringComparison.OrdinalIgnoreCase));
+		}
+
+		/// <summary>
+		/// Picks the next line a viking scolds a stone golem with, never the one it said last
+		/// </summary>
+		/// <param name="last">The index of the line it said last, or -1</param>
+		/// <param name="pick">Picks an index below the count it's given</param>
+		/// <returns>The index of the line in MarshmallowLines</returns>
+		internal static int PickScold(int last, System.Func<int, int> pick)
+		{
+			if (last < 0 || last >= MarshmallowLines.Length)
+			{
+				return(pick(MarshmallowLines.Length));
+			}
+			int index = pick(MarshmallowLines.Length - 1);
+			return((index >= last) ? index + 1 : index);
 		}
 	}
 }

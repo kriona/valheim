@@ -416,6 +416,7 @@ namespace VikingVillages
 				{
 					fleeingFrom = null;
 					mover = "fighting away from any village";
+					Scold(target);
 					return(false);
 				}
 				if (Utils.DistanceXZ(target.transform.position, transform.position) < FleeSafe)

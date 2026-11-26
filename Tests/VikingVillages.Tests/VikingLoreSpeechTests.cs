@@ -121,6 +121,47 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that only a viking named Elsa, by her first name whatever its case and byname, scolds an enemy as
+		/// Marshmallow, and only a stone golem
+		/// </summary>
+		/// <param name="viking">The viking's name</param>
+		/// <param name="enemy">The enemy's prefab</param>
+		/// <param name="expected">True when she scolds it</param>
+		[Theory]
+		[InlineData("Elsa", "StoneGolem", true)]
+		[InlineData("elsa the Cold", "StoneGolem", true)]
+		[InlineData("Elsa", "Troll", false)]
+		[InlineData("Anna", "StoneGolem", false)]
+		[InlineData("Elsabet", "StoneGolem", false)]
+		[InlineData(null, "StoneGolem", false)]
+		public void ElsaScoldsStoneGolems(string viking, string enemy, bool expected)
+		{
+			Assert.Equal(expected, VikingFrozenSpeech.Scolds(viking, enemy));
+		}
+
+		/// <summary>
+		/// Checks that a scolding never repeats the line said last, and that every other line can be picked
+		/// </summary>
+		[Fact]
+		public void ScoldingNeverRepeats()
+		{
+			int count = VikingFrozenSpeech.MarshmallowLines.Length;
+			for (int last = 0; last < count; last++)
+			{
+				HashSet<int> picked = new HashSet<int>();
+				for (int pick = 0; pick < count - 1; pick++)
+				{
+					int index = VikingFrozenSpeech.PickScold(last, (int below) => pick);
+					Assert.NotEqual(last, index);
+					Assert.InRange(index, 0, count - 1);
+					picked.Add(index);
+				}
+				Assert.Equal(count - 1, picked.Count);
+			}
+			Assert.Equal(count - 1, VikingFrozenSpeech.PickScold(-1, (int below) => below - 1));
+		}
+
+		/// <summary>
 		/// Checks that a line names someone only as a word of its own, whatever its case, with an "ø" in the name read
 		/// as an "o"
 		/// </summary>

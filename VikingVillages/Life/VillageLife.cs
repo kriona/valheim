@@ -1476,6 +1476,13 @@ namespace VikingVillages
 		private static float lastCallOut = -SpotGap;
 
 		/// <summary>
+		/// When a viking fighting a stone golem it scolds next scolds it, in Time.time seconds, and the line it said last,
+		/// or -1 (see Scold)
+		/// </summary>
+		private float nextScold;
+		private int lastScold = -1;
+
+		/// <summary>
 		/// The player the viking is greeting and until when it stands facing them, when it next looks for a player to
 		/// greet, and when any viking on this client last had each player near, by the player's ZDO
 		/// </summary>
@@ -2051,6 +2058,7 @@ namespace VikingVillages
 					RaiseAlarm(target);
 				}
 				CallOut(target);
+				Scold(target);
 				body.Powers.UpdateFight();
 				if (Time.time < alarmUntil)
 				{
@@ -2115,7 +2123,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Has the viking call out an enemy it has just gone after - by name, every SpotInterval seconds at most, unless
 		/// another viking called it out in the last SpotRepeat seconds or any viking called one out in the last SpotGap.
-		/// A hunter doesn't call out its prey
+		/// A hunter doesn't call out its prey, and one that scolds the enemy scolds it in place of calling it out (see
+		/// Scold)
 		/// </summary>
 		/// <param name="enemy">The enemy</param>
 		private void CallOut(Character enemy)
@@ -2141,7 +2150,44 @@ namespace VikingVillages
 			calledOut[id] = Time.time;
 			lastCallOut = Time.time;
 			nextCallOut = Time.time + SpotInterval;
-			VikingSpeech.SayFirst(humanoid, VikingSpeech.Spotted(enemy), VikingSpeech.CallTime, VikingSpeech.CallCull);
+			string line = (ScoldsAt(enemy) ? ScoldLine() : VikingSpeech.Spotted(enemy));
+			VikingSpeech.SayFirst(humanoid, line, VikingSpeech.CallTime, VikingSpeech.CallCull);
+		}
+
+		/// <summary>
+		/// Has a viking named Elsa fighting a stone golem scold it as Marshmallow, the snow giant she made in the film
+		/// Frozen - every ScoldMin to ScoldMax seconds while she fights it, a different line each time (see
+		/// VikingFrozenSpeech)
+		/// </summary>
+		/// <param name="enemy">The enemy it fights</param>
+		private void Scold(Character enemy)
+		{
+			if (Time.time < nextScold || !ScoldsAt(enemy))
+			{
+				return;
+			}
+			VikingSpeech.Say(humanoid, ScoldLine(), VikingSpeech.CallTime, VikingSpeech.CallCull);
+		}
+
+		/// <summary>
+		/// Checks whether the viking scolds an enemy as Marshmallow
+		/// </summary>
+		/// <param name="enemy">The enemy</param>
+		/// <returns>True when it does</returns>
+		private bool ScoldsAt(Character enemy)
+		{
+			return(enemy != null && VikingFrozenSpeech.Scolds(VikingNames.Get(humanoid), Utils.GetPrefabName(enemy.gameObject)));
+		}
+
+		/// <summary>
+		/// Picks the next line the viking scolds a stone golem with, and when it scolds it again
+		/// </summary>
+		/// <returns>The line</returns>
+		private string ScoldLine()
+		{
+			nextScold = Time.time + Random.Range(VikingFrozenSpeech.ScoldMin, VikingFrozenSpeech.ScoldMax);
+			lastScold = VikingFrozenSpeech.PickScold(lastScold, (int count) => Random.Range(0, count));
+			return(VikingFrozenSpeech.MarshmallowLines[lastScold]);
 		}
 
 		/// <summary>
