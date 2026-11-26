@@ -32,7 +32,7 @@ This page gives a short tour of each feature. Every detail of how it works is in
 
 - They fight the zombies and monsters that threaten them rather than everything they see, and rush to help anyone attacked nearby (see [Picking Fights](LOGIC.md#picking-fights))
 - They don't fight a losing fight: a Viking outnumbered away from home runs back for help, and one badly hurt hangs back and strikes from behind (see [Away From Home](LOGIC.md#away-from-home) and [Hanging Back](LOGIC.md#hanging-back))
-- They pick the weapon that hurts each enemy most, switching between bow and melee as a fight goes (see [Weapons](LOGIC.md#weapons))
+- They pick the weapon that hurts each enemy most, switching between bow and melee as a fight goes, and use power attacks when they're a smart move - a Viking with an atgeir keeps enemies staggered for the others (see [Weapons](LOGIC.md#weapons))
 - They gang up on monsters too tough for one of them, luring and shooting them until enough have gathered to charge, and leave roots to the archers (see [Tough Monsters and Roots](LOGIC.md#tough-monsters-and-roots))
 - They keep out of flames and off deadly drops, open doors, jump fences, keep off roofs and get themselves unstuck (see [Hazards](LOGIC.md#hazards) and [Getting Around](LOGIC.md#getting-around))
 - They carry torches at night, get wet and cold like you, eat and rest to heal, gather at the fire at dusk, sleep in their beds and keep a night watch (see [Torches and Circlets](LOGIC.md#torches-and-circlets), [Weather](LOGIC.md#weather), [Eating](LOGIC.md#eating) and [Dusk and Night](LOGIC.md#dusk-and-night))

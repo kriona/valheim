@@ -148,6 +148,24 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Makes the viking's blow at an enemy its weapon's power attack when that's a smart move (see
+		/// VillageLife.UsesPowerAttack), and otherwise the blow it was asked for
+		/// </summary>
+		/// <param name="target">What it attacks, or null</param>
+		/// <param name="secondaryAttack">Whether it's the weapon's secondary attack</param>
+		/// <returns>Whether the attack started</returns>
+		public override bool StartAttack(Character target, bool secondaryAttack)
+		{
+			VillageLife own = Life();
+			if (!secondaryAttack && own != null && own.UsesPowerAttack(target) && base.StartAttack(target, true))
+			{
+				own.PowerAttacked(target);
+				return(true);
+			}
+			return(base.StartAttack(target, secondaryAttack));
+		}
+
+		/// <summary>
 		/// Speeds the viking's run by its Run skill the way a player's is (see VikingCore.RunSkillBonus), and by what its
 		/// gear does to its speed half again as much, as a player's run is (see GetEquipmentMovementModifier)
 		/// </summary>
