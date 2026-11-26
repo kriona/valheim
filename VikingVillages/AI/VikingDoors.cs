@@ -511,7 +511,7 @@ namespace VikingVillages
 			blocker = null;
 			blockerKey = 0;
 			standing = null;
-			if (crossings.TryGetValue(door, out KeyValuePair<Character, float> crossing) && crossing.Key != viking && crossing.Key != null && !crossing.Key.IsDead() && Time.time < crossing.Value)
+			if (CrossedByOther(door, viking, out KeyValuePair<Character, float> crossing))
 			{
 				blocker = DebugName(crossing.Key) + " crossing (" + (crossing.Value - Time.time).ToString("F0") + "s left)";
 				blockerKey = crossing.Key.GetInstanceID() * 2;
@@ -533,6 +533,18 @@ namespace VikingVillages
 				}
 			}
 			return(false);
+		}
+
+		/// <summary>
+		/// Checks whether another viking, alive, holds a door's crossing that hasn't run out
+		/// </summary>
+		/// <param name="door">The door</param>
+		/// <param name="viking">The viking left out</param>
+		/// <param name="crossing">Given the viking crossing and until when it's held</param>
+		/// <returns>True when one does</returns>
+		private static bool CrossedByOther(Door door, Character viking, out KeyValuePair<Character, float> crossing)
+		{
+			return(crossings.TryGetValue(door, out crossing) && crossing.Key != viking && crossing.Key != null && !crossing.Key.IsDead() && Time.time < crossing.Value);
 		}
 
 		/// <summary>
@@ -876,8 +888,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Opens or closes the usable door nearest a viking that's stood stuck on its way somewhere, within UnstickReach
 		/// of it, at most every UnstickWait seconds - closing an open one, whose door may be what stands in its way as it
-		/// walks past, unless someone else stands in the doorway, its own way goes through it or it's walking into it, or
-		/// opening a closed one, which may be what it's walking into
+		/// walks past, unless someone else stands in the doorway or is crossing it, its own way goes through it or it's
+		/// walking into it, or opening a closed one, which may be what it's walking into
 		/// </summary>
 		/// <param name="viking">The viking, on its owner</param>
 		/// <returns>True when it opened or closed one</returns>
@@ -925,7 +937,7 @@ namespace VikingVillages
 				return(false);
 			}
 			bool open = (nearest.m_nview.GetZDO().GetInt(ZDOVars.s_state) != 0);
-			if (open && IsOccupied(GetInfo(nearest), viking))
+			if (open && (IsOccupied(GetInfo(nearest), viking) || CrossedByOther(nearest, viking, out KeyValuePair<Character, float> _)))
 			{
 				return(false);
 			}
