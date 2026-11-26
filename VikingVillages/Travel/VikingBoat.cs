@@ -1033,7 +1033,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Finds a player near the boat who isn't on it - one swimming out to it first, since the boat waits longer for
-		/// them (see UpdateWaiting)
+		/// them (see UpdateWaiting). One on board another ship has gone their own way, so isn't waited for
 		/// </summary>
 		/// <returns>The player, or null when there's none</returns>
 		private Player PlayerAshore()
@@ -1041,7 +1041,7 @@ namespace VikingVillages
 			Player found = null;
 			foreach (Player player in Player.GetAllPlayers())
 			{
-				if (player == null || player.IsDead() || Vector3.Distance(player.transform.position, transform.position) > PlayerReach || Ship.IsPlayerInBoat(player))
+				if (player == null || player.IsDead() || Vector3.Distance(player.transform.position, transform.position) > PlayerReach || Ship.IsPlayerInBoat(player) || OnOtherShip(player))
 				{
 					continue;
 				}
@@ -1052,6 +1052,17 @@ namespace VikingVillages
 				found = (found ?? player);
 			}
 			return(found);
+		}
+
+		/// <summary>
+		/// Checks whether a player is on board a ship other than this boat - by each ship's own count of the players on
+		/// it, which goes for every player loaded on this client, not only the local one
+		/// </summary>
+		/// <param name="player">The player</param>
+		/// <returns>True when they are</returns>
+		private bool OnOtherShip(Player player)
+		{
+			return(Ships().Exists((Ship other) => other != Ship && other.IsPlayerInBoat(player)));
 		}
 
 		/// <summary>
