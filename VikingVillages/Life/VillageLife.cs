@@ -1369,6 +1369,12 @@ namespace VikingVillages
 		private float walkingStill;
 
 		/// <summary>
+		/// How many of the viking's moves were stopped short of a ledge or dangerous ground (see VikingDangerStepPatch)
+		/// since it last moved from where it stands, for the log when it's freed
+		/// </summary>
+		private int stepsStopped;
+
+		/// <summary>
 		/// How many seconds a viking tries to walk somewhere without getting anywhere before it's freed (see
 		/// FreeIfTrapped), and how far around it a spot to put it is looked for, in steps of FreeStep, in meters, with
 		/// FreeSides spots at each step
@@ -1411,7 +1417,9 @@ namespace VikingVillages
 		/// Frees a viking in its village that has tried to walk somewhere for FreeAfter seconds without getting
 		/// anywhere - shut in beside its bed by the furniture, at the far side of a pen too big to tell from open ground,
 		/// or anywhere else it has no way out of - putting it at the nearest spot with a way to the village's open ground
-		/// (see FreeSpot), rather than leaving it there to go hungry
+		/// (see FreeSpot), rather than leaving it there to go hungry. When the spot it stands on has a way there already,
+		/// what holds it is something the navmesh doesn't show, which the spots around it share, so it's put at the
+		/// open ground itself
 		/// </summary>
 		private void FreeIfTrapped()
 		{
@@ -1425,7 +1433,13 @@ namespace VikingVillages
 				return;
 			}
 			Vector3 from = transform.position;
-			if (!FreeSpot(from, village.RallyPoint(), FreeReach, out Vector3 spot))
+			Vector3 open = village.RallyPoint();
+			bool wayOut = WayToOpenGround(from, open, out string own);
+			// What it was doing is written down before it's moved, which starts its path and its moves over
+			string report = ((TestLog.On || Player.m_debugMode) ? FreeReport(own) : null);
+			Vector3 spot;
+			bool found = (wayOut ? NavmeshPoints.FindValidPoint(out spot, open, FreeStep, Pathfinding.AgentType.Humanoid) : FreeSpot(from, open, FreeReach, out spot));
+			if (!found)
 			{
 				return;
 			}
@@ -1436,10 +1450,66 @@ namespace VikingVillages
 			ai.StopMoving();
 			ResetStuck();
 			TestLog.Count("Troubles", "freed after walking without getting anywhere");
-			if (TestLog.On || Player.m_debugMode)
+			TestLog.Count("Freed, by where to", (wayOut ? "the open ground, its own spot having a way there" : "the nearest spot with a way to the open ground"));
+			if (report != null)
 			{
-				Plugin.Log.LogInfo("Freed: " + TestLog.Name(humanoid, "F1") + " tried to walk for " + FreeAfter.ToString("F0") + "s without getting anywhere, moved by " + mover + ", at its job: " + ((job != null) ? job.Describe() : "none") + ", so it's put at " + freed.ToString("F1") + ", " + Utils.DistanceXZ(from, freed).ToString("F1") + "m away");
+				Plugin.Log.LogInfo("Freed: " + TestLog.Label(humanoid) + " at " + from.ToString("F1") + " tried to walk for " + FreeAfter.ToString("F0") + "s without getting anywhere, moved by " + mover + ", at its job: " + ((job != null) ? job.Describe() : "none") + ", so it's put at " + freed.ToString("F1") + ", " + Utils.DistanceXZ(from, freed).ToString("F1") + "m away" + (wayOut ? ", on the village's open ground" : "") + "\n" + report);
 			}
+		}
+
+		/// <summary>
+		/// Checks whether the spot a viking stands on has a whole way to the village's open ground - on the navmesh
+		/// within FreeStep of it, out of any pen and off the roofs, the way FreeSpot checks the spots around it
+		/// </summary>
+		/// <param name="from">Where the viking stands</param>
+		/// <param name="open">The spot on the village's open ground (see Village.RallyPoint)</param>
+		/// <param name="state">What was found, for the log</param>
+		/// <returns>True when it has</returns>
+		private static bool WayToOpenGround(Vector3 from, Vector3 open, out string state)
+		{
+			if (!NavmeshPoints.FindValidPoint(out Vector3 own, from, FreeStep, Pathfinding.AgentType.Humanoid))
+			{
+				state = "no navmesh within " + FreeStep.ToString("F1") + "m";
+				return(false);
+			}
+			string at = "its navmesh at " + own.ToString("F1") + ", " + Utils.DistanceXZ(from, own).ToString("F1") + "m away";
+			if (Village.FencedIn(own))
+			{
+				state = at + ", in a pen";
+				return(false);
+			}
+			if (NavmeshRoofs.OnRoof(own))
+			{
+				state = at + ", on a roof";
+				return(false);
+			}
+			if (!Pathfinding.instance.HavePath(own, open, Pathfinding.AgentType.Humanoid))
+			{
+				state = at + ", with no whole way to the open ground at " + open.ToString("F1");
+				return(false);
+			}
+			state = at + ", with a whole way to the open ground at " + open.ToString("F1");
+			return(true);
+		}
+
+		/// <summary>
+		/// Describes what a viking about to be freed was doing, for the log - the spot it stands on, the path its AI
+		/// follows, whether it was trying to move and how fast it went, how many of its moves stopped short of a ledge
+		/// or dangerous ground, and its last moves
+		/// </summary>
+		/// <param name="own">What WayToOpenGround found for the spot it stands on</param>
+		/// <returns>The report's lines</returns>
+		private string FreeReport(string own)
+		{
+			System.Text.StringBuilder text = new System.Text.StringBuilder();
+			text.Append("  Own spot: " + own + "\n");
+			text.Append("  Path: " + PathText() + ", the last search " + ((ai != null && ai.m_lastFindPathResult) ? "found a way" : "found none") + "\n");
+			Vector3 move = humanoid.GetMoveDir();
+			Vector3 velocity = humanoid.m_body.linearVelocity;
+			text.Append("  Moving: " + ((new Vector3(move.x, 0f, move.z).sqrMagnitude > 0.01f) ? "trying to" : "not trying to") + ", at " + new Vector3(velocity.x, 0f, velocity.z).magnitude.ToString("F2") + "m/s\n");
+			text.Append("  Steps stopped at a ledge or dangerous ground: " + stepsStopped + " since it last got anywhere\n");
+			text.Append("  Trace (M moving, . still, then facing): " + MoveTrace());
+			return(text.ToString());
 		}
 
 		/// <summary>
@@ -1776,6 +1846,12 @@ namespace VikingVillages
 		private static readonly VillageGiveUps giveUps = new VillageGiveUps();
 		private static float nextGiveUpPrune;
 		private const float GiveUpPruneInterval = 60f;
+
+		/// <summary>
+		/// What the viking alone has given up on reaching, after failing at it Tries times itself within Window (see
+		/// VillageGiveUps), whether or not any other viking tried - so one left on its own stops going back to it
+		/// </summary>
+		private readonly VillageGiveUps ownGiveUps = new VillageGiveUps(1);
 
 		/// <summary>
 		/// What the viking is doing, or null when it has nothing to do
@@ -3620,6 +3696,7 @@ namespace VikingVillages
 				stillAt = transform.position;
 				stillSince = Time.time;
 				walkingStill = 0f;
+				stepsStopped = 0;
 			}
 			else if (walkedThisUpdate)
 			{
@@ -3759,14 +3836,7 @@ namespace VikingVillages
 			text.Append("  Job: " + ((job != null) ? job.Describe() : "none") + "\n");
 			Character target = ((ai != null) ? ai.m_targetCreature : null);
 			text.Append("  Target: " + ((target != null) ? TestLog.Label(target) + " at " + Vector3.Distance(target.transform.position, transform.position).ToString("F1") + "m" : "none") + ", alerted " + (ai != null && ai.IsAlerted()) + "\n");
-			if (ai != null && ai.m_path != null && ai.m_path.Count > 0)
-			{
-				text.Append("  Path: " + ai.m_path.Count + " points left, next " + Utils.DistanceXZ(ai.m_path[0], transform.position).ToString("F1") + "m away at " + ai.m_path[0].ToString("F1") + "\n");
-			}
-			else
-			{
-				text.Append("  Path: none\n");
-			}
+			text.Append("  Path: " + PathText() + "\n");
 			text.Append("  Stuck: " + ((stuckSince > 0f) ? (Time.time - stuckSince).ToString("F1") + "s without progress" : "no") + ", hops " + hops + ", door " + (VikingDoors.IsWaiting(humanoid) ? "waiting" : (VikingDoors.IsCrossing(humanoid) ? "crossing" : "none")) + "\n");
 			text.Append("  Steering around: " + ((steeredAround != null && Time.time - steeredAt < SteeredShowTime) ? TestLog.Label(steeredAround) + " at " + Vector3.Distance(steeredAround.transform.position, transform.position).ToString("F1") + "m" : "no one") + "\n");
 			Dictionary<string, int> movers = new Dictionary<string, int>();
@@ -3780,13 +3850,45 @@ namespace VikingVillages
 				moverText.Add(entry.Key + " x" + entry.Value);
 			}
 			text.Append("  Moved by: " + string.Join(", ", moverText) + "\n");
+			text.Append("  Trace (M moving, . still, then facing): " + MoveTrace());
+			return(text.ToString());
+		}
+
+		/// <summary>
+		/// Describes the path the viking's AI is following, for the log
+		/// </summary>
+		/// <returns>How many points it has left and where the next is, or "none"</returns>
+		private string PathText()
+		{
+			if (ai != null && ai.m_path != null && ai.m_path.Count > 0)
+			{
+				return(ai.m_path.Count + " points left, next " + Utils.DistanceXZ(ai.m_path[0], transform.position).ToString("F1") + "m away at " + ai.m_path[0].ToString("F1"));
+			}
+			return("none");
+		}
+
+		/// <summary>
+		/// Lists the viking's moves over the last TwitchWindow seconds, for the log - M when it was moving or . when it
+		/// was still, then the way it faced
+		/// </summary>
+		/// <returns>The moves, oldest first</returns>
+		private string MoveTrace()
+		{
 			System.Text.StringBuilder trace = new System.Text.StringBuilder();
 			foreach (MoveSample sample in moveSamples)
 			{
 				trace.Append((sample.Moving ? "M" : ".") + Mathf.RoundToInt(sample.Yaw) + " ");
 			}
-			text.Append("  Trace (M moving, . still, then facing): " + trace.ToString().TrimEnd());
-			return(text.ToString());
+			return(trace.ToString().TrimEnd());
+		}
+
+		/// <summary>
+		/// Notes that the viking's move was stopped short of a ledge or dangerous ground (see VikingDangerStepPatch), for
+		/// the log when it's freed
+		/// </summary>
+		public void NoteStepStopped()
+		{
+			stepsStopped++;
 		}
 
 		/// <summary>
@@ -7181,8 +7283,9 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Leaves a chest, loot or piece the viking couldn't get to alone for a while, and notes the failed try at
-		/// anything but a chest for the village, whose vikings all leave it alone for longer once enough of them have
-		/// failed (see VillageGiveUps) - unless the viking stands off its navmesh (see OffItsNavmesh)
+		/// anything but a chest for the viking itself and for the village, whose vikings all leave it alone for longer
+		/// once enough of them have failed (see VillageGiveUps) - unless the viking stands off its navmesh (see
+		/// OffItsNavmesh)
 		/// </summary>
 		/// <param name="view">The chest, loot or piece</param>
 		/// <param name="seconds">How long it's left alone</param>
@@ -7260,6 +7363,16 @@ namespace VikingVillages
 			{
 				TestLog.Count("Tries not counted for the village, the viking off the navmesh", name);
 				return;
+			}
+			ownGiveUps.Prune(Time.time);
+			float own = ownGiveUps.Fail(thing, nview.GetZDO().m_uid, Time.time);
+			if (own > 0f)
+			{
+				TestLog.Count("Given up on by a viking alone", name);
+				if (TestLog.On || Player.m_debugMode)
+				{
+					Plugin.Log.LogInfo("Given up: " + LogName() + " (" + LogJobName() + ") leaves " + name + " at " + view.transform.position.ToString("F1") + " alone for " + (own / 60f).ToString("F0") + " minutes, after " + VillageGiveUps.Tries + " tries of its own failed to reach it");
+				}
 			}
 			float shared = giveUps.Fail(thing, nview.GetZDO().m_uid, Time.time);
 			if (shared <= 0f)
@@ -7399,14 +7512,14 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether the viking is leaving a chest or loot alone after it couldn't get to it, or every viking is
-		/// after they all gave up on it (see VillageGiveUps)
+		/// Checks whether the viking is leaving a chest or loot alone after it couldn't get to it or gave up on it after
+		/// failing again and again, or every viking is after they all gave up on it (see VillageGiveUps)
 		/// </summary>
 		/// <param name="id">The chest's or loot's ZDO</param>
 		/// <returns>True while it is</returns>
 		private bool Avoided(ZDOID id)
 		{
-			return((avoided.TryGetValue(id, out float until) && Time.time < until) || giveUps.GivenUp(id, Time.time));
+			return((avoided.TryGetValue(id, out float until) && Time.time < until) || ownGiveUps.GivenUp(id, Time.time) || giveUps.GivenUp(id, Time.time));
 		}
 
 		/// <summary>

@@ -453,7 +453,8 @@ namespace VikingVillages
 	{
 		/// <summary>
 		/// Turns the viking's move aside from a ledge, or stops it in place, still turning it the way it meant to go,
-		/// when its step ahead is dangerous
+		/// when its step ahead is dangerous - noting the stop for its village life, to be logged if it's freed (see
+		/// VillageLife.FreeIfTrapped)
 		/// </summary>
 		/// <param name="__instance">The AI moving</param>
 		/// <param name="dir">The way it's moving, turned here</param>
@@ -472,6 +473,10 @@ namespace VikingVillages
 				{
 					return(true);
 				}
+			}
+			if (__instance.TryGetComponent(out VillageLife life))
+			{
+				life.NoteStepStopped();
 			}
 			__instance.LookTowards(dir.normalized);
 			__instance.StopMoving();

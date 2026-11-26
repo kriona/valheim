@@ -47,6 +47,25 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a viking's own count gives up after three of its own tries, and longer when it gives up again
+		/// </summary>
+		[Fact]
+		public void OneVikingGivesUpForItselfAfterThreeTries()
+		{
+			VillageGiveUps own = new VillageGiveUps(1);
+			Assert.Equal(0f, own.Fail(Thing, Astrid, 0f));
+			Assert.Equal(0f, own.Fail(Thing, Astrid, 60f));
+			Assert.False(own.GivenUp(Thing, 90f));
+			Assert.Equal(VillageGiveUps.AvoidTime, own.Fail(Thing, Astrid, 120f));
+			Assert.True(own.GivenUp(Thing, 121f));
+			Assert.False(own.GivenUp(Other, 121f));
+			float later = 120f + VillageGiveUps.AvoidTime;
+			own.Fail(Thing, Astrid, later);
+			own.Fail(Thing, Astrid, later + 60f);
+			Assert.Equal(VillageGiveUps.AvoidTime * 2f, own.Fail(Thing, Astrid, later + 120f));
+		}
+
+		/// <summary>
 		/// Checks that tries spread out past Window start the count over
 		/// </summary>
 		[Fact]

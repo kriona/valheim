@@ -9,7 +9,8 @@ namespace VikingVillages
 	/// again as soon as it's forgotten its own try
 	/// </summary>
 	/// <remarks>
-	/// The times are passed in, so the counting can be tested outside the game
+	/// The times are passed in, so the counting can be tested outside the game. One made for a single viking, needing
+	/// tries by only that one, is what that viking alone has given up on
 	/// </remarks>
 	internal class VillageGiveUps
 	{
@@ -44,8 +45,23 @@ namespace VikingVillages
 		private readonly Dictionary<ZDOID, Record> records = new Dictionary<ZDOID, Record>();
 
 		/// <summary>
+		/// How many different vikings at least have to have failed for them to give up on something
+		/// </summary>
+		private readonly int needed;
+
+		/// <summary>
+		/// Makes a count of failed tries that gives up on something once enough different vikings have failed
+		/// </summary>
+		/// <param name="vikings">How many different vikings at least, Vikings for a village and 1 for a viking of its
+		/// own</param>
+		public VillageGiveUps(int vikings = Vikings)
+		{
+			needed = vikings;
+		}
+
+		/// <summary>
 		/// Notes a viking's failed try at something, giving up on it for every viking when it's the last of Tries by at
-		/// least Vikings of them within Window
+		/// least as many of them as it needs within Window
 		/// </summary>
 		/// <param name="thing">What it couldn't reach</param>
 		/// <param name="viking">The viking</param>
@@ -66,7 +82,7 @@ namespace VikingVillages
 			}
 			record.Tries++;
 			record.Vikings.Add(viking);
-			if (record.Tries < Tries || record.Vikings.Count < Vikings)
+			if (record.Tries < Tries || record.Vikings.Count < needed)
 			{
 				return(0f);
 			}
