@@ -443,6 +443,7 @@ The Plains - 2 fulings, a fuling archer and a third of a berserker each. Fulings
 - They put what they brought home in the chests before anything else, even at night, and call their own houses home again
 - A village that can't be left - walled in, or ringed by water - sends them from the spot nearest its edge they can reach, and they come back there
 - A quest not back 2 game days past when it was due is given up on
+- While a quest waits to set out in the morning, every Viking of the village talks about it - those going about setting out at first light, naming the others going with them, and those staying about who's going - to each other and to you
 - They talk about the quest for a game day after they're back, and about the trip itself for 12 game hours - hunting, foraging and cutting trees are too ordinary to talk about, though the trip can be. Other villages within 3 km hear of a quest worth talking about coming home
 - Disband the village while they're out and they go on to the village the rest of its Vikings went to once they're done. Start a village at its bonfire again and they still go on there first, then turn around for home
 

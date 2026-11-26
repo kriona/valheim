@@ -224,6 +224,24 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Gets the names of the vikings on the quest but some of them, for another viking to talk about
+		/// </summary>
+		/// <param name="left">The GUIDs of the vikings left out (see VikingIdentity)</param>
+		/// <returns>The names, without those left out and without any empty ones</returns>
+		public List<string> NamesBut(params string[] left)
+		{
+			List<string> names = new List<string>();
+			for (int i = 0; i < Members.Count && i < Names.Count; i++)
+			{
+				if (Names[i].Length > 0 && System.Array.IndexOf(left, Members[i]) < 0)
+				{
+					names.Add(Names[i]);
+				}
+			}
+			return(names);
+		}
+
+		/// <summary>
 		/// Writes a list of items and how many of each to a package
 		/// </summary>
 		/// <param name="pkg">The package</param>

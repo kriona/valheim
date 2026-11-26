@@ -63,6 +63,70 @@ namespace VikingVillages.Tests
 				Assert.True(QuestSpeech.AwayAnswers.ContainsKey(kind), kind + " has no answers while it's out");
 				Assert.True(QuestSpeech.BackTalks.ContainsKey(kind), kind + " has no talks once it's back");
 				Assert.True(QuestSpeech.BackAnswers.ContainsKey(kind), kind + " has no answers once it's back");
+				Assert.True(QuestSpeech.Errands.ContainsKey(kind), kind + " has no errand to talk about before it sets out");
+			}
+		}
+
+		[Fact]
+		public void TalksBeforeSettingOutFitWhoIsGoing()
+		{
+			List<string> none = new List<string>();
+			List<string> two = new List<string> { "Ragna", "Ulf" };
+			for (int roll = 0; roll < 8; roll++)
+			{
+				string[] goingAlone = QuestSpeech.SoonTalk(QuestKind.MineCopper, none, true, false, roll);
+				Assert.NotNull(goingAlone);
+				Assert.DoesNotContain(goingAlone, (string line) => line.Contains(QuestSpeech.WithToken) || line.Contains(QuestSpeech.ErrandToken));
+				string[] fellow = QuestSpeech.SoonTalk(QuestKind.MineCopper, two, true, true, roll);
+				Assert.DoesNotContain(fellow, (string line) => line.Contains("Ragna"));
+				string[] seeOff = QuestSpeech.SoonTalk(QuestKind.MineCopper, two, false, true, roll);
+				Assert.DoesNotContain(seeOff, (string line) => line.Contains("Ragna"));
+				string[] staying = QuestSpeech.SoonTalk(QuestKind.MineCopper, two, false, false, roll);
+				Assert.Contains(staying, (string line) => line.Contains("Ragna and Ulf"));
+				Assert.Null(QuestSpeech.SoonTalk(QuestKind.MineCopper, none, false, false, roll));
+				Assert.Null(QuestSpeech.SoonTalk(QuestKind.Hunt, two, false, false, roll));
+			}
+		}
+
+		[Fact]
+		public void AnswersBeforeSettingOutFitWhoIsGoing()
+		{
+			for (int roll = 0; roll < 4; roll++)
+			{
+				string alone = QuestSpeech.SoonAnswer(QuestKind.FindBees, new List<string>(), true, "Kriona", roll);
+				Assert.Equal("I'm off at first light to look for wild bees, Kriona.", alone);
+				Assert.Null(QuestSpeech.SoonAnswer(QuestKind.FindBees, new List<string>(), false, "Kriona", roll));
+				Assert.Contains("Ragna and Ulf", QuestSpeech.SoonAnswer(QuestKind.FindBees, new List<string> { "Ragna", "Ulf" }, false, "Kriona", roll));
+			}
+			Assert.Equal("Ragna and I set out in the morning to buy a strength belt from Haldor, Kriona.", QuestSpeech.SoonAnswer(QuestKind.BuyBelt, new List<string> { "Ragna" }, true, "Kriona", 1));
+			Assert.Equal("To sell our treasure to Hildir", QuestSpeech.NameTrader("To " + QuestSpeech.Errands[QuestKind.SellTreasure], "Hildir"));
+		}
+
+		[Fact]
+		public void LinesBeforeSettingOutOnlyUseTokensThatAreFilledIn()
+		{
+			List<string> lines = new List<string>(QuestSpeech.GoingAnswers);
+			lines.AddRange(QuestSpeech.StayingAnswers);
+			foreach (string[][] talks in new[] { QuestSpeech.GoingTalks, QuestSpeech.FellowTalks, QuestSpeech.SeeOffTalks, QuestSpeech.StayingTalks })
+			{
+				foreach (string[] talk in talks)
+				{
+					lines.AddRange(talk);
+				}
+			}
+			foreach (string line in lines)
+			{
+				foreach (Match token in Regex.Matches(line, "\\{[a-z]+\\}"))
+				{
+					Assert.Contains(token.Value, new[] { "{errand}", "{away}", "{with}", "{player}", "{name}" });
+				}
+			}
+			foreach (string errand in QuestSpeech.Errands.Values)
+			{
+				foreach (Match token in Regex.Matches(errand, "\\{[a-z]+\\}"))
+				{
+					Assert.Equal(QuestSpeech.TraderToken, token.Value);
+				}
 			}
 		}
 

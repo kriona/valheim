@@ -269,6 +269,17 @@ namespace VikingVillages.Tests
 		}
 
 		[Fact]
+		public void NamesButLeavesOutThoseGivenAndTheNameless()
+		{
+			QuestRecord record = FullRecord();
+			record.Names.Add("Bjorn");
+			record.Members.Add("c");
+			Assert.Equal(new List<string> { "Ragna", "Bjorn" }, record.NamesBut());
+			Assert.Equal(new List<string> { "Bjorn" }, record.NamesBut("a", "x"));
+			Assert.Equal(new List<string>(), record.NamesBut("a", "c"));
+		}
+
+		[Fact]
 		public void DepartureSaysWhenTheyreBack()
 		{
 			Assert.Equal("Back tomorrow.", QuestSpeech.Fill("Back {when}.", "tomorrow", "", "", ""));

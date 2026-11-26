@@ -401,12 +401,24 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Gets the village's quest waiting to set out in the morning, when it's worth talking about
+		/// </summary>
+		/// <returns>The quest, or null</returns>
+		private QuestRecord QuestSoon()
+		{
+			QuestRecord record = VillageQuests.Read(village);
+			return((record != null && record.Phase == QuestPhase.Waiting && QuestRules.WorthTalkingAbout(record.Kind)) ? record : null);
+		}
+
+		/// <summary>
 		/// Picks a talk about a quest, now and then - the one the viking who started it just came back from, naming the
-		/// others who went, or the one out now, naming those on it
+		/// others who went, the one out now, naming those on it, or the one waiting for the morning, which the vikings
+		/// going on it talk about as well as those staying
 		/// </summary>
 		/// <param name="leader">The viking that started the talk</param>
+		/// <param name="partner">The viking it talks to</param>
 		/// <returns>The talk's lines, or null for a talk about anything else</returns>
-		private static string[] QuestTalk(VillageLife leader)
+		private static string[] QuestTalk(VillageLife leader, VillageLife partner)
 		{
 			if (leader.village == null)
 			{
@@ -436,12 +448,20 @@ namespace VikingVillages
 			{
 				return(QuestSpeech.NameTrader(QuestSpeech.AwayTalk(record.Kind, record.Names, VillageQuests.DuePhrase(record)), VillageQuests.TraderOf(leader.village)));
 			}
+			QuestRecord soon = leader.QuestSoon();
+			if (soon != null && Random.value < QuestSpeech.SoonTalkChance)
+			{
+				string leaderId = VikingIdentity.Get(leader.nview.GetZDO());
+				string partnerId = VikingIdentity.Get(partner.nview.GetZDO());
+				string[] talk = QuestSpeech.SoonTalk(soon.Kind, soon.NamesBut(leaderId, partnerId), soon.Members.Contains(leaderId), soon.Members.Contains(partnerId));
+				return(QuestSpeech.NameTrader(talk, VillageQuests.TraderOf(leader.village)));
+			}
 			return(null);
 		}
 
 		/// <summary>
-		/// Picks what the viking says to a player about a quest, now and then - the one it just came back from, or the one
-		/// out now
+		/// Picks what the viking says to a player about a quest, now and then - the one it just came back from, the one out
+		/// now, or the one waiting for the morning, whether it's going on it or staying
 		/// </summary>
 		/// <param name="player">The player</param>
 		/// <returns>The line, or null for an answer about anything else</returns>
@@ -475,6 +495,13 @@ namespace VikingVillages
 			if (record != null && Random.value < QuestSpeech.AwayAnswerChance)
 			{
 				return(QuestSpeech.NameTrader(QuestSpeech.AwayAnswer(record.Kind, record.Names, VillageQuests.DuePhrase(record), player.GetPlayerName()), VillageQuests.TraderOf(village)));
+			}
+			QuestRecord soon = QuestSoon();
+			if (soon != null && Random.value < QuestSpeech.SoonAnswerChance)
+			{
+				string ownId = VikingIdentity.Get(nview.GetZDO());
+				string line = QuestSpeech.SoonAnswer(soon.Kind, soon.NamesBut(ownId), soon.Members.Contains(ownId), player.GetPlayerName());
+				return(QuestSpeech.NameTrader(line, VillageQuests.TraderOf(village)));
 			}
 			return(null);
 		}

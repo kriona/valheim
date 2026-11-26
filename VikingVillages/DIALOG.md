@@ -26,6 +26,8 @@ What they say to you, and what they shout about danger, shows over their heads f
 | They gather at the fire of a village you disbanded - every 8-25 seconds half the time, and when you talk to them until they set out - {village} being the disbanded village | 20 m, 6 s | "So that's it for {village}?"<br>"I can't believe {village} is finished."<br>"All that work on {village}, for nothing."<br>"Everyone, to the fire! {village} is done."<br>"I liked it in {village}."<br>"Gather round. We need to talk about {village}."<br>Or with no name:<br>"So that's it for the village?"<br>"I can't believe it's over."<br>"All that work, for nothing."<br>"Everyone, to the fire!"<br>"I liked it here."<br>"Gather round. We need to talk." |
 | They're all at the fire of a village you disbanded, every 8-25 seconds half the time | 20 m, 6 s | "What now?"<br>"Where should we go?"<br>"Is there another village near here?"<br>"We can't stay here."<br>"We'll need to find a new fire."<br>"Someone must have room for us." |
 | One of them says where they're going as they leave a village you disbanded, {village} being the village they go to | 20 m, 6 s | "Let's go to {village}."<br>"{village} isn't far. Let's go!"<br>"We'll make for {village}. Come on!"<br>Or with no name:<br>"Let's find another village."<br>"There's another village out there. Let's go!" |
+| You talk to a Viking going on a quest waiting to set out in the morning - 40% of the time, not for hunting, foraging or cutting trees - {with} being the names of the others going, the line with it left out when they go alone, and {errand} what the quest goes to do, like "mine copper" (see the list below) | 20 m, 6 s | "I'm off at first light to {errand}, {player}."<br>"{with} and I set out in the morning to {errand}, {player}." |
+| You talk to a Viking staying home from a quest waiting to set out in the morning - 40% of the time, not for hunting, foraging or cutting trees - {away} being the names of the Vikings going | 20 m, 6 s | "{away} will be off at first light to {errand}, {player}."<br>"Come morning, {away} will go to {errand}, {player}." |
 | The first of the Vikings setting out on a quest, as they get ready to leave, {when} being roughly when they're due back - like "in a couple of hours", "later today", "tomorrow" or "in a couple of days" | 20 m, 6 s | "We're off! Expect us back {when}."<br>"Keep the fire going - we'll be back {when}."<br>"Don't wait up. We should be home {when}."<br>"Right, we're away. Back {when}, if the gods allow."<br>"Off we go. Look for us {when}." |
 | You talk to a Viking at home while a quest is out - 40% of the time, not for hunting, foraging or cutting trees - {away} being the names of the Vikings on it, like "Ragna and Ulf", and {when} roughly when they're due back | 20 m, 6 s | Any quest:<br>"{away} went out on a quest, {player}. Back {when}, they said."<br>"We're short-handed until {away} gets back, {player}."<br>And one of the quest's own:<br>Mining copper: "{away} went mining copper, {player}. We'll have bronze before long."<br>Tin: "{away} went down to the shore after tin, {player}."<br>Silver: "{away} went up the mountain for silver, {player}."<br>Sunken crypts: "{away} went into the sunken crypts for iron. Pray for them, {player}."<br>A burial chamber: "{away} went raiding a burial chamber, {player}."<br>Trolls: "{away} went troll hunting. Troll hunting, {player}!"<br>Fulings: "{away} went to raid a fuling village, {player}."<br>Selling treasure: "{away} took our treasure to {trader}, {player}." - {trader} being the trader they went to<br>A circlet: "{away} went to buy a circlet from Haldor, {player}."<br>A strength belt: "{away} went to buy a strength belt from Haldor, {player}."<br>Wider pockets: "{away} went to Haldor for wider pockets, {player}. Room for a little more loot."<br>Deeper pockets: "{away} went to Haldor for deeper pockets, {player}. Wider ones weren't enough."<br>Eikthyr: "{away} went to face Eikthyr, {player}. For his antlers."<br>Wild bees: "{away} went looking for wild bees, {player}."<br>Ghosts: "{away} went hunting ghosts in the burial chambers, {player}. We need their ectoplasm."<br>Frost caves: "{away} went raiding the frost caves, {player}. Up past the snow line." |
 | You talk to a Viking who came back from a quest in the last game day - 60% of the time, not for hunting, foraging or cutting trees - {with} being the names of the others who went, the lines with it left out when they went alone | 20 m, 6 s | Any quest:<br>"We're back, {player}! {with} and I didn't come home empty-handed."<br>"Home again, {player}. It was a long trip."<br>And one of the quest's own:<br>Copper: "Copper, {player}! {with} and I carried home all we could lift."<br>Tin: "Tin for the bronze, {player}. {with} found a good seam."<br>Silver: "We brought silver down from the mountain, {player}. {with} dug most of it."<br>Sunken crypts: "We went into the sunken crypts, {player}. {with} and I came out with iron."<br>A burial chamber: "We raided a burial chamber, {player}! {with} nearly got lost in the dark."<br>Trolls: "We killed a troll, {player}! Ask {with} if you don't believe me."<br>Fulings: "We raided the fulings, {player}. {with} fought like a bear."<br>Selling treasure: "{trader} paid well for our treasure, {player}. {with} drove the bargain."<br>A circlet: "Haldor's circlet, {player}! No more torches for us."<br>A strength belt: "We bought Haldor's strength belt, {player}. More wood on every trip from now on."<br>Wider pockets: "We bought wider pockets from Haldor, {player}. More room for loot."<br>Deeper pockets: "We bought deeper pockets from Haldor, {player}. Deep enough to lose a hammer in."<br>Eikthyr: "We faced Eikthyr, {player}! {with} and I brought back his antlers."<br>Wild bees: "I found wild bees, {player}. They found me too."<br>Ghosts: "We hunted ghosts in a burial chamber, {player}. {with} and I brought back their ectoplasm."<br>Frost caves: "We raided a frost cave, {player}! {with} and I brought back red jute and crystals." |
@@ -217,6 +219,19 @@ When two Vikings talk, they take turns saying the lines of one talk, starting wi
 | A Viking new to the village whose group left a village you disbanded, to another Viking - in place of those above | "{newcomer} came all the way from {from}."<br>"I heard {from} is gone now."<br>"Then we'll make room here." |
 | A Viking new to the village whose group left a village you disbanded, to another Viking | "The folk from {from} have settled in well, {name}."<br>"{newcomer} most of all." |
 | A Viking new to the village whose group left a village you disbanded, to another Viking | "Did {newcomer} say why {from} broke up?"<br>"No, and I didn't ask. Let them be." |
+| A quest waiting to set out in the morning, started by a Viking going on it with one staying - 30% of the other talks, not for hunting, foraging or cutting trees, {with} being the names of the others going, the talks with it left out when they go alone, and {errand} what the quest goes to do (see the list below) | "{with} and I set out at first light to {errand}."<br>"Then get some sleep while you can." |
+| A quest waiting to set out in the morning, by a Viking going with one staying | "I'm off in the morning to {errand}, {name}."<br>"Mind you come back in one piece." |
+| A quest waiting to set out in the morning, by a Viking going with one staying | "{with} and I go in the morning to {errand}, {name}."<br>"Keep each other safe out there." |
+| A quest waiting to set out in the morning, by a Viking going with one staying | "Come morning, I go to {errand}."<br>"Pack plenty of food." |
+| A quest waiting to set out in the morning, between two Vikings going on it | "Ready for the morning, {name}?"<br>"As ready as I'll ever be." |
+| A quest waiting to set out in the morning, between two Vikings going on it | "At first light we {errand}, {name}."<br>"Then we'd better turn in early." |
+| A quest waiting to set out in the morning, between two Vikings going on it | "Have you packed for the morning, {name}?"<br>"Food, a torch and a sharp edge."<br>"That'll do." |
+| A quest waiting to set out in the morning, by a Viking staying with one going | "You're off to {errand}, {name}?"<br>"At first light." |
+| A quest waiting to set out in the morning, by a Viking staying with one going | "I hear you'll {errand} in the morning, {name}."<br>"Someone has to." |
+| A quest waiting to set out in the morning, by a Viking staying with one going | "Come back to us, {name}."<br>"I mean to." |
+| A quest waiting to set out in the morning, between two Vikings staying, {away} being the names of the Vikings going | "{away} will be off at first light to {errand}."<br>"Then we'll have their work to do as well." |
+| A quest waiting to set out in the morning, between two Vikings staying | "Come morning, {away} will go to {errand}, {name}."<br>"Let's give them a good meal tonight." |
+| A quest waiting to set out in the morning, between two Vikings staying | "Would you go with {away} to {errand}, {name}?"<br>"Someone has to stay and mind the fire." |
 | A quest out, started by a Viking at home - 30% of the other talks, not for hunting, foraging or cutting trees, {away} being the names of the Vikings on it and {when} roughly when they're due back | "Any word from {away}?"<br>"Not yet. They'll be back {when}." |
 | A quest out, by a Viking at home | "It's quiet without {away}, {name}."<br>"Too quiet. I'll be glad when they're back." |
 | Mining copper, by a Viking at home | "Think {away} found the copper yet?"<br>"If anyone can find it, it's them." |
@@ -285,6 +300,27 @@ When two Vikings talk, they take turns saying the lines of one talk, starting wi
 | Hunting ghosts, by a Viking who went | "I keep hearing wailing, {name}."<br>"That's just the wind."<br>"I hope so." |
 | Raiding frost caves, by a Viking who went | "The frost caves were full of cultists, {name}. {with} took on the worst of them."<br>"Was it worth it?"<br>"Red jute, crystals and a chill I can't shake." |
 | Raiding frost caves, by a Viking who went | "Bats everywhere in those caves, {name}."<br>"Better bats than fenrings."<br>"There were those too." |
+
+The lines about a quest waiting to set out in the morning fill in {errand} with what the quest goes to do:
+
+| Quest | {errand} |
+|---|---|
+| Mining copper | "mine copper" |
+| Mining tin | "dig tin on the shore" |
+| Mining silver | "dig silver up the mountain" |
+| Raiding sunken crypts | "raid the sunken crypts for iron" |
+| Raiding a burial chamber | "raid a burial chamber" |
+| Hunting trolls | "hunt a troll" |
+| Raiding fulings | "raid a fuling village" |
+| Selling treasure | "sell our treasure to {trader}" - {trader} being the trader they're going to, Hildir, Haldor or the Bog Witch |
+| Buying a circlet | "buy a Dverger circlet from Haldor" |
+| Buying a strength belt | "buy a strength belt from Haldor" |
+| Buying wider pockets | "buy wider pockets from Haldor" |
+| Buying deeper pockets | "buy deeper pockets from Haldor" |
+| Facing Eikthyr | "face Eikthyr" |
+| Finding wild bees | "look for wild bees" |
+| Hunting ghosts | "hunt ghosts in the burial chambers" |
+| Raiding frost caves | "raid the frost caves" |
 
 ## Trips and Neighbors
 

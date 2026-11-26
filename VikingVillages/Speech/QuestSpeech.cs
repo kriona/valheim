@@ -4,8 +4,9 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// What the vikings say about their village's quests (see VillageQuests) - as one sets out, while it's out, about
-	/// it for a day once they're back, and coming home to a village whose vikings all died while they were gone. Hunting,
+	/// What the vikings say about their village's quests (see VillageQuests) - while one waits to set out in the
+	/// morning, as it sets out, while it's out, about it for a day once they're back, and coming home to a village whose
+	/// vikings all died while they were gone. Hunting,
 	/// foraging and cutting trees are too ordinary to talk about (see QuestRules.WorthTalkingAbout). The lines are in
 	/// DIALOG.md too
 	/// </summary>
@@ -24,9 +25,18 @@ namespace VikingVillages
 		public const string TraderToken = "{trader}";
 
 		/// <summary>
-		/// How likely a talk between two vikings is about a quest out, by one at home, and about a quest just back, by one
-		/// who went on it, and how likely a viking answers a player about them
+		/// The token lines about a quest waiting for the morning are filled in at with what it's going to do, like "mine
+		/// copper" (see Errands)
 		/// </summary>
+		public const string ErrandToken = "{errand}";
+
+		/// <summary>
+		/// How likely a talk between two vikings is about a quest waiting for the morning, by any of them, about a quest
+		/// out, by one at home, and about a quest just back, by one who went on it, and how likely a viking answers a
+		/// player about them
+		/// </summary>
+		public const float SoonTalkChance = 0.3f;
+		public const float SoonAnswerChance = 0.4f;
 		public const float AwayTalkChance = 0.3f;
 		public const float BackTalkChance = 0.5f;
 		public const float AwayAnswerChance = 0.4f;
@@ -36,6 +46,90 @@ namespace VikingVillages
 		/// How long the vikings who went on a quest talk about it once they're back, in game days
 		/// </summary>
 		public const float BackDays = 1f;
+
+		/// <summary>
+		/// What each quest goes to do, as the lines about one waiting for the morning say it after "to"
+		/// </summary>
+		internal static readonly Dictionary<QuestKind, string> Errands = new Dictionary<QuestKind, string>
+		{
+			{ QuestKind.MineCopper, "mine copper" },
+			{ QuestKind.MineTin, "dig tin on the shore" },
+			{ QuestKind.MineSilver, "dig silver up the mountain" },
+			{ QuestKind.RaidCrypts, "raid the sunken crypts for iron" },
+			{ QuestKind.RaidBurialChambers, "raid a burial chamber" },
+			{ QuestKind.HuntTrolls, "hunt a troll" },
+			{ QuestKind.HuntGoblins, "raid a fuling village" },
+			{ QuestKind.SellTreasure, "sell our treasure to {trader}" },
+			{ QuestKind.BuyCirclet, "buy a Dverger circlet from Haldor" },
+			{ QuestKind.BuyBelt, "buy a strength belt from Haldor" },
+			{ QuestKind.BuyWiderPockets, "buy wider pockets from Haldor" },
+			{ QuestKind.BuyDeeperPockets, "buy deeper pockets from Haldor" },
+			{ QuestKind.KillEikthyr, "face Eikthyr" },
+			{ QuestKind.FindBees, "look for wild bees" },
+			{ QuestKind.HuntGhosts, "hunt ghosts in the burial chambers" },
+			{ QuestKind.RaidFrostCaves, "raid the frost caves" }
+		};
+
+		/// <summary>
+		/// The talks about a quest waiting for the morning - started by a viking going on it with one staying, naming the
+		/// others going, the talks naming them left out when it goes alone
+		/// </summary>
+		internal static readonly string[][] GoingTalks =
+		{
+			new[] { "{with} and I set out at first light to {errand}.", "Then get some sleep while you can." },
+			new[] { "I'm off in the morning to {errand}, {name}.", "Mind you come back in one piece." },
+			new[] { "{with} and I go in the morning to {errand}, {name}.", "Keep each other safe out there." },
+			new[] { "Come morning, I go to {errand}.", "Pack plenty of food." }
+		};
+
+		/// <summary>
+		/// The talks about a quest waiting for the morning between two vikings going on it
+		/// </summary>
+		internal static readonly string[][] FellowTalks =
+		{
+			new[] { "Ready for the morning, {name}?", "As ready as I'll ever be." },
+			new[] { "At first light we {errand}, {name}.", "Then we'd better turn in early." },
+			new[] { "Have you packed for the morning, {name}?", "Food, a torch and a sharp edge.", "That'll do." }
+		};
+
+		/// <summary>
+		/// The talks about a quest waiting for the morning started by a viking staying with one going
+		/// </summary>
+		internal static readonly string[][] SeeOffTalks =
+		{
+			new[] { "You're off to {errand}, {name}?", "At first light." },
+			new[] { "I hear you'll {errand} in the morning, {name}.", "Someone has to." },
+			new[] { "Come back to us, {name}.", "I mean to." }
+		};
+
+		/// <summary>
+		/// The talks about a quest waiting for the morning between two vikings staying, naming those going
+		/// </summary>
+		internal static readonly string[][] StayingTalks =
+		{
+			new[] { "{away} will be off at first light to {errand}.", "Then we'll have their work to do as well." },
+			new[] { "Come morning, {away} will go to {errand}, {name}.", "Let's give them a good meal tonight." },
+			new[] { "Would you go with {away} to {errand}, {name}?", "Someone has to stay and mind the fire." }
+		};
+
+		/// <summary>
+		/// What a viking going on a quest waiting for the morning says to a player about it, naming the others going, the
+		/// lines naming them left out when it goes alone
+		/// </summary>
+		internal static readonly string[] GoingAnswers =
+		{
+			"I'm off at first light to {errand}, {player}.",
+			"{with} and I set out in the morning to {errand}, {player}."
+		};
+
+		/// <summary>
+		/// What a viking staying says to a player about a quest waiting for the morning, naming those going
+		/// </summary>
+		internal static readonly string[] StayingAnswers =
+		{
+			"{away} will be off at first light to {errand}, {player}.",
+			"Come morning, {away} will go to {errand}, {player}."
+		};
 
 		/// <summary>
 		/// What one of the vikings setting out on a quest says as they go - with roughly when they'll be back
@@ -190,6 +284,98 @@ namespace VikingVillages
 		public static string Departure(string when)
 		{
 			return(Fill(Pick(DepartureLines), ((when == "now") ? "soon" : when), "", "", ""));
+		}
+
+		/// <summary>
+		/// Picks a talk about a quest waiting for the morning, by whether the viking starting it and the one it talks to
+		/// are going on it
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <param name="names">The names of the vikings going on it but the two talking</param>
+		/// <param name="leaderGoes">Whether the viking starting the talk is going on it</param>
+		/// <param name="partnerGoes">Whether the viking it talks to is going on it</param>
+		/// <returns>The talk's lines, filled in but for the name of the one spoken to, or null when there's none</returns>
+		public static string[] SoonTalk(QuestKind kind, List<string> names, bool leaderGoes, bool partnerGoes)
+		{
+			return(SoonTalk(kind, names, leaderGoes, partnerGoes, Roll()));
+		}
+
+		/// <summary>
+		/// Picks a talk about a quest waiting for the morning, by a roll - between one going and one staying naming the
+		/// others going, between two going, between one staying and one going, or between two staying naming those going
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <param name="names">The names of the vikings going on it but the two talking</param>
+		/// <param name="leaderGoes">Whether the viking starting the talk is going on it</param>
+		/// <param name="partnerGoes">Whether the viking it talks to is going on it</param>
+		/// <param name="roll">A roll from 0 up, picking the talk</param>
+		/// <returns>The talk's lines, filled in but for the name of the one spoken to, or null when there's none</returns>
+		internal static string[] SoonTalk(QuestKind kind, List<string> names, bool leaderGoes, bool partnerGoes, int roll)
+		{
+			if (!Errands.TryGetValue(kind, out string errand))
+			{
+				return(null);
+			}
+			string joined = JoinNames(names);
+			string[][] talks;
+			if (leaderGoes)
+			{
+				talks = (partnerGoes ? FellowTalks : Fitting(GoingTalks, joined.Length > 0, WithToken));
+			}
+			else if (partnerGoes)
+			{
+				talks = SeeOffTalks;
+			}
+			else
+			{
+				talks = Fitting(StayingTalks, joined.Length > 0, AwayToken);
+			}
+			if (talks.Length == 0)
+			{
+				return(null);
+			}
+			string away = (leaderGoes ? "" : joined);
+			string with = (leaderGoes ? joined : "");
+			return(System.Array.ConvertAll(talks[roll % talks.Length], (string line) => Fill(line.Replace(ErrandToken, errand), "", away, with, "")));
+		}
+
+		/// <summary>
+		/// Picks what a viking says to a player about a quest waiting for the morning
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <param name="names">The names of the vikings going on it but the one speaking</param>
+		/// <param name="goes">Whether the viking speaking is going on it</param>
+		/// <param name="player">The player's name</param>
+		/// <returns>The line, or null when there's none</returns>
+		public static string SoonAnswer(QuestKind kind, List<string> names, bool goes, string player)
+		{
+			return(SoonAnswer(kind, names, goes, player, Roll()));
+		}
+
+		/// <summary>
+		/// Picks what a viking says to a player about a quest waiting for the morning, by a roll - one going naming the
+		/// others going, the lines naming them left out when it goes alone, or one staying naming those going
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <param name="names">The names of the vikings going on it but the one speaking</param>
+		/// <param name="goes">Whether the viking speaking is going on it</param>
+		/// <param name="player">The player's name</param>
+		/// <param name="roll">A roll from 0 up, picking the line</param>
+		/// <returns>The line, or null when there's none</returns>
+		internal static string SoonAnswer(QuestKind kind, List<string> names, bool goes, string player, int roll)
+		{
+			if (!Errands.TryGetValue(kind, out string errand))
+			{
+				return(null);
+			}
+			string joined = JoinNames(names);
+			string token = (goes ? WithToken : AwayToken);
+			string[] lines = System.Array.FindAll((goes ? GoingAnswers : StayingAnswers), (string line) => joined.Length > 0 || !line.Contains(token));
+			if (lines.Length == 0)
+			{
+				return(null);
+			}
+			return(Fill(lines[roll % lines.Length].Replace(ErrandToken, errand), "", (goes ? "" : joined), (goes ? joined : ""), player));
 		}
 
 		/// <summary>
@@ -364,19 +550,24 @@ namespace VikingVillages
 			List<string[]> found = new List<string[]>();
 			foreach (QuestKind key in new[] { kind, QuestKind.None })
 			{
-				if (!talks.TryGetValue(key, out string[][] lines))
+				if (talks.TryGetValue(key, out string[][] lines))
 				{
-					continue;
-				}
-				foreach (string[] talk in lines)
-				{
-					if (named || !System.Array.Exists(talk, (string line) => line.Contains(token)))
-					{
-						found.Add(talk);
-					}
+					found.AddRange(Fitting(lines, named, token));
 				}
 			}
 			return(found.ToArray());
+		}
+
+		/// <summary>
+		/// Lists the talks that fit - leaving out those with a token for names when there are none to fill it with
+		/// </summary>
+		/// <param name="talks">The talks</param>
+		/// <param name="named">Whether there are names to fill the token with</param>
+		/// <param name="token">The token for names</param>
+		/// <returns>The talks</returns>
+		internal static string[][] Fitting(string[][] talks, bool named, string token)
+		{
+			return(System.Array.FindAll(talks, (string[] talk) => named || !System.Array.Exists(talk, (string line) => line.Contains(token))));
 		}
 
 		/// <summary>
