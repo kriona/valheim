@@ -10488,7 +10488,7 @@ namespace VikingVillages
 					inPenForWood = false;
 				}
 			}
-			if (viking == null || !viking.AvoidsRoofs() || GoesIntoPens() || attachPoint != null)
+			if (viking == null || !viking.NoDangerNear() || GoesIntoPens() || attachPoint != null)
 			{
 				gettingOutOfPen = false;
 				return(false);
@@ -10520,7 +10520,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets the viking off a roof it finds itself on with no danger near, to the nearest ground within RoofExitSearch
+		/// Gets the viking off a roof it finds itself on out of a fight, to the nearest ground within RoofExitSearch
 		/// with a way to the village's open ground (see FreeSpot) - climbing straight down when that's right below it or
 		/// beside it, or else stopping what it's doing and walking there, and climbing down to it when walking doesn't
 		/// get it off. With no such ground, it gives up for a while

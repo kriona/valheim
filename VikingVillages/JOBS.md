@@ -232,7 +232,7 @@ With nothing to fight and awake, a corpse about to rise within 25 meters - and n
 
 ### Get Off a Roof
 
-With no danger near - not alerted, not waiting for the dead and not hurt in the last 10 seconds - a Viking on a roof heads for the nearest ground within 10 meters that's out of any pen, clear of fires and has a way to the village's open ground, checked every second. When it's within a meter of them seen from above, or 1.5 meters or more below them within 3 meters, they climb straight down to it; otherwise they stop what they're doing and walk there, climbing down to it when walking leaves them still on the roof - standing over it, or getting no nearer for 10 seconds. With no such ground, they give up for 15 seconds.
+Out of a fight - with no enemy as their target, not waiting for the dead, not aiming at a bird or prey, not ready for a raid and with no deathsquito after them, even while alerted or just hurt - a Viking on a roof heads for the nearest ground within 10 meters that's out of any pen, clear of fires and has a way to the village's open ground, checked every second. When it's within a meter of them seen from above, or 1.5 meters or more below them within 3 meters, they climb straight down to it; otherwise they stop what they're doing and walk there, climbing down to it when walking leaves them still on the roof - standing over it, or getting no nearer for 10 seconds. With no such ground, they give up for 15 seconds.
 
 ### Get Out of a Pen
 

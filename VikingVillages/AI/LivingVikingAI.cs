@@ -49,7 +49,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Lets the viking's village life go first - keeping it off roofs with no danger near and out of the water while
+		/// Lets the viking's village life go first - keeping it off roofs out of a fight and out of the water while
 		/// it chases an enemy, and taking the update over while it walks back, gets off a roof or raises the alarm. On a
 		/// client that doesn't own the viking, its village life lets go of what the viking was doing, which it notices
 		/// here

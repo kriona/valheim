@@ -233,10 +233,32 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether the living viking keeps off roofs - with no danger near, as it only walks over a roof in a fight
+		/// Checks whether the living viking keeps off roofs - unless it's in a fight, as it only walks over a roof to get
+		/// at an enemy: it has a target, is wary (see IVikingLife.IsWary) or has a deathsquito after it. Being alerted or
+		/// hurt a moment ago with no enemy to fight doesn't take it onto a roof
 		/// </summary>
 		/// <returns>True when it does</returns>
 		public bool AvoidsRoofs()
+		{
+			return(!Fighting());
+		}
+
+		/// <summary>
+		/// Checks whether the living viking is in a fight - it has a target, is wary (see IVikingLife.IsWary) or has a
+		/// deathsquito after it
+		/// </summary>
+		/// <returns>True when it is</returns>
+		private bool Fighting()
+		{
+			return((life != null && life.IsWary()) || diver != null || (ai != null && ai.GetTargetCreature() != null));
+		}
+
+		/// <summary>
+		/// Checks whether the living viking has no danger near - not alerted, without a target, not hurt in the last few
+		/// seconds, not waiting for a corpse to rise and with no deathsquito after it
+		/// </summary>
+		/// <returns>True when it has none</returns>
+		public bool NoDangerNear()
 		{
 			return(!InDanger());
 		}

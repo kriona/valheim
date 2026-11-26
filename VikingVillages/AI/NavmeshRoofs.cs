@@ -13,8 +13,8 @@ namespace VikingVillages
 	/// </summary>
 	/// <remarks>
 	/// Each tile's roof colliders are built into a navmesh area of their own with a high cost. Roofs stay walkable, so a
-	/// creature still climbs one when that's the only way to its target - except a living viking with no danger near,
-	/// whose AI leaves the roof area out altogether (see StartAvoiding). Every agent but the fish walks any area, and
+	/// creature still climbs one when that's the only way to its target - except a living viking out of a fight, whose
+	/// AI leaves the roof area out altogether (see StartAvoiding). Every agent but the fish walks any area, and
 	/// the fish's areas leave this one out, but a creature that can't walk has its sources built as not walkable, which
 	/// is left alone
 	/// </remarks>
@@ -95,7 +95,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Leaves navmesh areas out of the paths, valid spots and path checks of every humanoid walking as a living
 		/// viking does until StopAvoiding - for a living viking's AI update, so it keeps off the lava and the boiling sea
-		/// (see DangerousGround) and, while there's no danger, off roofs, rather than only preferring to
+		/// (see DangerousGround) and, while it's out of a fight, off roofs, rather than only preferring to
 		/// </summary>
 		/// <remarks>
 		/// The game keeps one area mask for each kind of agent, so it's changed just while the viking's AI runs and put
