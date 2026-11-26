@@ -164,6 +164,28 @@ namespace VikingVillages
 		/// Since when the boat has had a player on board and none still off it near it, in Time.time seconds, or -1
 		/// </summary>
 		private float boardedSince = -1f;
+
+		/// <summary>
+		/// How the crew talks as the boat sails (see UpdateTalk) - how often it looks at what's around it, in seconds, how
+		/// far off a flying monster and a sea serpent can be to count as after them, how near one comes to count however
+		/// it's minded, and how far off a leviathan is in sight, in meters
+		/// </summary>
+		private const float TalkLookInterval = 1f;
+		private const float FlyerReach = 40f;
+		private const float FlyerNear = 15f;
+		private const float SerpentReach = 60f;
+		private const float SerpentNear = 30f;
+		private const float LeviathanSight = 120f;
+
+		/// <summary>
+		/// When the crew next looks at what's around it and next makes small talk, when it last said anything, what was
+		/// around it on its last look, and which of the crew spoke last, in Time.time seconds
+		/// </summary>
+		private float nextTalkLook;
+		private float nextTalk = -1f;
+		private float lastTalkAt = -100f;
+		private BoatTalk.Topic seenTopic = BoatTalk.Topic.Calm;
+		private Character lastSpeaker;
 		private float stuckLookAt;
 		private float stuckDistance = float.MaxValue;
 		private float backUntil;
@@ -856,9 +878,11 @@ namespace VikingVillages
 			}
 			if (leg >= route.Count && distance < LandReach)
 			{
+				LandHo();
 				SetPhase(Phase.Landing);
 				return;
 			}
+			UpdateTalk();
 			if (Time.time >= stuckLookAt)
 			{
 				stuckLookAt = Time.time + StuckCheck;
@@ -1020,6 +1044,145 @@ namespace VikingVillages
 			float rudder = BoatRules.Rudder(transform.forward, who.transform.position - transform.position);
 			Ship.m_speed = speed;
 			Ship.m_rudderValue = Mathf.MoveTowards(Ship.m_rudderValue, rudder, Ship.m_rudderSpeed * dt * 2f);
+		}
+
+		/// <summary>
+		/// Has the crew talk as the boat sails - looking at what's around it every TalkLookInterval seconds (see
+		/// BoatTalk.Pick), calling out something new to worry about or marvel at as soon as it's seen, and otherwise
+		/// making small talk about it every TalkMin to TalkMax seconds, never two lines within TalkGap of each other
+		/// </summary>
+		private void UpdateTalk()
+		{
+			if (Time.time < nextTalkLook)
+			{
+				return;
+			}
+			nextTalkLook = Time.time + TalkLookInterval;
+			if (nextTalk < 0f)
+			{
+				nextTalk = Time.time + Random.Range(BoatTalk.TalkMin, BoatTalk.TalkMax) / 2f;
+			}
+			Character speaker = TalkerAboard();
+			if (speaker == null)
+			{
+				return;
+			}
+			BoatTalk.Topic topic = BoatTalk.Pick(FlyersAfterUs(speaker), SerpentAfterUs(), VikingNewsWatch.LeviathanInSight(transform.position, LeviathanSight), VikingWeather.Storming(), EnvMan.IsWet(), EnvMan.IsFreezing(), VikingWeather.Foggy(), EnvMan.IsNight());
+			bool callOut = BoatTalk.CallsOut(topic, seenTopic);
+			seenTopic = topic;
+			if (Time.time - lastTalkAt < BoatTalk.TalkGap || (!callOut && Time.time < nextTalk))
+			{
+				return;
+			}
+			lastTalkAt = Time.time;
+			lastSpeaker = speaker;
+			nextTalk = Time.time + Random.Range(BoatTalk.TalkMin, BoatTalk.TalkMax);
+			VikingSpeech.Say(speaker, VikingRoadSpeech.Sailing(topic), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+			TestLog.Count("Boats", "lines said at sea about " + topic.ToString().ToLowerInvariant());
+		}
+
+		/// <summary>
+		/// Has one of the crew on board call out the far shore as the boat reaches it, with the name of the village
+		/// they're going to
+		/// </summary>
+		private void LandHo()
+		{
+			Character speaker = TalkerAboard();
+			if (speaker == null)
+			{
+				return;
+			}
+			VikingSpeech.SayFirst(speaker, VikingRoadSpeech.LandHo(VillageTravel.DestinationName(speaker.m_nview.GetZDO())), VikingSpeech.CallTime, VikingSpeech.CallCull);
+		}
+
+		/// <summary>
+		/// Picks one of the crew sitting on board and loaded on this client to say something - at random, and not the one
+		/// who spoke last while another is there to
+		/// </summary>
+		/// <returns>The viking, or null when none is</returns>
+		private Character TalkerAboard()
+		{
+			List<Character> aboard = new List<Character>();
+			for (int seat = 0; seat < Crew.Count; seat++)
+			{
+				Character member = CrewMember(seat);
+				if (member != null && member.m_nview.GetZDO().GetInt(BoardKey) == Aboard)
+				{
+					aboard.Add(member);
+				}
+			}
+			if (aboard.Count > 1)
+			{
+				aboard.Remove(lastSpeaker);
+			}
+			return((aboard.Count > 0) ? aboard[Random.Range(0, aboard.Count)] : null);
+		}
+
+		/// <summary>
+		/// Checks whether flying monsters are after the boat - one of the speaker's enemies, flying within FlyerReach, after
+		/// someone on board or come within FlyerNear
+		/// </summary>
+		/// <param name="speaker">One of the crew, whose enemies they are</param>
+		/// <returns>True when they are</returns>
+		private bool FlyersAfterUs(Character speaker)
+		{
+			foreach (Character other in Character.GetAllCharacters())
+			{
+				if (other != null && !other.IsDead() && other.IsFlying() && BaseAI.IsEnemy(speaker, other) && AfterUs(other, FlyerReach, FlyerNear))
+				{
+					return(true);
+				}
+			}
+			return(false);
+		}
+
+		/// <summary>
+		/// Checks whether a sea serpent is after the boat - within SerpentReach, after someone on board or come within
+		/// SerpentNear
+		/// </summary>
+		/// <returns>True when one is</returns>
+		private bool SerpentAfterUs()
+		{
+			foreach (Character other in Character.GetAllCharacters())
+			{
+				if (other != null && !other.IsDead() && VikingNewsLines.Serpents.Contains(Utils.GetPrefabName(other.gameObject)) && AfterUs(other, SerpentReach, SerpentNear))
+				{
+					return(true);
+				}
+			}
+			return(false);
+		}
+
+		/// <summary>
+		/// Checks whether a monster is after the boat - within reach of it and after someone on board, or come near it
+		/// whatever it's after
+		/// </summary>
+		/// <param name="monster">The monster</param>
+		/// <param name="reach">How far off it can be, in meters</param>
+		/// <param name="near">How near it counts however it's minded, in meters</param>
+		/// <returns>True when it is</returns>
+		private bool AfterUs(Character monster, float reach, float near)
+		{
+			float distance = Vector3.Distance(monster.transform.position, transform.position);
+			if (distance > reach)
+			{
+				return(false);
+			}
+			if (distance <= near)
+			{
+				return(true);
+			}
+			Character target = ((monster.GetBaseAI() is MonsterAI theirs) ? theirs.GetTargetCreature() : null);
+			if (target == null)
+			{
+				return(false);
+			}
+			if (target is Player player)
+			{
+				return(Ship.IsPlayerInBoat(player));
+			}
+			ZDO zdo = ((target.m_nview != null && target.m_nview.IsValid()) ? target.m_nview.GetZDO() : null);
+			return(zdo != null && zdo.GetString(BoatKey, "") == Key && zdo.GetInt(BoardKey) == Aboard);
 		}
 
 		/// <summary>

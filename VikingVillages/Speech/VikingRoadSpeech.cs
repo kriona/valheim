@@ -177,7 +177,7 @@ namespace VikingVillages
 			"Stand back - I'll knock a {0} together.",
 			"Give me a moment and we'll have a {0} in the water.",
 			"No boat? I'll build us a {0}.",
-			"A few swings of the hammer and we sail. One {0}, coming up!"
+			"One swing of the hammer and we sail. One {0}, coming up!"
 		};
 
 		/// <summary>
@@ -190,6 +190,97 @@ namespace VikingVillages
 			"{0}! Are you coming with us or not?",
 			"Hop aboard, {0}, or we sail without you!",
 			"Are you coming, {0}? The tide won't wait."
+		};
+
+		/// <summary>
+		/// What the vikings on a boat say as they sail, by what's around them (see BoatTalk.Pick) - a calm sea, the night,
+		/// fog, the cold, rain, a storm, a leviathan in sight, a sea serpent after them, and flying monsters after them
+		/// </summary>
+		internal static readonly string[] SailCalmLines =
+		{
+			"Fair winds today. The gods are kind.",
+			"Nothing but sea and sky. I could get used to this.",
+			"Keep her steady. We'll make good time.",
+			"My father always said the sea clears the head.",
+			"Smell that salt air!",
+			"Anyone else hungry? I could eat a whole boar.",
+			"Not a cloud in sight. Njord smiles on us."
+		};
+		internal static readonly string[] SailNightLines =
+		{
+			"The stars are bright tonight. Good for steering.",
+			"I don't like sailing in the dark. Keep your eyes open.",
+			"Quiet out here at night. Too quiet.",
+			"Who knows what swims beneath us in the dark..."
+		};
+		internal static readonly string[] SailFogLines =
+		{
+			"I can barely see the bow in this fog.",
+			"Listen for the surf - we don't want to hit rocks.",
+			"This mist is thick as porridge.",
+			"Stay close, everyone. Easy to get lost in this."
+		};
+		internal static readonly string[] SailColdLines =
+		{
+			"By Ymir's beard, it's cold out here!",
+			"My fingers are frozen to the rigging.",
+			"I can see my breath. Let's get to land quickly.",
+			"Cold enough to freeze the sea itself."
+		};
+		internal static readonly string[] SailRainLines =
+		{
+			"Rain again. At least it's fresh water.",
+			"Soaked to the bone, and we're not even swimming.",
+			"Bail if you have to - this rain won't stop.",
+			"Wet above and wet below. Such is a sailor's life."
+		};
+		internal static readonly string[] SailStormLines =
+		{
+			"Hold on tight! Thor's angry tonight!",
+			"These waves will swamp us! Keep her head into them!",
+			"If we live through this, I'm buying the mead!",
+			"Lash yourself down if you have to!",
+			"The sea wants us. Don't let it have us!"
+		};
+		internal static readonly string[] SailLeviathanLines =
+		{
+			"Look - a leviathan! Like an island that breathes.",
+			"Steer clear of that leviathan. I don't want to wake it.",
+			"By the gods, the size of that thing!",
+			"A leviathan! My grandmother never believed me."
+		};
+		internal static readonly string[] SailSerpentLines =
+		{
+			"Serpent! It's coming for us - full sail!",
+			"Something big in the water - serpent!",
+			"Keep it off the hull! Weapons ready!",
+			"Sea serpent behind us! Don't let it get close!"
+		};
+		internal static readonly string[] SailFlyersLines =
+		{
+			"Something's coming at us from the sky!",
+			"Archers! Shoot them down!",
+			"Keep your heads down - they're diving at us!",
+			"Out here there's nowhere to hide from them!"
+		};
+
+		/// <summary>
+		/// What a viking on a boat says as it reaches the far shore - with the name of the village it's going to, and
+		/// when it has none
+		/// </summary>
+		internal static readonly string[] LandHoLines =
+		{
+			"Land ho! {village} isn't far now.",
+			"There's the shore! On to {village}!",
+			"Solid ground at last. {village} awaits.",
+			"Everyone off! {village} is close."
+		};
+		internal static readonly string[] UnnamedLandHoLines =
+		{
+			"Land ho!",
+			"There's the shore! Everyone off!",
+			"Solid ground at last. Thank the gods.",
+			"We made it! Mind the rocks."
 		};
 
 		/// <summary>
@@ -495,6 +586,45 @@ namespace VikingVillages
 		public static string Wrecked()
 		{
 			return(VikingSpeech.Pick(WreckedLines, ""));
+		}
+
+		/// <summary>
+		/// Picks what a viking on a boat says as it sails, about what's around it
+		/// </summary>
+		/// <param name="topic">What it's about (see BoatTalk.Pick)</param>
+		/// <returns>The line</returns>
+		public static string Sailing(BoatTalk.Topic topic)
+		{
+			switch (topic)
+			{
+				case BoatTalk.Topic.Flyers:
+					return(VikingSpeech.Pick(SailFlyersLines, ""));
+				case BoatTalk.Topic.Serpent:
+					return(VikingSpeech.Pick(SailSerpentLines, ""));
+				case BoatTalk.Topic.Leviathan:
+					return(VikingSpeech.Pick(SailLeviathanLines, ""));
+				case BoatTalk.Topic.Storm:
+					return(VikingSpeech.Pick(SailStormLines, ""));
+				case BoatTalk.Topic.Rain:
+					return(VikingSpeech.Pick(SailRainLines, ""));
+				case BoatTalk.Topic.Cold:
+					return(VikingSpeech.Pick(SailColdLines, ""));
+				case BoatTalk.Topic.Fog:
+					return(VikingSpeech.Pick(SailFogLines, ""));
+				case BoatTalk.Topic.Night:
+					return(VikingSpeech.Pick(SailNightLines, ""));
+			}
+			return(VikingSpeech.Pick(SailCalmLines, ""));
+		}
+
+		/// <summary>
+		/// Picks what a viking on a boat says as it reaches the far shore
+		/// </summary>
+		/// <param name="village">The name of the village it's going to, or "" when it has none</param>
+		/// <returns>The line</returns>
+		public static string LandHo(string village)
+		{
+			return(string.Format(PickFor(LandHoLines, UnnamedLandHoLines, village)));
 		}
 
 		/// <summary>

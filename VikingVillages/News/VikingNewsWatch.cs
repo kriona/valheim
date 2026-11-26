@@ -111,6 +111,18 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Checks whether a leviathan that hasn't dived yet is within a distance of a point - one the vikings on a boat
+		/// there can see
+		/// </summary>
+		/// <param name="point">The point</param>
+		/// <param name="range">The distance, in meters</param>
+		/// <returns>True when one is</returns>
+		public static bool LeviathanInSight(Vector3 point, float range)
+		{
+			return(leviathans.Exists((Leviathan leviathan) => leviathan != null && !leviathan.m_left && Utils.DistanceXZ(leviathan.transform.position, point) <= range));
+		}
+
+		/// <summary>
 		/// Reports the local player coming within LeviathanNear of a leviathan, once until they're LeviathanFar from it
 		/// </summary>
 		/// <param name="player">The local player</param>
