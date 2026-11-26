@@ -386,6 +386,45 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a jump east over a fence whose face is at x 10 and whose top is 1.3 meters up counts as over once
+		/// the viking is 0.4 meters past the face, whatever the ground's height there
+		/// </summary>
+		[Fact]
+		public void JumpsCountOverPastTheFence()
+		{
+			Vector3 face = new Vector3(10f, 0.4f, 5f);
+			Assert.Equal(VillageLife.HopOutcome.Over, VillageLife.HopResult(face, Vector3.right, new Vector3(11.5f, -0.1f, 5f), 1.3f));
+			Assert.Equal(VillageLife.HopOutcome.Over, VillageLife.HopResult(face, Vector3.right, new Vector3(10.45f, 0f, 5f), 1.3f));
+			Assert.Equal(VillageLife.HopOutcome.Over, VillageLife.HopResult(face, Vector3.right, new Vector3(10.6f, 1.3f, 5f), 1.3f));
+		}
+
+		/// <summary>
+		/// Checks that a viking short of 0.4 meters past a fence's face counts as on top of it with its feet within 0.3
+		/// meters of the fence's top, and as fallen back below that - including one that ended up off to the side
+		/// </summary>
+		[Fact]
+		public void JumpsCountOnTopOrFallenBack()
+		{
+			Vector3 face = new Vector3(10f, 0.4f, 5f);
+			Assert.Equal(VillageLife.HopOutcome.OnTop, VillageLife.HopResult(face, Vector3.right, new Vector3(10.2f, 1.35f, 5f), 1.3f));
+			Assert.Equal(VillageLife.HopOutcome.OnTop, VillageLife.HopResult(face, Vector3.right, new Vector3(10.1f, 1.05f, 5f), 1.3f));
+			Assert.Equal(VillageLife.HopOutcome.FellBack, VillageLife.HopResult(face, Vector3.right, new Vector3(9f, 0f, 5f), 1.3f));
+			Assert.Equal(VillageLife.HopOutcome.FellBack, VillageLife.HopResult(face, Vector3.right, new Vector3(10.2f, 0.9f, 5f), 1.3f));
+			Assert.Equal(VillageLife.HopOutcome.FellBack, VillageLife.HopResult(face, Vector3.right, new Vector3(10f, 0f, 8f), 1.3f));
+		}
+
+		/// <summary>
+		/// Checks the words each way a jump over a fence can end is logged with
+		/// </summary>
+		[Fact]
+		public void NamesHowJumpsEnd()
+		{
+			Assert.Equal("got over", VillageLife.HopOutcomeName(VillageLife.HopOutcome.Over));
+			Assert.Equal("ended up on top of it", VillageLife.HopOutcomeName(VillageLife.HopOutcome.OnTop));
+			Assert.Equal("fell back", VillageLife.HopOutcomeName(VillageLife.HopOutcome.FellBack));
+		}
+
+		/// <summary>
 		/// Checks that an archer whose own best arrows already fill its quiver takes none from the chest and keeps all
 		/// its own
 		/// </summary>

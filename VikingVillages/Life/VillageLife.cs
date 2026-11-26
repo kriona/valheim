@@ -1845,6 +1845,23 @@ namespace VikingVillages
 		private bool hopLeftGround;
 
 		/// <summary>
+		/// For the log of how the viking's jump over a fence ended (see LogHopEnd) - the piece it jumps, how high its top
+		/// stands, where the viking left the ground and how far in front of the fence, and the highest its feet got
+		/// </summary>
+		private string hopPiece;
+		private float hopFenceTop;
+		private Vector3 hopTakeoff;
+		private float hopTakeoffAhead;
+		private float hopPeak;
+
+		/// <summary>
+		/// How a jump over a fence ended, for the log (see HopResult) - with the viking past the fence's face by at least
+		/// HopOverPast, in meters, or with its feet within HopOnTopDrop of the fence's top short of that
+		/// </summary>
+		private const float HopOverPast = 0.4f;
+		private const float HopOnTopDrop = 0.3f;
+
+		/// <summary>
 		/// What the viking is doing to jump a fence - nothing, backing up for its run-up, running at the fence, or in
 		/// the air over it
 		/// </summary>
@@ -1854,6 +1871,16 @@ namespace VikingVillages
 			BackUp,
 			RunUp,
 			Air
+		}
+
+		/// <summary>
+		/// Where a jump over a fence left the viking - past the fence, on top of it, or back on the side it jumped from
+		/// </summary>
+		internal enum HopOutcome
+		{
+			Over,
+			OnTop,
+			FellBack
 		}
 
 		/// <summary>
@@ -11167,6 +11194,8 @@ namespace VikingVillages
 			hopPoint = obstacle.point;
 			hopTop = top;
 			hopLeftGround = false;
+			hopPiece = Utils.GetPrefabName(obstacle.collider.GetComponentInParent<WearNTear>().gameObject);
+			hopFenceTop = feet.y + top;
 			// It only backs up for a run-up with no fire's flames within reach behind it, since it backs up without looking -
 			// beside a fire it jumps from where it stands
 			bool backUp = (Ahead() < RunUpDistance && !FireSafety.FlamesNear(feet, RunUpDistance + RunUpFireMargin, out Vector3 _, out float _));
@@ -11174,8 +11203,7 @@ namespace VikingVillages
 			hopPhaseUntil = Time.time + (backUp ? BackUpTime : RunUpTime);
 			if (Player.m_debugMode)
 			{
-				string piece = Utils.GetPrefabName(obstacle.collider.GetComponentInParent<WearNTear>().gameObject);
-				Plugin.Log.LogInfo("Hop: " + TestLog.Label(humanoid) + " at " + feet.ToString("F1") + " (" + ((job != null) ? job.Describe() : "no job") + ") takes a run-up to jump " + piece + ", " + top.ToString("F2") + "m high at " + obstacle.point.ToString("F1") + ", toward " + toward.ToString("F1") + ", finding no path there" + (VikingDoors.IsCrossing(humanoid) ? ", while crossing a doorway" : ""));
+				Plugin.Log.LogInfo("Hop: " + TestLog.Label(humanoid) + " at " + feet.ToString("F1") + " (" + ((job != null) ? job.Describe() : "no job") + ") takes a run-up to jump " + hopPiece + ", " + top.ToString("F2") + "m high at " + obstacle.point.ToString("F1") + ", toward " + toward.ToString("F1") + ", finding no path there" + (VikingDoors.IsCrossing(humanoid) ? ", while crossing a doorway" : ""));
 			}
 			return(true);
 		}
@@ -11194,6 +11222,7 @@ namespace VikingVillages
 			}
 			if (Time.time >= hopPhaseUntil && hopPhase != HopPhase.BackUp)
 			{
+				LogHopEnd((hopPhase == HopPhase.Air) ? ", still off the ground after " + HopAirTime.ToString("F1") + "s" : null);
 				hopPhase = HopPhase.None;
 				return(false);
 			}
@@ -11220,6 +11249,9 @@ namespace VikingVillages
 					// A creature's jump carries it the way it faces, so it's turned to the fence first
 					transform.rotation = Quaternion.LookRotation(hopDirection);
 					humanoid.m_body.rotation = transform.rotation;
+					hopTakeoff = transform.position;
+					hopTakeoffAhead = Ahead();
+					hopPeak = hopTakeoff.y;
 					humanoid.Jump(true);
 					hopPhase = HopPhase.Air;
 					hopPhaseUntil = Time.time + HopAirTime;
@@ -11228,15 +11260,93 @@ namespace VikingVillages
 			}
 			mover = "jumping a fence";
 			ai.MoveTowards(hopDirection, true);
+			hopPeak = Mathf.Max(hopPeak, transform.position.y);
 			if (!humanoid.IsOnGround())
 			{
 				hopLeftGround = true;
 			}
 			else if (hopLeftGround)
 			{
+				LogHopEnd(null);
 				hopPhase = HopPhase.None;
 			}
 			return(true);
+		}
+
+		/// <summary>
+		/// Writes to the log, in test or debug mode, how the viking's jump over a fence ended - where it landed, whether
+		/// that's past the fence, on top of it or back where it jumped from (see HopResult), how high its feet got
+		/// against the fence's top and how far in front of the fence it left the ground - or that its run-up ran out
+		/// before it jumped, counting each outcome
+		/// </summary>
+		/// <param name="note">What to add about how the jump ended, like still being in the air, or null</param>
+		private void LogHopEnd(string note)
+		{
+			if (hopPhase == HopPhase.RunUp)
+			{
+				TestLog.Count("Fence jumps", "never jumped");
+				if (TestLog.On || Player.m_debugMode)
+				{
+					Plugin.Log.LogInfo("Hop: " + TestLog.Name(humanoid, "F1") + " ran at the " + hopPiece + " at " + hopPoint.ToString("F1") + " for " + RunUpTime.ToString("F0") + "s without jumping, " + Ahead().ToString("F2") + "m in front of it");
+				}
+				return;
+			}
+			if (hopPhase != HopPhase.Air)
+			{
+				return;
+			}
+			HopOutcome outcome = HopResult(hopPoint, hopDirection, transform.position, hopFenceTop);
+			string how = HopOutcomeName(outcome);
+			TestLog.Count("Fence jumps", how);
+			if (TestLog.On || Player.m_debugMode)
+			{
+				float clearance = hopPeak - hopFenceTop;
+				Plugin.Log.LogInfo("Hop: " + TestLog.Name(humanoid, "F1") + " jumped the " + hopPiece + " at " + hopPoint.ToString("F1") + " and " + how + " - its feet rose " + (hopPeak - hopTakeoff.y).ToString("F2") + "m from " + hopTakeoff.ToString("F1") + ", " + Mathf.Abs(clearance).ToString("F2") + "m " + ((clearance >= 0f) ? "over" : "short of") + " the fence's top at " + hopFenceTop.ToString("F2") + ", leaving the ground " + hopTakeoffAhead.ToString("F2") + "m in front of it" + note);
+			}
+		}
+
+		/// <summary>
+		/// Works out where a jump over a fence left the viking - past the fence once it's at least HopOverPast beyond the
+		/// fence's face the way it jumped, on top of it short of that with its feet no more than HopOnTopDrop below the
+		/// fence's top, and otherwise back on the side it jumped from
+		/// </summary>
+		/// <param name="face">Where it found the fence's face, before jumping</param>
+		/// <param name="direction">The way it jumped, level</param>
+		/// <param name="landed">Where its feet are once it's down</param>
+		/// <param name="top">How high the fence's top stands</param>
+		/// <returns>Where it ended up</returns>
+		internal static HopOutcome HopResult(Vector3 face, Vector3 direction, Vector3 landed, float top)
+		{
+			Vector3 offset = landed - face;
+			offset.y = 0f;
+			float past = Vector3.Dot(offset, direction);
+			if (past >= HopOverPast)
+			{
+				return(HopOutcome.Over);
+			}
+			if (landed.y >= top - HopOnTopDrop)
+			{
+				return(HopOutcome.OnTop);
+			}
+			return(HopOutcome.FellBack);
+		}
+
+		/// <summary>
+		/// Names how a jump over a fence ended, for the log
+		/// </summary>
+		/// <param name="outcome">How it ended</param>
+		/// <returns>The words for it</returns>
+		internal static string HopOutcomeName(HopOutcome outcome)
+		{
+			if (outcome == HopOutcome.Over)
+			{
+				return("got over");
+			}
+			else if (outcome == HopOutcome.OnTop)
+			{
+				return("ended up on top of it");
+			}
+			return("fell back");
 		}
 
 		/// <summary>
