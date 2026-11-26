@@ -113,7 +113,6 @@ namespace Kriona.Vikings
 			VikingNames.GiveName(zdo, rolled, false);
 			StyleAfterName(zdo, rolled);
 			SaveGenerated(rolled, gear);
-			VillageTravel.NoteSpawned(zdo);
 			if (TestLog.On)
 			{
 				Plugin.Log.LogInfo("New viking: " + TestLog.Name(humanoid) + ", rolled up for the " + VikingGear.Biomes[index].Biome + (zdo.GetBool(ArcherKey) ? " as the village's archer" : ""));

@@ -100,11 +100,16 @@ namespace VikingVillages
 		private bool frostImmune;
 
 		/// <summary>
-		/// Starts what the viking eats, its rest, the weather getting to it and its forsaken powers as the body wakes
+		/// Starts what the viking eats, its rest, the weather getting to it and its forsaken powers as the body wakes, and
+		/// notes it as lost when a console command just made it (see VillageTravel.NoteSpawned)
 		/// </summary>
 		public override void Awake()
 		{
 			base.Awake();
+			if (m_nview != null && m_nview.GetZDO() != null)
+			{
+				VillageTravel.NoteSpawned(m_nview.GetZDO());
+			}
 			ownFrost = m_damageModifiers.m_frost;
 			Food = new VikingFood(this);
 			Rest = new VikingRested(this);

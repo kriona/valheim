@@ -190,12 +190,13 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Notes a living viking just made as lost when a console command made it, so it stands about confused before it
-		/// sets out for a village (see VillageLife.UpdateRoad)
+		/// sets out for a village (see VillageLife.UpdateRoad) - called from its Awake, which runs inside the command, as
+		/// its Start, where its gear is first rolled, only runs once the command is done. One with data already isn't new
 		/// </summary>
 		/// <param name="viking">The viking's ZDO</param>
 		public static void NoteSpawned(ZDO viking)
 		{
-			if (CommandsRunning > 0)
+			if (CommandsRunning > 0 && viking != null && viking.GetByteArray(VikingCore.DataKey) == null)
 			{
 				viking.Set(ConfusedKey, true);
 			}
