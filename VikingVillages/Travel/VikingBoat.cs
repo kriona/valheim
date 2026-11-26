@@ -90,6 +90,12 @@ namespace VikingVillages
 		/// </summary>
 		private const float AskEvery = 15f;
 		private const float SwimmerWait = 90f;
+
+		/// <summary>
+		/// How long the boat waits once a player is on board and no other is still off it, before it sets off, in seconds -
+		/// so a player who just climbed aboard finds their feet first
+		/// </summary>
+		private const float BoardedDelay = 2f;
 		private const float PlayerReach = 40f;
 		private const float BreakWait = 60f;
 
@@ -153,6 +159,11 @@ namespace VikingVillages
 		/// </summary>
 		private float settleUntil;
 		private float nextAsk;
+
+		/// <summary>
+		/// Since when the boat has had a player on board and none still off it near it, in Time.time seconds, or -1
+		/// </summary>
+		private float boardedSince = -1f;
 		private float stuckLookAt;
 		private float stuckDistance = float.MaxValue;
 		private float backUntil;
@@ -720,17 +731,27 @@ namespace VikingVillages
 		/// <summary>
 		/// Waits for a player near the boat to come aboard - asking them after AskAfter seconds and again every AskEvery
 		/// seconds, and setting off DepartAfter seconds after the crew got on, or SwimmerWait for a player swimming out to
-		/// it, with the one at the helm calling out a farewell to whoever it leaves behind - or at once when no player
-		/// near is still off it
+		/// it, with the one at the helm calling out a farewell to whoever it leaves behind - or once no player near is
+		/// still off it, BoardedDelay seconds after that with a player on board, and at once with none
 		/// </summary>
 		private void UpdateWaiting()
 		{
 			Player waiting = PlayerAshore();
 			if (waiting == null)
 			{
+				if (Ship.m_players.Count > 0)
+				{
+					boardedSince = ((boardedSince < 0f) ? Time.time : boardedSince);
+					if (Time.time - boardedSince < BoardedDelay)
+					{
+						return;
+					}
+				}
+				boardedSince = -1f;
 				SetPhase(Phase.Sailing);
 				return;
 			}
+			boardedSince = -1f;
 			Character helm = CrewMember(0);
 			if (PhaseSeconds >= (waiting.IsSwimming() ? SwimmerWait : DepartAfter))
 			{
