@@ -996,6 +996,7 @@ namespace VikingVillages
 					riders.Add(player.GetZDOID());
 				}
 			}
+			LogSerpents();
 			Character overboard = FindOverboard();
 			if (overboard != null)
 			{
@@ -1257,6 +1258,54 @@ namespace VikingVillages
 				}
 			}
 			return(true);
+		}
+
+		/// <summary>
+		/// How often the boat logs the sea serpents near it in debug mode or a test run, in seconds, and how near they have
+		/// to be, in meters (see LogSerpents)
+		/// </summary>
+		private const float SerpentLogInterval = 5f;
+		private const float SerpentLogReach = 80f;
+
+		/// <summary>
+		/// When the boat next logs the sea serpents near it
+		/// </summary>
+		private float nextSerpentLog;
+
+		/// <summary>
+		/// Logs, in debug mode or a test run, every SerpentLogInterval seconds, each sea serpent within SerpentLogReach of
+		/// the boat - whether this client runs its AI, what it's after and whether it's alerted, and for each of the boat's
+		/// crew in the water, whether it takes them for an enemy and can sense them - to tell why a serpent leaves a viking
+		/// overboard alone
+		/// </summary>
+		private void LogSerpents()
+		{
+			if ((!TestLog.On && !Player.m_debugMode) || Time.time < nextSerpentLog)
+			{
+				return;
+			}
+			nextSerpentLog = Time.time + SerpentLogInterval;
+			string key = Key;
+			List<Character> swimming = Character.GetAllCharacters().FindAll((Character character) =>
+			{
+				ZDO zdo = ((character != null && character.m_nview != null && character.m_nview.IsValid()) ? character.m_nview.GetZDO() : null);
+				return(zdo != null && !character.IsDead() && zdo.GetInt(BoardKey) == Overboard && zdo.GetString(BoatKey, "") == key);
+			});
+			foreach (Character serpent in Character.GetAllCharacters())
+			{
+				if (serpent == null || serpent.IsDead() || !VikingNewsLines.Serpents.Contains(Utils.GetPrefabName(serpent.gameObject)) || Vector3.Distance(serpent.transform.position, transform.position) > SerpentLogReach)
+				{
+					continue;
+				}
+				MonsterAI ai = serpent.GetBaseAI() as MonsterAI;
+				Character target = ((ai != null) ? ai.GetTargetCreature() : null);
+				string line = "Boat: a serpent " + Vector3.Distance(serpent.transform.position, transform.position).ToString("F0") + "m from " + key + ", its AI run " + (serpent.m_nview.IsOwner() ? "here" : "elsewhere") + ", after " + ((target != null) ? TestLog.Name(target) + " " + Vector3.Distance(target.transform.position, serpent.transform.position).ToString("F0") + "m off" : "nothing") + ((ai != null && ai.IsAlerted()) ? ", alerted" : ", not alerted");
+				foreach (Character crew in swimming)
+				{
+					line += "; overboard " + TestLog.Name(crew) + " " + Vector3.Distance(crew.transform.position, serpent.transform.position).ToString("F0") + "m off, " + (BaseAI.IsEnemy(serpent, crew) ? "an enemy" : "not an enemy") + ", " + ((ai != null && ai.CanSenseTarget(crew)) ? "sensed" : "not sensed") + (crew.IsSwimming() ? ", swimming" : "");
+				}
+				Plugin.Log.LogInfo(line);
+			}
 		}
 
 		/// <summary>

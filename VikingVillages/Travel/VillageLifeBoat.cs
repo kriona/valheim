@@ -51,12 +51,14 @@ namespace VikingVillages
 		private float nextTreadCall;
 
 		/// <summary>
-		/// How a viking on board shoots at a flying enemy attacking the boat (see DefendBoat) - how far off the enemy can
-		/// be, how near it counts as attacking whoever it's after, how far from its seat the viking can be knocked before
-		/// it's sat back down, in meters, and how long it stays standing once the last enemy is gone, in seconds
+		/// How a viking on board shoots at a flying enemy or a sea serpent attacking the boat (see DefendBoat) - how far off
+		/// the enemy can be, how near a flying one and a serpent count as attacking whoever they're after, how far from its
+		/// seat the viking can be knocked before it's sat back down, in meters, and how long it stays standing once the last
+		/// enemy is gone, in seconds
 		/// </summary>
 		private const float BoatShootRange = 40f;
 		private const float BoatThreatNear = 15f;
+		private const float BoatSerpentNear = 30f;
 		private const float BoatStandDrift = 2f;
 		private const float BoatShootSettle = 3f;
 
@@ -974,7 +976,8 @@ namespace VikingVillages
 		/// Rides along on the boat, keeping its place on the road with the boat's - and gets off at the far shore, or swims
 		/// for it when the boat is gone from under it. Knocked out of its seat, like by a fight, it sits back down while
 		/// it's still on board, and in the water while the boat sails on, it's overboard and swims back to it (see
-		/// SwimBack). With a flying enemy attacking the boat, it stands at its seat and shoots at it (see DefendBoat)
+		/// SwimBack). With a flying enemy or a sea serpent attacking the boat, it stands at its seat and shoots at it (see
+		/// DefendBoat)
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="zdo">Its ZDO</param>
@@ -1039,7 +1042,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Shoots at a flying enemy attacking the boat - for any of its crew with a bow but the one at the helm, which
+		/// Shoots at a flying enemy or a sea serpent attacking the boat (see BoatThreat) - for any of its crew with a bow
+		/// but the one at the helm, which
 		/// steers on: standing up at its seat, its bow drawn, aiming ahead of the enemy and over it for the arrow's drop,
 		/// loosing an arrow every BirdShotInterval seconds, and sitting back down BoatShootSettle seconds after the last
 		/// enemy is gone. It never leaves the boat for it - knocked more than BoatStandDrift from its seat or off the deck,
@@ -1048,7 +1052,7 @@ namespace VikingVillages
 		/// <returns>True while it's standing to shoot, so it isn't held in its seat</returns>
 		private bool DefendBoat()
 		{
-			Character threat = ((mySeat != 0 && HasBow(humanoid)) ? FlyingThreat() : null);
+			Character threat = ((mySeat != 0 && HasBow(humanoid)) ? BoatThreat() : null);
 			if (threat != null)
 			{
 				lastThreatAt = Time.time;
@@ -1112,17 +1116,23 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the nearest flying enemy attacking the viking's boat - within BoatShootRange, after one of its crew on
-		/// board or a player on it, or come within BoatThreatNear of the viking
+		/// Finds the nearest enemy attacking the viking's boat that it can shoot at from the deck - a flying monster or a
+		/// sea serpent, within BoatShootRange, after one of its crew or a player on it, or come within BoatThreatNear of
+		/// the viking, or BoatSerpentNear for a serpent, which circles a boat before it strikes
 		/// </summary>
 		/// <returns>The enemy, or null when there's none</returns>
-		private Character FlyingThreat()
+		private Character BoatThreat()
 		{
 			Character nearest = null;
 			float best = BoatShootRange;
 			foreach (Character other in Character.GetAllCharacters())
 			{
-				if (other == null || other.IsDead() || !other.IsFlying() || !BaseAI.IsEnemy(humanoid, other))
+				if (other == null || other.IsDead() || !BaseAI.IsEnemy(humanoid, other))
+				{
+					continue;
+				}
+				bool serpent = VikingNewsLines.Serpents.Contains(Utils.GetPrefabName(other.gameObject));
+				if (!serpent && !other.IsFlying())
 				{
 					continue;
 				}
@@ -1132,7 +1142,7 @@ namespace VikingVillages
 					continue;
 				}
 				Character after = ((other.GetBaseAI() is MonsterAI theirs) ? theirs.GetTargetCreature() : null);
-				if (distance <= BoatThreatNear || (after != null && OnMyBoat(after)))
+				if (distance <= (serpent ? BoatSerpentNear : BoatThreatNear) || (after != null && OnMyBoat(after)))
 				{
 					nearest = other;
 					best = distance;
@@ -1142,7 +1152,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether someone is on the viking's boat - a player standing on it, or one of its crew sitting on board
+		/// Checks whether someone is with the viking's boat - a player standing on it, or one of its crew sitting on board
+		/// or overboard getting back on (see SwimBack)
 		/// </summary>
 		/// <param name="who">Who it is</param>
 		/// <returns>True when they are</returns>
@@ -1157,7 +1168,8 @@ namespace VikingVillages
 				return(myBoat.Ship.IsPlayerInBoat(player));
 			}
 			ZDO theirs = ((who.m_nview != null && who.m_nview.IsValid()) ? who.m_nview.GetZDO() : null);
-			return(theirs != null && theirs.GetString(VikingBoat.BoatKey, "") == myBoat.Key && theirs.GetInt(VikingBoat.BoardKey) == VikingBoat.Aboard);
+			int board = ((theirs != null) ? theirs.GetInt(VikingBoat.BoardKey) : 0);
+			return(theirs != null && theirs.GetString(VikingBoat.BoatKey, "") == myBoat.Key && (board == VikingBoat.Aboard || board == VikingBoat.Overboard));
 		}
 
 		/// <summary>
