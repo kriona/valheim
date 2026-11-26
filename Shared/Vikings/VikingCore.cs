@@ -2216,7 +2216,8 @@ namespace Kriona.Vikings
 		/// <summary>
 		/// Has a living or dvergr viking walk while there's no danger and it's at home, and move at its full pace once
 		/// there's danger - when it's alerted, has a target, or was hurt in the last few seconds - or it's away from its
-		/// village's core, or it's climbing a slope or taking a run-up to a fence, so it makes it over
+		/// village's core or on the road to a village, or it's climbing a slope or taking a run-up to a fence, so it
+		/// makes it over
 		/// </summary>
 		/// <remarks>
 		/// A creature moves at its jog whenever it isn't running, which for a viking built from the player is a quick

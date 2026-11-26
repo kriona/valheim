@@ -37,7 +37,7 @@ namespace Kriona.Vikings
 		bool GearHeld();
 
 		/// <summary>
-		/// Checks whether the viking is away from its village's home ground
+		/// Checks whether the viking is away from its village's home ground, or on the road to a village
 		/// </summary>
 		/// <returns>True while it is</returns>
 		bool AwayFromHome();
