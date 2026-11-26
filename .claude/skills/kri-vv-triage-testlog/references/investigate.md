@@ -32,7 +32,7 @@ Cause: what's wrong and where (file:line), or why it's fine
 Evidence: the log lines and code that show it
 Plan: the change, file by file - for needs logging, what's logged, where, and what it will tell apart
 Tests: the unit tests to add or change, or why none fit (engine glue, Harmony patches)
-README: what VikingVillages\README.md says that the change alters, or nothing
+README: what VikingVillages\README.md, LOGIC.md or JOBS.md says that the change alters, or nothing
 Other bugs: each with its evidence and a one-line plan, or none
 
 You'll be told when to make each change, one at a time
@@ -45,7 +45,7 @@ Continue the investigator with SendMessage, once for each change - its main fix 
 ````
 Go ahead with <your plan for issue N | the other bug you found: <its one line>>, and only that. Re-read each file before editing it, since other fixes may have changed it since you looked
 
-- Follow CLAUDE.md: the Edit tool for every change, its code style and docblocks, unit tests where they make sense, and VikingVillages\README.md when what the vikings do changes
+- Follow CLAUDE.md: the Edit tool for every change, its code style and docblocks, unit tests where they make sense, and VikingVillages\LOGIC.md and JOBS.md when what the vikings do changes - README.md too when it changes a feature it mentions
 - New logging follows the logging around it: gated the same way (usually `if (TestLog.On || Player.m_debugMode)`), a line starting with its kind like "Freed: ", the viking named with TestLog.Name, written when the thing happens rather than every frame, and counted with TestLog.Count when a total helps
 - Build with `dotnet build VikingVillages/VikingVillages.csproj -c Release` and run `dotnet test --project Tests/VikingVillages.Tests/VikingVillages.Tests.csproj -c Release`. If the session guard denies either, don't retry or work around it - say so
 - Don't stage or commit anything

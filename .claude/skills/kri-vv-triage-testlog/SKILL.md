@@ -104,7 +104,7 @@ Spawn a general-purpose subagent per issue, all in one message (up to 6 at once,
 Go through the issues in order. For each investigator whose verdict is bug or needs logging:
 
 1. Send it the go-ahead from `references/investigate.md` with SendMessage (fetch it with ToolSearch `select:SendMessage` when it isn't loaded). Each go-ahead is one change: its fix for the issue first, then each other bug it found, each after the one before is committed
-2. Check what it changed with `git status --porcelain` and `git diff` on the files it names. All of it should be this change, following CLAUDE.md - style, docblocks, README when what the vikings do changes, tests where they make sense. Send it back with what's wrong when it isn't
+2. Check what it changed with `git status --porcelain` and `git diff` on the files it names. All of it should be this change, following CLAUDE.md - style, docblocks, LOGIC.md and JOBS.md when what the vikings do changes, tests where they make sense. Send it back with what's wrong when it isn't
 3. If the session guard denied its build or tests, or they failed and it couldn't fix them, stop - don't commit it, and tell the user where things stand, since the next fix's commit would sweep it in when they share a file
 4. When commits were asked for, commit it: `git add` its new files, then `git commit -m "<message>" -- <every file it touched>`. The message is one line, about 50-70 characters, saying what changed for the user or the code, without the cause or file names, and with no Co-Authored-By trailer - the user wants only their name on commits
 5. Set the issue's Status in the triage file: `fixed (<hash>)`, `logging added (<hash>)`, `fixed, not committed` or `logging added, not committed`

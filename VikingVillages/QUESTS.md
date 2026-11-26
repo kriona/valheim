@@ -1,6 +1,6 @@
 # Viking Villages - Quests
 
-Everything a village's quests do, with the numbers they go by. The [README](README.md) has the short version, and [DIALOG.md](DIALOG.md) what the Vikings say about them.
+Everything a village's quests do, with the numbers they go by. [LOGIC.md](LOGIC.md#quests) has the short version, and [DIALOG.md](DIALOG.md) what the Vikings say about them.
 
 ## How a Quest Is Picked
 

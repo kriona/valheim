@@ -1,12 +1,12 @@
 # Viking Villages - Jobs
 
-Everything a living Viking does in their village, with the numbers it goes by. The [README](README.md) has the short version in its table of jobs, [QUESTS.md](QUESTS.md) what they do once they've left on a quest, and [DIALOG.md](DIALOG.md) what they say as they go about it.
+Everything a living Viking does in their village, with the numbers it goes by. [LOGIC.md](LOGIC.md) covers what their work adds up to and how they fight, get around and look after themselves, [QUESTS.md](QUESTS.md) what they do once they've left on a quest, and [DIALOG.md](DIALOG.md) what they say as they go about it.
 
 Times of day are shares of the game's day, as the game counts it: 0.25 is dawn, about 6 in the morning, 0.5 noon and 0.75 nightfall, about 6 in the evening. Dusk is from 0.71, about 5 in the afternoon, until night. Seconds are real seconds - at the default day of 30 real minutes, each real minute is 48 game minutes.
 
 ## Every Job
 
-The jobs in the order this file describes them - see [How a Job Is Picked](#how-a-job-is-picked) for the order a Viking picks them in.
+Everything a living Viking does, most important first. What's higher up stops what's lower down: the jobs marked Always drop whatever a Viking is doing, by day a Viking picks the first of the numbered jobs they can do, and with no work they roll between the ones at the bottom, by weight - see [How a Job Is Picked](#how-a-job-is-picked) for the whole order.
 
 | Job | When | What they do |
 | --- | --- | --- |
@@ -24,52 +24,52 @@ The jobs in the order this file describes them - see [How a Job Is Picked](#how-
 | [Walk back](#walk-back) | Always | Return when more than 75 m past the village's edge |
 | [Mourn the dead](#mourn-the-dead) | Day or night | Grieve by a fallen Viking of their village, then put away their gear |
 | [Keep guard](#keep-guard) | During a raid | Stand around the fire, facing out, with their weapon drawn |
-| [Lighten the load](#lighten-the-load) | Day or night | Put away or drop what they can't carry |
-| [Pick up kill loot](#pick-up-kill-loot) | Day or night | Pick up what an enemy they fought dropped |
-| [Put away what a quest brought home](#put-away-what-a-quest-brought-home) | Day or night | Store what a quest brought back |
+| [Lighten the load](#lighten-the-load) | Day or night, first | Put away or drop what they can't carry |
+| [Pick up kill loot](#pick-up-kill-loot) | Day or night, next | Pick up what an enemy they fought dropped |
+| [Put away what a quest brought home](#put-away-what-a-quest-brought-home) | Day or night, next | Store what a quest brought back |
 | [Keep watch](#keep-watch) | Night | Patrol the village with a torch and wake it to danger |
 | [Sleep](#sleep) | Night | Go to bed, a chair or their house's floor |
 | [Torches](#torches) | Dusk and night | Hold a torch, and craft one when short |
 | [Teach a forsaken power](#teach-a-forsaken-power) | Dusk | Use a power beside a Viking who doesn't know it |
 | [Gather at the fire](#gather-at-the-fire) | Dusk | Stand or sit in a ring around the fire |
-| [Leave on a quest](#leave-on-a-quest) | Day | Pack food, potions and a tool, then head out |
-| [Eat](#eat) | Day | Eat from the chests when hurt |
-| [Rest by the fire](#rest-by-the-fire) | Day | Sit by the fire when hurt until rested |
-| [Keep their foods up](#keep-their-foods-up) | Day | Eat while there's food to spare |
-| [Keep warm](#keep-warm) | Day | Sit by a fire or go inside in freezing weather |
-| [Cook](#cook) | Day | Cook raw meat at the cooking stations |
-| [Cook a meal](#cook-a-meal) | Day | Make a meal at the cauldron |
-| [Put away loot](#put-away-loot) | Day | Put what they carry in the chests |
-| [Pick up loot](#pick-up-loot) | Day | Gather items lying around the village |
-| [Take up better gear](#take-up-better-gear) | Day | Put on better gear from the chests |
-| [Fill their quiver](#fill-their-quiver) | Day | Take arrows from the chests |
-| [Repair the village](#repair-the-village) | Day | Fix damaged pieces |
-| [Clear snow](#clear-snow) | Day | In the Deep North, knock heavy snow off pieces and the ground |
-| [Repair their gear](#repair-their-gear) | Day | Fix worn gear at the workbench or forge |
-| [Rebuild the fire](#rebuild-the-fire) | Day | Build back the village's fire |
-| [Take down a sitting log](#take-down-a-sitting-log) | Day | Take down the logs by an old fire for their wood |
-| [Cut trees](#cut-trees) | Day | Fell brush trees when the village is out of wood |
-| [Rebuild the village](#rebuild-the-village) | Day | Build back destroyed pieces |
-| [Stack the fire](#stack-the-fire) | Day | Put wood on the fire |
-| [Craft arrows](#craft-arrows) | Day | Make the best arrows the village can |
-| [Craft a torch](#craft-a-torch) | Day | Make a torch when theirs is missing or worn |
-| [Craft a second weapon](#craft-a-second-weapon) | Day | Make a crude bow, or an axe or club |
-| [Craft better gear](#craft-better-gear) | Day | Make a weapon, shield or armor better than their own |
-| [Upgrade their gear](#upgrade-their-gear) | Day | Raise a piece of their gear one quality |
-| [Work toward the goal](#work-toward-the-goal) | Day | Fuel and fill smelters, and craft materials for the village's goal |
-| [Stock tools](#stock-tools) | Day | Make axes and pickaxes for the chests |
-| [Line a weapon with silver](#line-a-weapon-with-silver) | Day | With Zombie Apocalypse, line a weapon with silver |
-| [Silver arrows](#silver-arrows) | Day | With Zombie Apocalypse, take or craft silver arrows |
-| [Make paths](#make-paths) | Day | Hoe paths to new buildings, bridging water |
-| [Build a beehive](#build-a-beehive) | Day | Build a hive with a queen bee |
-| [Talk](#talk) | Day, rolled | Chat with another Viking |
-| [Pet a boar](#pet-a-boar) | Day, rolled | Pet one of the village's livestock |
-| [Stock the chests with wood](#stock-the-chests-with-wood) | Day, rolled | Gather wood from the ground into the chests |
-| [Forage](#forage) | Day, rolled | Pick honey, berries, mushrooms and flint |
-| [Hunt](#hunt) | Day, rolled | Hunt prey near the village, from the Plains on in parties |
-| [Get rested again](#get-rested-again) | Day, rolled | Sit by the fire until rested |
-| [Stroll](#stroll) | Day, rolled | Walk to an open spot in the village |
-| [Stand about](#stand-about) | Day, rolled | Stand and look around |
+| [Leave on a quest](#leave-on-a-quest) | Day, first | Pack food, potions and a tool, then head out |
+| [Eat](#eat) | Day 1 | Eat from the chests when hurt |
+| [Rest by the fire](#rest-by-the-fire) | Day 2 | Sit by the fire when hurt until rested |
+| [Keep their foods up](#keep-their-foods-up) | Day 3 | Eat while there's food to spare |
+| [Keep warm](#keep-warm) | Day 4 | Sit by a fire or go inside in freezing weather |
+| [Cook](#cook) | Day 5 | Cook raw meat at the cooking stations |
+| [Cook a meal](#cook-a-meal) | Day 6 | Make a meal at the cauldron |
+| [Put away loot](#put-away-loot) | Day 7 | Put what they carry in the chests |
+| [Pick up loot](#pick-up-loot) | Day 8 | Gather items lying around the village |
+| [Take up better gear](#take-up-better-gear) | Day 9 | Put on better gear from the chests |
+| [Fill their quiver](#fill-their-quiver) | Day 10 | Take arrows from the chests |
+| [Repair the village](#repair-the-village) | Day 11 | Fix damaged pieces |
+| [Clear snow](#clear-snow) | Day 12 | In the Deep North, knock heavy snow off pieces and the ground |
+| [Repair their gear](#repair-their-gear) | Day 13 | Fix worn gear at the workbench or forge |
+| [Rebuild the fire](#rebuild-the-fire) | Day 14 | Build back the village's fire |
+| [Take down a sitting log](#take-down-a-sitting-log) | Day 15 | Take down the logs by an old fire for their wood |
+| [Cut trees](#cut-trees) | Day 16 | Fell brush trees when the village is out of wood |
+| [Rebuild the village](#rebuild-the-village) | Day 17 | Build back destroyed pieces |
+| [Stack the fire](#stack-the-fire) | Day 18 | Put wood on the fire |
+| [Craft arrows](#craft-arrows) | Day 19 | Make the best arrows the village can |
+| [Craft a torch](#craft-a-torch) | Day 20 | Make a torch when theirs is missing or worn |
+| [Craft a second weapon](#craft-a-second-weapon) | Day 21 | Make a crude bow, or an axe or club |
+| [Craft better gear](#craft-better-gear) | Day 22 | Make a weapon, shield or armor better than their own |
+| [Upgrade their gear](#upgrade-their-gear) | Day 23 | Raise a piece of their gear one quality |
+| [Work toward the goal](#work-toward-the-goal) | Day 24 | Fuel and fill smelters, and craft materials for the village's goal |
+| [Stock tools](#stock-tools) | Day 25 | Make axes and pickaxes for the chests |
+| [Line a weapon with silver](#line-a-weapon-with-silver) | Day 26 | With Zombie Apocalypse, line a weapon with silver |
+| [Silver arrows](#silver-arrows) | Day 27 | With Zombie Apocalypse, take or craft silver arrows |
+| [Make paths](#make-paths) | Day 28 | Hoe paths to new buildings, bridging water |
+| [Build a beehive](#build-a-beehive) | Day 29 | Build a hive with a queen bee |
+| [Talk](#talk) | Day, weight 25 | Chat with another Viking |
+| [Pet a boar](#pet-a-boar) | Day, weight 10 | Pet one of the village's livestock |
+| [Stock the chests with wood](#stock-the-chests-with-wood) | Day, weight 15 | Gather wood from the ground into the chests |
+| [Forage](#forage) | Day, weight 15, or 60 short of food | Pick honey, berries, mushrooms and flint |
+| [Hunt](#hunt) | Day, weight 15, or 60 short of food | Hunt prey near the village, from the Plains on in parties |
+| [Get rested again](#get-rested-again) | Day, weight 15 | Sit by the fire until rested |
+| [Stroll](#stroll) | Day, weight 40 | Walk to an open spot in the village |
+| [Stand about](#stand-about) | Day, weight 25 | Stand and look around |
 
 ## How a Job Is Picked
 

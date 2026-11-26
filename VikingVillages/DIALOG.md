@@ -269,7 +269,7 @@ For 12 game hours after a Viking gets where they were going on the road - a vill
 | A harder biome | "We came through the {biome} to get here. Long road, {player}." / "Walked through the {biome} the whole way. My boots are done for." / "The {biome}, {player}! I didn't think we'd make it out." | "We crossed the {biome} on the way." / "Rather you than me." - "The {biome} nearly had us." / "But here you are." |
 | Picked things on the way | "Picked a few berries along the road. Want one, {player}?" / "Found mushrooms on the way here - not bad ones either." / "Long road, but there was plenty to pick along it." | "Picked berries all the way here." / "Save some for the rest of us." |
 
-The villages hear of each other too (see News in the [README](README.md)) - 20% of the time you talk to a Viking, and in 15% of their talks, they pass on something from a village within 3 km in the last 3 game days, a village being disbanded most of all. A line is how word came, then what happened. {village} is the village it came from, or "the next village over" when it has no name, {who} the Viking it happened to, {quest} the quest that came home and {item} what it was for.
+The villages hear of each other too (see [News](LOGIC.md#news) in LOGIC.md) - 20% of the time you talk to a Viking, and in 15% of their talks, they pass on something from a village within 3 km in the last 3 game days, a village being disbanded most of all. A line is how word came, then what happened. {village} is the village it came from, or "the next village over" when it has no name, {who} the Viking it happened to, {quest} the quest that came home and {item} what it was for.
 
 | How word came | Lines |
 |---|---|
@@ -287,7 +287,7 @@ The villages hear of each other too (see News in the [README](README.md)) - 20% 
 
 ## News
 
-Word of what you've done gets around (see News in the [README](README.md)). Each piece of news is told by 2-4 Vikings, from any village, each picking a line of its row that none of the others said, in place of their greeting or what they'd say when you talk to them - over their head, within 20 m, for 6 s. They only tell it to the players it happened to, and only news from after they last talked to you. {player} is your name and {creature} is the name of the creature in it.
+Word of what you've done gets around (see [News](LOGIC.md#news) in LOGIC.md). Each piece of news is told by 2-4 Vikings, from any village, each picking a line of its row that none of the others said, in place of their greeting or what they'd say when you talk to them - over their head, within 20 m, for 6 s. They only tell it to the players it happened to, and only news from after they last talked to you. {player} is your name and {creature} is the name of the creature in it.
 
 When a Viking tells you about a boss or a biome beyond their own village's biome, they add one of these after their line:
 
@@ -471,7 +471,7 @@ A death is told with the lines of what killed you - the creature or player that 
 
 ## Dvergr Vikings
 
-The Dvergr Vikings the Dvergr hire in the Mistlands (see Dvergr Vikings in the [README](README.md)) have a set of lines of their own, about working for the Dvergr - none of the living Vikings' lines above but the news about the Mistlands, which they tell in the same words, and the lines for old friends, asking how you're doing, the runestones where they stand and the runestones of someone with their name, which they say the same way, in place of the lines below. They say them over their heads the way the living Vikings do. {player} is your name, {name} their own name, {enemy} the enemy's name, {skill} and {level} the skill and its new level, and {power} the forsaken power's name.
+The Dvergr Vikings the Dvergr hire in the Mistlands (see [Dvergr Vikings](LOGIC.md#dvergr-vikings) in LOGIC.md) have a set of lines of their own, about working for the Dvergr - none of the living Vikings' lines above but the news about the Mistlands, which they tell in the same words, and the lines for old friends, asking how you're doing, the runestones where they stand and the runestones of someone with their name, which they say the same way, in place of the lines below. They say them over their heads the way the living Vikings do. {player} is your name, {name} their own name, {enemy} the enemy's name, {skill} and {level} the skill and its new level, and {power} the forsaken power's name.
 
 | When | Seen within | Lines |
 |---|---|---|
