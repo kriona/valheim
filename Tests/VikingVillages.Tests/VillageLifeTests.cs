@@ -770,9 +770,34 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void FoodLineShowsHowShortTheChestsAre()
 		{
-			Assert.Equal("Food: 14 in the chests for 7 vikings loaded, low, 7 short of 21, 0 raw, 1 livestock, no wild prey that drops food near", VillageLife.DescribeFoodFor(14, 7, 0, 1, false));
-			Assert.Equal("Food: 30 in the chests for 6 vikings loaded, enough, 4 raw, 0 livestock, wild prey that drops food near", VillageLife.DescribeFoodFor(30, 6, 4, 0, true));
-			Assert.Equal("Food: 0 in the chests for 0 vikings loaded, low, 3 short of 3, 0 raw, 2 livestock, no viking loaded to look for wild prey", VillageLife.DescribeFoodFor(0, 0, 0, 2, null));
+			Assert.Equal("Food: 14 in the chests for 7 vikings loaded, low, 7 short of 21, 0 raw, 1 livestock, no wild prey that drops food near", VillageLife.DescribeFoodFor(14, 0, 7, 0, 1, false));
+			Assert.Equal("Food: 30 in the chests for 6 vikings loaded, enough, 4 raw, 0 livestock, wild prey that drops food near", VillageLife.DescribeFoodFor(30, 0, 6, 4, 0, true));
+			Assert.Equal("Food: 0 in the chests for 0 vikings loaded, low, 3 short of 3, 0 raw, 2 livestock, no viking loaded to look for wild prey", VillageLife.DescribeFoodFor(0, 0, 0, 0, 2, null));
+		}
+
+		/// <summary>
+		/// Checks that the snapshot's food line says how much food was left out in chests out of reach, and counts the
+		/// village as short of food without it
+		/// </summary>
+		[Fact]
+		public void FoodLineShowsFoodOutOfReach()
+		{
+			Assert.Equal("Food: 0 in the chests (10 more left out, in chests a viking couldn't get to lately) for 1 vikings loaded, low, 3 short of 3, 0 raw, 1 livestock, no wild prey that drops food near", VillageLife.DescribeFoodFor(0, 10, 1, 0, 1, false));
+		}
+
+		/// <summary>
+		/// Checks that a chest a viking couldn't get to stays out of reach for its village's food for ten minutes after
+		/// </summary>
+		/// <param name="since">How long ago a viking couldn't get to it, in seconds</param>
+		/// <param name="expected">Whether it's still out of reach</param>
+		[Theory]
+		[InlineData(0f, true)]
+		[InlineData(599f, true)]
+		[InlineData(600f, false)]
+		[InlineData(3600f, false)]
+		public void ChestOutOfReachForTenMinutes(float since, bool expected)
+		{
+			Assert.Equal(expected, VillageLife.OutOfReach(1000f, 1000f + since));
 		}
 
 		/// <summary>

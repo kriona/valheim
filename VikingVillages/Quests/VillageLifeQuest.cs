@@ -74,14 +74,116 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// How long a chest a viking couldn't get to has its food left out of its village's food (see FoodLow), in
+		/// seconds, unless a viking opens it sooner
+		/// </summary>
+		private const float ChestMissMemory = 600f;
+
+		/// <summary>
+		/// When a viking on this client last couldn't get to each chest, by its ZDO, in Time.time seconds
+		/// </summary>
+		private static readonly Dictionary<ZDOID, float> chestMissedAt = new Dictionary<ZDOID, float>();
+
+		/// <summary>
 		/// Checks whether a village's chests hold too little food for its vikings to keep their foods up (see
-		/// FoodEnough)
+		/// FoodEnough), counting only the food in chests within reach (see ChestFoodWithinReach)
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <returns>True when they do</returns>
 		internal static bool FoodLow(Village village)
 		{
-			return(!FoodEnough(ChestFoodOf(village), village.Vikings().Count));
+			return(!FoodEnough(ChestFoodWithinReach(village, out int _), village.Vikings().Count));
+		}
+
+		/// <summary>
+		/// Counts the food in a village's chests the vikings can get to, leaving out the chests a viking couldn't get to
+		/// lately (see OutOfReach)
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="outOfReach">Given the food in the chests left out</param>
+		/// <returns>The food in the rest</returns>
+		internal static int ChestFoodWithinReach(Village village, out int outOfReach)
+		{
+			int food = 0;
+			outOfReach = 0;
+			foreach (Container chest in VillageChests(village))
+			{
+				int held = 0;
+				foreach (ItemDrop.ItemData item in chest.GetInventory().GetAllItems())
+				{
+					held += (VikingFood.IsFood(item) ? item.m_stack : 0);
+				}
+				if (ChestOutOfReach(chest))
+				{
+					outOfReach += held;
+				}
+				else
+				{
+					food += held;
+				}
+			}
+			return(food);
+		}
+
+		/// <summary>
+		/// Notes that a viking couldn't get to a chest, so its food is left out of its village's food for a while (see
+		/// ChestFoodWithinReach)
+		/// </summary>
+		/// <param name="chest">The chest</param>
+		private static void NoteChestMissed(Container chest)
+		{
+			if (chest != null && chest.m_nview != null && chest.m_nview.IsValid())
+			{
+				chestMissedAt[chest.m_nview.GetZDO().m_uid] = Time.time;
+			}
+		}
+
+		/// <summary>
+		/// Notes that a viking opened a chest, so its food counts toward its village's food again
+		/// </summary>
+		/// <param name="chest">The chest</param>
+		private static void NoteChestReached(Container chest)
+		{
+			if (chestMissedAt.Count > 0 && chest != null && chest.m_nview != null && chest.m_nview.IsValid())
+			{
+				chestMissedAt.Remove(chest.m_nview.GetZDO().m_uid);
+			}
+		}
+
+		/// <summary>
+		/// Checks whether a chest is out of reach for its village's food - a viking couldn't get to it lately (see
+		/// OutOfReach), forgetting the miss once that's run out
+		/// </summary>
+		/// <param name="chest">The chest</param>
+		/// <returns>True when it is</returns>
+		private static bool ChestOutOfReach(Container chest)
+		{
+			if (chestMissedAt.Count == 0 || chest.m_nview == null || !chest.m_nview.IsValid())
+			{
+				return(false);
+			}
+			if (!chestMissedAt.TryGetValue(chest.m_nview.GetZDO().m_uid, out float missedAt))
+			{
+				return(false);
+			}
+			if (OutOfReach(missedAt, Time.time))
+			{
+				return(true);
+			}
+			chestMissedAt.Remove(chest.m_nview.GetZDO().m_uid);
+			return(false);
+		}
+
+		/// <summary>
+		/// Checks whether a chest a viking last couldn't get to at a time is still out of reach for its village's food -
+		/// for ChestMissMemory seconds after
+		/// </summary>
+		/// <param name="missedAt">When a viking last couldn't get to it, in seconds</param>
+		/// <param name="now">The time now, in seconds</param>
+		/// <returns>True when it is</returns>
+		internal static bool OutOfReach(float missedAt, float now)
+		{
+			return(now - missedAt < ChestMissMemory);
 		}
 
 		/// <summary>

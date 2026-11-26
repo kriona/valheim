@@ -7244,7 +7244,14 @@ namespace VikingVillages
 			// what they find or eat from - only by the viking that couldn't get to it, for a while
 			if (chest)
 			{
-				LogChestMiss(view.GetComponent<Container>());
+				Container store = view.GetComponent<Container>();
+				// A chest it got to but found nothing in is still within reach, and a viking off its navmesh fails to get to
+				// everything, so neither leaves the chest's food out of the village's (see ChestFoodWithinReach)
+				if (!AtChest(store) && !OffItsNavmesh())
+				{
+					NoteChestMissed(store);
+				}
+				LogChestMiss(store);
 				return;
 			}
 			// A viking stranded where it can't walk from - up on a roof, or anywhere else off its navmesh - fails to get
@@ -7927,6 +7934,7 @@ namespace VikingVillages
 			{
 				return(false);
 			}
+			NoteChestReached(chest);
 			if (!chest.m_nview.IsOwner())
 			{
 				chest.m_nview.ClaimOwnership();

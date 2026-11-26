@@ -431,7 +431,7 @@ An archer missing at least a batch of their 100 arrows - 20 for wood arrows - wi
 
 ### Get Food
 
-While the chests hold fewer than three foods for each Viking, getting more comes ahead of making paths and the village's upkeep, so a village kept busy repairing after attacks still gets meat. Not below three quarters of their health, and with fewer hunting than one for every 5 Vikings:
+While the chests hold fewer than three foods for each Viking, getting more comes ahead of making paths and the village's upkeep, so a village kept busy repairing after attacks still gets meat. The food in a chest a Viking couldn't get to in the last 10 minutes doesn't count until one opens it, so a village whose food is out of reach still goes for more. Not below three quarters of their health, and with fewer hunting than one for every 5 Vikings:
 
 1. They [hunt](#hunt) the nearest wild prey that drops food and that they hunt themselves - leaving alone prey that drops none, like a draugr or a leech, and birds
 2. With no wild prey about that drops food for any of the village's hunters, they [slaughter](#slaughter) one of the village's livestock
