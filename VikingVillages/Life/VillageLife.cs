@@ -7118,7 +7118,7 @@ namespace VikingVillages
 		/// <returns>False when it can't get within reach</returns>
 		private bool CanReach(Vector3 point, out Vector3 stand)
 		{
-			return(CanReach(point, out stand, out string _));
+			return(CanReach(point, out stand, out string _, out bool _));
 		}
 
 		/// <summary>
@@ -7128,11 +7128,14 @@ namespace VikingVillages
 		/// <param name="point">Where it lies</param>
 		/// <param name="stand">Where the viking can stand to reach it</param>
 		/// <param name="why">Why it can't, for the log, or null when it can</param>
+		/// <param name="noPath">True when there's a spot near enough to stand at, and only the whole path there is
+		/// missing</param>
 		/// <returns>False when it can't get within reach</returns>
-		private bool CanReach(Vector3 point, out Vector3 stand, out string why)
+		private bool CanReach(Vector3 point, out Vector3 stand, out string why, out bool noPath)
 		{
 			stand = point;
 			why = null;
+			noPath = false;
 			if (Pathfinding.instance == null)
 			{
 				return(true);
@@ -7155,6 +7158,7 @@ namespace VikingVillages
 			{
 				bool onMesh = NavmeshPoints.FindValidPoint(out Vector3 from, transform.position, 1f, Pathfinding.AgentType.Humanoid);
 				why = "no whole path from the viking to " + stand.ToString("F1") + (onMesh ? "" : " - the viking isn't on the navmesh itself");
+				noPath = true;
 				return(false);
 			}
 			return(true);
@@ -8177,7 +8181,8 @@ namespace VikingVillages
 			}
 			found.Sort((KeyValuePair<float, ZNetView> a, KeyValuePair<float, ZNetView> b) => a.Key.CompareTo(b.Key));
 			// Loot it can't get within reach of is left alone for a while, and the next nearest tried - except in a pen,
-			// which has no way in but over its fence, which the viking jumps
+			// which has no way in but over its fence, which the viking jumps. Loot lying up on a pen's fence is told by the
+			// ground it's reached from, which lies in the pen, since its own spot is above the fence
 			int tries = 0;
 			foreach (KeyValuePair<float, ZNetView> entry in found)
 			{
@@ -8186,7 +8191,7 @@ namespace VikingVillages
 				{
 					continue;
 				}
-				if (InPen(entry.Value.GetZDO().m_uid, entry.Value.transform.position) || CanReach(entry.Value.transform.position, out Vector3 _, out string why))
+				if (InPen(entry.Value.GetZDO().m_uid, entry.Value.transform.position) || CanReach(entry.Value.transform.position, out Vector3 stand, out string why, out bool noPath) || (noPath && Village.FencedIn(stand)))
 				{
 					return(entry.Value);
 				}
@@ -10780,17 +10785,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// How many times a viking shut in a pen tries to jump out within PenHopWindow seconds before it climbs over
-		/// instead - a pen whose ground inside lies lower than its fence's foot outside can have a fence too high to jump
+		/// How many times a viking shut in a pen tries to jump out before it climbs over instead - a pen whose ground
+		/// inside lies lower than its fence's foot outside can have a fence too high to jump
 		/// </summary>
 		private const int PenHopTries = 3;
-		private const float PenHopWindow = 60f;
 
 		/// <summary>
-		/// The viking's jumps out of a pen since when, for ClimbOutOfPen
+		/// The viking's jumps out of the pen it's shut in, for ClimbOutOfPen
 		/// </summary>
 		private int penHops;
-		private float penHopSince;
 
 		/// <summary>
 		/// Checks whether something in the viking's way is a building piece it jumps when there's no way around it - like
@@ -10830,9 +10833,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Climbs the viking over a pen's fence it's shut in by, once it has tried to jump out more than PenHopTries times
-		/// within PenHopWindow - putting it down on the far side, where its jump would land - rather than leaving it
-		/// shut in, jumping and falling back, for as long as the fence is too high for it
+		/// Climbs the viking over a pen's fence it's shut in by (see ShutIn), once it has tried to jump out more than
+		/// PenHopTries times without getting out - putting it down on the far side, where its jump would land - rather
+		/// than leaving it shut in, jumping and falling back, for as long as the fence is too high for it
 		/// </summary>
 		/// <param name="feet">Where it stands</param>
 		/// <param name="landing">Where its jump would land, past the fence, on the ground</param>
@@ -10840,23 +10843,12 @@ namespace VikingVillages
 		/// <returns>True when it climbed over</returns>
 		private bool ClimbOutOfPen(Vector3 feet, Vector3 landing, RaycastHit obstacle)
 		{
-			if (!Village.FencedIn(feet) || Village.FencedIn(landing))
-			{
-				penHops = 0;
-				return(false);
-			}
-			if (Time.time - penHopSince > PenHopWindow)
-			{
-				penHopSince = Time.time;
-				penHops = 0;
-			}
-			penHops++;
-			if (penHops <= PenHopTries)
+			bool shutIn = ShutIn(feet, landing, out Vector3 outside);
+			if (!PenHopDue(ref penHops, shutIn))
 			{
 				return(false);
 			}
-			penHops = 0;
-			Vector3 over = landing + Vector3.up * 0.1f;
+			Vector3 over = outside + Vector3.up * 0.1f;
 			transform.position = over;
 			humanoid.m_body.position = over;
 			humanoid.m_body.linearVelocity = Vector3.zero;
@@ -10867,6 +10859,61 @@ namespace VikingVillages
 				WearNTear piece = obstacle.collider.GetComponentInParent<WearNTear>();
 				Plugin.Log.LogInfo("Climb: " + TestLog.Name(humanoid, "F1") + " couldn't jump the " + ((piece != null) ? Utils.GetPrefabName(piece.gameObject) : "fence") + " at " + obstacle.point.ToString("F1") + " out of a pen, so it climbs over to " + over.ToString("F1"));
 			}
+			return(true);
+		}
+
+		/// <summary>
+		/// Counts a viking's jump out of a pen toward climbing over its fence (see ClimbOutOfPen) - counting each jump it
+		/// makes while it's shut in, however far apart, and starting over once it isn't
+		/// </summary>
+		/// <param name="hops">Its jumps out so far, counted on, or set back to none</param>
+		/// <param name="shutIn">True when it's shut in as it jumps</param>
+		/// <returns>True when it has jumped more than PenHopTries times without getting out, so it climbs over</returns>
+		internal static bool PenHopDue(ref int hops, bool shutIn)
+		{
+			if (!shutIn)
+			{
+				hops = 0;
+				return(false);
+			}
+			hops++;
+			if (hops <= PenHopTries)
+			{
+				return(false);
+			}
+			hops = 0;
+			return(true);
+		}
+
+		/// <summary>
+		/// Checks whether the viking is shut in where it stands, with its jump the way out - in its village, when it has no
+		/// whole path to the village's open ground (see Village.RallyPoint) and the navmesh where its jump would land
+		/// does, which tells a pen too big to see as fenced in from its far side as well as a small one, and never takes
+		/// it into one. Out of its village, when it stands fenced in and its jump would land outside (see
+		/// Village.FencedIn)
+		/// </summary>
+		/// <param name="feet">Where it stands</param>
+		/// <param name="landing">Where its jump would land, past the fence, on the ground</param>
+		/// <param name="outside">Where it would be put down out of it - on the navmesh near the landing, when there's
+		/// that</param>
+		/// <returns>True when it's shut in</returns>
+		private bool ShutIn(Vector3 feet, Vector3 landing, out Vector3 outside)
+		{
+			outside = landing;
+			if (village == null || Pathfinding.instance == null || !village.Contains(feet))
+			{
+				return(Village.FencedIn(feet) && !Village.FencedIn(landing));
+			}
+			Vector3 open = village.RallyPoint();
+			if (Pathfinding.instance.HavePath(feet, open, Pathfinding.AgentType.Humanoid))
+			{
+				return(false);
+			}
+			if (!NavmeshPoints.FindValidPoint(out Vector3 ground, landing, HopLanding, Pathfinding.AgentType.Humanoid) || !Pathfinding.instance.HavePath(ground, open, Pathfinding.AgentType.Humanoid))
+			{
+				return(false);
+			}
+			outside = ground;
 			return(true);
 		}
 

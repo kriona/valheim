@@ -352,6 +352,40 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a viking shut in a pen climbs over its fence on its fourth jump out, however far apart they come,
+		/// and counts from none again after it
+		/// </summary>
+		[Fact]
+		public void ClimbsOutOfAPenOnTheFourthJump()
+		{
+			int hops = 0;
+			Assert.False(VillageLife.PenHopDue(ref hops, true));
+			Assert.False(VillageLife.PenHopDue(ref hops, true));
+			Assert.False(VillageLife.PenHopDue(ref hops, true));
+			Assert.True(VillageLife.PenHopDue(ref hops, true));
+			Assert.Equal(0, hops);
+			Assert.False(VillageLife.PenHopDue(ref hops, true));
+		}
+
+		/// <summary>
+		/// Checks that a jump made while not shut in, like one into a pen or one that got out, starts the count over
+		/// </summary>
+		[Fact]
+		public void StartsCountingPenJumpsOverOnceOut()
+		{
+			int hops = 0;
+			Assert.False(VillageLife.PenHopDue(ref hops, true));
+			Assert.False(VillageLife.PenHopDue(ref hops, true));
+			Assert.False(VillageLife.PenHopDue(ref hops, true));
+			Assert.False(VillageLife.PenHopDue(ref hops, false));
+			Assert.Equal(0, hops);
+			Assert.False(VillageLife.PenHopDue(ref hops, true));
+			Assert.False(VillageLife.PenHopDue(ref hops, true));
+			Assert.False(VillageLife.PenHopDue(ref hops, true));
+			Assert.True(VillageLife.PenHopDue(ref hops, true));
+		}
+
+		/// <summary>
 		/// Checks that an archer whose own best arrows already fill its quiver takes none from the chest and keeps all
 		/// its own
 		/// </summary>
