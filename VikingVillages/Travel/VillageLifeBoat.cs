@@ -11,7 +11,7 @@ namespace VikingVillages
 	/// </summary>
 	/// <remarks>
 	/// Reaching the sea on its road, a viking waits at the shore for the rest of its group, for up to GatherMax seconds.
-	/// The one of the hardest biome among them then takes out a hammer, swings it a few times and builds as many boats of
+	/// The one of the hardest biome among them then takes out a hammer, swings it once and builds as many boats of
 	/// the best kind their biome has as they need - each with one of them at the helm - from nothing. Each tries once to
 	/// jump on board from the shore, and swims to the boat's ladder when it misses; once VikingBoat.BoardTime seconds
 	/// have passed, those still off it are put on board. On board it sits where it's put until the boat reaches the far
@@ -59,9 +59,10 @@ namespace VikingVillages
 		private const float RestoreWait = 20f;
 
 		/// <summary>
-		/// How the boats are built - how many times the builder swings its hammer, and how long between swings, in seconds
+		/// How the boats are built and broken up - how many times the viking swings its hammer, once, as a player builds or
+		/// takes a piece down, and how long the swing takes to land, in seconds
 		/// </summary>
-		private const int BuildSwings = 3;
+		private const int BuildSwings = 1;
 		private const float BuildSwingGap = 1.1f;
 
 		/// <summary>
@@ -373,7 +374,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Swings the hammer at the water a few times, then builds the group's boats - as many as they need, each with its
+		/// Swings the hammer at the water once, then builds the group's boats - as many as they need, each with its
 		/// share of the group on board and the first of them at the helm
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
@@ -1024,8 +1025,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Has the viking that was at the helm swing its hammer at the boat a couple of times and ask for it to be broken
-		/// up, once the rest of the crew is off it (see VikingBoat.UpdateLanding)
+		/// Has the viking that was at the helm swing its hammer at the boat once and ask for it to be broken up, once the
+		/// rest of the crew is off it (see VikingBoat.UpdateLanding)
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
 		/// <returns>True while it works on the boat</returns>
@@ -1044,7 +1045,7 @@ namespace VikingVillages
 			{
 				return(true);
 			}
-			if (swings < BuildSwings - 1)
+			if (swings < BuildSwings)
 			{
 				VikingPoses.Swing(humanoid);
 				swings++;
