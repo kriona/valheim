@@ -25,3 +25,9 @@ What test runs show that's been looked into and isn't a bug. Triage leaves these
 - **Looks like:** `Door:` lines by the hundreds, vikings waiting at a door for another crossing it or standing in the doorway, most of them at the doors of the busiest houses
 - **Why it's fine:** vikings take turns at doors, and every wait is written
 - **An issue when:** one viking waits at the same door for minutes, two wait on each other, or a viking named as standing in a doorway stays there - and `Stuck:` lines for the vikings waiting there back that up
+
+## No cooking where there's no meat
+
+- **Looks like:** no `Cook` or `Meal` jobs in the totals and `Eaten` no higher than the food the village was stocked with, in a biome whose wild prey drops no food - like the Swamp, whose leeches and draugr drop bloodbags and entrails
+- **Why it's fine:** cooking needs raw food in the chests and every cauldron meal the chests could make needs something they don't hold, so a village whose pen is empty has nothing to cook. The snapshot's `Food:` part shows the raw food, livestock and wild prey behind it
+- **An issue when:** the `Food:` part shows raw food in the chests, livestock in the pens or wild prey that drops food near while food is low, and no `Hunt (food)`, `Slaughter` or `Cook` jobs follow
