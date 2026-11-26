@@ -277,6 +277,8 @@ They stand around the fire they gather at, weapon drawn, facing out and looking 
 
 Each Viking keeps to a side of the fire of their own, give or take 10°, trying up to 12 spots fanned out from it - out of the water, houses and pens. With no fire, or no spot found, they stand anywhere open in the core. Every 20-40 seconds they move to a new spot.
 
+They fight the raid together. A Viking keeping guard goes to any fight one of the village's Vikings is in, and answers any call for help, anywhere in the village or within 20 meters past its edge - seen or not, and however far off.
+
 ## Night and Dusk
 
 ### Gather at the Fire

@@ -322,6 +322,7 @@ How living Vikings see, fight, get around and look after themselves. What they d
 ### Raids
 
 - They know when a raid is on. When one of the game's raids - the zombie Viking raid among them - reaches over the village, every Viking who's awake draws their weapon and drops whatever they're doing but what can't wait - keeping watch, eating or resting by the fire while hurt, and lightening their load - to keep guard: they form up around the fire they gather at, facing out and looking around - Vikings who can shoot in the ring they gather in at dusk, and those fighting hand to hand 3 meters farther out, in front of them - each on their own side of the fire, shifting a little every 20-40 seconds, and in a village with no fire to gather at, at a spot in its core, and take up no other work, go out for nothing and mourn no one until the raid is over
+- They fight a raid together. While one is on, a Viking keeping guard goes to any fight one of the village's Vikings is in, and answers any call for help, anywhere in the village or within 20 meters past its edge - seen or not, however far off - rather than only those within 30 meters, so no one is left to take on the raid alone at the edge of the village
 - By day the first to notice calls it out. At night the watch roars the alarm the moment the raid starts, waking the whole village to keep guard with them rather than going back to bed - a Viking asleep doesn't know of the raid until something wakes them
 
 ### The Dead

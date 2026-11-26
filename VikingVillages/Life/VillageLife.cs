@@ -201,6 +201,12 @@ namespace VikingVillages
 		private const float DefendRange = 30f;
 
 		/// <summary>
+		/// How far past the village's edge a fellow's fight or call for help reaches every viking ready for a raid on
+		/// the village, wherever in it they stand, in meters
+		/// </summary>
+		private const float RaidCallReach = 20f;
+
+		/// <summary>
 		/// How far past the village's edge the viking chases an enemy, and one that hurt it or someone it's defending
 		/// within GrudgeTime seconds, and how far past it the viking can end up before it walks back, in meters
 		/// </summary>
@@ -4121,8 +4127,9 @@ namespace VikingVillages
 		/// <summary>
 		/// Joins a fight the viking sees one of its fellows in - while it has no enemy of its own, isn't in bed, resting
 		/// or badly hurt - every JoinCheckInterval seconds: the nearest enemy within DefendRange of it that a living viking
-		/// within JoinRange it can see is fighting, the way it comes to a call for help (see OnDistress). A fellow's prey
-		/// isn't its enemy, so it leaves a hunt to the hunter
+		/// within JoinRange it can see is fighting, the way it comes to a call for help (see OnDistress). Through a raid
+		/// it's ready for, it's the nearest enemy any of its village's vikings is fighting where its fight reaches it (see
+		/// Hears), seen or not. A fellow's prey isn't its enemy, so it leaves a hunt to the hunter
 		/// </summary>
 		/// <remarks>
 		/// Only the vikings this client runs are known to be fighting, by the enemy their AI is after - those near it
@@ -4139,8 +4146,17 @@ namespace VikingVillages
 			{
 				return;
 			}
+			// Through a raid it joins any fellow fighting in the village, seen or not
+			bool raid = RaidReady();
 			List<Character> near = new List<Character>();
-			Character.GetCharactersInRange(transform.position, JoinRange, near);
+			if (raid)
+			{
+				near = village.Vikings();
+			}
+			else
+			{
+				Character.GetCharactersInRange(transform.position, JoinRange, near);
+			}
 			Character joined = null;
 			float nearest = float.MaxValue;
 			foreach (Character other in near)
@@ -4155,7 +4171,8 @@ namespace VikingVillages
 					continue;
 				}
 				float distance = Vector3.Distance(enemy.transform.position, transform.position);
-				if (distance <= DefendRange && distance < nearest && ai.CanSeeTarget(other))
+				bool reaches = (raid ? Hears(other.transform.position) : (distance <= DefendRange && ai.CanSeeTarget(other)));
+				if (reaches && distance < nearest)
 				{
 					joined = enemy;
 					nearest = distance;
@@ -4911,7 +4928,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Rushes the viking to help when someone near it is attacked
+		/// Rushes the viking to help when someone near it is attacked - through a raid, anywhere in its village (see
+		/// Hears)
 		/// </summary>
 		/// <param name="where">Where they were attacked</param>
 		/// <param name="attacker">Who attacked them</param>
@@ -4921,7 +4939,7 @@ namespace VikingVillages
 			{
 				return;
 			}
-			if (attacker == humanoid || Vector3.Distance(where, transform.position) > DefendRange || !BaseAI.IsEnemy(humanoid, attacker))
+			if (attacker == humanoid || !Hears(where) || !BaseAI.IsEnemy(humanoid, attacker))
 			{
 				return;
 			}
@@ -4934,6 +4952,22 @@ namespace VikingVillages
 			grudge = attacker;
 			grudgeUntil = Time.time + GrudgeTime;
 			Engage(attacker);
+		}
+
+		/// <summary>
+		/// Checks whether a fight or a call for help at a place reaches the viking - within DefendRange of it, or through
+		/// a raid it's ready for, anywhere in its village or within RaidCallReach past its edge, so the whole village
+		/// fights a raid together rather than leaving one of its own to it at the edge
+		/// </summary>
+		/// <param name="where">Where the fight or call is</param>
+		/// <returns>True when it reaches the viking</returns>
+		private bool Hears(Vector3 where)
+		{
+			if (Vector3.Distance(where, transform.position) <= DefendRange)
+			{
+				return(true);
+			}
+			return(RaidReady() && village.DistanceOutside(where) <= RaidCallReach);
 		}
 
 		/// <summary>
