@@ -34,6 +34,12 @@ namespace VikingVillages
 		private const float FallbackSpacing = 1.5f;
 
 		/// <summary>
+		/// How fast every ring's marks move around it along the ground, in meters a second, whatever its size - the game
+		/// turns every ring at the same angle a second, so a big ring's marks would race while a small one's crawl
+		/// </summary>
+		internal const float MarkSpeed = 0.5f;
+
+		/// <summary>
 		/// The color the village's ring is drawn in, in place of the workbench's white
 		/// </summary>
 		private static readonly Color RingColor = new Color(0.35f, 1f, 0.35f, 1f);
@@ -531,7 +537,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Puts a ring around one of a village's zones at its reach, with its marks as far apart as the workbench's
+		/// Puts a ring around one of a village's zones at its reach, with its marks as far apart as the workbench's and
+		/// moving around it at MarkSpeed
 		/// </summary>
 		/// <param name="ring">The ring</param>
 		/// <param name="zone">The zone</param>
@@ -540,6 +547,18 @@ namespace VikingVillages
 			ring.transform.position = zone.Center;
 			ring.m_radius = zone.Radius;
 			ring.m_nrOfSegments = Segments(zone.Radius, Spacing());
+			ring.m_speed = TurnSpeed(zone.Radius);
+		}
+
+		/// <summary>
+		/// Works out how fast a ring turns, in radians a second - the game's CircleProjector.m_speed - for its marks to
+		/// move around it at MarkSpeed
+		/// </summary>
+		/// <param name="radius">The ring's radius, in meters</param>
+		/// <returns>The speed, or 0 for a ring with no size</returns>
+		internal static float TurnSpeed(float radius)
+		{
+			return((radius > 0f) ? MarkSpeed / radius : 0f);
 		}
 
 		/// <summary>

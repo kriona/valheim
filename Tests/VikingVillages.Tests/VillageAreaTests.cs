@@ -51,6 +51,22 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that every ring's marks move along the ground at the same speed, a big ring turning slower than a
+		/// small one, and a ring with no size not at all
+		/// </summary>
+		/// <param name="radius">The ring's radius, in meters</param>
+		[Theory]
+		[InlineData(4f)]
+		[InlineData(12f)]
+		[InlineData(52f)]
+		public void EveryRingsMarksMoveAlike(float radius)
+		{
+			Assert.Equal(VillageArea.MarkSpeed, VillageArea.TurnSpeed(radius) * radius, 4);
+			Assert.True(VillageArea.TurnSpeed(radius * 2f) < VillageArea.TurnSpeed(radius));
+			Assert.Equal(0f, VillageArea.TurnSpeed(0f));
+		}
+
+		/// <summary>
 		/// Checks that a player showing the ring again moves to the end, as the latest to show it
 		/// </summary>
 		[Fact]
