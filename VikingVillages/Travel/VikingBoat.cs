@@ -12,8 +12,9 @@ namespace VikingVillages
 	/// <remarks>
 	/// Everything about the boat is kept in its ZDO, so it sails on whichever client owns it - the one that built it,
 	/// or a player's who boards it - and carries on after the world is saved and loaded again. It waits while its crew
-	/// boards, and once they're all on, waits for a player standing near to come aboard too - asking after
-	/// AskAfter seconds, setting off DepartAfter seconds after they're all on, or at once with no player near. It
+	/// boards, and once they're all on, waits for a player near to come aboard too - asking after AskAfter seconds and
+	/// again every AskEvery, setting off DepartAfter seconds after they're all on, or SwimmerWait for a player swimming
+	/// out to it, with a farewell to whoever it leaves behind, or at once with no player near. It
 	/// steers for each waypoint in turn, backing off when it's stuck, and once it's near the shore its crew jumps off and
 	/// swims to land, and one of them breaks it up - waiting for any player on board to get off, for up to BreakWait
 	/// seconds. A player can ride along, but not take the helm (see VikingBoatPatches)
@@ -82,6 +83,13 @@ namespace VikingVillages
 		public const float BoardTime = 30f;
 		private const float AskAfter = 5f;
 		private const float DepartAfter = 20f;
+
+		/// <summary>
+		/// How often the boat asks a player near it to come aboard again while it waits, and how long it waits in all for
+		/// one swimming out to it, in seconds - longer than for one standing ashore, who can choose to stay
+		/// </summary>
+		private const float AskEvery = 15f;
+		private const float SwimmerWait = 90f;
 		private const float PlayerReach = 40f;
 		private const float BreakWait = 60f;
 
@@ -139,12 +147,12 @@ namespace VikingVillages
 		private Ladder[] ladders;
 
 		/// <summary>
-		/// Until when the boat holds still after loading, in Time.time seconds, whether it asked a player to come aboard,
-		/// and how it's getting unstuck - when it last looked, how far it was from where it's heading then, until when it
-		/// backs off and how many times it has
+		/// Until when the boat holds still after loading, in Time.time seconds, when it next asks a player near it to come
+		/// aboard, and how it's getting unstuck - when it last looked, how far it was from where it's heading then, until
+		/// when it backs off and how many times it has
 		/// </summary>
 		private float settleUntil;
-		private bool asked;
+		private float nextAsk;
 		private float stuckLookAt;
 		private float stuckDistance = float.MaxValue;
 		private float backUntil;
@@ -682,7 +690,7 @@ namespace VikingVillages
 					Hold();
 					if (CrewAboard() >= Crew.Count || PhaseSeconds > BoardTime + 10f)
 					{
-						asked = false;
+						nextAsk = 0f;
 						SetPhase(Phase.Waiting);
 					}
 					break;
@@ -710,8 +718,10 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Waits for a player standing near the boat to come aboard - asking them after AskAfter seconds, and setting off
-		/// DepartAfter seconds after the crew got on, or at once when no player near is still ashore
+		/// Waits for a player near the boat to come aboard - asking them after AskAfter seconds and again every AskEvery
+		/// seconds, and setting off DepartAfter seconds after the crew got on, or SwimmerWait for a player swimming out to
+		/// it, with the one at the helm calling out a farewell to whoever it leaves behind - or at once when no player
+		/// near is still off it
 		/// </summary>
 		private void UpdateWaiting()
 		{
@@ -721,35 +731,49 @@ namespace VikingVillages
 				SetPhase(Phase.Sailing);
 				return;
 			}
-			if (!asked && PhaseSeconds >= AskAfter)
+			Character helm = CrewMember(0);
+			if (PhaseSeconds >= (waiting.IsSwimming() ? SwimmerWait : DepartAfter))
 			{
-				asked = true;
-				Character helm = CrewMember(0);
+				if (helm != null)
+				{
+					VikingSpeech.SayFirst(helm, VikingRoadSpeech.SailAway(waiting.GetPlayerName()), VikingSpeech.CallTime, VikingSpeech.CallCull);
+				}
+				Plugin.Log.LogInfo("Boat: " + Key + " sails without " + waiting.GetPlayerName() + ", " + (waiting.IsSwimming() ? "still swimming" : "still ashore") + " " + Vector3.Distance(waiting.transform.position, transform.position).ToString("F0") + "m away");
+				TestLog.Count("Boats", "sailed without a player");
+				SetPhase(Phase.Sailing);
+				return;
+			}
+			if (PhaseSeconds >= AskAfter && Time.time >= nextAsk)
+			{
+				nextAsk = Time.time + AskEvery;
 				if (helm != null)
 				{
 					VikingSpeech.Say(helm, VikingRoadSpeech.Coming(waiting.GetPlayerName()), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 				}
 			}
-			if (PhaseSeconds >= DepartAfter)
-			{
-				SetPhase(Phase.Sailing);
-			}
 		}
 
 		/// <summary>
-		/// Finds a player standing near the boat who isn't on it
+		/// Finds a player near the boat who isn't on it - one swimming out to it first, since the boat waits longer for
+		/// them (see UpdateWaiting)
 		/// </summary>
 		/// <returns>The player, or null when there's none</returns>
 		private Player PlayerAshore()
 		{
+			Player found = null;
 			foreach (Player player in Player.GetAllPlayers())
 			{
-				if (player != null && !player.IsDead() && Vector3.Distance(player.transform.position, transform.position) <= PlayerReach && !Ship.IsPlayerInBoat(player))
+				if (player == null || player.IsDead() || Vector3.Distance(player.transform.position, transform.position) > PlayerReach || Ship.IsPlayerInBoat(player))
+				{
+					continue;
+				}
+				if (player.IsSwimming())
 				{
 					return(player);
 				}
+				found = (found ?? player);
 			}
-			return(null);
+			return(found);
 		}
 
 		/// <summary>

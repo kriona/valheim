@@ -193,6 +193,17 @@ namespace VikingVillages
 		};
 
 		/// <summary>
+		/// What the viking at a boat's helm calls out to a player as the boat sets off without them, by their name
+		/// </summary>
+		internal static readonly string[] SailAwayLines =
+		{
+			"Farewell, {0}! See you on the other shore!",
+			"We can't wait any longer - fair winds, {0}!",
+			"The sea won't wait, {0}! Farewell!",
+			"Safe travels, {0}! We're off!"
+		};
+
+		/// <summary>
 		/// What the viking at a boat's helm says as it comes about for someone who went overboard, by their name
 		/// </summary>
 		internal static readonly string[] OverboardLines =
@@ -484,6 +495,16 @@ namespace VikingVillages
 		public static string Wrecked()
 		{
 			return(VikingSpeech.Pick(WreckedLines, ""));
+		}
+
+		/// <summary>
+		/// Picks what the viking at a boat's helm calls out to a player as the boat sets off without them
+		/// </summary>
+		/// <param name="player">The player's name</param>
+		/// <returns>The line</returns>
+		public static string SailAway(string player)
+		{
+			return(string.Format(VikingSpeech.Pick(SailAwayLines, ""), player));
 		}
 
 		/// <summary>
