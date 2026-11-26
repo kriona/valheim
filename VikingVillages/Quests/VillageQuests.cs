@@ -358,9 +358,9 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Picks a quest for a village once it has rested long enough since its last and no enemy is near - the first it
-		/// can go on and spare the vikings for, of the next step of its goal, hunting or foraging when its chests are low
-		/// on food and it has found none around it for a while, it's trapped, or its chests hold less than a food for each
-		/// of its vikings, cutting trees when it's out of wood,
+		/// can go on and spare the vikings for, of hunting or foraging when its chests hold less than a food for each of
+		/// its vikings, the next step of its goal, hunting or foraging when its chests are low on food and it has found
+		/// none around it for a while or it's trapped, cutting trees when it's out of wood,
 		/// selling its treasure to Haldor, and buying a Dverger circlet once a week for a viking still using torches -
 		/// setting out at once by day, or waiting for the morning
 		/// </summary>
@@ -413,6 +413,20 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Finds a quest for food a village could go on now - hunting and foraging taking turns, the other when the one
+		/// whose turn it is can't go
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="book">Every way to get each item</param>
+		/// <param name="holdings">What the village has</param>
+		/// <returns>The quest, or null when neither can go</returns>
+		private static Choice FoodChoice(Village village, ResourceBook book, VillageHoldings holdings)
+		{
+			QuestKind kind = (village.Zdo.GetBool(LastHuntKey) ? QuestKind.Forage : QuestKind.Hunt);
+			return(Possible(book, holdings, kind, "", 0) ?? Possible(book, holdings, ((kind == QuestKind.Hunt) ? QuestKind.Forage : QuestKind.Hunt), "", 0));
+		}
+
+		/// <summary>
 		/// Finds the first quest a village could go on now (see Pick)
 		/// </summary>
 		/// <param name="village">The village, run by this client</param>
@@ -425,6 +439,15 @@ namespace VikingVillages
 				return(null);
 			}
 			VillageHoldings holdings = VillageLife.HoldingsOf(village);
+			// A village nearly out of food goes for more ahead of its goal, so its wounded have something to heal on
+			if (VillageLife.FoodScarce(village))
+			{
+				Choice scarce = FoodChoice(village, book, holdings);
+				if (scarce != null)
+				{
+					return(scarce);
+				}
+			}
 			PlanStep step = VillageLife.CurrentGoalStep(village);
 			if (step != null && step.Kind == StepKind.Quest && step.Source != null)
 			{
@@ -433,10 +456,9 @@ namespace VikingVillages
 			bool foodLow = VillageLife.FoodLow(village);
 			bool woodLow = (VillageLife.ChestWoodOf(village) < VillageLife.WoodLow);
 			bool trapped = ((foodLow || woodLow) && IsTrapped(village));
-			if (foodLow && (trapped || VillageLife.FoodGone(village) || VillageLife.FoodScarce(village)))
+			if (foodLow && (trapped || VillageLife.FoodGone(village)))
 			{
-				QuestKind kind = (village.Zdo.GetBool(LastHuntKey) ? QuestKind.Forage : QuestKind.Hunt);
-				Choice food = Possible(book, holdings, kind, "", 0) ?? Possible(book, holdings, ((kind == QuestKind.Hunt) ? QuestKind.Forage : QuestKind.Hunt), "", 0);
+				Choice food = FoodChoice(village, book, holdings);
 				if (food != null)
 				{
 					return(food);

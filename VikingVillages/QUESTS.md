@@ -8,11 +8,12 @@ A village looks at its quest every 10 seconds, on the client that runs it, and s
 
 It picks the first of these that it can go on:
 
-1. The next step of the village's goal, when that step is a quest - ore for bronze or iron, core wood, an antler from Eikthyr, with Zombie Apocalypse ectoplasm for lining a weapon with silver, and so on
-2. Hunting or foraging, taking turns, when the chests hold fewer than three foods for each Viking and nothing's been found around the village for half a day, or the chests hold less than one food for each Viking - or as soon as it runs low when the village can't be left
-3. Cutting trees for 50 wood when it's out of wood and finds none to gather - or as soon as it runs low when the village can't be left
-4. Selling treasure to the nearest trader once its amber, pearls, rubies and silver necklaces are worth 100 coins
-5. Buying a Dverger circlet, from the Swamp on, at most once every 7 game days, when a Viking still uses torches and the coins and treasure will pay for it
+1. Hunting or foraging, taking turns, when the chests hold less than one food for each Viking - ahead of the goal, so the wounded have something to heal on
+2. The next step of the village's goal, when that step is a quest - ore for bronze or iron, core wood, an antler from Eikthyr, with Zombie Apocalypse ectoplasm for lining a weapon with silver, and so on
+3. Hunting or foraging, taking turns, when the chests hold fewer than three foods for each Viking and nothing's been found around the village for half a day - or as soon as it runs low when the village can't be left
+4. Cutting trees for 50 wood when it's out of wood and finds none to gather - or as soon as it runs low when the village can't be left
+5. Selling treasure to the nearest trader once its amber, pearls, rubies and silver necklaces are worth 100 coins
+6. Buying a Dverger circlet, from the Swamp on, at most once every 7 game days, when a Viking still uses torches and the coins and treasure will pay for it
 
 A village can only go on a quest when its biome isn't easier than the quest's or the item's, it has the stations the quest needs, and it can spare the Vikings with 2 left at home. The healthiest go, those with the quest's tool first.
 
