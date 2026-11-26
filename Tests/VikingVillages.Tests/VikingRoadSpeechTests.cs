@@ -14,8 +14,8 @@ namespace VikingVillages.Tests
 		/// The tables of lines naming a village, each of which names it in every line, and the tables for when it has no
 		/// name, which never do
 		/// </summary>
-		private static readonly string[] NamedTables = { "TravelLines", "TravelAnswers", "DisbandedLines", "LetsGoLines" };
-		private static readonly string[] UnnamedTables = { "UnnamedTravelLines", "UnnamedTravelAnswers", "UnnamedDisbandedLines", "UnnamedLetsGoLines" };
+		private static readonly string[] NamedTables = { "TravelLines", "TravelAnswers", "DisbandedLines", "LetsGoLines", "FoundWayLines" };
+		private static readonly string[] UnnamedTables = { "UnnamedTravelLines", "UnnamedTravelAnswers", "UnnamedDisbandedLines", "UnnamedLetsGoLines", "UnnamedFoundWayLines", "NowhereLines" };
 
 		/// <summary>
 		/// Finds a token's braces in a line

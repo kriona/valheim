@@ -140,6 +140,12 @@ namespace VikingVillages
 		/// says its first and second lines, or -1 once it has, all in Time.time seconds, and the last line it said
 		/// </summary>
 		private float confusedUntil;
+
+		/// <summary>
+		/// Whether the viking was lost until it started waiting to know where to go, so it says where it's going once it
+		/// knows (see TakeAnswer)
+		/// </summary>
+		private bool wasLost;
 		private float stillUntil;
 		private float nextLookAt;
 		private Vector3 lookToward;
@@ -453,6 +459,7 @@ namespace VikingVillages
 			{
 				zdo.Set(VillageTravel.ConfusedKey, false);
 				road = Road.Searching;
+				wasLost = true;
 			}
 			return(true);
 		}
@@ -479,11 +486,31 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Sets the viking out for the village the server found, or has it wander when it found none
+		/// Sets the viking out for the village the server found, or has it wander when it found none - one that was lost
+		/// saying where it's going, or that there's nowhere to go
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
 		/// <param name="answer">The server's answer</param>
 		private void TakeAnswer(ZDO zdo, TravelPlanner.Answer answer)
+		{
+			if (wasLost)
+			{
+				wasLost = false;
+				VikingSpeech.Say(humanoid, (answer.Found ? VikingRoadSpeech.FoundWay(answer.Spoken()) : VikingRoadSpeech.Nowhere()), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+				TakeRoad(zdo, answer);
+				// Its road talk starts later, so it doesn't talk over what it just said
+				nextRoadLine = Mathf.Max(nextRoadLine, Time.time + RoadLineMin);
+				return;
+			}
+			TakeRoad(zdo, answer);
+		}
+
+		/// <summary>
+		/// Sets the viking out for the village the server found, or has it wander when it found none
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <param name="answer">The server's answer</param>
+		private void TakeRoad(ZDO zdo, TravelPlanner.Answer answer)
 		{
 			if (!answer.Found)
 			{

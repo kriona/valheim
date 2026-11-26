@@ -96,6 +96,32 @@ namespace VikingVillages
 		};
 
 		/// <summary>
+		/// What a viking that was lost says as it works out where to go - the village it sets out for, by name, and when
+		/// it has none - and when there's nowhere it can get to
+		/// </summary>
+		internal static readonly string[] FoundWayLines =
+		{
+			"Wait - I know this place. {village} isn't far from here.",
+			"{village}! That's where I'll go.",
+			"If I'm right, {village} lies that way.",
+			"Right. {village} it is, then.",
+			"I remember now - there's a fire at {village}."
+		};
+		internal static readonly string[] UnnamedFoundWayLines =
+		{
+			"I think there's a village that way.",
+			"Smoke on the wind... there must be a village near.",
+			"Right. I'll find a village and get my bearings.",
+			"There has to be a fire somewhere this way."
+		};
+		internal static readonly string[] NowhereLines =
+		{
+			"No village anywhere near. I'll have to fend for myself.",
+			"Not a roof in sight. I'll just have to wander.",
+			"Well, nobody's coming for me. I'll look around."
+		};
+
+		/// <summary>
 		/// What a viking on its way to a village says when a player it knows talks to it - with the village's name, and
 		/// when it has none
 		/// </summary>
@@ -304,6 +330,25 @@ namespace VikingVillages
 		private static string PickFor(string[] named, string[] unnamed, string village)
 		{
 			return((village.Length > 0) ? VikingSpeech.Pick(named, village) : VikingSpeech.Pick(unnamed, ""));
+		}
+
+		/// <summary>
+		/// Picks what a viking that was lost says as it sets out for a village
+		/// </summary>
+		/// <param name="village">The village's name, or "" when it has none</param>
+		/// <returns>The line</returns>
+		public static string FoundWay(string village)
+		{
+			return(string.Format(PickFor(FoundWayLines, UnnamedFoundWayLines, village)));
+		}
+
+		/// <summary>
+		/// Picks what a viking that was lost says when there's no village it can get to
+		/// </summary>
+		/// <returns>The line</returns>
+		public static string Nowhere()
+		{
+			return(VikingSpeech.Pick(NowhereLines, ""));
 		}
 
 		/// <summary>
