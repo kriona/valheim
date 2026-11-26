@@ -51,6 +51,24 @@ namespace VikingVillages
 		private float nextTreadCall;
 
 		/// <summary>
+		/// How a viking on board shoots at a flying enemy attacking the boat (see DefendBoat) - how far off the enemy can
+		/// be, how near it counts as attacking whoever it's after, how far from its seat the viking can be knocked before
+		/// it's sat back down, in meters, and how long it stays standing once the last enemy is gone, in seconds
+		/// </summary>
+		private const float BoatShootRange = 40f;
+		private const float BoatThreatNear = 15f;
+		private const float BoatStandDrift = 2f;
+		private const float BoatShootSettle = 3f;
+
+		/// <summary>
+		/// Whether the viking is standing at its seat to shoot from the boat, when it last saw an enemy to shoot at, and
+		/// when it can loose its next arrow, in Time.time seconds
+		/// </summary>
+		private bool standingToShoot;
+		private float lastThreatAt;
+		private float nextBoatShot;
+
+		/// <summary>
 		/// How long a viking at the shore waits for the rest of its group, how long it waits for a boat before it builds
 		/// its own, and how long one loaded mid-voyage waits for its boat to load before it counts as wrecked, in seconds
 		/// </summary>
@@ -727,6 +745,7 @@ namespace VikingVillages
 		/// <param name="how">How it got on, for the log</param>
 		private void GetAboard(ZDO zdo, string how)
 		{
+			StopDefending(false);
 			SitOnBoard();
 			zdo.Set(VikingBoat.BoatKey, myBoat.Key);
 			SetCrossing(zdo, Crossing.Aboard);
@@ -843,14 +862,14 @@ namespace VikingVillages
 		/// Rides along on the boat, keeping its place on the road with the boat's - and gets off at the far shore, or swims
 		/// for it when the boat is gone from under it. Knocked out of its seat, like by a fight, it sits back down while
 		/// it's still on board, and in the water while the boat sails on, it's overboard and swims back to it (see
-		/// SwimBack)
+		/// SwimBack). With a flying enemy attacking the boat, it stands at its seat and shoots at it (see DefendBoat)
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="zdo">Its ZDO</param>
 		/// <returns>True, as it takes the update over</returns>
 		private bool RideAlong(float dt, ZDO zdo)
 		{
-			if (myBoat != null && attachPoint == null && myBoat.CurrentPhase != VikingBoat.Phase.Landing)
+			if (myBoat != null && attachPoint == null && !standingToShoot && myBoat.CurrentPhase != VikingBoat.Phase.Landing)
 			{
 				if (humanoid.GetStandingOnShip() == myBoat.Ship || Vector3.Distance(transform.position, myBoat.Seat(mySeat).position) < ClimbReach)
 				{
@@ -867,6 +886,7 @@ namespace VikingVillages
 			}
 			if (myBoat == null)
 			{
+				StopDefending(false);
 				GetOffBoard();
 				Plugin.Log.LogInfo(LogName() + " lost its boat at sea at " + transform.position.ToString("F0") + ", and swims for the shore");
 				TestLog.Count("Boats", "vikings wrecked");
@@ -875,15 +895,18 @@ namespace VikingVillages
 				StartSwim(zdo, Crossing.Wrecked, Vector3.zero);
 				return(true);
 			}
-			mover = ((mySeat == 0) ? "at the helm" : "on board");
-			// Anything that moved it, like its AI before it was seated or its gear going on, stands it back up
-			ai.StopMoving();
-			string pose = myBoat.SeatPose(mySeat);
-			if (!VikingPoses.InShipPose(humanoid, pose))
+			if (myBoat.CurrentPhase == VikingBoat.Phase.Landing || !DefendBoat())
 			{
-				VikingPoses.SetShipPose(humanoid, pose, true);
+				mover = ((mySeat == 0) ? "at the helm" : "on board");
+				// Anything that moved it, like its AI before it was seated or its gear going on, stands it back up
+				ai.StopMoving();
+				string pose = myBoat.SeatPose(mySeat);
+				if (!VikingPoses.InShipPose(humanoid, pose))
+				{
+					VikingPoses.SetShipPose(humanoid, pose, true);
+				}
+				UpdatePush(dt);
 			}
-			UpdatePush(dt);
 			int leg = Mathf.Clamp(myBoat.SeaStart + myBoat.Leg - 1, 0, travelRoad.Count);
 			if (leg != roadLeg)
 			{
@@ -892,6 +915,7 @@ namespace VikingVillages
 			}
 			if (myBoat.CurrentPhase == VikingBoat.Phase.Landing)
 			{
+				StopDefending(false);
 				GetOffBoard();
 				Vector3 toward = myBoat.Land - transform.position;
 				toward.y = 0f;
@@ -899,6 +923,128 @@ namespace VikingVillages
 				StartSwim(zdo, Crossing.Landing, myBoat.Land);
 			}
 			return(true);
+		}
+
+		/// <summary>
+		/// Shoots at a flying enemy attacking the boat - for any of its crew with a bow but the one at the helm, which
+		/// steers on: standing up at its seat, its bow drawn, aiming ahead of the enemy and over it for the arrow's drop,
+		/// loosing an arrow every BirdShotInterval seconds, and sitting back down BoatShootSettle seconds after the last
+		/// enemy is gone. It never leaves the boat for it - knocked more than BoatStandDrift from its seat or off the deck,
+		/// it's sat back down there at once
+		/// </summary>
+		/// <returns>True while it's standing to shoot, so it isn't held in its seat</returns>
+		private bool DefendBoat()
+		{
+			Character threat = ((mySeat != 0 && HasBow(humanoid)) ? FlyingThreat() : null);
+			if (threat != null)
+			{
+				lastThreatAt = Time.time;
+			}
+			else if (!standingToShoot || Time.time - lastThreatAt > BoatShootSettle)
+			{
+				StopDefending(true);
+				return(false);
+			}
+			if (!standingToShoot)
+			{
+				GetOffBoard();
+				standingToShoot = true;
+				Plugin.Log.LogInfo(LogName() + " stands up on " + myBoat.Key + " to shoot at " + TestLog.Name(threat));
+				TestLog.Count("Boats", "vikings shooting from a boat");
+			}
+			if (Vector3.Distance(transform.position, myBoat.Seat(mySeat).position) > BoatStandDrift || (humanoid.InWater() && humanoid.GetStandingOnShip() != myBoat.Ship))
+			{
+				// Kept on board, put back at its seat
+				StopDefending(true);
+				return(false);
+			}
+			aimingBow = true;
+			ai.StopMoving();
+			if (threat == null)
+			{
+				mover = "standing on deck, bow ready";
+				return(true);
+			}
+			mover = "standing on deck shooting at " + threat.GetHoverName();
+			if (viking != null && !VikingCore.IsRanged(humanoid.GetCurrentWeapon()))
+			{
+				viking.EquipWeapon();
+			}
+			Vector3 aim = BirdAim(threat.GetCenterPoint(), threat.GetVelocity());
+			ai.LookAt(aim);
+			if (Time.time >= nextBoatShot && ReadyToShoot(aim) && humanoid.StartAttack(null, false))
+			{
+				nextBoatShot = Time.time + BirdShotInterval;
+				TestLog.Count("Boats", "arrows shot from a boat");
+			}
+			return(true);
+		}
+
+		/// <summary>
+		/// Puts the bow down after shooting from the boat, sitting back down at its seat unless it's getting off the boat
+		/// </summary>
+		/// <param name="sit">True to sit back down</param>
+		private void StopDefending(bool sit)
+		{
+			if (!standingToShoot)
+			{
+				return;
+			}
+			standingToShoot = false;
+			aimingBow = false;
+			if (sit && myBoat != null)
+			{
+				SitOnBoard();
+			}
+		}
+
+		/// <summary>
+		/// Finds the nearest flying enemy attacking the viking's boat - within BoatShootRange, after one of its crew on
+		/// board or a player on it, or come within BoatThreatNear of the viking
+		/// </summary>
+		/// <returns>The enemy, or null when there's none</returns>
+		private Character FlyingThreat()
+		{
+			Character nearest = null;
+			float best = BoatShootRange;
+			foreach (Character other in Character.GetAllCharacters())
+			{
+				if (other == null || other.IsDead() || !other.IsFlying() || !BaseAI.IsEnemy(humanoid, other))
+				{
+					continue;
+				}
+				float distance = Vector3.Distance(other.transform.position, transform.position);
+				if (distance > best)
+				{
+					continue;
+				}
+				Character after = ((other.GetBaseAI() is MonsterAI theirs) ? theirs.GetTargetCreature() : null);
+				if (distance <= BoatThreatNear || (after != null && OnMyBoat(after)))
+				{
+					nearest = other;
+					best = distance;
+				}
+			}
+			return(nearest);
+		}
+
+		/// <summary>
+		/// Checks whether someone is on the viking's boat - a player standing on it, or one of its crew sitting on board
+		/// </summary>
+		/// <param name="who">Who it is</param>
+		/// <returns>True when they are</returns>
+		private bool OnMyBoat(Character who)
+		{
+			if (myBoat == null)
+			{
+				return(false);
+			}
+			if (who is Player player)
+			{
+				return(myBoat.Ship.IsPlayerInBoat(player));
+			}
+			ZDO theirs = ((who.m_nview != null && who.m_nview.IsValid()) ? who.m_nview.GetZDO() : null);
+			return(theirs != null && theirs.GetString(VikingBoat.BoatKey, "") == myBoat.Key && theirs.GetInt(VikingBoat.BoardKey) == VikingBoat.Aboard);
 		}
 
 		/// <summary>
