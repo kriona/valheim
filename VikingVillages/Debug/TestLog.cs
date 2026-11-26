@@ -608,13 +608,17 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Describes where a hit came from and how much it dealt - who dealt it, or what kind of hit it was when no one did
+		/// Describes where a hit came from and how much it dealt - who dealt it, with its stars when it has any, or what
+		/// kind of hit it was when no one did
 		/// </summary>
 		/// <param name="hit">The hit</param>
 		/// <returns>The description</returns>
 		public static string Source(HitData hit)
 		{
-			return(Dealer(hit) + " (" + hit.m_hitType + ", " + hit.GetTotalDamage().ToString("F1") + " damage)");
+			Character attacker = hit.GetAttacker();
+			int stars = ((attacker != null) ? attacker.GetLevel() - 1 : 0);
+			string starred = ((stars > 0) ? ", " + stars + ((stars == 1) ? " star" : " stars") : "");
+			return(Dealer(hit) + starred + " (" + hit.m_hitType + ", " + hit.GetTotalDamage().ToString("F1") + " damage)");
 		}
 
 		/// <summary>

@@ -589,6 +589,32 @@ namespace VikingVillages
 	}
 
 	/// <summary>
+	/// Keeps a monster from getting its sneak attack bonus on a living or dvergr viking, the same as on a player - the
+	/// game multiplies a hit by the weapon's backstab bonus, often 4, on any creature with an AI that isn't alerted, and
+	/// a player has no AI
+	/// </summary>
+	/// <remarks>
+	/// The bonus comes before armor, which takes a flat amount off a hit over twice the armor rather than shrinking it
+	/// by its square, so on a viking in iron armor a sneak attack would land about ten times as hard
+	/// </remarks>
+	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
+	public static class VikingBackstabPatch
+	{
+		/// <summary>
+		/// Takes the backstab bonus off a hit on a living or dvergr viking
+		/// </summary>
+		/// <param name="__instance">The creature hit</param>
+		/// <param name="hit">The hit</param>
+		private static void Prefix(Character __instance, HitData hit)
+		{
+			if (hit != null && VikingCore.IsLivingOrDvergr(__instance))
+			{
+				hit.m_backstabBonus = 1f;
+			}
+		}
+	}
+
+	/// <summary>
 	/// Spreads the poison a living viking takes over as long as a player's, so it deals as much each second as it does
 	/// to a player - the game only gives a player the longer time (see SE_Poison.AddDamage)
 	/// </summary>
