@@ -98,6 +98,7 @@ namespace VikingVillages
 						tag.Label.rectTransform.sizeDelta = tag.Label.GetPreferredValues();
 					}
 					tag.Label.rectTransform.position = new Vector3(screen.x, screen.y, 0f);
+					Sort(tag.Label);
 					if (!tag.Label.gameObject.activeSelf)
 					{
 						tag.Label.gameObject.SetActive(true);
@@ -163,9 +164,20 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Where a village's name sorts - above CreatureMarker's markers (450), level with the game's health bars it sorts
-		/// over them (455), and below the vikings' speech (see SpeechLayer)
+		/// over them (455), and below the vikings' speech (see SpeechLayer) - though behind the big map and the loading
+		/// screen while either shows (see Sort)
 		/// </summary>
 		private const int SortingOrder = 455;
+
+		/// <summary>
+		/// Sorts a village name's label at SortingOrder, or behind the big map and the loading screen while either shows
+		/// (see SpeechLayer.Sort) - call it every frame the label shows
+		/// </summary>
+		/// <param name="label">The label, made by MakeLabel</param>
+		internal static void Sort(TextMeshProUGUI label)
+		{
+			SpeechLayer.Sort(label.canvas, SortingOrder);
+		}
 
 		/// <summary>
 		/// Makes a label for a village's name in the health bars' root, styled like their creatures' names in the

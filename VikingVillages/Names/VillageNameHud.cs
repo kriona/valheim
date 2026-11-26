@@ -7,7 +7,8 @@ namespace VikingVillages
 	/// <summary>
 	/// Shows the name of the village the player is in at the top of the screen, while they're inside its rings, styled
 	/// like the name over its fire (see VillageNameTags) - in the clock's spot when aedenthorn's Clock Mod is installed,
-	/// moving the clock down under it, or else where that clock would be
+	/// moving the clock down under it, or else where that clock would be - and behind the big map and the loading screen
+	/// while either shows (see VillageNameTags.Sort)
 	/// </summary>
 	/// <remarks>
 	/// Clock Mod draws its clock with IMGUI at a window position it keeps in static fields and saves to its config
@@ -158,6 +159,7 @@ namespace VikingVillages
 			bool clock = (clockReady != null && (bool)clockReady.GetValue(null));
 			Vector2 spot = (clock ? ClockSpot() : new Vector2(Screen.width / 2f, Screen.height * ScreenTop));
 			label.rectTransform.position = new Vector3(spot.x, Screen.height - spot.y, 0f);
+			VillageNameTags.Sort(label);
 			if (!label.gameObject.activeSelf)
 			{
 				label.gameObject.SetActive(true);

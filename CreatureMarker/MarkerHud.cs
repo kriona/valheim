@@ -483,9 +483,10 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// Sorts the hammer's build menu - the piece list and the selected piece's requirements - above the markers,
-		/// giving each window a canvas of its own and a raycaster, without which its buttons would take no clicks. A
-		/// window that has a canvas of its own already is left alone
+		/// Sorts the hammer's build menu - the piece list the hammer opens (BuildUi), the game's older piece list, and
+		/// the selected piece's requirements - above the markers, giving each window a canvas of its own and a
+		/// raycaster, without which its buttons would take no clicks. A window that has a canvas of its own already is
+		/// left alone
 		/// </summary>
 		/// <param name="hud">The game's HUD</param>
 		private void RaiseBuildMenu(Hud hud)
@@ -493,7 +494,8 @@ namespace CreatureMarker
 			// The previous HUD's parts were destroyed along with it
 			buildMenuParts.Clear();
 			raisedHud = hud;
-			foreach (GameObject window in new GameObject[] { hud.m_buildHud, hud.m_pieceSelectionWindow })
+			GameObject buildUi = ((hud.m_buildUi != null) ? hud.m_buildUi.gameObject : null);
+			foreach (GameObject window in new GameObject[] { buildUi, hud.m_buildHud, hud.m_pieceSelectionWindow })
 			{
 				if (window == null || window.GetComponent<Canvas>() != null)
 				{

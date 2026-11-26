@@ -51,10 +51,25 @@ namespace VikingVillages
 			{
 				canvas.overrideSorting = raised;
 			}
-			int order = (Covered() ? CoveredOrder : SortingOrder);
-			if (raised && canvas.sortingOrder != order)
+			if (raised)
 			{
-				canvas.sortingOrder = order;
+				Sort(canvas, SortingOrder);
+			}
+		}
+
+		/// <summary>
+		/// Sorts a canvas of its own drawn over the game's HUD at its order - or while the big map or the loading screen
+		/// shows, just behind them. Call it every frame, so it follows the map and the loading screen as they open and
+		/// close
+		/// </summary>
+		/// <param name="canvas">The canvas, with its sorting overridden</param>
+		/// <param name="order">Its order while neither shows</param>
+		public static void Sort(Canvas canvas, int order)
+		{
+			int wanted = (Covered() ? CoveredOrder : order);
+			if (canvas != null && canvas.sortingOrder != wanted)
+			{
+				canvas.sortingOrder = wanted;
 			}
 		}
 

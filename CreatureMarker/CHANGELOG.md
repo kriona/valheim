@@ -1,6 +1,7 @@
 # Changelog
 
 ## 1.12.0
+- Markers are drawn behind the hammer's build menu, which they showed through
 - With Zombie Apocalypse installed, zombie animals like deer and hares are now marked as hostile creatures, and turn to Angry Color when they're after you
 - Mark tombstones, with the All Tombstones switch, on by default, and the Tombstone Color setting, default #BBB (light gray). The name is the player who died there
 - Mark map pings in the game's ping color, and shouts like the "I have arrived!" a player sends when they join in the game's yellow, for as long as the game shows them, whatever Max Distance is. The arrow sits above the game's own text, which moves behind the arrow when it's pinned to the screen edge, and the label leaves out the name since that text shows who sent it
