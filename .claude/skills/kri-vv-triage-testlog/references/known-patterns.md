@@ -26,6 +26,12 @@ What test runs show that's been looked into and isn't a bug. Triage leaves these
 - **Why it's fine:** vikings take turns at doors, and every wait is written
 - **An issue when:** one viking waits at the same door for minutes, two wait on each other, or a viking named as standing in a doorway stays there - and `Stuck:` lines for the vikings waiting there back that up
 
+## An empty village held by hostiles for game days
+
+- **Looks like:** after a wipe, snapshot after snapshot with `Vikings loaded: 0`, `Respawns: N waiting, next due` and `Enemies within 10m: ... holding back the vikings due for` a growing number of minutes, the same few creatures (swamp skeletons, the village's own dead risen as zombies) in each, until a `Came back past enemies: N vikings together` line
+- **Why it's fine:** the dead come due one a game day, and while hostiles have held the village they wait until enough are due to outnumber them, then come together (LOGIC.md's Coming Back). Creatures with no target idle around where they spawned or fell for as long as they like, so they don't leave on their own. The snapshot says why a due viking hasn't come yet - no spot to come from, or how many of how many are due
+- **An issue when:** the group that comes loses its first fight, the snapshot gives no reason or a reason that doesn't fit, or the count of vikings due stops growing a day at a time
+
 ## No cooking where there's no meat
 
 - **Looks like:** no `Cook` or `Meal` jobs in the totals and `Eaten` no higher than the food the village was stocked with, in a biome whose wild prey drops no food - like the Swamp, whose leeches and draugr drop bloodbags and entrails
