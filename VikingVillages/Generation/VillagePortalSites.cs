@@ -177,7 +177,7 @@ namespace VikingVillages
 			foreach (ZoneSystem.LocationInstance instance in ZoneSystem.instance.m_locationInstances.Values)
 			{
 				Vector3 spot = instance.m_position;
-				if (instance.m_placed || !FarmSpawns.IsFarm(instance.m_location) || ZoneSystem.instance.IsZoneGenerated(ZoneSystem.GetZone(spot)) || !VillagePortals.IsDestination(WorldGenerator.instance.GetBiome(spot)))
+				if (instance.m_placed || !FarmSpawns.IsFarm(instance.m_location) || ZoneSystem.instance.IsZoneGenerated(ZoneSystem.GetZone(spot)) || !VillagePortals.IsDestination(VillageCooking.GameBiomeAt(spot)))
 				{
 					continue;
 				}
@@ -226,7 +226,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Checks whether a farm can stand at a spot, the way ZoneSystem.GenerateLocationsTimeSliced checks a spot for a
 		/// location - its biome area, height above the water, how much the ground rises and falls across it and how far
-		/// it is from the farms near it - in the Plains or an easier biome rather than the farm's own, and away from the
+		/// it is from the farms near it - for a village of the Plains or an easier biome (see VillageCooking.BiomeAt)
+		/// rather than the farm's own, and away from the
 		/// world's start location (see StartClearance)
 		/// </summary>
 		/// <param name="location">The farm's location</param>
@@ -234,7 +235,7 @@ namespace VikingVillages
 		/// <returns>True when it can</returns>
 		private static bool FitsFarm(ZoneSystem.ZoneLocation location, ref Vector3 spot)
 		{
-			if (!VillagePortals.IsDestination(WorldGenerator.instance.GetBiome(spot)) || (location.m_biomeArea & WorldGenerator.instance.GetBiomeArea(spot)) == 0 || StartClearance.NearStart(spot))
+			if (!VillagePortals.IsDestination(VillageCooking.GameBiomeAt(spot)) || (location.m_biomeArea & WorldGenerator.instance.GetBiomeArea(spot)) == 0 || StartClearance.NearStart(spot))
 			{
 				return(false);
 			}

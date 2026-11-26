@@ -77,7 +77,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Checks whether a village gets wisp lights - one of the Mistlands
 		/// </summary>
-		/// <param name="biome">The biome its farm stands in</param>
+		/// <param name="biome">The village's biome (see VillageCooking.GameBiomeAt)</param>
 		/// <returns>True when it does</returns>
 		public static bool GetsWisps(Heightmap.Biome biome)
 		{

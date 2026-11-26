@@ -553,9 +553,9 @@ namespace VikingVillages
 			List<Blocker> blockers = FindBlockers(min, max);
 			VillagePortals.LeaveOut(blockers, portal);
 			grid.Flatten(farm, houses, blockers);
-			// A village in the Swamp, or the Plains by the sea, can stand in the water, so its ground is raised out of it
+			// A village of the Swamp, or the Plains by the sea, can stand in the water, so its ground is raised out of it
 			// before the paths are found - ground that's already dry is left as it is
-			Heightmap.Biome biome = ((WorldGenerator.instance != null) ? WorldGenerator.instance.GetBiome(farm) : Heightmap.Biome.None);
+			Heightmap.Biome biome = VillageCooking.GameBiomeAt(farm);
 			int raised = ((biome == Heightmap.Biome.Swamp || biome == Heightmap.Biome.Plains) ? grid.RaiseOutOfWater(farm, houses, blockers) : 0);
 			if (raised > 0)
 			{

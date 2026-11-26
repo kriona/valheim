@@ -180,8 +180,7 @@ namespace VikingVillages
 		/// <returns>The piece's name</returns>
 		internal static string BridgePieceAt(Vector3 farm)
 		{
-			Heightmap.Biome biome = ((WorldGenerator.instance != null) ? WorldGenerator.instance.GetBiome(farm) : Heightmap.Biome.None);
-			return(UsesStoneBridges(biome) ? StoneBridgePiece : BridgePiece);
+			return(UsesStoneBridges(VillageCooking.GameBiomeAt(farm)) ? StoneBridgePiece : BridgePiece);
 		}
 
 		/// <summary>

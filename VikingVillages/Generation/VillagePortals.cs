@@ -394,7 +394,7 @@ namespace VikingVillages
 			{
 				return(true);
 			}
-			if (GetsPortal(WorldGenerator.instance.GetBiome(farm)))
+			if (GetsPortal(VillageCooking.GameBiomeAt(farm)))
 			{
 				return(Ask(generator, farm, out plan));
 			}
@@ -787,7 +787,7 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="name">The other village's name, filtered for its author's words and without rich text</param>
-		/// <param name="biome">The biome the other village's farm stands in</param>
+		/// <param name="biome">The other village's biome (see VillageCooking.GameBiomeAt)</param>
 		/// <returns>False when there's no such village, or the server hasn't said yet</returns>
 		public static bool Linked(Village village, out string name, out Heightmap.Biome biome)
 		{
@@ -799,7 +799,7 @@ namespace VikingVillages
 			}
 			name = VikingNames.Filter(raw, author).RemoveRichTextTags().Trim();
 			Vector3 other = village.Zdo.GetVec3(LinkKey, Nowhere);
-			biome = ((WorldGenerator.instance != null) ? WorldGenerator.instance.GetBiome(other) : Heightmap.Biome.None);
+			biome = VillageCooking.GameBiomeAt(other);
 			return(name.Length > 0);
 		}
 

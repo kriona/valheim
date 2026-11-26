@@ -177,19 +177,41 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out the biome a village's vikings are of - the hardest within VillageFarmhouses.HardBiomeVikingReach of
-		/// its farm, or the farm's own (see VikingCore.Generate) - by its index into VikingGear's tables
+		/// Works out a village's biome, the one everything about it goes by - its vikings (see VikingCore.Generate), how
+		/// it's built and stocked, and its quests - the hardest within VillageFarmhouses.HardBiomeVikingReach of its farm,
+		/// or the farm's own, by its index into VikingGear's tables
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <returns>The index, from 0 for the Meadows</returns>
 		public static int VillageBiome(Village village)
 		{
+			return(BiomeAt(village.Farm));
+		}
+
+		/// <summary>
+		/// Works out the biome of the village whose farm stands at a spot (see VillageBiome) - for working one out before
+		/// the village is loaded, like a farm a portal could lead to, or while its ground is laid
+		/// </summary>
+		/// <param name="farm">Where the farm stands</param>
+		/// <returns>The index, from 0 for the Meadows</returns>
+		public static int BiomeAt(Vector3 farm)
+		{
 			if (WorldGenerator.instance == null)
 			{
 				return(0);
 			}
-			int own = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(village.Farm));
-			return(Mathf.Max(own, VillageFarmhouses.HardestBiomeNear(village.Farm, VillageFarmhouses.HardBiomeVikingReach)));
+			int own = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(farm));
+			return(Mathf.Max(own, VillageFarmhouses.HardestBiomeNear(farm, VillageFarmhouses.HardBiomeVikingReach)));
+		}
+
+		/// <summary>
+		/// Gets the biome of the village whose farm stands at a spot (see BiomeAt) as the game's biome
+		/// </summary>
+		/// <param name="farm">Where the farm stands</param>
+		/// <returns>The biome, or None before the world is generated</returns>
+		public static Heightmap.Biome GameBiomeAt(Vector3 farm)
+		{
+			return((WorldGenerator.instance != null) ? VikingGear.Get(BiomeAt(farm)).Biome : Heightmap.Biome.None);
 		}
 
 		/// <summary>

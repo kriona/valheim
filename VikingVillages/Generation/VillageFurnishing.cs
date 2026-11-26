@@ -336,7 +336,7 @@ namespace VikingVillages
 			{
 				stock.Add(new KeyValuePair<string, int>(name, int.MaxValue));
 			}
-			int biome = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(village.Farm));
+			int biome = VillageCooking.VillageBiome(village);
 			foreach (string name in StarterFoods[Mathf.Clamp(biome, 0, StarterFoods.Length - 1)])
 			{
 				stock.Add(new KeyValuePair<string, int>(name, StarterFood));

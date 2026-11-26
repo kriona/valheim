@@ -106,7 +106,7 @@ namespace VikingVillages
 			}
 			if (party == null)
 			{
-				party = TravelParty.Of(VillageFarmhouses.HardestBiomeNear(village.Farm, VillageFarmhouses.HardBiomeVikingReach));
+				party = TravelParty.Of(VillageCooking.VillageBiome(village));
 			}
 			VillageChestUse.NoteDisbandChests(village, fire);
 			fire.Set(DisbandAtKey, NetTime.Now());

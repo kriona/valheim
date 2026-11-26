@@ -30,14 +30,25 @@ namespace VikingVillages
 		private static readonly Dictionary<ZDOID, KeyValuePair<float, List<WearNTear>>> snowy = new Dictionary<ZDOID, KeyValuePair<float, List<WearNTear>>>();
 
 		/// <summary>
-		/// Lists a village's pieces in the Deep North with ClearAt or more snow on them, nearest a point first
+		/// Checks whether a village is of the Deep North (see VillageCooking.VillageBiome), whose vikings clear the snow -
+		/// though only the Deep North's own ground and the pieces on it ever have any
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>True when it is</returns>
+		private static bool OfDeepNorth(Village village)
+		{
+			return(VillageCooking.VillageBiome(village) == ResourceBook.DeepNorth);
+		}
+
+		/// <summary>
+		/// Lists the pieces of a village of the Deep North with ClearAt or more snow on them, nearest a point first
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="from">The point</param>
 		/// <returns>The pieces</returns>
 		public static List<WearNTear> Snowy(Village village, Vector3 from)
 		{
-			if (village == null || village.Zdo == null || !WorldGenerator.IsDeepnorth(village.Farm.x, village.Farm.z))
+			if (village == null || village.Zdo == null || !OfDeepNorth(village))
 			{
 				return(new List<WearNTear>());
 			}
@@ -99,7 +110,7 @@ namespace VikingVillages
 		public static bool ClaimDeepSpot(Village village, Vector3 from, out Vector3 spot)
 		{
 			spot = Vector3.zero;
-			if (village == null || village.Zdo == null || !WorldGenerator.IsDeepnorth(village.Farm.x, village.Farm.z))
+			if (village == null || village.Zdo == null || !OfDeepNorth(village))
 			{
 				return(false);
 			}

@@ -11,9 +11,9 @@ Everything that changes with a Viking's or a village's biome, in one place - fir
 
 ## Which Biome Counts
 
-- **A Viking's biome** is rolled when they first appear and kept for life - the harder of the biome they appear in and their village's biome. Everything in [Vikings by Biome](#vikings-by-biome) and [Viking Features](#viking-features) goes by it, so a Viking who moves to an easier village keeps their gear, skills and odds
-- **A village's biome** is the hardest biome within 50 meters of its farm's middle - checked at the middle and in 16 directions 25 and 50 meters out, the sea counting as the Meadows - so a Meadows farm by the Black Forest has Black Forest Vikings. Its station upgrades, cooking stations, cauldron, cart, tools and quests go by it, so its stations always repair its Vikings' gear
-- **The farm's own biome**, at its very middle, sets its starter food and pickaxes, shore boat, raised ground, grausten bridges, wisp lights, portal home and snow clearing - so a Meadows farm by the Black Forest has Black Forest Vikings but a Meadows village's food and boat
+- **A village's biome** is the hardest biome within 50 meters of its farm's middle - checked at the middle and in 16 directions 25 and 50 meters out, the sea counting as the Meadows - so a farm in the Meadows by the Black Forest is a Black Forest village. A village has that one biome, and everything in [Villages by Biome](#villages-by-biome), [Village Features](#village-features) and [Quests by Biome](#quests-by-biome) goes by it
+- **A Viking's biome** is their village's, whatever ground they appear on - or for one spawned out in the wild with no village, the biome where they stand, worked out the same way. It's rolled when they first appear and kept for life, and everything in [Vikings by Biome](#vikings-by-biome) and [Viking Features](#viking-features) goes by it, so a Viking who moves to an easier village keeps their gear, skills and odds
+- What the ground itself is still matters where it's the ground that does it: only Deep North ground and the pieces on it get heavy snow to clear, and a Viking never hunts on ground harder than their own biome
 - A farm in or within 150 meters of any biome harder than the Meadows is built bigger
 
 ## Vikings by Biome
@@ -387,7 +387,7 @@ What a village of each biome is built and stocked with. Every village has a work
 
 ### Crafting Stations
 
-Upgraded far enough to repair the gear of the village's biome and every biome before it, by the village's biome, which its Vikings are of. A black forge or galdr table is only upgraded when the village's houses came with one.
+Upgraded far enough to repair the gear of the village's biome and every biome before it, so they always repair its Vikings' gear. A black forge or galdr table is only upgraded when the village's houses came with one.
 
 | Biome | Workbench | Forge | Black forge | Galdr table |
 | --- | --- | --- | --- | --- |
@@ -402,7 +402,7 @@ Upgraded far enough to repair the gear of the village's biome and every biome be
 
 ### Starter Food and Pickaxes
 
-The village's chests start with 10 each of two foods and 2 pickaxes, by the farm's own biome.
+The village's chests start with 10 each of two foods and 2 pickaxes.
 
 | Biome | Foods | Pickaxes |
 | --- | --- | --- |
@@ -417,8 +417,6 @@ The village's chests start with 10 each of two foods and 2 pickaxes, by the farm
 
 ### Cooking
 
-By the village's biome.
-
 | Biome | Cooking stations | Cauldron |
 | --- | --- | --- |
 | Meadows | Wooden | None |
@@ -432,8 +430,6 @@ By the village's biome.
 
 ### Tools and Cart
 
-By the village's biome.
-
 | Biome | Kept in storage | Cart |
 | --- | --- | --- |
 | Meadows | 3 axes | No |
@@ -443,19 +439,17 @@ By the village's biome.
 
 ### Ground, Bridges, Lights and Portals
 
-By the farm's own biome.
-
 | Feature | Biomes |
 | --- | --- |
 | Ground raised out of the water | Swamp, Plains |
 | Grausten bridges | Ashlands, Deep North |
 | Wisp torches and a wisp fountain | Mistlands |
 | A stone portal home to an easier village, which gets a wood portal back | Ashlands, Deep North - to a village of the Meadows to the Plains |
-| Clearing heavy and deep snow | Deep North, wherever the ground is Deep North |
+| Clearing heavy and deep snow | Deep North - only the Deep North's own ground and the pieces on it get any |
 
 ### Shore Boat
 
-The village's boat by the water is the best boat of the farm's own biome - a drakkar wherever the sea boils, whatever the biome.
+The village's boat by the water is the best boat of its biome - a drakkar wherever the sea boils, whatever the biome.
 
 | Biome | Boat |
 | --- | --- |

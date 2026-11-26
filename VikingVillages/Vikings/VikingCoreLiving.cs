@@ -111,9 +111,9 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Rolls a new living viking's look, health, skill, power and gear for the biome it's in, or the hardest biome
-		/// within HardBiomeVikingReach of its village's farm when that's harder (see VillageFarmhouses.HardestBiomeNear),
-		/// as a woman or a man to suit a name it was given before it was rolled (see VikingNames.PresetFirst), and names
+		/// Rolls a new living viking's look, health, skill, power and gear for its village's biome (see
+		/// VillageCooking.BiomeAt), wherever around the village it appears - or out in the wild with no village, the
+		/// biome where it stands worked out the same way - as a woman or a man to suit a name it was given before it was rolled (see VikingNames.PresetFirst), and names
 		/// it, with the looks its name comes with (see StyleAfterName) - or a dvergr viking's for the Mistlands (see
 		/// GenerateDvergr)
 		/// </summary>
@@ -124,8 +124,7 @@ namespace Kriona.Vikings
 				GenerateDvergr();
 				return;
 			}
-			int index = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(transform.position));
-			index = Mathf.Max(index, VillageFarmhouses.HardestBiomeNear(VillageFarm(), VillageFarmhouses.HardBiomeVikingReach));
+			int index = VillageCooking.BiomeAt(VillageFarm());
 			VikingData rolled = VikingGear.RollData(index);
 			// One of its village's first vikings named before it's rolled is a woman or a man to suit the name
 			int model = VikingNames.PresetModel(nview.GetZDO());

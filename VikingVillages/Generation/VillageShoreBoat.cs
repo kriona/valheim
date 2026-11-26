@@ -119,7 +119,7 @@ namespace VikingVillages
 		/// <returns>False when there's no water by the village that runs on to the sea with room for the boat</returns>
 		private static bool FindSpot(Village village, out Vector3 spot, out Vector3 facing, out string prefab)
 		{
-			int biome = VikingGear.IndexOf(WorldGenerator.instance.GetBiome(village.Farm));
+			int biome = VillageCooking.VillageBiome(village);
 			prefab = TravelTime.BoatPrefab(biome);
 			if (!Find(village, prefab, out spot, out facing))
 			{

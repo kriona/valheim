@@ -374,7 +374,7 @@ namespace VikingVillages
 				return(true);
 			}
 			// Nothing more fits in its pack - with no cart yet, it gets one when it may
-			if (lootCart == null && CartRules.Allowed(VikingGear.IndexOf(WorldGenerator.instance.GetBiome(middle))))
+			if (lootCart == null && CartRules.Allowed(VillageCooking.BiomeAt(middle)))
 			{
 				lootCart = VillageCartAt(middle);
 				if (lootCart != null)

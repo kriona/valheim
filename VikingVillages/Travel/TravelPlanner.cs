@@ -793,7 +793,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out the biome of a village's vikings at a spot once (see VillageFarmhouses.HardestBiomeNear)
+		/// Works out the biome of the village whose farm stands at a spot once (see VillageCooking.BiomeAt)
 		/// </summary>
 		/// <param name="spot">The spot</param>
 		/// <returns>The biome, by VikingGear's order</returns>
@@ -801,7 +801,7 @@ namespace VikingVillages
 		{
 			if (!biomes.TryGetValue(spot, out int biome))
 			{
-				biome = VillageFarmhouses.HardestBiomeNear(spot, VillageFarmhouses.HardBiomeVikingReach);
+				biome = VillageCooking.BiomeAt(spot);
 				biomes[spot] = biome;
 			}
 			return(biome);
