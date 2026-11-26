@@ -84,7 +84,7 @@ Some Vikings have taken work with the Dvergr in the Mistlands, keeping to their 
 
 ## With Zombie Apocalypse
 
-With [Zombie Apocalypse](https://thunderstore.io/c/valheim/p/Kriona/ZombieApocalypse/) installed too, a Viking who dies rises as a zombie with their gear and skills, and the Vikings know it - they stand ready over the dead, keep clear of poison clouds, talk of the dead walking, and line their weapons with silver (see [With Zombie Apocalypse](LOGIC.md#with-zombie-apocalypse)). Any version of Viking Villages works with any version of Zombie Apocalypse.
+With [Zombie Apocalypse](https://thunderstore.io/c/valheim/p/Kriona/ZombieApocalypse/) installed too, a Viking who dies rises as a zombie with their name, gear and skills, and the Vikings know it - they stand ready over the dead, keep clear of poison clouds, talk of the dead walking, and line their weapons with silver (see [With Zombie Apocalypse](LOGIC.md#with-zombie-apocalypse)). Any version of Viking Villages works with any version of Zombie Apocalypse.
 
 ## Configuration
 

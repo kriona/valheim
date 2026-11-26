@@ -8,6 +8,24 @@ namespace ZombieApocalypse
 	internal class ZombieVikingBody : VikingBody
 	{
 		/// <summary>
+		/// Gets the zombie's name as the local player sees it - ZombieName and the name of the living or dvergr viking it
+		/// rose from to a player that viking knew, and plain Zombie Viking to anyone else, without Viking Villages' "(?)"
+		/// for a viking that doesn't know them yet, since a zombie never gets to know anyone (see VikingName)
+		/// </summary>
+		/// <returns>Its name</returns>
+		public override string GetHoverName()
+		{
+			Player player = Player.m_localPlayer;
+			string name = ((player != null && m_nview != null && m_nview.IsValid()) ? VikingName.ShownTo(m_nview.GetZDO(), player.GetPlayerID()) : "");
+			if (name.Length == 0)
+			{
+				return(base.GetHoverName());
+			}
+			string word = Plugin.ZombieName.Value;
+			return(string.IsNullOrEmpty(word) ? name : word + " " + name);
+		}
+
+		/// <summary>
 		/// Gets how much the zombie's heat is kept off - all of it for a zombie of the Ashlands, which the lava and the
 		/// boiling sea don't hurt, and none otherwise, as for any creature but a player
 		/// </summary>

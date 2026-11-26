@@ -17,8 +17,8 @@ namespace VikingVillages
 		/// <summary>
 		/// On a living viking, the name a player gave it and who gave it, by platform user ID or "host"
 		/// </summary>
-		private static readonly int NameKey = "kriona.VikingVillages.vikingName".GetStableHashCode();
-		private static readonly int AuthorKey = "kriona.VikingVillages.vikingNameAuthor".GetStableHashCode();
+		private static readonly int NameKey = VikingName.NameKey;
+		private static readonly int AuthorKey = VikingName.AuthorKey;
 
 		/// <summary>
 		/// The most characters a name can have - room for a name and a byname, like "Alfric Stormbreaker"
@@ -893,7 +893,7 @@ namespace VikingVillages
 		/// <returns>The name without it</returns>
 		public static string Plain(string name)
 		{
-			return(name.Replace("$", "").Trim());
+			return(VikingName.Plain(name));
 		}
 
 		/// <summary>
@@ -955,15 +955,7 @@ namespace VikingVillages
 		/// <returns>The name, filtered, or ""</returns>
 		public static string Filter(string name, string author)
 		{
-			if (name.Length == 0)
-			{
-				return("");
-			}
-			if (string.IsNullOrEmpty(author) || author == "host")
-			{
-				return(CensorShittyWords.FilterUGC(name, UGCType.Text, default, 0L));
-			}
-			return(CensorShittyWords.FilterUGC(name, UGCType.Text, new PlatformUserID(author), 0L));
+			return(VikingName.Filter(name, author));
 		}
 	}
 }

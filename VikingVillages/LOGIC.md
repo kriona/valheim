@@ -615,7 +615,7 @@ Some Vikings have taken work with the Dvergr in the Mistlands. A Dvergr Viking i
 
 With [Zombie Apocalypse](https://thunderstore.io/c/valheim/p/Kriona/ZombieApocalypse/) installed too, the living Vikings live through its apocalypse:
 
-- A living or Dvergr Viking who dies rises as a zombie Viking with their looks, gear and skills, as any slain creature does under Zombie Apocalypse's rules, and drops coins like any zombie Viking when killed in turn - along with the wood and loot they carried for their village
+- A living or Dvergr Viking who dies rises as a zombie Viking with their looks, name, gear and skills, as any slain creature does under Zombie Apocalypse's rules - their name showing after the zombie word to the players they knew, like Zombie Ragnar, and plain Zombie Viking to anyone else - and drops coins like any zombie Viking when killed in turn - along with the wood and loot they carried for their village
 - They stand ready over the corpses about to rise, fight the zombie once it's up rather than a corpse that can't be hurt, and keep clear of the poison clouds zombies' corpses leave (see [The Dead](#the-dead))
 - They talk of the dead walking (see [DIALOG.md](DIALOG.md)) - of burning the dead only when Zombie Apocalypse's `FireStaysDead` lets fire keep them down, and of silver whenever they do, since spirit damage always keeps the dead down
 - The empty abandoned houses near a farm are its Vikings', so zombie Vikings never hold them

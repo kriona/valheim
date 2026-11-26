@@ -110,7 +110,7 @@ Creatures that do not turn into zombies:
 
 With [Viking Villages](https://thunderstore.io/c/valheim/p/Kriona/VikingVillages/) installed too, the living Vikings of its villages live through the apocalypse:
 
-- A living Viking who dies rises as a zombie Viking with their looks, gear and skills, by the same rules as any slain creature - `RiseChance`, `FireStaysDead` and spirit damage - and drops coins like any zombie Viking when killed in turn, along with the wood and loot they carried for their village. So does a Dvergr Viking, one of the living Vikings the Dvergr hire in the Mistlands
+- A living Viking who dies rises as a zombie Viking with their looks, name, gear and skills - Zombie Ragnar to the players they knew, and plain Zombie Viking to anyone else - by the same rules as any slain creature - `RiseChance`, `FireStaysDead` and spirit damage - and drops coins like any zombie Viking when killed in turn, along with the wood and loot they carried for their village. So does a Dvergr Viking, one of the living Vikings the Dvergr hire in the Mistlands
 - They stand ready over corpses about to rise and keep clear of poison clouds
 - What they talk about follows the world's zombies - the dead walking while `RiseChance` is above 0, burning the dead while `FireStaysDead` is above 0 (and silver always), dead deer while `AnimalsRise` is on, the dead raiding while `VikingRaids` is on, and newcomers rising while `TombstoneZombies` is on
 - The empty abandoned houses within 100 meters of a farm are its living Vikings', so zombie Vikings never hold them

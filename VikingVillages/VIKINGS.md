@@ -9,8 +9,8 @@ There are three kinds of Viking across Viking Villages and Zombie Apocalypse. Th
 | Console command | `spawn Viking` | | `spawn ZombieViking` |
 | Biome of their gear and stats | Their village's | The Mistlands | Where they spawn |
 | Can be starred | No | Yes - one star, as often as the game stars the Mistlands' creatures | Yes - up to 1 by day and 2 at night, each star upgrading their gear a level |
-| Named | Yes | Yes | No - a tombstone zombie has your name |
-| Shows as "Viking (?)" until they know you | Yes | Yes | No |
+| Named | Yes | Yes | Only a risen living or Dvergr Viking, who keeps their name, and a tombstone zombie, who has yours |
+| Shows as "Viking (?)" until they know you | Yes | Yes | No - a risen Viking shows their name to the players they knew, like Zombie Ragnar, and is plain Zombie Viking to anyone else |
 | Can be renamed (Shift + E) | Yes | No | No |
 | Can be talked to (E) | Yes | Yes | No |
 | Greets you and passes on your news | Yes | Yes | No |
@@ -31,7 +31,7 @@ There are three kinds of Viking across Viking Villages and Zombie Apocalypse. Th
 | Coins dropped on death | None | 100-140, multiplied by stars | By biome, multiplied by stars |
 | Gear dropped on death | Everything, where they fall | Each piece 5%, at most 2 | Each piece 5%, at most 2 - a tombstone zombie drops everything |
 | Comes back after dying | No - a new Viking, with a new name and fresh skills, takes their place after a day, or three if a player killed them | No - an outpost never hires again | No |
-| Rises as a zombie Viking (with Zombie Apocalypse) | Yes, with their looks, gear and skills, dropping their silver | Yes | No |
+| Rises as a zombie Viking (with Zombie Apocalypse) | Yes, with their looks, name, gear and skills, dropping their silver | Yes, with their looks, name, gear and skills | No |
 | Silver-lined weapons (with Zombie Apocalypse) | From the Mountains on, 25% of the time rising to always from the Ashlands | 75% of the time | Never - no spirit weapons or ammo |
 | Flees at dawn | No | No | Night spawns do |
 | Zombie looks - tint, red eyes, flies and a lurch | No | No | Yes |

@@ -461,7 +461,7 @@ namespace VikingVillages
 		/// <summary>
 		/// On a living viking, the players it knows - having greeted them - by player ID, and the most it remembers
 		/// </summary>
-		private static readonly int KnownKey = "kriona.VikingVillages.vikingKnown".GetStableHashCode();
+		private static readonly int KnownKey = VikingName.KnownKey;
 		private const int KnownMax = 64;
 
 		/// <summary>
@@ -1385,13 +1385,7 @@ namespace VikingVillages
 			{
 				known.RemoveAt(0);
 			}
-			ZPackage pkg = new ZPackage();
-			pkg.Write(known.Count);
-			foreach (long id in known)
-			{
-				pkg.Write(id);
-			}
-			zdo.Set(KnownKey, pkg.GetArray());
+			zdo.Set(KnownKey, VikingName.WriteKnown(known));
 		}
 
 		/// <summary>
@@ -1401,19 +1395,7 @@ namespace VikingVillages
 		/// <returns>Their IDs, the one it met longest ago first</returns>
 		private static List<long> Known(ZDO zdo)
 		{
-			List<long> known = new List<long>();
-			byte[] bytes = zdo.GetByteArray(KnownKey);
-			if (bytes == null)
-			{
-				return(known);
-			}
-			ZPackage pkg = new ZPackage(bytes);
-			int count = pkg.ReadInt();
-			for (int i = 0; i < count; i++)
-			{
-				known.Add(pkg.ReadLong());
-			}
-			return(known);
+			return(VikingName.ReadKnown(zdo.GetByteArray(KnownKey)));
 		}
 
 		/// <summary>

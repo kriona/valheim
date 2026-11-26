@@ -723,7 +723,8 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Hands a dying living or dvergr viking's data and inventory to its corpse, for the zombie viking it rises as
+		/// Hands a dying living or dvergr viking's data, inventory, name and the players it knows to its corpse, for the
+		/// zombie viking it rises as
 		/// </summary>
 		/// <param name="creature">The dying creature</param>
 		/// <param name="corpse">Its corpse's ZDO, owned by this client</param>
@@ -747,10 +748,12 @@ namespace Kriona.Vikings
 			{
 				corpse.Set(InventoryKey, inventoryBytes);
 			}
+			VikingName.Carry(zdo, corpse);
 		}
 
 		/// <summary>
-		/// Gives a viking that's just been raised its data and inventory from the corpse it rose from
+		/// Gives a viking that's just been raised its data, inventory, name and the players it knows from the corpse it
+		/// rose from
 		/// </summary>
 		/// <param name="corpse">The corpse's ZDO</param>
 		/// <param name="viking">The viking, owned by this client</param>
@@ -760,6 +763,7 @@ namespace Kriona.Vikings
 			if (dataBytes != null)
 			{
 				HandOver(dataBytes, corpse.GetByteArray(InventoryKey), viking);
+				VikingName.Carry(corpse, viking.m_nview.GetZDO());
 			}
 		}
 
