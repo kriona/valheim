@@ -876,8 +876,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Opens or closes the usable door nearest a viking that's stood stuck on its way somewhere, within UnstickReach
 		/// of it, at most every UnstickWait seconds - closing an open one, whose door may be what stands in its way as it
-		/// walks past, unless someone else stands in the doorway or its own way goes through it, or opening a closed one,
-		/// which may be what it's walking into
+		/// walks past, unless someone else stands in the doorway, its own way goes through it or it's walking into it, or
+		/// opening a closed one, which may be what it's walking into
 		/// </summary>
 		/// <param name="viking">The viking, on its owner</param>
 		/// <returns>True when it opened or closed one</returns>
@@ -893,6 +893,9 @@ namespace VikingVillages
 				return(false);
 			}
 			Vector3 position = viking.transform.position;
+			Vector3 heading = viking.GetMoveDir();
+			heading.y = 0f;
+			heading = ((heading.sqrMagnitude > 0.01f) ? heading.normalized : Vector3.zero);
 			FindDoors(position, UnstickReach);
 			Door nearest = null;
 			float best = float.MaxValue;
@@ -902,13 +905,14 @@ namespace VikingVillages
 				{
 					continue;
 				}
-				// The door its own way goes through stays open
-				bool ownWay = (door == state.CrossDoor || door == state.RouteDoor);
+				// The door its own way goes through, or that it's walking into, stays open - Update would only open the
+				// one it's walking into again
+				DoorInfo info = GetInfo(door);
+				bool ownWay = (door == state.CrossDoor || door == state.RouteDoor || DoorGeometry.IsAhead(info, position, heading));
 				if (ownWay && door.m_nview.GetZDO().GetInt(ZDOVars.s_state) != 0)
 				{
 					continue;
 				}
-				DoorInfo info = GetInfo(door);
 				float distance = Utils.DistanceXZ(position, info.Floor);
 				if (Mathf.Abs(position.y - info.Floor.y) <= FloorReach && distance <= UnstickReach && distance < best)
 				{

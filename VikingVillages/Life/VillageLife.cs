@@ -1816,6 +1816,12 @@ namespace VikingVillages
 		private float stuckSince;
 
 		/// <summary>
+		/// Whether the viking has opened or closed a door beside it since it last got anywhere (see CheckStuck), so a
+		/// door that didn't free it doesn't hold off giving up
+		/// </summary>
+		private bool doorTried;
+
+		/// <summary>
 		/// How many times the viking has jumped toward where it's walking, and its jump over a fence - what it's doing
 		/// for it, which way it jumps, where the fence it's jumping is and how high above where it started its top is,
 		/// until when it keeps at what it's doing, and whether it has left the ground yet
@@ -9819,12 +9825,14 @@ namespace VikingVillages
 				stuckBest = distance;
 				stuckFrom = transform.position;
 				stuckSince = Time.time;
+				doorTried = false;
 				return(false);
 			}
-			// A door beside it, standing open across its way or shut in front of it, is opened or closed before it tries
-			// jumping anything
-			if (Time.time - stuckSince >= HopAfter && VikingDoors.Unstick(humanoid))
+			// A door beside it, standing open across its way or shut in front of it, is opened or closed once before it
+			// tries jumping anything
+			if (!doorTried && Time.time - stuckSince >= HopAfter && VikingDoors.Unstick(humanoid))
 			{
+				doorTried = true;
 				stuckSince = Time.time;
 				return(false);
 			}
@@ -9855,6 +9863,7 @@ namespace VikingVillages
 			stuckFrom = transform.position;
 			stuckSince = Time.time;
 			hops = 0;
+			doorTried = false;
 		}
 
 		/// <summary>
