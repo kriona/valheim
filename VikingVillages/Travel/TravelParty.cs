@@ -61,10 +61,11 @@ namespace VikingVillages
 		/// <summary>
 		/// Describes the party for the log
 		/// </summary>
-		/// <returns>The description, like "biomes 1-3, by karve, swimming 50m, carrying what no portal takes"</returns>
+		/// <returns>The description, like "biomes 1-3, sails a karve, swimming 50m, carrying what no portal takes" - the
+		/// boat it would sail where its road crosses the sea, whether or not it does</returns>
 		public string Describe()
 		{
-			return("biomes " + Easiest + ((Hardest != Easiest) ? "-" + Hardest : "") + ", by " + TravelTime.BoatName(Hardest) + ((SwimMeters > 0f) ? ", swimming " + SwimMeters.ToString("F0") + "m" : "") + (Unteleportable ? ", carrying what no portal takes" : ""));
+			return("biomes " + Easiest + ((Hardest != Easiest) ? "-" + Hardest : "") + ", sails a " + TravelTime.BoatName(Hardest) + ((SwimMeters > 0f) ? ", swimming " + SwimMeters.ToString("F0") + "m" : "") + (Unteleportable ? ", carrying what no portal takes" : ""));
 		}
 
 		/// <summary>

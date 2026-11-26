@@ -1412,8 +1412,7 @@ namespace VikingVillages
 			{
 				string name = VillageTravel.DestinationName(zdo);
 				int biome = VillageTravel.BoatBiome(zdo);
-				int portals = travelRoad.PortalCount();
-				line += " to " + ((name.Length > 0) ? name + " " : "") + "at " + zdo.GetVec3(VillageTravel.DestinationKey, Vector3.zero).ToString("F0") + ", " + travelRoad.Meters(roadLeg, transform.position).ToString("F0") + "m and " + travelRoad.Seconds(roadLeg, transform.position, TravelTime.BoatSpeed(biome)).ToString("F0") + "s left, " + VillageTravel.PartyOf(zdo).Describe() + ((portals > 0) ? ", " + portals + " portals on the road" : "") + ", waypoint " + roadLeg + " of " + travelRoad.Count + (zdo.GetBool(VillageTravel.SailingKey) ? ", setting sail" : "") + (zdo.GetBool(VillageTravel.PortalKey) ? ", stepping through a portal" : "");
+				line += " to " + ((name.Length > 0) ? name + " " : "") + "at " + zdo.GetVec3(VillageTravel.DestinationKey, Vector3.zero).ToString("F0") + ", " + travelRoad.Meters(roadLeg, transform.position).ToString("F0") + "m and " + travelRoad.Seconds(roadLeg, transform.position, TravelTime.BoatSpeed(biome)).ToString("F0") + "s left by " + TravelPlanner.DescribeRoad(travelRoad) + ", " + VillageTravel.PartyOf(zdo).Describe() + ", waypoint " + roadLeg + " of " + travelRoad.Count + (zdo.GetBool(VillageTravel.SailingKey) ? ", setting sail" : "") + (zdo.GetBool(VillageTravel.PortalKey) ? ", stepping through a portal" : "");
 			}
 			text.Append(line + "\n");
 			string crossingLine = DescribeCrossing();
