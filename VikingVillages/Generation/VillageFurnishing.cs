@@ -1544,13 +1544,20 @@ namespace VikingVillages
 
 			/// <summary>
 			/// The spots tried for the last piece placed against a wall or near a point, and why each that didn't fit
-			/// didn't - its cells already taken, something already standing in its way, or the house left too hard to
-			/// get around - for the log (see DescribeMisses)
+			/// didn't - its cells something stands on or with no floor, kept clear by a door or in front of a station,
+			/// or taken by a piece laid out, something already standing in its way, the house left too hard to get
+			/// around, or out of reach of the point once pushed back against the wall - and for a piece placed near a
+			/// point, how many spots with free cells were out of its reach, for the log (see DescribeMisses)
 			/// </summary>
 			private int missTried;
+			private int missStanding;
+			private int missKeptClear;
 			private int missTaken;
 			private int missBlocked;
 			private int missCramped;
+			private int missPushedFar;
+			private int missFar;
+			private bool missNear;
 			private bool missNoSize;
 
 			/// <summary>
@@ -1572,7 +1579,12 @@ namespace VikingVillages
 				{
 					return(floor + ": the piece's size couldn't be measured");
 				}
-				return(floor + ": " + missTried + " spots tried - " + missTaken + " on cells already taken, " + missBlocked + " with something already standing in the way, " + missCramped + " leaving the house too hard to get around");
+				string tried = floor + ": " + missTried + " spots tried - " + missStanding + " on cells something stands on or with no floor, " + missKeptClear + " on cells kept clear by a door or in front of a station, " + missTaken + " on cells taken by pieces laid out, " + missBlocked + " with something already standing in the way, " + missCramped + " leaving the house too hard to get around";
+				if (!missNear)
+				{
+					return(tried);
+				}
+				return(tried + ", " + missPushedFar + " out of reach once pushed back against the wall - and " + missFar + " spots against the walls with free cells out of reach");
 			}
 
 			/// <summary>
@@ -1581,10 +1593,37 @@ namespace VikingVillages
 			private void ResetMisses()
 			{
 				missTried = 0;
+				missStanding = 0;
+				missKeptClear = 0;
 				missTaken = 0;
 				missBlocked = 0;
 				missCramped = 0;
+				missPushedFar = 0;
+				missFar = 0;
+				missNear = false;
 				missNoSize = false;
+			}
+
+			/// <summary>
+			/// Counts a spot tried whose cells aren't all free, by what keeps them from being free (see
+			/// FloorGrid.Hindrance)
+			/// </summary>
+			/// <param name="hindrance">What keeps them from being free</param>
+			private void CountHindrance(byte hindrance)
+			{
+				missTried++;
+				if (hindrance == FloorGrid.Blocked)
+				{
+					missStanding++;
+				}
+				else if (hindrance == FloorGrid.KeepClear)
+				{
+					missKeptClear++;
+				}
+				else
+				{
+					missTaken++;
+				}
 			}
 
 			/// <summary>
@@ -1878,6 +1917,7 @@ namespace VikingVillages
 					missNoSize = (reach > 0f);
 					return(false);
 				}
+				missNear = true;
 				int width = CellSpan(size.size.x);
 				int depth = CellSpan(size.size.z);
 				List<WallSpot> spots = new List<WallSpot>();
@@ -1890,15 +1930,27 @@ namespace VikingVillages
 						for (int offset = 0; offset < along; offset++)
 						{
 							List<Vector2Int> cells = grid.WallCells(quarter, offset, gap, width, depth);
-							if (!grid.AreFree(cells))
+							// A piece running past the end of the wall isn't a spot along it
+							if (!cells.TrueForAll(grid.Inside))
 							{
 								continue;
 							}
 							float distance = Vector3.Distance(Origin(size, rotation, cells), point);
-							if (distance <= reach)
+							byte hindrance = grid.Hindrance(cells);
+							if (hindrance != FloorGrid.Free)
 							{
-								spots.Add(new WallSpot { Gap = gap, Quarter = quarter, Offset = offset, Distance = distance });
+								if (distance <= reach)
+								{
+									CountHindrance(hindrance);
+								}
+								continue;
 							}
+							if (distance > reach)
+							{
+								missFar++;
+								continue;
+							}
+							spots.Add(new WallSpot { Gap = gap, Quarter = quarter, Offset = offset, Distance = distance });
 						}
 					}
 				}
@@ -1917,6 +1969,7 @@ namespace VikingVillages
 					// Pushed back against the wall, it can end up out of reach
 					if (Vector3.Distance(Placed[Placed.Count - 1].Position, point) > reach)
 					{
+						missPushedFar++;
 						Remove(Placed.Count - 1);
 						continue;
 					}
@@ -2062,12 +2115,13 @@ namespace VikingVillages
 			/// <returns>True when it was placed</returns>
 			private bool TryTake(string prefabName, Bounds size, Quaternion rotation, List<Vector2Int> taken)
 			{
-				missTried++;
-				if (!grid.AreFree(taken))
+				byte hindrance = grid.Hindrance(taken);
+				if (hindrance != FloorGrid.Free)
 				{
-					missTaken++;
+					CountHindrance(hindrance);
 					return(false);
 				}
+				missTried++;
 				Vector3 position = Origin(size, rotation, taken);
 				PieceBox(size, position, rotation, out Vector3 boxCenter, out Vector3 half);
 				if (Physics.CheckBox(boxCenter, half, rotation, pieceMask, QueryTriggerInteraction.Ignore))
@@ -2260,6 +2314,30 @@ namespace VikingVillages
 					}
 				}
 				return(true);
+			}
+
+			/// <summary>
+			/// Works out what keeps some cells from all being free, the longest lasting first - a cell off the grid, with no
+			/// floor or something standing on it, then one kept clear, then one taken by a piece laid out
+			/// </summary>
+			/// <param name="cells">The cells</param>
+			/// <returns>Blocked, KeepClear or Taken, or Free when they're all free</returns>
+			public byte Hindrance(List<Vector2Int> cells)
+			{
+				byte worst = Free;
+				foreach (Vector2Int cell in cells)
+				{
+					byte state = (Inside(cell) ? Cells[cell.x, cell.y] : Blocked);
+					if (state == Blocked)
+					{
+						return(Blocked);
+					}
+					if (state == KeepClear || (state == Taken && worst == Free))
+					{
+						worst = state;
+					}
+				}
+				return(worst);
 			}
 
 			/// <summary>

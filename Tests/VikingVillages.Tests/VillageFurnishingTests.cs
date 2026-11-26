@@ -178,6 +178,59 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that free cells have nothing keeping them from being free
+		/// </summary>
+		[Fact]
+		public void FreeCellsHaveNoHindrance()
+		{
+			VillageFurnishing.FloorGrid grid = new VillageFurnishing.FloorGrid(3, 3);
+			Assert.Equal(VillageFurnishing.FloorGrid.Free, grid.Hindrance(new List<Vector2Int> { new Vector2Int(0, 0), new Vector2Int(2, 2) }));
+		}
+
+		/// <summary>
+		/// Checks that a cell off the grid counts as blocked
+		/// </summary>
+		[Fact]
+		public void CellOffTheGridIsBlocked()
+		{
+			VillageFurnishing.FloorGrid grid = new VillageFurnishing.FloorGrid(3, 3);
+			Assert.Equal(VillageFurnishing.FloorGrid.Blocked, grid.Hindrance(new List<Vector2Int> { new Vector2Int(2, 0), new Vector2Int(3, 0) }));
+		}
+
+		/// <summary>
+		/// Checks that each kind of cell that isn't free is named when it's the only one in the way
+		/// </summary>
+		[Theory]
+		[InlineData(VillageFurnishing.FloorGrid.Blocked)]
+		[InlineData(VillageFurnishing.FloorGrid.KeepClear)]
+		[InlineData(VillageFurnishing.FloorGrid.Taken)]
+		public void NamesTheOneCellInTheWay(byte state)
+		{
+			VillageFurnishing.FloorGrid grid = new VillageFurnishing.FloorGrid(3, 3);
+			grid.Cells[1, 0] = state;
+			Assert.Equal(state, grid.Hindrance(new List<Vector2Int> { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0) }));
+		}
+
+		/// <summary>
+		/// Checks that blocked cells are named over kept clear ones, and kept clear ones over taken ones, whichever comes
+		/// first
+		/// </summary>
+		[Fact]
+		public void NamesTheLongestLastingCellInTheWay()
+		{
+			VillageFurnishing.FloorGrid grid = new VillageFurnishing.FloorGrid(3, 1);
+			grid.Cells[0, 0] = VillageFurnishing.FloorGrid.Taken;
+			grid.Cells[1, 0] = VillageFurnishing.FloorGrid.KeepClear;
+			grid.Cells[2, 0] = VillageFurnishing.FloorGrid.Blocked;
+			List<Vector2Int> cells = new List<Vector2Int> { new Vector2Int(0, 0), new Vector2Int(1, 0) };
+			Assert.Equal(VillageFurnishing.FloorGrid.KeepClear, grid.Hindrance(cells));
+			cells.Reverse();
+			Assert.Equal(VillageFurnishing.FloorGrid.KeepClear, grid.Hindrance(cells));
+			cells.Add(new Vector2Int(2, 0));
+			Assert.Equal(VillageFurnishing.FloorGrid.Blocked, grid.Hindrance(cells));
+		}
+
+		/// <summary>
 		/// Checks that an empty floor is easy to get around
 		/// </summary>
 		[Fact]
