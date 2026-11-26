@@ -14,6 +14,18 @@ namespace VikingVillages.Tests
 		private const float CookMargin = 1.75f;
 
 		/// <summary>
+		/// How far a bonfire's flames reach from its middle, and how near a cauldron the game lets a player use it, in
+		/// meters
+		/// </summary>
+		private const float BonfireFlames = 1.8f;
+		private const float CauldronUseDistance = 1.9f;
+
+		/// <summary>
+		/// How far apart the spots VillageCooking tries for a cauldron are, in meters - its OffsetStep
+		/// </summary>
+		private const float OffsetStep = 0.1f;
+
+		/// <summary>
 		/// How much a distance can come up short of where it should be from float rounding, in meters
 		/// </summary>
 		private const float Tolerance = 0.0001f;
@@ -201,6 +213,37 @@ namespace VikingVillages.Tests
 			Assert.Equal(0f, spot.x, 4);
 			Assert.Equal(1f + CookMargin, spot.z, 4);
 			Assert.Equal(1f, spot.y, 4);
+		}
+
+		/// <summary>
+		/// Checks that a cauldron within a step of the edge of a bonfire's flames, as VillageCooking places it, is worked
+		/// from outside them within the game's use distance
+		/// </summary>
+		/// <param name="angle">Which way from the fire's middle the cauldron stands, in degrees</param>
+		/// <param name="inside">How far inside the flames' edge it stands, in steps</param>
+		[Theory]
+		[InlineData(0f, 0)]
+		[InlineData(90f, 1)]
+		[InlineData(225f, 1)]
+		public void CauldronAtTheFlamesEdgeIsInReachFromOutside(float angle, int inside)
+		{
+			Vector3 middle = new Vector3(50f, 30f, -20f);
+			Vector3 outward = new Vector3(Mathf.Sin(angle * Mathf.Deg2Rad), 0f, Mathf.Cos(angle * Mathf.Deg2Rad));
+			Vector3 cauldron = middle + outward * (BonfireFlames - inside * OffsetStep);
+			Vector3 spot = FireSafety.SpotAround(cauldron, middle + new Vector3(-10f, 0f, 3f), middle, BonfireFlames);
+			Assert.True(Utils.DistanceXZ(spot, middle) > BonfireFlames);
+			Assert.True(Vector3.Distance(spot, cauldron) < CauldronUseDistance);
+		}
+
+		/// <summary>
+		/// Checks that a cauldron over a bonfire's middle is out of the game's use distance from outside its flames, so
+		/// it would only be used from inside them
+		/// </summary>
+		[Fact]
+		public void CauldronOverTheMiddleIsOutOfReachFromOutside()
+		{
+			Vector3 spot = FireSafety.SpotAround(Vector3.zero, new Vector3(-10f, 0f, 3f), Vector3.zero, BonfireFlames);
+			Assert.True(Vector3.Distance(spot, Vector3.zero) > CauldronUseDistance);
 		}
 	}
 }

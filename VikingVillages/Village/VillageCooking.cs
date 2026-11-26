@@ -302,10 +302,10 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Gives a village of the Black Forest or a harder biome a cauldron over its fire once its fire is lit - where
-		/// there's room for it in the flames beside the cooking stations, as near the fire's middle as it fits - with the
-		/// extensions its biome calls for around it, out of the flames (see CauldronExtensions). It's placed once, noted
-		/// so it isn't placed again, and noted among the village's pieces so its vikings build it back. A village with a
-		/// cauldron already standing over its fire just gets the extensions
+		/// there's room for it in the flames beside the cooking stations, as far out from the fire's middle as it fits -
+		/// with the extensions its biome calls for around it, out of the flames (see CauldronExtensions). It's placed
+		/// once, noted so it isn't placed again, and noted among the village's pieces so its vikings build it back. A
+		/// village with a cauldron already standing over its fire just gets the extensions
 		/// </summary>
 		/// <param name="village">The village, whose generator or anchor this client owns, with everything across it
 		/// loaded</param>
@@ -377,9 +377,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Places a cauldron in a fire's flames - its middle where the game counts it as over the fire - as near the fire's
-		/// middle as it has room, clear of the cooking stations and anything else but the fire itself
+		/// Places a cauldron in a fire's flames - its middle inside them, where the game also counts it as over the fire -
+		/// as far out from the fire's middle as it has room, clear of the cooking stations and anything else but the fire
+		/// itself
 		/// </summary>
+		/// <remarks>
+		/// The game's cauldron is used from within 1.9 meters of its middle, and a bonfire's flames reach 1.8 meters, so
+		/// one at the fire's middle could only be used from inside the flames - at their edge a viking or a player works
+		/// it from outside them
+		/// </remarks>
 		/// <param name="fire">The fire, lit</param>
 		/// <param name="prefab">The cauldron's prefab</param>
 		/// <param name="built">The pieces placed, as they'd be noted among the village's pieces, added to</param>
@@ -389,14 +395,17 @@ namespace VikingVillages
 		{
 			Vector3 middle = fire.transform.position;
 			Bounds size = (VillageFurnishing.Footprint(CauldronPrefab, out Bounds measured) ? measured : new Bounds(Vector3.up * 0.5f, Vector3.one));
-			for (float offset = 0f; offset <= MaxOffset; offset += OffsetStep)
+			float flames = Mathf.Min(VillageLife.AreaReach(fire, EffectArea.Type.Burning), MaxOffset);
+			// Stepping in by OffsetStep can come up a hair short of the middle, so the last step lands on it
+			for (float step = flames; step > -OffsetStep / 2f; step -= OffsetStep)
 			{
+				float offset = Mathf.Max(0f, step);
 				for (float angle = 0f; angle < 360f; angle += AngleStep)
 				{
 					Vector3 outward = Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
 					spot = OnGround(middle + outward * offset);
 					Quaternion facing = Quaternion.LookRotation(outward);
-					if (EffectArea.IsPointPlus025InsideBurningArea(spot) && Clear(spot, facing, size, fire.gameObject))
+					if (InFlames(fire, spot, 0f) && EffectArea.IsPointPlus025InsideBurningArea(spot) && Clear(spot, facing, size, fire.gameObject))
 					{
 						built.Add(Build(prefab, spot, facing));
 						return(true);
@@ -450,7 +459,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a piece has room at a spot - nothing solid in the space it takes but what's left out
+		/// Checks whether a piece has room at a spot - nothing solid in the space it takes but what's left out, counting
+		/// the colliders a cooking station, cauldron or the like keeps on the game's non-solid piece and blocker layers
 		/// </summary>
 		/// <param name="spot">Where its origin would be, on the ground</param>
 		/// <param name="facing">Which way it would face</param>
@@ -461,7 +471,7 @@ namespace VikingVillages
 		{
 			if (solidMask == 0)
 			{
-				solidMask = LayerMask.GetMask("piece", "Default", "static_solid", "Default_small");
+				solidMask = LayerMask.GetMask("piece", "piece_nonsolid", "blocker", "Default", "static_solid", "Default_small");
 			}
 			Vector3 center = spot + facing * size.center + Vector3.up * 0.05f;
 			foreach (Collider hit in Physics.OverlapBox(center, size.extents * 0.9f, facing, solidMask, QueryTriggerInteraction.Ignore))

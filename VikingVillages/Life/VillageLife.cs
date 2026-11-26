@@ -18816,9 +18816,11 @@ namespace VikingVillages
 				{
 					return(Fetch(dt, ingredient, needed));
 				}
-				if (Utils.DistanceXZ(cauldron.transform.position, life.transform.position) > CraftReach)
+				// A cauldron over a fire is worked from outside the fire's flames, the way a cooking station is
+				FireSafety.CookSpot(cauldron.transform.position, life.transform.position, CraftReach, out Vector3 spot, out float within);
+				if (Utils.DistanceXZ(spot, life.transform.position) > Mathf.Max(within, ArriveReach))
 				{
-					life.Go(dt, cauldron.transform.position, CraftReach, false);
+					life.Go(dt, spot, within, false);
 					return(life.moveFailed);
 				}
 				life.Face(cauldron.transform.position);

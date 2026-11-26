@@ -397,7 +397,7 @@ From dusk, they finish what's on the stations without fetching more - see [How a
 
 ### Cook a Meal
 
-Every 15 seconds, by day, they look at the village's cauldron - usable the way it is for you, under a roof - for the meal it can make from what the chests hold that adds the most health and stamina, among those the chests hold fewer than 10 of. They fetch what it takes, work at the cauldron for 3 seconds, and put the meal away. What the meals need of the raw food in the chests - one cauldron's worth for each - is kept back from the cooking stations.
+Every 15 seconds, by day, they look at the village's cauldron - usable the way it is for you, under a roof - for the meal it can make from what the chests hold that adds the most health and stamina, among those the chests hold fewer than 10 of. They fetch what it takes, work at the cauldron for 3 seconds from outside the fire's flames, and put the meal away. What the meals need of the raw food in the chests - one cauldron's worth for each - is kept back from the cooking stations.
 
 ### Pick Up Kill Loot
 
