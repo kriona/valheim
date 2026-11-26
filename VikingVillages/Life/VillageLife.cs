@@ -7451,7 +7451,7 @@ namespace VikingVillages
 				why = "the nearest navmesh, at " + stand.ToString("F1") + ", is " + Utils.DistanceXZ(stand, point).ToString("F1") + "m from it";
 				return(false);
 			}
-			if (VikingDoors.Steer(humanoid, stand, out Vector3 _, out bool _))
+			if (VikingDoors.WayThroughDoor(humanoid, stand))
 			{
 				return(true);
 			}

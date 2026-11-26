@@ -327,6 +327,11 @@ namespace VikingVillages
 		private static readonly RaycastHit[] hits = new RaycastHit[32];
 
 		/// <summary>
+		/// The state a route is worked out into by WayThroughDoor, so the viking's own is left as it is
+		/// </summary>
+		private static readonly VikingState probe = new VikingState();
+
+		/// <summary>
 		/// The layers of building pieces, looked up on first use
 		/// </summary>
 		private static int pieceMask;
@@ -510,6 +515,26 @@ namespace VikingVillages
 		public static bool IsCrossing(Character viking)
 		{
 			return(viking != null && states.TryGetValue(viking, out VikingState state) && state.CrossDoor != null);
+		}
+
+		/// <summary>
+		/// Checks whether a viking's way to a target goes through a door it can use, the way Steer works it out, without
+		/// touching what the viking is doing with doors - its route, its crossing or its wait - so a spot can be looked at
+		/// without the viking setting off for it
+		/// </summary>
+		/// <param name="viking">The viking</param>
+		/// <param name="target">The spot</param>
+		/// <returns>True when its way there goes through a door</returns>
+		public static bool WayThroughDoor(Character viking, Vector3 target)
+		{
+			if (viking == null || viking.IsDead())
+			{
+				return(false);
+			}
+			FindRoute(probe, viking.transform.position, target);
+			bool through = IsUsable(probe.RouteDoor);
+			probe.RouteDoor = null;
+			return(through);
 		}
 
 		/// <summary>
