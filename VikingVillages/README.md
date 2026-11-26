@@ -6,7 +6,7 @@ The Meadows' abandoned farms aren't abandoned anymore. Living Vikings move in, k
 
 Viking Villages works on its own, and with [Zombie Apocalypse](https://thunderstore.io/c/valheim/p/Kriona/ZombieApocalypse/) the two know about each other - see With Zombie Apocalypse below.
 
-This page gives a short tour of each feature. Every detail of how it works is in [LOGIC.md](LOGIC.md), and every job the Vikings do, in the order they pick them, is in [JOBS.md](JOBS.md).
+This page gives a short tour of each feature. Every detail of how it works is in [LOGIC.md](LOGIC.md), and every job the Vikings do, in the order they pick them, is in [JOBS.md](JOBS.md). How living Vikings, Dvergr Vikings and Zombie Apocalypse's zombie Vikings compare is in [VIKINGS.md](VIKINGS.md).
 
 ## Villages
 
