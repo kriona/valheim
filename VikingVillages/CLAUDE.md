@@ -7,7 +7,7 @@
 - A change to what the Vikings do goes in `LOGIC.md` or `JOBS.md`, and in the README only when it adds a feature or changes one the README mentions
 
 ## Code
-- The code sits in folders by feature - `Generation`, `Village`, `Vikings`, `AI`, `Life` (the `VillageLife` jobs), `Quests`, `Travel`, `Speech`, `News` and the rest - with only `Plugin.cs`, which `Directory.Build.props` reads the version from, left beside the docs. A `*Patches.cs` file goes in its feature's folder
+- The code sits in folders by feature - `Generation`, `Village`, `Vikings`, `AI`, `Life` (the `VillageLife` partial class, a file for each part of a viking's life and `Life\Jobs` with a file for each job), `Quests`, `Travel`, `Speech`, `News` and the rest - with only `Plugin.cs`, which `Directory.Build.props` reads the version from, left beside the docs. A `*Patches.cs` file goes in its feature's folder
 - Village houses are built from the `.blueprint` files in `Blueprints\` - the user makes and changes them in game with PlanBuild, as `Blueprints\README.md` describes, so don't write or edit `.blueprint` files by hand
 
 ## Vikings
