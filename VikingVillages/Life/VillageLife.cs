@@ -7244,6 +7244,7 @@ namespace VikingVillages
 			// what they find or eat from - only by the viking that couldn't get to it, for a while
 			if (chest)
 			{
+				LogChestMiss(view.GetComponent<Container>());
 				return;
 			}
 			// A viking stranded where it can't walk from - up on a roof, or anywhere else off its navmesh - fails to get
@@ -16733,7 +16734,7 @@ namespace VikingVillages
 					{
 						if (bed != null)
 						{
-							Plugin.Log.LogInfo(life.LogName() + " couldn't reach the bed at " + bed.transform.position.ToString("F0") + ", so it rests on the floor instead");
+							Plugin.Log.LogInfo(life.LogName() + " couldn't reach the bed at " + bed.transform.position.ToString("F0") + ", so it rests on the floor instead" + life.DescribeBedMiss(bed, spot));
 							life.ReleaseObject(bed.GetComponent<ZNetView>());
 						}
 						if (chair != null)

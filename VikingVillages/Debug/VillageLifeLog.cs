@@ -914,5 +914,93 @@ namespace VikingVillages
 			reason = "vikings busy";
 			return("the vikings would take it but never got to it - " + string.Join(", ", doing));
 		}
+
+		/// <summary>
+		/// Writes to the log why the viking couldn't get to a chest - where it walks to use it (see ChestStand), how
+		/// that spot stands toward the chest's house and the viking (see DescribeMiss), and whether the spot sees the
+		/// chest past building pieces, like the wall it stands against - and counts what was wrong. A chest it got to
+		/// and found nothing in isn't written
+		/// </summary>
+		/// <param name="chest">The chest</param>
+		private void LogChestMiss(Container chest)
+		{
+			if (chest == null || !(TestLog.On || Player.m_debugMode) || AtChest(chest))
+			{
+				return;
+			}
+			Vector3 target = chest.transform.position;
+			bool hasStand = ChestStand(chest, out Vector3 stand);
+			string standing = (hasStand ? "walks to " + stand.ToString("F1") + " to use it, " + Utils.DistanceXZ(stand, target).ToString("F1") + "m from it and " + (stand.y - target.y).ToString("F1") + "m above its floor" : "has no navmesh within " + ChestStandSearch.ToString("F1") + "m of it, so walks at the chest itself");
+			Vector3 spot = (hasStand ? stand : target);
+			string detail = DescribeMiss(spot, target, out string trouble);
+			TestLog.Count("Chests out of reach, by what's wrong", (hasStand ? trouble : "no spot to stand"));
+			Plugin.Log.LogInfo("Chest: " + TestLog.Name(humanoid, "F1") + " (" + LogJobName() + ") couldn't get to " + Utils.GetPrefabName(chest.gameObject) + " at " + target.ToString("F1") + " - it " + standing + "; the spot is " + detail + "; the spot and the chest " + VikingDoors.DescribeRooms(spot, target));
+		}
+
+		/// <summary>
+		/// Describes, for the line written when the viking couldn't reach a bed, the spot it walked to (see DescribeMiss)
+		/// - and counts what was wrong
+		/// </summary>
+		/// <param name="bed">The bed</param>
+		/// <param name="spot">Where it walked to lie down in it</param>
+		/// <returns>The description, starting with " - ", or nothing when the test log is off and it isn't debug mode</returns>
+		private string DescribeBedMiss(Bed bed, Vector3 spot)
+		{
+			if (bed == null || !(TestLog.On || Player.m_debugMode))
+			{
+				return("");
+			}
+			string detail = DescribeMiss(spot, bed.transform.position, out string trouble);
+			TestLog.Count("Beds out of reach, by what's wrong", trouble);
+			return(" - it walked to " + spot.ToString("F1") + ", " + Utils.DistanceXZ(spot, bed.transform.position).ToString("F1") + "m from the bed, which is " + detail);
+		}
+
+		/// <summary>
+		/// Describes for the log a spot the viking couldn't get to on its way to something - how far it is, whether it's
+		/// within the bounds of the house the thing stands in (see Village.InHouse), whether the viking has a whole path
+		/// to it and to the village's open ground, whether the viking stands off its navmesh, what moved it last, the
+		/// door its way goes through, and how the viking and the spot stand toward the houses' rooms (see
+		/// VikingDoors.DescribeRooms)
+		/// </summary>
+		/// <param name="spot">The spot it walked to</param>
+		/// <param name="thing">Where the thing it was after stands</param>
+		/// <param name="trouble">Given what was wrong, the first of these that holds, for the totals: the viking off
+		/// its navmesh, with no way out to the open ground, the spot outside the thing's house, no whole path to the
+		/// spot, or else none of those</param>
+		/// <returns>The description</returns>
+		private string DescribeMiss(Vector3 spot, Vector3 thing, out string trouble)
+		{
+			Vector3 position = transform.position;
+			Pathfinding pathfinding = Pathfinding.instance;
+			bool toSpot = (pathfinding != null && pathfinding.HavePath(position, spot, Pathfinding.AgentType.Humanoid));
+			bool toOpen = (pathfinding != null && village != null && pathfinding.HavePath(position, village.RallyPoint(), Pathfinding.AgentType.Humanoid));
+			bool offMesh = OffItsNavmesh();
+			VillagePaths.House house = new VillagePaths.House();
+			bool hasHouse = (village != null && village.NearestHouse(thing, out house) && Village.InHouse(house, thing, 0f));
+			bool spotInside = (hasHouse && Village.InHouse(house, spot, 0f));
+			string where = (hasHouse ? (spotInside ? "within" : "outside") + " the bounds of the house at " + house.Center.ToString("F0") : "where no house is");
+			string door = VikingDoors.DebugLine(humanoid).Trim();
+			if (offMesh)
+			{
+				trouble = "the viking off its navmesh";
+			}
+			else if (!toOpen)
+			{
+				trouble = "the viking with no way to the open ground";
+			}
+			else if (hasHouse && !spotInside)
+			{
+				trouble = "the spot outside the house";
+			}
+			else if (!toSpot)
+			{
+				trouble = "no whole path to the spot";
+			}
+			else
+			{
+				trouble = "a whole path to the spot";
+			}
+			return(Utils.DistanceXZ(position, spot).ToString("F1") + "m from the viking, " + where + ", with " + (toSpot ? "a" : "no") + " whole path from the viking to it and " + (toOpen ? "a" : "no") + " whole path from the viking to the open ground, the viking " + (offMesh ? "off" : "on") + " its navmesh, moved by " + mover + ", " + ((door.Length > 0) ? door : "no door on its way") + ", the viking and the spot " + VikingDoors.DescribeRooms(position, spot));
+		}
 	}
 }

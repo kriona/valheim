@@ -728,6 +728,22 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Describes for the log how two points stand toward the houses' rooms, the way FindRoute sees them - how many
+		/// rooms each is in, whether they share one, and whether they can see each other past building pieces
+		/// </summary>
+		/// <param name="from">One point, like where a viking stands</param>
+		/// <param name="to">The other, like where it's heading</param>
+		/// <returns>The description, like "in 1 and 0 rooms, sharing none, in sight"</returns>
+		internal static string DescribeRooms(Vector3 from, Vector3 to)
+		{
+			FindDoors(from, DoorRange);
+			FindRooms(from, vikingRooms);
+			FindDoors(to, DoorRange);
+			FindRooms(to, targetRooms);
+			return("in " + vikingRooms.Count + " and " + targetRooms.Count + " rooms, " + (SharesRoom() ? "sharing one" : "sharing none") + ", " + (InSight(from, to, null) ? "in sight" : "out of sight"));
+		}
+
+		/// <summary>
 		/// Finds the rooms a point is in among the doors found near it - each side of a door that's a room, that the
 		/// point is on and can see the point just inside the door from
 		/// </summary>

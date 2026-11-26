@@ -1433,6 +1433,10 @@ namespace VikingVillages
 				layout.PlaceAgainstWall(ChestPrefab);
 			}
 			Plugin.Log.LogInfo("Furnished the house at " + layout.House.Center.ToString("F0") + " with " + layout.Placed.Count + " pieces");
+			if (TestLog.On || Player.m_debugMode)
+			{
+				Plugin.Log.LogInfo("Furnished floor: " + layout.DescribeGrid());
+			}
 			return(placedStations);
 		}
 
@@ -1563,6 +1567,18 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// A bed or chest standing in a house before it's furnished, for the log - its prefab, where it stands, the
+		/// cells it stands on, as column and row, and the mark it's drawn with on the grid
+		/// </summary>
+		private struct StandingPiece
+		{
+			public string Name;
+			public Vector3 Position;
+			public List<Vector2Int> Cells;
+			public char Mark;
+		}
+
+		/// <summary>
 		/// A house's floor as a grid of cells lined up with its walls, and the pieces laid out on it
 		/// </summary>
 		private class Layout
@@ -1600,6 +1616,11 @@ namespace VikingVillages
 			/// anything was laid out, so nothing laid out shuts it off
 			/// </summary>
 			private readonly List<List<Vector2Int>> standingBeds = new List<List<Vector2Int>>();
+
+			/// <summary>
+			/// The beds and chests already standing in the house, for the log (see DescribeGrid)
+			/// </summary>
+			private readonly List<StandingPiece> standingPieces = new List<StandingPiece>();
 
 			/// <summary>
 			/// The spots tried for the last piece placed against a wall or near a point, and why each that didn't fit
@@ -1789,11 +1810,12 @@ namespace VikingVillages
 			/// <summary>
 			/// Marks each cell blocked where there's no floor or something stands, kept clear by a door, or free, notes
 			/// where the way in from each door starts, and notes the cells of the beds already standing that can be
-			/// walked up to
+			/// walked up to, and of every bed and chest already standing for the log
 			/// </summary>
 			private void MarkCells()
 			{
 				Dictionary<Bed, List<Vector2Int>> beds = new Dictionary<Bed, List<Vector2Int>>();
+				Dictionary<Container, List<Vector2Int>> chests = new Dictionary<Container, List<Vector2Int>>();
 				foreach (Collider collider in Physics.OverlapSphere(House.Center, House.HalfSize + 2f, solidMask, QueryTriggerInteraction.Collide))
 				{
 					Door door = collider.GetComponentInParent<Door>();
@@ -1819,7 +1841,8 @@ namespace VikingVillages
 						if (standing.Length > 0)
 						{
 							grid.Cells[column, row] = FloorGrid.Blocked;
-							NoteBeds(standing, new Vector2Int(column, row), beds);
+							NoteStanding(standing, new Vector2Int(column, row), beds);
+							NoteStanding(standing, new Vector2Int(column, row), chests);
 							continue;
 						}
 						grid.Cells[column, row] = FloorGrid.Free;
@@ -1850,33 +1873,78 @@ namespace VikingVillages
 						standingBeds.Add(cells);
 					}
 				}
+				foreach (KeyValuePair<Bed, List<Vector2Int>> bed in beds)
+				{
+					standingPieces.Add(new StandingPiece { Name = Utils.GetPrefabName(bed.Key.gameObject), Position = bed.Key.transform.position, Cells = bed.Value, Mark = 'B' });
+				}
+				foreach (KeyValuePair<Container, List<Vector2Int>> chest in chests)
+				{
+					standingPieces.Add(new StandingPiece { Name = Utils.GetPrefabName(chest.Key.gameObject), Position = chest.Key.transform.position, Cells = chest.Value, Mark = 'C' });
+				}
 			}
 
 			/// <summary>
-			/// Notes a cell as one a bed stands on, for each bed among what stands on it
+			/// Notes a cell as one a piece of a kind stands on, for each piece of that kind among what stands on it
 			/// </summary>
+			/// <typeparam name="T">The kind of piece, like Bed</typeparam>
 			/// <param name="standing">The colliders standing on the cell</param>
 			/// <param name="cell">The cell</param>
-			/// <param name="beds">The cells each bed stands on, added to</param>
-			private static void NoteBeds(Collider[] standing, Vector2Int cell, Dictionary<Bed, List<Vector2Int>> beds)
+			/// <param name="found">The cells each piece of the kind stands on, added to</param>
+			private static void NoteStanding<T>(Collider[] standing, Vector2Int cell, Dictionary<T, List<Vector2Int>> found) where T : Component
 			{
 				foreach (Collider collider in standing)
 				{
-					Bed bed = collider.GetComponentInParent<Bed>();
-					if (bed == null)
+					T piece = collider.GetComponentInParent<T>();
+					if (piece == null)
 					{
 						continue;
 					}
-					if (!beds.TryGetValue(bed, out List<Vector2Int> cells))
+					if (!found.TryGetValue(piece, out List<Vector2Int> cells))
 					{
 						cells = new List<Vector2Int>();
-						beds[bed] = cells;
+						found[piece] = cells;
 					}
 					if (!cells.Contains(cell))
 					{
 						cells.Add(cell);
 					}
 				}
+			}
+
+			/// <summary>
+			/// Describes the house's floor for the log once it's laid out - which way the grid lies, the pieces laid out
+			/// and the beds and chests already standing, each with whether it can still be walked up to (see
+			/// FloorGrid.Reachable), and the grid drawn a row a line (see FloorGrid.Draw), with each piece laid out marked
+			/// by its number, a bed already standing by "B" and a chest by "C"
+			/// </summary>
+			/// <returns>The description, its grid on the lines after the first</returns>
+			public string DescribeGrid()
+			{
+				bool[,] reached = grid.Reach(out int reachedFree);
+				Dictionary<Vector2Int, char> marks = new Dictionary<Vector2Int, char>();
+				List<string> pieces = new List<string>();
+				for (int i = 0; i < Placed.Count; i++)
+				{
+					char mark = (char)((i < 9) ? '1' + i : 'a' + i - 9);
+					foreach (Vector2Int cell in Placed[i].Cells)
+					{
+						marks[cell] = mark;
+					}
+					pieces.Add(mark + " " + Placed[i].Prefab + " at " + Placed[i].Position.ToString("F1") + " facing " + Placed[i].Rotation.eulerAngles.y.ToString("F0") + (grid.Reachable(Placed[i].Cells, reached) ? "" : ", out of reach"));
+				}
+				foreach (StandingPiece standing in standingPieces)
+				{
+					foreach (Vector2Int cell in standing.Cells)
+					{
+						if (!marks.ContainsKey(cell))
+						{
+							marks[cell] = standing.Mark;
+						}
+					}
+					pieces.Add(standing.Mark + " " + standing.Name + " at " + standing.Position.ToString("F1") + ", already standing" + (grid.Reachable(standing.Cells, reached) ? "" : ", out of reach"));
+				}
+				string head = "the house at " + House.Center.ToString("F0") + ", " + grid.Columns + "x" + grid.Rows + " cells of " + Cell.ToString("F1") + "m around its floor's middle at " + origin.ToString("F1") + ", drawn with " + facing.eulerAngles.y.ToString("F0") + " degrees from north up, " + reachedFree + " of " + grid.FreeAtStart + " free cells reached from the way in - " + ((pieces.Count > 0) ? string.Join(", ", pieces) : "no pieces");
+				return(head + "\n" + string.Join("\n", grid.Draw(reached, marks)));
 			}
 
 			/// <summary>
@@ -2646,6 +2714,56 @@ namespace VikingVillages
 					}
 				}
 				return(false);
+			}
+
+			/// <summary>
+			/// Draws the grid for the log, a character a cell, its last row first - a cell marked with a piece shows the
+			/// piece's mark, and the others show their state: "#" for something standing on it or no floor, "E" for a
+			/// way in that can be walked to, "." and "," for free cells that can and can't be walked to from the way in,
+			/// "+" and "-" for cells kept clear that can and can't, and "x" for a cell taken by a piece with no mark
+			/// </summary>
+			/// <param name="reached">Whether each cell can be walked to from the way in (see Reach)</param>
+			/// <param name="marks">The mark of each cell a piece stands on, by its column and row</param>
+			/// <returns>The rows, the last first</returns>
+			public List<string> Draw(bool[,] reached, Dictionary<Vector2Int, char> marks)
+			{
+				List<string> lines = new List<string>();
+				for (int row = Rows - 1; row >= 0; row--)
+				{
+					char[] line = new char[Columns];
+					for (int column = 0; column < Columns; column++)
+					{
+						Vector2Int cell = new Vector2Int(column, row);
+						bool walked = reached[column, row];
+						byte state = Cells[column, row];
+						if (marks.TryGetValue(cell, out char mark))
+						{
+							line[column] = mark;
+						}
+						else if (state == Blocked)
+						{
+							line[column] = '#';
+						}
+						else if (state == Taken)
+						{
+							line[column] = 'x';
+						}
+						else if (walked && Entries.Contains(cell))
+						{
+							line[column] = 'E';
+						}
+						else if (state == KeepClear)
+						{
+							line[column] = (walked ? '+' : '-');
+						}
+						else
+						{
+							line[column] = (walked ? '.' : ',');
+						}
+					}
+					lines.Add(new string(line));
+				}
+				return(lines);
 			}
 		}
 	}

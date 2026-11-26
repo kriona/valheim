@@ -529,5 +529,24 @@ namespace VikingVillages.Tests
 				last = rank;
 			}
 		}
+
+		/// <summary>
+		/// Checks that the grid is drawn a row a line, its last row first - pieces by their marks, blocked and taken
+		/// cells, the way in, and free and kept clear cells as walked to from the way in or not
+		/// </summary>
+		[Fact]
+		public void DrawsTheGridLastRowFirst()
+		{
+			VillageFurnishing.FloorGrid grid = OpenGrid(4, 3, new Vector2Int(0, 0));
+			grid.Cells[1, 0] = VillageFurnishing.FloorGrid.KeepClear;
+			grid.Cells[2, 0] = VillageFurnishing.FloorGrid.Blocked;
+			grid.Cells[2, 1] = VillageFurnishing.FloorGrid.Blocked;
+			grid.Cells[2, 2] = VillageFurnishing.FloorGrid.Taken;
+			grid.Cells[3, 0] = VillageFurnishing.FloorGrid.KeepClear;
+			grid.Cells[1, 2] = VillageFurnishing.FloorGrid.Taken;
+			Dictionary<Vector2Int, char> marks = new Dictionary<Vector2Int, char> { { new Vector2Int(1, 2), '1' }, { new Vector2Int(2, 1), 'B' } };
+			List<string> lines = grid.Draw(grid.Reach(out int _), marks);
+			Assert.Equal(new List<string> { ".1x,", "..B,", "E+#-" }, lines);
+		}
 	}
 }
