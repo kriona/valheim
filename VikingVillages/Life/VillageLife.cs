@@ -4477,8 +4477,9 @@ namespace VikingVillages
 		/// drops what it's after (see GatherFor)</param>
 		/// <param name="party">True for prey a hunting party goes after - from the Plains on, a viking hunts wild prey
 		/// that isn't only for archers only as a party, and alone only what is (see GroupHunts)</param>
+		/// <param name="food">True to take only prey that drops food, like meat (see QuestLoot.DropsFood)</param>
 		/// <returns>The prey, or null when there's none</returns>
-		private Character FindPrey(bool archer, string wanted, bool livestock, bool party = false)
+		private Character FindPrey(bool archer, string wanted, bool livestock, bool party = false, bool food = false)
 		{
 			float reach = (MayLeave() ? HuntReach : 0f);
 			bool grouped = (!livestock && GroupHunts());
@@ -4487,6 +4488,10 @@ namespace VikingVillages
 			{
 				bool prey = (livestock ? (creature != null && !creature.IsDead() && FarmSpawns.IsLivestock(creature) && !ZombieState.IsZombie(creature)) : IsPrey(creature, archer));
 				if (!prey || (wanted != null && !Drops(creature.gameObject, wanted)) || village.DistanceOutside(creature.transform.position) > reach || hunts.ContainsValue(creature))
+				{
+					continue;
+				}
+				if (food && !QuestLoot.DropsFood(Utils.GetPrefabName(creature.gameObject)))
 				{
 					continue;
 				}
@@ -4514,6 +4519,17 @@ namespace VikingVillages
 				}
 			}
 			return(null);
+		}
+
+		/// <summary>
+		/// Checks whether there's wild prey about that drops food for the village's hunters - the prey only archers hunt
+		/// too when the village has an archer, hunted alone or by a party (see FindPrey)
+		/// </summary>
+		/// <returns>True when there is</returns>
+		private bool WildFoodNear()
+		{
+			bool archers = village.Vikings().Exists((Character other) => HasBow(other));
+			return(FindPrey(archers, null, false, false, true) != null || FindPrey(archers, null, false, true, true) != null);
 		}
 
 		/// <summary>
@@ -5231,12 +5247,17 @@ namespace VikingVillages
 			float pet = ((boar != null) ? PetWeight : 0f);
 			float stock = ((store != null) ? StockWeight : 0f);
 			// While the chests hold too little food for the village to keep its foods up, getting more comes up far more often
-			float need = (FoodLow(village) ? FoodShortBoost : 1f);
+			bool foodLow = FoodLow(village);
+			float need = (foodLow ? FoodShortBoost : 1f);
 			float gather = (forage ? ForageWeight * need : 0f);
 			float rest = (refresh ? RefreshWeight : 0f);
 			float hunting = (hunt ? HuntWeight * need : 0f);
+			// Short of food with no wild prey about that drops any for the village's hunters, it slaughters one of the
+			// village's livestock, which its pen brings back
+			bool slaughter = (foodLow && mayHunt && !WildFoodNear() && FindPrey(HasBow(humanoid), null, true, false, true) != null);
+			float butcher = (slaughter ? HuntWeight * need : 0f);
 			float stroll = (raining ? 0f : StrollWeight);
-			float roll = Random.value * (talk + pet + stock + gather + rest + hunting + stroll + IdleWeight);
+			float roll = Random.value * (talk + pet + stock + gather + rest + hunting + butcher + stroll + IdleWeight);
 			if (roll < talk)
 			{
 				TalkSession session = new TalkSession(this, partner, Random.Range(TalkTimeMin, TalkTimeMax));
@@ -5270,6 +5291,11 @@ namespace VikingVillages
 				return(led ?? new HuntJob(this, archer, null, false));
 			}
 			roll -= hunting;
+			if (roll < butcher)
+			{
+				return(new HuntJob(this, HasBow(humanoid), null, true));
+			}
+			roll -= butcher;
 			if (raining)
 			{
 				return(new IdleJob(this, Random.Range(IdleTimeMin, IdleTimeMax), true));

@@ -540,6 +540,7 @@ With no work, a Viking picks one of these at random, by weight among those they 
 | Forage | 15, or 60 while the chests hold fewer than three foods for each Viking | A beehive has honey, or there's something to forage, and fewer are foraging than one for every 4 Vikings |
 | Get rested again | 15 | Not rested, before 0.6 of the day, no rain at all, and the village has a gathering fire |
 | Hunt | 15, or 60 while the chests hold fewer than three foods for each Viking | Not below three quarters of their health, prey to hunt, and fewer hunting than one for every 5 Vikings |
+| [Slaughter](#slaughter) | 60 | The chests hold fewer than three foods for each Viking, no wild prey about that drops food for the village's hunters, livestock that does, not below three quarters of their health, and fewer hunting than one for every 5 Vikings |
 | Stroll | 40 | It isn't raining |
 | Stand about | 25 | Always |
 
@@ -608,6 +609,10 @@ From the Plains on, prey that isn't only for archers - the earlier biomes' too -
 4. Only the leader picks up the drops, the others going back to their day
 
 The party breaks up below 3 before the fight, or when the prey gets away, and with the leader gone, another leads.
+
+### Slaughter
+
+Short of food, with no wild prey about that drops any - counting the prey only archers hunt when the village has an archer - they slaughter one of the village's livestock, the nearest, the way they hunt it, and cook its meat. Its pen brings another back once its spawner's wait is up (see [LOGIC.md](LOGIC.md#livestock)), so a farm with pens always has some meat.
 
 ### Get Rested Again
 
