@@ -21,6 +21,7 @@ namespace VikingVillages
 			ServerVillageRun.RegisterCommand();
 			TravelCommand.Register();
 			BoatSpawnCommand.Register();
+			BoatDestroyCommand.Register();
 			YuleHats.Register();
 		}
 	}
