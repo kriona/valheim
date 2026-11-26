@@ -24,21 +24,27 @@ namespace VikingVillages
 	internal partial class VillageLife
 	{
 		/// <summary>
-		/// How far along crossing the sea a viking is - noted on its ZDO (see VikingBoat.BoardKey), so it carries on after
-		/// it loads again
+		/// How a viking in the water climbs onto a ship that isn't its own and rides along on it (see BoardAsPassenger) -
+		/// how far off the ship's ladder can be for it to swim there, how near land the ship has to stop for it to get off,
+		/// in meters, how slow it has to be going to count as stopped, in meters a second, how long it has to stay stopped,
+		/// and how often the viking looks for land, in seconds
 		/// </summary>
-		private enum Crossing
-		{
-			None = 0,
-			Gathering = 1,
-			Building = 2,
-			Boarding = 3,
-			Landing = 4,
-			Aboard = VikingBoat.Aboard,
-			Wrecked = 6,
-			Breaking = 7,
-			Overboard = VikingBoat.Overboard
-		}
+		private const float PassengerSwimReach = 60f;
+		private const float PassengerLandReach = 30f;
+		private const float PassengerStopSpeed = 1f;
+		private const float PassengerStopTime = 3f;
+		private const float PassengerShoreLook = 2f;
+
+		/// <summary>
+		/// For a viking riding along on a ship that isn't its own, the ship, the spot on its deck it sits at, since when the
+		/// ship has been stopped near land, in Time.time seconds, or -1, when it next looks for land, and the land it last
+		/// found
+		/// </summary>
+		private Ship rideShip;
+		private Transform rideSpot;
+		private float rideStoppedSince = -1f;
+		private float nextRideShoreLook;
+		private Vector3 rideShore;
 
 		/// <summary>
 		/// How often a viking overboard treading water calls out to its boat, in seconds
@@ -162,10 +168,12 @@ namespace VikingVillages
 		private bool hasEdge;
 
 		/// <summary>
-		/// Its swim ashore - where it swims to, and how long it has been out of the water - drowning on the way as any
-		/// viking in the water does once its stamina runs out (see LivingVikingBody.OnSwimming)
+		/// Its swim ashore - where it swims to, whether it climbs onto a ship nearer than that on the way, as one swimming
+		/// for the nearest land does, and how long it has been out of the water - drowning on the way as any viking in the
+		/// water does once its stamina runs out (see LivingVikingBody.OnSwimming)
 		/// </summary>
 		private Vector3 swimTo;
+		private bool swimForShips;
 		private float ashoreFor;
 
 		/// <summary>
@@ -892,6 +900,8 @@ namespace VikingVillages
 					return(SwimAshore(dt, zdo));
 				case Crossing.Overboard:
 					return(SwimBack(zdo));
+				case Crossing.Passenger:
+					return(RidePassenger(dt, zdo));
 				case Crossing.Breaking:
 					return(BreakBoat(zdo));
 			}
@@ -910,6 +920,12 @@ namespace VikingVillages
 			if (saved == Crossing.None)
 			{
 				return(false);
+			}
+			if (saved == Crossing.Passenger)
+			{
+				// The ship it rode isn't known once it loads again, so it swims for it, or the nearest land
+				StartSwim(zdo, Crossing.Wrecked, Vector3.zero);
+				return(true);
 			}
 			if (saved == Crossing.Overboard)
 			{
@@ -1168,18 +1184,20 @@ namespace VikingVillages
 				return(myBoat.Ship.IsPlayerInBoat(player));
 			}
 			ZDO theirs = ((who.m_nview != null && who.m_nview.IsValid()) ? who.m_nview.GetZDO() : null);
-			int board = ((theirs != null) ? theirs.GetInt(VikingBoat.BoardKey) : 0);
-			return(theirs != null && theirs.GetString(VikingBoat.BoatKey, "") == myBoat.Key && (board == VikingBoat.Aboard || board == VikingBoat.Overboard));
+			Crossing board = VikingBoat.BoardOf(theirs);
+			return(theirs != null && theirs.GetString(VikingBoat.BoatKey, "") == myBoat.Key && (board == Crossing.Aboard || board == Crossing.Overboard));
 		}
 
 		/// <summary>
-		/// Starts the viking swimming for the shore - to a spot given, or the nearest dry ground
+		/// Starts the viking swimming for the shore - to a spot given, or the nearest dry ground, climbing onto a ship
+		/// nearer than that on the way (see SwimAshore)
 		/// </summary>
 		/// <param name="zdo">Its ZDO</param>
 		/// <param name="why">Landing at the far shore, or wrecked</param>
 		/// <param name="to">Where it swims to, or zero for the nearest dry ground</param>
 		private void StartSwim(ZDO zdo, Crossing why, Vector3 to)
 		{
+			swimForShips = (to == Vector3.zero && why == Crossing.Wrecked);
 			swimTo = ((to != Vector3.zero) ? to : NearestShore(transform.position));
 			ashoreFor = 0f;
 			SetCrossing(zdo, why);
@@ -1209,16 +1227,29 @@ namespace VikingVillages
 			}
 			Vector3 ladder = myBoat.Ladder(transform.position);
 			float distance = Vector3.Distance(transform.position, ladder);
-			if (distance < ClimbReach || humanoid.GetStandingOnShip() == myBoat.Ship)
+			// Another ship nearer than its own, a player's too, it climbs onto instead and rides along on
+			Ship other = NearestShip(myBoat.Ship, out Vector3 otherLadder, out float otherDistance);
+			bool toOther = (other != null && otherDistance < distance);
+			if (toOther && (otherDistance < ClimbReach || humanoid.GetStandingOnShip() == other))
+			{
+				BoardAsPassenger(zdo, other);
+				return(true);
+			}
+			if (!toOther && (distance < ClimbReach || humanoid.GetStandingOnShip() == myBoat.Ship))
 			{
 				GetAboard(zdo, "climbed back");
 				VikingSpeech.Say(humanoid, VikingRoadSpeech.BackAboard(), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 				return(true);
 			}
+			if (toOther)
+			{
+				ladder = otherLadder;
+				distance = otherDistance;
+			}
 			float left = ((body != null) ? BoatRules.SwimMetersLeft(body.Stamina(), humanoid.GetSkillFactor(Skills.SkillType.Swim), Game.m_moveStaminaRate, humanoid.m_swimSpeed) : float.MaxValue);
 			if (!humanoid.InWater() || BoatRules.SwimsForBoat(left, distance))
 			{
-				mover = "swimming back to its boat";
+				mover = (toOther ? "swimming for the nearest boat" : "swimming back to its boat");
 				Vector3 way = ladder - transform.position;
 				way.y = 0f;
 				ai.MoveTowards(way.normalized, true);
@@ -1233,6 +1264,145 @@ namespace VikingVillages
 				VikingSpeech.Say(humanoid, VikingRoadSpeech.TreadWater(), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 			}
 			return(true);
+		}
+
+		/// <summary>
+		/// Finds the loaded ship whose ladder is nearest the viking, within PassengerSwimReach - a player's or vikings',
+		/// any but one left out
+		/// </summary>
+		/// <param name="except">A ship not to count, like the viking's own boat, or null</param>
+		/// <param name="ladder">Set to where it climbs onto the ship</param>
+		/// <param name="distance">Set to how far that is, in meters</param>
+		/// <returns>The ship, or null when none is near enough</returns>
+		private Ship NearestShip(Ship except, out Vector3 ladder, out float distance)
+		{
+			Ship nearest = null;
+			ladder = Vector3.zero;
+			distance = PassengerSwimReach;
+			foreach (Ship ship in VikingBoat.Ships())
+			{
+				ZNetView view = ship.GetComponent<ZNetView>();
+				if (ship == except || view == null || !view.IsValid())
+				{
+					continue;
+				}
+				Vector3 point = VikingBoat.LadderOf(ship, transform.position);
+				float away = Vector3.Distance(point, transform.position);
+				if (away < distance)
+				{
+					nearest = ship;
+					ladder = point;
+					distance = away;
+				}
+			}
+			return(nearest);
+		}
+
+		/// <summary>
+		/// Climbs onto a ship that isn't the viking's own, a player's or another group's, to ride along on it - sitting on
+		/// its deck out of the way (see VikingBoat.DeckSpot), no longer one of its own boat's crew, so that boat sails on
+		/// without it (see RidePassenger)
+		/// </summary>
+		/// <param name="zdo">Its ZDO</param>
+		/// <param name="ship">The ship</param>
+		private void BoardAsPassenger(ZDO zdo, Ship ship)
+		{
+			StopDefending(false);
+			GetOffBoard();
+			if (!VikingBoat.DeckSpot(ship, out Vector3 deck))
+			{
+				deck = ship.transform.position;
+			}
+			GameObject spot = new GameObject("vikingPassenger");
+			spot.transform.SetParent(ship.transform, false);
+			spot.transform.position = deck;
+			spot.transform.rotation = Quaternion.LookRotation(ship.transform.forward);
+			rideSpot = spot.transform;
+			rideShip = ship;
+			rideStoppedSince = -1f;
+			nextRideShoreLook = 0f;
+			Attach(rideSpot, ship.gameObject);
+			VikingPoses.SetShipPose(humanoid, VikingPoses.FloorPose, true);
+			myBoat = null;
+			zdo.Set(VikingBoat.BoatKey, "");
+			SetCrossing(zdo, Crossing.Passenger);
+			Plugin.Log.LogInfo(LogName() + " climbed onto the " + Utils.GetPrefabName(ship.gameObject) + " at " + ship.transform.position.ToString("F0") + " to ride along on it");
+			TestLog.Count("Boats", "vikings riding along on another boat");
+			VikingSpeech.Say(humanoid, VikingRoadSpeech.BackAboard(), VikingSpeech.TalkTime, VikingSpeech.TalkCull);
+		}
+
+		/// <summary>
+		/// Rides along on a ship that isn't the viking's own, sitting on its deck, wherever it goes - and once it has
+		/// stopped within PassengerLandReach of land for PassengerStopTime seconds, jumps off and swims ashore, planning
+		/// its road again from there, or for a village's viking, going on with its life (see Ashore). Knocked off its spot,
+		/// it sits back down while it's still on the ship, and in the water, or with the ship gone, it swims for the
+		/// nearest ship or land again
+		/// </summary>
+		/// <param name="dt">Seconds since the AI's last update</param>
+		/// <param name="zdo">Its ZDO</param>
+		/// <returns>True, as it takes the update over</returns>
+		private bool RidePassenger(float dt, ZDO zdo)
+		{
+			if (rideShip == null || (attachPoint == null && humanoid.GetStandingOnShip() != rideShip))
+			{
+				LeaveRide();
+				StartSwim(zdo, Crossing.Wrecked, Vector3.zero);
+				return(true);
+			}
+			if (attachPoint == null)
+			{
+				Attach(rideSpot, rideShip.gameObject);
+			}
+			mover = "riding along on a boat";
+			ai.StopMoving();
+			if (!VikingPoses.InShipPose(humanoid, VikingPoses.FloorPose))
+			{
+				VikingPoses.SetShipPose(humanoid, VikingPoses.FloorPose, true);
+			}
+			Rigidbody hull = rideShip.m_body;
+			bool stopped = (hull == null || hull.linearVelocity.magnitude < PassengerStopSpeed);
+			if (!stopped)
+			{
+				rideStoppedSince = -1f;
+				return(true);
+			}
+			if (Time.time >= nextRideShoreLook)
+			{
+				nextRideShoreLook = Time.time + PassengerShoreLook;
+				rideShore = NearestShore(transform.position);
+			}
+			if (Utils.DistanceXZ(rideShore, transform.position) > PassengerLandReach || rideShore == transform.position)
+			{
+				rideStoppedSince = -1f;
+				return(true);
+			}
+			rideStoppedSince = ((rideStoppedSince < 0f) ? Time.time : rideStoppedSince);
+			if (Time.time - rideStoppedSince < PassengerStopTime)
+			{
+				return(true);
+			}
+			Vector3 shore = rideShore;
+			LeaveRide();
+			Vector3 toward = shore - transform.position;
+			toward.y = 0f;
+			humanoid.m_body.linearVelocity = toward.normalized * JumpOut + Vector3.up * JumpUp;
+			Plugin.Log.LogInfo(LogName() + " gets off the boat it rode along on at " + transform.position.ToString("F0") + ", near land");
+			StartSwim(zdo, Crossing.Wrecked, shore);
+			return(true);
+		}
+
+		/// <summary>
+		/// Gets the viking off the ship it rode along on, taking away its spot on the deck
+		/// </summary>
+		private void LeaveRide()
+		{
+			GetOffBoard();
+			if (rideSpot != null)
+			{
+				Object.Destroy(rideSpot.gameObject);
+			}
+			rideSpot = null;
+			rideShip = null;
 		}
 
 		/// <summary>
@@ -1265,13 +1435,31 @@ namespace VikingVillages
 		/// <summary>
 		/// Swims the viking for the shore - drowning on the way once its stamina runs out, as any viking in the water does
 		/// (see LivingVikingBody.OnSwimming) - and once it has been out of the water a moment, goes on along its road from
-		/// the far shore, or plans its road again from where it washed up
+		/// the far shore, or plans its road again from where it washed up. One swimming for the nearest land climbs onto
+		/// any ship whose ladder is nearer than that instead, a player's too, and rides along on it (see BoardAsPassenger)
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="zdo">Its ZDO</param>
 		/// <returns>True, as it takes the update over</returns>
 		private bool SwimAshore(float dt, ZDO zdo)
 		{
+			if (humanoid.InWater() && swimForShips)
+			{
+				Ship ship = NearestShip(null, out Vector3 ladder, out float distance);
+				if (ship != null && distance < Utils.DistanceXZ(swimTo, transform.position))
+				{
+					if (distance < ClimbReach || humanoid.GetStandingOnShip() == ship)
+					{
+						BoardAsPassenger(zdo, ship);
+						return(true);
+					}
+					mover = "swimming for the nearest boat";
+					Vector3 toShip = ladder - transform.position;
+					toShip.y = 0f;
+					ai.MoveTowards(toShip.normalized, true);
+					return(true);
+				}
+			}
 			if (humanoid.InWater())
 			{
 				ashoreFor = 0f;
@@ -1397,6 +1585,10 @@ namespace VikingVillages
 			else if (crossing == Crossing.Overboard && myBoat != null)
 			{
 				line += ", " + Vector3.Distance(transform.position, myBoat.Ladder(transform.position)).ToString("F0") + "m from its ladder" + stamina;
+			}
+			else if (crossing == Crossing.Passenger && rideShip != null)
+			{
+				line += ", riding along on the " + Utils.GetPrefabName(rideShip.gameObject) + ((rideStoppedSince >= 0f) ? ", stopped near land for " + (Time.time - rideStoppedSince).ToString("F0") + "s" : "");
 			}
 			return(line);
 		}

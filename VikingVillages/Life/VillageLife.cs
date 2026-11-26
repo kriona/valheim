@@ -5127,7 +5127,7 @@ namespace VikingVillages
 			}
 			// One on the road joins only the village it's going to, none joins one while sitting on a boat, and none joins
 			// a village before it has every viking it starts with, so it doesn't take a new viking's place
-			if (here != null && zdo.GetInt(VikingBoat.BoardKey) != VikingBoat.Aboard && VillageTravel.Bound(zdo, here) && VillageTravel.Takes(here) && here.NearestCoreHouse(transform.position, out VillagePaths.House house))
+			if (here != null && VikingBoat.BoardOf(zdo) != Crossing.Aboard && VillageTravel.Bound(zdo, here) && VillageTravel.Takes(here) && here.NearestCoreHouse(transform.position, out VillagePaths.House house))
 			{
 				here.Adopt(zdo, house);
 				return(here);

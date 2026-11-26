@@ -986,7 +986,7 @@ namespace VikingVillages
 					if (zdo != null)
 					{
 						zdo.Set(VikingBoat.BoatKey, boat.Key);
-						zdo.Set(VikingBoat.BoardKey, VikingBoat.Aboard);
+						zdo.Set(VikingBoat.BoardKey, (int)Crossing.Aboard);
 						entry.Vikings.Remove(snapshot);
 					}
 				}

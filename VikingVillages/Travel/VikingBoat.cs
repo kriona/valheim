@@ -81,16 +81,20 @@ namespace VikingVillages
 
 		/// <summary>
 		/// On a living viking, the boat it's crossing the sea in, as its group and the boat's index, or "", and how far
-		/// along its crossing it is (see VillageLife's Crossing)
+		/// along its crossing it is (see Crossing and BoardOf)
 		/// </summary>
 		public static readonly int BoatKey = "kriona.VikingVillages.vikingBoat".GetStableHashCode();
 		public static readonly int BoardKey = "kriona.VikingVillages.vikingBoard".GetStableHashCode();
 
 		/// <summary>
-		/// The values of BoardKey for a viking sitting on board, and for one that went overboard and is getting back on
+		/// Reads how far along crossing the sea a viking is from its ZDO (see BoardKey)
 		/// </summary>
-		public const int Aboard = 5;
-		public const int Overboard = 8;
+		/// <param name="viking">The viking's ZDO, or null</param>
+		/// <returns>How far along it is, Crossing.None for null</returns>
+		public static Crossing BoardOf(ZDO viking)
+		{
+			return((viking != null) ? (Crossing)viking.GetInt(BoardKey) : Crossing.None);
+		}
 
 		/// <summary>
 		/// The longest the boat comes about for any one person overboard before it sails on without them, in seconds - so
@@ -176,6 +180,87 @@ namespace VikingVillages
 		/// Every boat loaded on this client
 		/// </summary>
 		public static readonly List<VikingBoat> All = new List<VikingBoat>();
+
+		/// <summary>
+		/// Every ship loaded on this client, the vikings' and players' alike, for a viking in the water to climb onto (see
+		/// Ships)
+		/// </summary>
+		private static readonly List<Ship> ships = new List<Ship>();
+
+		/// <summary>
+		/// Notes a ship as it loads (see VikingBoatAwakePatch)
+		/// </summary>
+		/// <param name="ship">The ship</param>
+		public static void NoteShip(Ship ship)
+		{
+			if (ship != null && !ships.Contains(ship))
+			{
+				ships.Add(ship);
+			}
+		}
+
+		/// <summary>
+		/// Lists every ship loaded on this client, forgetting those gone since
+		/// </summary>
+		/// <returns>The ships</returns>
+		public static List<Ship> Ships()
+		{
+			ships.RemoveAll((Ship ship) => ship == null);
+			return(ships);
+		}
+
+		/// <summary>
+		/// Finds a spot on a ship's deck for a viking riding along on it - the deck at its middle, or a little fore or aft
+		/// of it when something stands there
+		/// </summary>
+		/// <param name="ship">The ship</param>
+		/// <param name="deck">Set to the spot</param>
+		/// <returns>False when no deck was found</returns>
+		public static bool DeckSpot(Ship ship, out Vector3 deck)
+		{
+			deck = Vector3.zero;
+			foreach (float along in new[] { 0f, -1.5f, 1.5f, -3f })
+			{
+				Vector3 above = ship.transform.position + ship.transform.forward * along + Vector3.up * 6f;
+				float nearest = float.MaxValue;
+				foreach (RaycastHit hit in Physics.RaycastAll(above, Vector3.down, 12f))
+				{
+					if (hit.collider != null && !hit.collider.isTrigger && hit.collider.transform.IsChildOf(ship.transform) && hit.distance < nearest)
+					{
+						nearest = hit.distance;
+						deck = hit.point;
+					}
+				}
+				if (nearest < float.MaxValue)
+				{
+					return(true);
+				}
+			}
+			return(false);
+		}
+
+		/// <summary>
+		/// Finds where a viking in the water climbs onto a ship - the ladder nearest it, or the ship's middle when it has
+		/// none
+		/// </summary>
+		/// <param name="ship">The ship</param>
+		/// <param name="from">Where the viking is</param>
+		/// <returns>The point</returns>
+		public static Vector3 LadderOf(Ship ship, Vector3 from)
+		{
+			Vector3 best = ship.transform.position;
+			float nearest = float.MaxValue;
+			foreach (Ladder ladder in ship.GetComponentsInChildren<Ladder>())
+			{
+				float distance = Vector3.Distance(ladder.transform.position, from);
+				if (distance < nearest)
+				{
+					nearest = distance;
+					best = ladder.transform.position;
+				}
+			}
+			return(best);
+		}
 
 		/// <summary>
 		/// The ship, its view, its seats - the helm's first - each with the pose it's sat in (see
@@ -1087,7 +1172,7 @@ namespace VikingVillages
 			foreach (Character character in Character.GetAllCharacters())
 			{
 				ZDO zdo = ((character != null && character.m_nview != null && character.m_nview.IsValid()) ? character.m_nview.GetZDO() : null);
-				if (zdo != null && !character.IsDead() && zdo.GetInt(BoardKey) == Overboard && zdo.GetString(BoatKey, "") == key)
+				if (zdo != null && !character.IsDead() && BoardOf(zdo) == Crossing.Overboard && zdo.GetString(BoatKey, "") == key)
 				{
 					Consider(character, ref nearest, ref best);
 				}
@@ -1289,7 +1374,7 @@ namespace VikingVillages
 			List<Character> swimming = Character.GetAllCharacters().FindAll((Character character) =>
 			{
 				ZDO zdo = ((character != null && character.m_nview != null && character.m_nview.IsValid()) ? character.m_nview.GetZDO() : null);
-				return(zdo != null && !character.IsDead() && zdo.GetInt(BoardKey) == Overboard && zdo.GetString(BoatKey, "") == key);
+				return(zdo != null && !character.IsDead() && BoardOf(zdo) == Crossing.Overboard && zdo.GetString(BoatKey, "") == key);
 			});
 			foreach (Character serpent in Character.GetAllCharacters())
 			{
@@ -1425,7 +1510,7 @@ namespace VikingVillages
 			for (int seat = 0; seat < Crew.Count; seat++)
 			{
 				Character member = CrewMember(seat);
-				if (member != null && member.m_nview.GetZDO().GetInt(BoardKey) == Aboard)
+				if (member != null && BoardOf(member.m_nview.GetZDO()) == Crossing.Aboard)
 				{
 					aboard.Add(member);
 				}
@@ -1501,7 +1586,7 @@ namespace VikingVillages
 				return(Ship.IsPlayerInBoat(player));
 			}
 			ZDO zdo = ((target.m_nview != null && target.m_nview.IsValid()) ? target.m_nview.GetZDO() : null);
-			return(zdo != null && zdo.GetString(BoatKey, "") == Key && zdo.GetInt(BoardKey) == Aboard);
+			return(zdo != null && zdo.GetString(BoatKey, "") == Key && BoardOf(zdo) == Crossing.Aboard);
 		}
 
 		/// <summary>
@@ -1513,7 +1598,7 @@ namespace VikingVillages
 			for (int seat = 0; seat < Crew.Count; seat++)
 			{
 				Character member = CrewMember(seat);
-				if (member != null && member.m_nview.GetZDO().GetInt(BoardKey) == Aboard)
+				if (member != null && BoardOf(member.m_nview.GetZDO()) == Crossing.Aboard)
 				{
 					return(member);
 				}
@@ -1697,7 +1782,7 @@ namespace VikingVillages
 			foreach (Character character in Character.GetAllCharacters())
 			{
 				ZDO zdo = ((character != null && character.m_nview != null && character.m_nview.IsValid()) ? character.m_nview.GetZDO() : null);
-				if (zdo != null && !character.IsDead() && zdo.GetString(BoatKey, "") == key && zdo.GetInt(BoardKey) == Aboard)
+				if (zdo != null && !character.IsDead() && zdo.GetString(BoatKey, "") == key && BoardOf(zdo) == Crossing.Aboard)
 				{
 					count++;
 				}

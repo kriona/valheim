@@ -152,7 +152,7 @@ namespace VikingVillages
 				zdo.Set(VillageTravel.ConfusedKey, false);
 				zdo.Set(VillageTravel.GroupKey, group);
 				zdo.Set(VikingBoat.BoatKey, boat.Key);
-				zdo.Set(VikingBoat.BoardKey, VikingBoat.Aboard);
+				zdo.Set(VikingBoat.BoardKey, (int)Crossing.Aboard);
 				ids.Add(id);
 				VillageLife life = instance.GetComponent<VillageLife>();
 				if (life != null)
@@ -238,7 +238,7 @@ namespace VikingVillages
 			{
 				ZNetView view = ((character != null) ? character.m_nview : null);
 				// Only those still on board - once the boat broke, they're on their way, and left to it
-				if (view == null || !view.IsValid() || !keys.Contains(view.GetZDO().GetString(VikingBoat.BoatKey, "")) || view.GetZDO().GetInt(VikingBoat.BoardKey) != VikingBoat.Aboard)
+				if (view == null || !view.IsValid() || !keys.Contains(view.GetZDO().GetString(VikingBoat.BoatKey, "")) || VikingBoat.BoardOf(view.GetZDO()) != Crossing.Aboard)
 				{
 					continue;
 				}

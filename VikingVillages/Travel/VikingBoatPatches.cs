@@ -13,11 +13,12 @@ namespace VikingVillages
 	public static class VikingBoatAwakePatch
 	{
 		/// <summary>
-		/// Turns the ship into a vikings' boat when it's one
+		/// Turns the ship into a vikings' boat when it's one, and notes it among the ships loaded (see VikingBoat.Ships)
 		/// </summary>
 		/// <param name="__instance">The ship</param>
 		private static void Postfix(Ship __instance)
 		{
+			VikingBoat.NoteShip(__instance);
 			VikingBoat.Take(__instance);
 		}
 	}
