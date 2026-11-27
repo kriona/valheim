@@ -926,6 +926,22 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Checks whether two points stand together the way FindRoute sees them - in one of the same rooms, or in sight
+		/// of each other past building pieces - rather than with a wall between them
+		/// </summary>
+		/// <param name="from">One point, like a spot to stand at</param>
+		/// <param name="to">The other, like the chest used from there</param>
+		/// <returns>True when they do</returns>
+		internal static bool Together(Vector3 from, Vector3 to)
+		{
+			FindDoors(from, DoorRange);
+			FindRooms(from, vikingRooms);
+			FindDoors(to, DoorRange);
+			FindRooms(to, targetRooms);
+			return(SharesRoom() || InSight(from, to, null));
+		}
+
+		/// <summary>
 		/// Finds the rooms a point is in among the doors found near it - each side of a door that's a room, that the
 		/// point is on and can see the point just inside the door from
 		/// </summary>

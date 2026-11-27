@@ -946,7 +946,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Writes to the log why the viking couldn't get to a chest - where it walks to use it (see ChestStand), how
+		/// Writes to the log why the viking couldn't get to a chest - where it walks to use it (see ChestStand), or with
+		/// no spot to stand at, whether the nearest navmesh is past a wall from the chest, how
 		/// that spot stands toward the chest's house and the viking (see DescribeMiss), and whether the spot sees the
 		/// chest past building pieces, like the wall it stands against - and counts what was wrong. A chest it got to
 		/// and found nothing in isn't written
@@ -960,10 +961,13 @@ namespace VikingVillages
 			}
 			Vector3 target = chest.transform.position;
 			bool hasStand = ChestStand(chest, out Vector3 stand);
-			string standing = (hasStand ? "walks to " + stand.ToString("F1") + " to use it, " + Utils.DistanceXZ(stand, target).ToString("F1") + "m from it and " + (stand.y - target.y).ToString("F1") + "m above its floor" : "has no navmesh within " + ChestStandSearch.ToString("F1") + "m of it, so walks at the chest itself");
+			Vector3 nearest = target;
+			bool pastWall = (!hasStand && NavmeshPoints.FindValidPoint(out nearest, target, ChestStandSearch, Pathfinding.AgentType.Humanoid));
+			string none = (pastWall ? "has no spot to stand within " + ChestStandSearch.ToString("F1") + "m of it in its room or in sight of it - the nearest navmesh, at " + nearest.ToString("F1") + ", is past a wall from it" : "has no navmesh within " + ChestStandSearch.ToString("F1") + "m of it");
+			string standing = (hasStand ? "walks to " + stand.ToString("F1") + " to use it, " + Utils.DistanceXZ(stand, target).ToString("F1") + "m from it and " + (stand.y - target.y).ToString("F1") + "m above its floor" : none + ", so walks at the chest itself");
 			Vector3 spot = (hasStand ? stand : target);
 			string detail = DescribeMiss(spot, target, out string trouble);
-			TestLog.Count("Chests out of reach, by what's wrong", (hasStand ? trouble : "no spot to stand"));
+			TestLog.Count("Chests out of reach, by what's wrong", (hasStand ? trouble : (pastWall ? "no spot to stand but past a wall" : "no spot to stand")));
 			Plugin.Log.LogInfo("Chest: " + TestLog.Name(humanoid, "F1") + " (" + LogJobName() + ") couldn't get to " + Utils.GetPrefabName(chest.gameObject) + " at " + target.ToString("F1") + " - it " + standing + "; the spot is " + detail + "; the spot and the chest " + VikingDoors.DescribeRooms(spot, target));
 		}
 

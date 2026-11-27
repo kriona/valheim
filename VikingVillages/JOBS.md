@@ -123,7 +123,7 @@ Out of the village, a Viking after wood, loot or forage who finds an enemy withi
 
 ### Chests
 
-The Vikings use any chest in the village's rings or inside one of its houses that's open to everyone, whoever built it - not a cart, ship or tombstone, one you've kept them out of with V (see [Village Chests](LOGIC.md#village-chests) in LOGIC.md), one that's open, or one whose player is within 6 meters of it. They walk to within 1.5 meters and reach in for 0.8 seconds, which also merges its part-stacks.
+The Vikings use any chest in the village's rings or inside one of its houses that's open to everyone, whoever built it - not a cart, ship or tombstone, one you've kept them out of with V (see [Village Chests](LOGIC.md#village-chests) in LOGIC.md), one that's open, or one whose player is within 6 meters of it. They walk to within 1.5 meters - to the nearest spot within 2.5 meters of it they can stand on, when that's in the chest's room or in sight of it rather than past the wall it stands against - and reach in for 0.8 seconds, which also merges its part-stacks.
 
 They keep their chests tidy:
 

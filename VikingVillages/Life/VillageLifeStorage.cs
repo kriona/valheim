@@ -500,11 +500,22 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Where the vikings stand to use each chest, by its ZDO, and when that was found, by Time.time - the nearest a
-		/// viking can stand to it, which can be a little way off when what's around it, like a bed or the wall it stands
-		/// against, keeps the floor right beside it out of reach
+		/// Where the vikings stand to use each chest, by its ZDO, and when that was looked for, by Time.time - the
+		/// nearest a viking can stand to it, which can be a little way off when what's around it, like a bed or the wall
+		/// it stands against, keeps the floor right beside it out of reach - or that there's no spot
 		/// </summary>
-		private static readonly Dictionary<ZDOID, KeyValuePair<float, Vector3>> chestStands = new Dictionary<ZDOID, KeyValuePair<float, Vector3>>();
+		private static readonly Dictionary<ZDOID, ChestStandSpot> chestStands = new Dictionary<ZDOID, ChestStandSpot>();
+
+		/// <summary>
+		/// The spot found to stand at to use a chest - when it was looked for, by Time.time, whether there's one, and
+		/// where it is (see ChestStand)
+		/// </summary>
+		private struct ChestStandSpot
+		{
+			public float LookedAt;
+			public bool Found;
+			public Vector3 Spot;
+		}
 
 		/// <summary>
 		/// How far from a chest the spot to stand at to use it is looked for, in meters, and how long a spot found is
@@ -547,7 +558,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Finds the spot to stand at to use a chest - the nearest point a viking can stand within ChestStandSearch of
-		/// it, found again every ChestStandLife
+		/// it, when that's in the chest's room or in sight of it rather than past the wall it stands against (see
+		/// VikingDoors.Together) - looked for again every ChestStandLife
 		/// </summary>
 		/// <param name="chest">The chest</param>
 		/// <param name="stand">The spot</param>
@@ -560,18 +572,21 @@ namespace VikingVillages
 				return(false);
 			}
 			ZDOID id = chest.m_nview.GetZDO().m_uid;
-			if (chestStands.TryGetValue(id, out KeyValuePair<float, Vector3> known) && Time.time - known.Key < ChestStandLife)
+			if (chestStands.TryGetValue(id, out ChestStandSpot known) && Time.time - known.LookedAt < ChestStandLife)
 			{
-				stand = known.Value;
-				return(true);
+				if (known.Found)
+				{
+					stand = known.Spot;
+				}
+				return(known.Found);
 			}
-			if (!NavmeshPoints.FindValidPoint(out Vector3 valid, chest.transform.position, ChestStandSearch, Pathfinding.AgentType.Humanoid))
+			bool found = (NavmeshPoints.FindValidPoint(out Vector3 valid, chest.transform.position, ChestStandSearch, Pathfinding.AgentType.Humanoid) && VikingDoors.Together(valid, chest.transform.position));
+			chestStands[id] = new ChestStandSpot { LookedAt = Time.time, Found = found, Spot = valid };
+			if (found)
 			{
-				return(false);
+				stand = valid;
 			}
-			chestStands[id] = new KeyValuePair<float, Vector3>(Time.time, valid);
-			stand = valid;
-			return(true);
+			return(found);
 		}
 
 		/// <summary>
