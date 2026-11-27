@@ -16,7 +16,8 @@ namespace VikingVillages
 	/// lined up with its walls, and each cell
 	/// is free, taken by something already standing there or where there's no floor, kept clear in front of a door, or
 	/// taken by a piece placed. A piece is only placed where every piece can still be reached from a door across free
-	/// cells, and while at least FreeShareMin of the floor that was free stays free, so a small house gets fewer pieces.
+	/// cells with room for a viking to stand on (see FloorGrid.RoomToStand), so every way through is three cells wide,
+	/// and while at least FreeShareMin of the floor that was free stays free, so a small house gets fewer pieces.
 	/// Pieces against a wall stand with their back to it, facing into the house - pushed back to meet the wall when it
 	/// stands past the grid's edge - and stools face their table. Each
 	/// piece's size comes from its own colliders, so which way a model faces doesn't matter to the layout. Every piece is
@@ -1621,6 +1622,13 @@ namespace VikingVillages
 			private readonly List<List<Vector2Int>> standingBeds = new List<List<Vector2Int>>();
 
 			/// <summary>
+			/// The cells each chest already standing in the house takes, like the treasure chest it came with or one
+			/// furnished before its station was upgraded, for each that could be walked up to before anything was laid
+			/// out, so nothing laid out shuts it off
+			/// </summary>
+			private readonly List<List<Vector2Int>> standingChests = new List<List<Vector2Int>>();
+
+			/// <summary>
 			/// The beds and chests already standing in the house, for the log (see DescribeGrid)
 			/// </summary>
 			private readonly List<StandingPiece> standingPieces = new List<StandingPiece>();
@@ -1658,15 +1666,7 @@ namespace VikingVillages
 			/// <returns>The description</returns>
 			public string DescribeMisses()
 			{
-				int free = 0;
-				for (int column = 0; column < grid.Columns; column++)
-				{
-					for (int row = 0; row < grid.Rows; row++)
-					{
-						free += ((grid.Cells[column, row] == FloorGrid.Free) ? 1 : 0);
-					}
-				}
-				string floor = "the house at " + House.Center.ToString("F0") + " (" + grid.Columns + "x" + grid.Rows + " cells, " + free + " free, " + Placed.Count + " pieces laid out)";
+				string floor = "the house at " + House.Center.ToString("F0") + " (" + grid.Columns + "x" + grid.Rows + " cells, " + grid.CountFree() + " free, " + Placed.Count + " pieces laid out)";
 				if (missNoSize)
 				{
 					return(floor + ": the piece's size couldn't be measured");
@@ -1823,8 +1823,8 @@ namespace VikingVillages
 
 			/// <summary>
 			/// Marks each cell blocked where there's no floor or something stands, kept clear by a door, or free, notes
-			/// where the way in from each door starts, and notes the cells of the beds already standing that can be
-			/// walked up to, and of every bed and chest already standing, and which cells have no floor and what stands
+			/// where the way in from each door starts, and notes the cells of the beds and chests already standing that
+			/// can be walked up to, and of every bed and chest already standing, and which cells have no floor and what stands
 			/// on the others that are blocked, for the log
 			/// </summary>
 			private void MarkCells()
@@ -1890,6 +1890,13 @@ namespace VikingVillages
 						standingBeds.Add(cells);
 					}
 				}
+				foreach (List<Vector2Int> cells in chests.Values)
+				{
+					if (grid.Reachable(cells, reached))
+					{
+						standingChests.Add(cells);
+					}
+				}
 				foreach (KeyValuePair<Bed, List<Vector2Int>> bed in beds)
 				{
 					standingPieces.Add(new StandingPiece { Name = Utils.GetPrefabName(bed.Key.gameObject), Position = bed.Key.transform.position, Cells = bed.Value, Mark = 'B' });
@@ -1950,8 +1957,9 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Describes the house's floor for the log once it's laid out - which way the grid lies, the pieces laid out
-			/// and the beds and chests already standing, each with whether it can still be walked up to (see
+			/// Describes the house's floor for the log once it's laid out - which way the grid lies, how many of the cells
+			/// left free are reached from the way in (see FloorGrid.Reach), the pieces laid out and the beds and chests
+			/// already standing, each with whether it can still be walked up to (see
 			/// FloorGrid.Reachable), what blocked its cells when it was measured (see DescribeBlocked), and the grid drawn
 			/// a row a line (see FloorGrid.Draw), with each piece laid out marked by its number, a bed already standing by
 			/// "B" and a chest by "C"
@@ -1982,7 +1990,7 @@ namespace VikingVillages
 					}
 					pieces.Add(standing.Mark + " " + standing.Name + " at " + standing.Position.ToString("F1") + ", already standing" + (grid.Reachable(standing.Cells, reached) ? "" : ", out of reach"));
 				}
-				string head = "the house at " + House.Center.ToString("F0") + ", " + grid.Columns + "x" + grid.Rows + " cells of " + Cell.ToString("F1") + "m around its floor's middle at " + origin.ToString("F1") + ", drawn with " + facing.eulerAngles.y.ToString("F0") + " degrees from north up, " + reachedFree + " of " + grid.FreeAtStart + " free cells reached from the way in, blocked cells " + DescribeBlocked(grid.CountFloorless(), standingCells) + " - " + ((pieces.Count > 0) ? string.Join(", ", pieces) : "no pieces");
+				string head = "the house at " + House.Center.ToString("F0") + ", " + grid.Columns + "x" + grid.Rows + " cells of " + Cell.ToString("F1") + "m around its floor's middle at " + origin.ToString("F1") + ", drawn with " + facing.eulerAngles.y.ToString("F0") + " degrees from north up, " + reachedFree + " of the " + grid.CountFree() + " cells left free reached from the way in (" + grid.FreeAtStart + " were free before anything was laid out), blocked cells " + DescribeBlocked(grid.CountFloorless(), standingCells) + " - " + ((pieces.Count > 0) ? string.Join(", ", pieces) : "no pieces");
 				return(head + "\n" + string.Join("\n", grid.Draw(reached, marks)));
 			}
 
@@ -2370,8 +2378,9 @@ namespace VikingVillages
 				List<List<Vector2Int>> pieces = Placed.ConvertAll((Placement laid) => laid.Cells);
 				// The floor kept clear in front of each station has to stay reachable too, so the station can be used
 				pieces.AddRange(stationFronts);
-				// So do the beds the house came with, so the vikings can get into them
+				// So do the beds and chests the house came with, so the vikings can get into them
 				pieces.AddRange(standingBeds);
+				pieces.AddRange(standingChests);
 				if (!grid.Roomy(pieces))
 				{
 					missCramped++;
@@ -2530,6 +2539,11 @@ namespace VikingVillages
 			private static readonly Vector2Int[] Steps = new Vector2Int[] { new Vector2Int(0, 1), new Vector2Int(0, -1), new Vector2Int(-1, 0), new Vector2Int(1, 0) };
 
 			/// <summary>
+			/// The eight steps from a cell to the cells around it, corners included
+			/// </summary>
+			private static readonly Vector2Int[] Around = new Vector2Int[] { new Vector2Int(0, 1), new Vector2Int(0, -1), new Vector2Int(-1, 0), new Vector2Int(1, 0), new Vector2Int(-1, -1), new Vector2Int(-1, 1), new Vector2Int(1, -1), new Vector2Int(1, 1) };
+
+			/// <summary>
 			/// Makes a grid with every cell free
 			/// </summary>
 			/// <param name="columns">How many columns it has</param>
@@ -2560,6 +2574,23 @@ namespace VikingVillages
 			}
 
 			/// <summary>
+			/// Counts the cells that are free
+			/// </summary>
+			/// <returns>How many there are</returns>
+			public int CountFree()
+			{
+				int count = 0;
+				for (int column = 0; column < Columns; column++)
+				{
+					for (int row = 0; row < Rows; row++)
+					{
+						count += ((Cells[column, row] == Free) ? 1 : 0);
+					}
+				}
+				return(count);
+			}
+
+			/// <summary>
 			/// Checks whether a cell is on the grid
 			/// </summary>
 			/// <param name="cell">The cell</param>
@@ -2582,6 +2613,58 @@ namespace VikingVillages
 				}
 				byte state = Cells[cell.x, cell.y];
 				return(state == Free || state == KeepClear);
+			}
+
+			/// <summary>
+			/// Checks whether a viking has room to stand on a cell - it and every cell around it, corners included, can be
+			/// walked across, with the grid's edge counting as the wall it is. The game's navmesh keeps a viking 0.4
+			/// meters from anything solid, more than the quarter meter from a cell's middle to its edge, so a way through
+			/// has to be three cells wide - a gap of one or two cells, up to a meter, has no navmesh across it
+			/// </summary>
+			/// <param name="cell">The cell</param>
+			/// <returns>True when it has</returns>
+			public bool RoomToStand(Vector2Int cell)
+			{
+				if (!Walkable(cell))
+				{
+					return(false);
+				}
+				foreach (Vector2Int step in Around)
+				{
+					if (!Walkable(cell + step))
+					{
+						return(false);
+					}
+				}
+				return(true);
+			}
+
+			/// <summary>
+			/// Checks whether a cell is reached from the way in - stood on, or one a viking standing beside it reaches
+			/// across, like the cells along a wall or beside a piece
+			/// </summary>
+			/// <param name="cell">The cell</param>
+			/// <param name="reached">Whether a viking can stand on each cell and walk to it from the way in (see Reach)</param>
+			/// <returns>True when it is</returns>
+			public bool ReachedAcross(Vector2Int cell, bool[,] reached)
+			{
+				if (!Walkable(cell))
+				{
+					return(false);
+				}
+				if (reached[cell.x, cell.y])
+				{
+					return(true);
+				}
+				foreach (Vector2Int step in Around)
+				{
+					Vector2Int next = cell + step;
+					if (Inside(next) && reached[next.x, next.y])
+					{
+						return(true);
+					}
+				}
+				return(false);
 			}
 
 			/// <summary>
@@ -2650,7 +2733,8 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Makes the way into a house no door gave a way into start from its middlemost cell that isn't blocked
+			/// Makes the way into a house no door gave a way into start from its middlemost cell with room to stand on (see
+			/// RoomToStand), or else its middlemost cell that isn't blocked
 			/// </summary>
 			public void EnterAtMiddle()
 			{
@@ -2661,15 +2745,23 @@ namespace VikingVillages
 				Vector2Int middle = new Vector2Int(Columns / 2, Rows / 2);
 				Vector2Int best = new Vector2Int(-1, -1);
 				float bestDistance = float.MaxValue;
+				bool bestRoomy = false;
 				for (int column = 0; column < Columns; column++)
 				{
 					for (int row = 0; row < Rows; row++)
 					{
-						float distance = (new Vector2Int(column, row) - middle).sqrMagnitude;
-						if (Cells[column, row] != Blocked && distance < bestDistance)
+						Vector2Int cell = new Vector2Int(column, row);
+						if (Cells[column, row] == Blocked)
 						{
-							best = new Vector2Int(column, row);
+							continue;
+						}
+						float distance = (cell - middle).sqrMagnitude;
+						bool roomy = RoomToStand(cell);
+						if ((roomy && !bestRoomy) || (roomy == bestRoomy && distance < bestDistance))
+						{
+							best = cell;
 							bestDistance = distance;
+							bestRoomy = roomy;
 						}
 					}
 				}
@@ -2790,7 +2882,7 @@ namespace VikingVillages
 
 			/// <summary>
 			/// Checks whether the house is still easy to get around - at least FreeShareMin of the cells free to start
-			/// with can be walked to from the way in, and every piece can be walked up to (see Reachable)
+			/// with are reached from the way in (see Reach), and every piece can be walked up to (see Reachable)
 			/// </summary>
 			/// <param name="pieces">The cells each piece that has to stay reachable takes</param>
 			/// <returns>True when it is</returns>
@@ -2812,18 +2904,19 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Finds the cells that can be walked to from the way in
+			/// Finds the cells a viking can stand on and walk to from the way in, stepping only onto cells with room to
+			/// stand on (see RoomToStand), so a gap narrower than three cells isn't a way through
 			/// </summary>
-			/// <param name="reachedFree">How many of them are free</param>
-			/// <returns>Whether each cell can be walked to, by column and row</returns>
+			/// <param name="reachedFree">How many free cells are reached - stood on, or reached across from a cell
+			/// beside them (see ReachedAcross)</param>
+			/// <returns>Whether a viking can stand on each cell and walk to it from the way in, by column and row</returns>
 			public bool[,] Reach(out int reachedFree)
 			{
 				bool[,] reached = new bool[Columns, Rows];
 				Queue<Vector2Int> open = new Queue<Vector2Int>();
-				reachedFree = 0;
 				foreach (Vector2Int entry in Entries)
 				{
-					if (Walkable(entry) && !reached[entry.x, entry.y])
+					if (RoomToStand(entry) && !reached[entry.x, entry.y])
 					{
 						reached[entry.x, entry.y] = true;
 						open.Enqueue(entry);
@@ -2832,17 +2925,24 @@ namespace VikingVillages
 				while (open.Count > 0)
 				{
 					Vector2Int cell = open.Dequeue();
-					if (Cells[cell.x, cell.y] == Free)
-					{
-						reachedFree++;
-					}
 					foreach (Vector2Int step in Steps)
 					{
 						Vector2Int next = cell + step;
-						if (Walkable(next) && !reached[next.x, next.y])
+						if (RoomToStand(next) && !reached[next.x, next.y])
 						{
 							reached[next.x, next.y] = true;
 							open.Enqueue(next);
+						}
+					}
+				}
+				reachedFree = 0;
+				for (int column = 0; column < Columns; column++)
+				{
+					for (int row = 0; row < Rows; row++)
+					{
+						if (Cells[column, row] == Free && ReachedAcross(new Vector2Int(column, row), reached))
+						{
+							reachedFree++;
 						}
 					}
 				}
@@ -2851,11 +2951,12 @@ namespace VikingVillages
 
 			/// <summary>
 			/// Checks whether a piece can be walked up to - one of its sides has a gap at least two cells deep out from
-			/// it, a meter, that can be walked to, since a viking needs about that much room to stand in, and a gap of
-			/// one cell is too narrow to get into
+			/// it, a meter, whose cell farther out a viking can stand on and walk to from the way in (see Reach), since
+			/// the cell beside the piece is too near it to stand on
 			/// </summary>
 			/// <param name="piece">The cells the piece takes</param>
-			/// <param name="reached">Whether each cell can be walked to from the way in (see Reach)</param>
+			/// <param name="reached">Whether a viking can stand on each cell and walk to it from the way in (see
+			/// Reach)</param>
 			/// <returns>True when it can</returns>
 			public bool Reachable(List<Vector2Int> piece, bool[,] reached)
 			{
@@ -2865,7 +2966,7 @@ namespace VikingVillages
 					{
 						Vector2Int next = cell + step;
 						Vector2Int beyond = next + step;
-						if (Walkable(next) && reached[next.x, next.y] && Walkable(beyond) && reached[beyond.x, beyond.y])
+						if (Walkable(next) && Walkable(beyond) && reached[beyond.x, beyond.y])
 						{
 							return(true);
 						}
@@ -2877,10 +2978,12 @@ namespace VikingVillages
 			/// <summary>
 			/// Draws the grid for the log, a character a cell, its last row first - a cell marked with a piece shows the
 			/// piece's mark, and the others show their state: "#" for something standing on it, "_" for no floor, "E" for
-			/// a way in that can be walked to, "." and "," for free cells that can and can't be walked to from the way in,
-			/// "+" and "-" for cells kept clear that can and can't, and "x" for a cell taken by a piece with no mark
+			/// a way in that's reached, "." for a free cell a viking can stand on and walk to from the way in, ":" for one
+			/// it only reaches across from a cell beside it (see ReachedAcross), "," for one it doesn't reach, "+" and "-"
+			/// for cells kept clear that are reached and aren't, and "x" for a cell taken by a piece with no mark
 			/// </summary>
-			/// <param name="reached">Whether each cell can be walked to from the way in (see Reach)</param>
+			/// <param name="reached">Whether a viking can stand on each cell and walk to it from the way in (see
+			/// Reach)</param>
 			/// <param name="marks">The mark of each cell a piece stands on, by its column and row</param>
 			/// <returns>The rows, the last first</returns>
 			public List<string> Draw(bool[,] reached, Dictionary<Vector2Int, char> marks)
@@ -2892,7 +2995,7 @@ namespace VikingVillages
 					for (int column = 0; column < Columns; column++)
 					{
 						Vector2Int cell = new Vector2Int(column, row);
-						bool walked = reached[column, row];
+						bool walked = ReachedAcross(cell, reached);
 						byte state = Cells[column, row];
 						if (marks.TryGetValue(cell, out char mark))
 						{
@@ -2916,7 +3019,7 @@ namespace VikingVillages
 						}
 						else
 						{
-							line[column] = (walked ? '.' : ',');
+							line[column] = (reached[column, row] ? '.' : (walked ? ':' : ','));
 						}
 					}
 					lines.Add(new string(line));
