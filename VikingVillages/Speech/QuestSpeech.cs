@@ -25,12 +25,6 @@ namespace VikingVillages
 		public const string TraderToken = "{trader}";
 
 		/// <summary>
-		/// The token lines about a quest waiting for the morning are filled in at with what it's going to do, like "mine
-		/// copper" (see Errands)
-		/// </summary>
-		public const string ErrandToken = "{errand}";
-
-		/// <summary>
 		/// How likely a talk between two vikings is about a quest waiting for the morning, by any of them, about a quest
 		/// out, by one at home, and about a quest just back, by one who went on it, and how likely a viking answers a
 		/// player about them
@@ -48,87 +42,154 @@ namespace VikingVillages
 		public const float BackDays = 1f;
 
 		/// <summary>
-		/// What each quest goes to do, as the lines about one waiting for the morning say it after "to"
+		/// The talks about a quest waiting for the morning started by a viking going on it with one staying, by the
+		/// quest - with the names of the others going, the talks naming them left out when it goes alone - and the talks
+		/// about any quest
 		/// </summary>
-		internal static readonly Dictionary<QuestKind, string> Errands = new Dictionary<QuestKind, string>
+		internal static readonly Dictionary<QuestKind, string[][]> GoingTalks = new Dictionary<QuestKind, string[][]>
 		{
-			{ QuestKind.MineCopper, "mine copper" },
-			{ QuestKind.MineTin, "dig tin on the shore" },
-			{ QuestKind.MineSilver, "dig silver up the mountain" },
-			{ QuestKind.RaidCrypts, "raid the sunken crypts for iron" },
-			{ QuestKind.RaidBurialChambers, "raid a burial chamber" },
-			{ QuestKind.HuntTrolls, "hunt a troll" },
-			{ QuestKind.HuntGoblins, "raid a fuling village" },
-			{ QuestKind.SellTreasure, "sell our treasure to {trader}" },
-			{ QuestKind.BuyCirclet, "buy a Dverger circlet from Haldor" },
-			{ QuestKind.BuyBelt, "buy a strength belt from Haldor" },
-			{ QuestKind.BuyWiderPockets, "buy wider pockets from Haldor" },
-			{ QuestKind.BuyDeeperPockets, "buy deeper pockets from Haldor" },
-			{ QuestKind.KillEikthyr, "face Eikthyr" },
-			{ QuestKind.FindBees, "look for wild bees" },
-			{ QuestKind.HuntGhosts, "hunt ghosts in the burial chambers" },
-			{ QuestKind.RaidFrostCaves, "raid the frost caves" }
+			{ QuestKind.MineCopper, new[] { new[] { "{with} and I go mining copper in the morning.", "Bring back enough to keep the smelter busy." } } },
+			{ QuestKind.MineTin, new[] { new[] { "{with} and I go down to the shore after tin in the morning.", "Watch for trolls by the water." } } },
+			{ QuestKind.MineSilver, new[] { new[] { "{with} and I climb the mountain for silver in the morning.", "Take a cloak. Take two." } } },
+			{ QuestKind.RaidCrypts, new[] { new[] { "{with} and I go into the sunken crypts in the morning.", "Keep your feet out of the bog." } } },
+			{ QuestKind.RaidBurialChambers, new[] { new[] { "{with} and I go raiding a burial chamber in the morning.", "Bring back amber, not bones." } } },
+			{ QuestKind.HuntTrolls, new[] { new[] { "{with} and I go after a troll in the morning.", "A troll? On purpose?", "Its hide makes good armor." } } },
+			{ QuestKind.HuntGoblins, new[] { new[] { "{with} and I go raiding the fulings in the morning.", "Bring back black metal, then." } } },
+			{ QuestKind.SellTreasure, new[] { new[] { "{with} and I take our treasure to {trader} in the morning.", "Don't let them cheat you." } } },
+			{ QuestKind.BuyCirclet, new[] { new[] { "{with} and I go to Haldor for a circlet in the morning.", "Then the dark won't trouble you much longer." } } },
+			{ QuestKind.BuyBelt, new[] { new[] { "{with} and I go to Haldor for a strength belt in the morning.", "Then the firewood's yours when you're back." } } },
+			{ QuestKind.BuyWiderPockets, new[] { new[] { "{with} and I go to Haldor for wider pockets in the morning.", "Pockets? I'll believe it when I see them." } } },
+			{ QuestKind.BuyDeeperPockets, new[] { new[] { "{with} and I go back to Haldor for deeper pockets in the morning.", "Wider wasn't enough for you?" } } },
+			{ QuestKind.KillEikthyr, new[] { new[] { "{with} and I go to face Eikthyr in the morning.", "The stag himself? May Thor keep you." } } },
+			{ QuestKind.FindBees, new[] { new[] { "{with} and I go looking for wild bees in the morning.", "Wrap up well. Bees sting." } } },
+			{ QuestKind.HuntGhosts, new[] { new[] { "{with} and I go hunting ghosts in the morning.", "Rather you than me." } } },
+			{ QuestKind.RaidFrostCaves, new[] { new[] { "{with} and I go up to the frost caves in the morning.", "Take a torch. And your warmest cloak." } } },
+			{ QuestKind.None, new[] { new[] { "{with} and I set out at first light.", "Then get some sleep while you can." }, new[] { "I'm off in the morning, {name}.", "Mind you come back in one piece." } } }
 		};
 
 		/// <summary>
-		/// The talks about a quest waiting for the morning - started by a viking going on it with one staying, naming the
-		/// others going, the talks naming them left out when it goes alone
+		/// The talks about a quest waiting for the morning between two vikings going on it, by the quest, and the talks
+		/// about any quest
 		/// </summary>
-		internal static readonly string[][] GoingTalks =
+		internal static readonly Dictionary<QuestKind, string[][]> FellowTalks = new Dictionary<QuestKind, string[][]>
 		{
-			new[] { "{with} and I set out at first light to {errand}.", "Then get some sleep while you can." },
-			new[] { "I'm off in the morning to {errand}, {name}.", "Mind you come back in one piece." },
-			new[] { "{with} and I go in the morning to {errand}, {name}.", "Keep each other safe out there." },
-			new[] { "Come morning, I go to {errand}.", "Pack plenty of food." }
+			{ QuestKind.MineCopper, new[] { new[] { "Is your pickaxe sharp, {name}? The copper won't dig itself out.", "Sharp as it'll ever be." } } },
+			{ QuestKind.MineTin, new[] { new[] { "Tin tomorrow, {name}. Mind the trolls by the water.", "I'll mind them from a distance." } } },
+			{ QuestKind.MineSilver, new[] { new[] { "Have you a warm cloak for the mountain, {name}?", "Wolf fur. It'll have to do." } } },
+			{ QuestKind.RaidCrypts, new[] { new[] { "The crypts tomorrow, {name}. Have you a torch?", "Two. And something for the smell." } } },
+			{ QuestKind.RaidBurialChambers, new[] { new[] { "A burial chamber tomorrow, {name}. Bring a torch.", "And a club for the skeletons." } } },
+			{ QuestKind.HuntTrolls, new[] { new[] { "Tomorrow we hunt a troll, {name}.", "I haven't slept for thinking about it." } } },
+			{ QuestKind.HuntGoblins, new[] { new[] { "The fulings won't see us coming tomorrow, {name}.", "Not if we keep quiet about it." } } },
+			{ QuestKind.SellTreasure, new[] { new[] { "Have you counted the amber for {trader}, {name}?", "Every piece. We won't be cheated." } } },
+			{ QuestKind.BuyCirclet, new[] { new[] { "Have you got the coins for Haldor, {name}?", "Every one we have. A circlet doesn't come cheap." } } },
+			{ QuestKind.BuyBelt, new[] { new[] { "Megingjord tomorrow, {name}.", "Then we'll carry the forest home." } } },
+			{ QuestKind.BuyWiderPockets, new[] { new[] { "Wider pockets tomorrow, {name}.", "No more leaving loot behind." } } },
+			{ QuestKind.BuyDeeperPockets, new[] { new[] { "Deeper pockets tomorrow, {name}.", "Then we'll never leave a scrap behind." } } },
+			{ QuestKind.KillEikthyr, new[] { new[] { "Tomorrow we face the stag, {name}.", "Keep clear of his lightning." } } },
+			{ QuestKind.FindBees, new[] { new[] { "Wild bees tomorrow, {name}. Follow the buzzing.", "And run from it after." } } },
+			{ QuestKind.HuntGhosts, new[] { new[] { "Ghosts tomorrow, {name}. Bring something silver.", "And a torch. Lots of torches." } } },
+			{ QuestKind.RaidFrostCaves, new[] { new[] { "The frost caves tomorrow, {name}.", "Cultists, wolves and bats. I can hardly wait." } } },
+			{ QuestKind.None, new[] { new[] { "Ready for the morning, {name}?", "As ready as I'll ever be." }, new[] { "Have you packed for the morning, {name}?", "Food, a torch and a sharp edge.", "That'll do." } } }
 		};
 
 		/// <summary>
-		/// The talks about a quest waiting for the morning between two vikings going on it
+		/// The talks about a quest waiting for the morning started by a viking staying with one going, by the quest, and
+		/// the talks about any quest
 		/// </summary>
-		internal static readonly string[][] FellowTalks =
+		internal static readonly Dictionary<QuestKind, string[][]> SeeOffTalks = new Dictionary<QuestKind, string[][]>
 		{
-			new[] { "Ready for the morning, {name}?", "As ready as I'll ever be." },
-			new[] { "At first light we {errand}, {name}.", "Then we'd better turn in early." },
-			new[] { "Have you packed for the morning, {name}?", "Food, a torch and a sharp edge.", "That'll do." }
+			{ QuestKind.MineCopper, new[] { new[] { "Copper in the morning, {name}?", "As much as I can carry." } } },
+			{ QuestKind.MineTin, new[] { new[] { "Off to the shore for tin, {name}?", "At first light. Bronze needs it." } } },
+			{ QuestKind.MineSilver, new[] { new[] { "Up the mountain for silver tomorrow, {name}?", "If the drakes let us." } } },
+			{ QuestKind.RaidCrypts, new[] { new[] { "Into the sunken crypts in the morning, {name}?", "Iron doesn't fetch itself." } } },
+			{ QuestKind.RaidBurialChambers, new[] { new[] { "Raiding the dead in the morning, {name}?", "They won't miss their amber." } } },
+			{ QuestKind.HuntTrolls, new[] { new[] { "You're really going after a troll in the morning, {name}?", "Someone has to." } } },
+			{ QuestKind.HuntGoblins, new[] { new[] { "The fulings, {name}? In the morning?", "Black metal won't wait." } } },
+			{ QuestKind.SellTreasure, new[] { new[] { "Off to {trader} with the treasure, {name}?", "At first light. Coins weigh less than amber." } } },
+			{ QuestKind.BuyCirclet, new[] { new[] { "A Dverger circlet tomorrow, {name}?", "If Haldor will part with one." } } },
+			{ QuestKind.BuyBelt, new[] { new[] { "Off to Haldor for that belt, {name}?", "In the morning. Then the wood comes in faster." } } },
+			{ QuestKind.BuyWiderPockets, new[] { new[] { "Pockets, {name}? You're paying good coin for pockets?", "Wait until you see what they hold." } } },
+			{ QuestKind.BuyDeeperPockets, new[] { new[] { "Back to Haldor again in the morning, {name}?", "Wider pockets were only the start." } } },
+			{ QuestKind.KillEikthyr, new[] { new[] { "Eikthyr in the morning, {name}?", "For his antlers. We need a pickaxe." } } },
+			{ QuestKind.FindBees, new[] { new[] { "Off after wild bees in the morning, {name}?", "Honey doesn't come from nowhere." } } },
+			{ QuestKind.HuntGhosts, new[] { new[] { "Ghost hunting in the morning, {name}?", "We need their ectoplasm." } } },
+			{ QuestKind.RaidFrostCaves, new[] { new[] { "Up to the frost caves in the morning, {name}?", "Past the snow line, at first light." } } },
+			{ QuestKind.None, new[] { new[] { "Off at first light, {name}?", "At first light." }, new[] { "Come back to us, {name}.", "I mean to." } } }
 		};
 
 		/// <summary>
-		/// The talks about a quest waiting for the morning started by a viking staying with one going
+		/// The talks about a quest waiting for the morning between two vikings staying, by the quest - with the names of
+		/// those going - and the talks about any quest
 		/// </summary>
-		internal static readonly string[][] SeeOffTalks =
+		internal static readonly Dictionary<QuestKind, string[][]> StayingTalks = new Dictionary<QuestKind, string[][]>
 		{
-			new[] { "You're off to {errand}, {name}?", "At first light." },
-			new[] { "I hear you'll {errand} in the morning, {name}.", "Someone has to." },
-			new[] { "Come back to us, {name}.", "I mean to." }
+			{ QuestKind.MineCopper, new[] { new[] { "{away} will be off after copper at first light.", "Then the smelter won't be cold for long." } } },
+			{ QuestKind.MineTin, new[] { new[] { "{away} will go down to the shore for tin come morning.", "Then we'll have bronze before long." } } },
+			{ QuestKind.MineSilver, new[] { new[] { "{away} will be up the mountain after silver come morning.", "Wolves and drakes up there. I hope they pack a cloak." } } },
+			{ QuestKind.RaidCrypts, new[] { new[] { "{away} will go into the sunken crypts come morning.", "Better them than me. The draugr don't stay down." } } },
+			{ QuestKind.RaidBurialChambers, new[] { new[] { "{away} will go into a burial chamber come morning.", "Let's hope the dead left something behind." } } },
+			{ QuestKind.HuntTrolls, new[] { new[] { "{away} will go troll hunting at first light.", "I'll have the salve ready." } } },
+			{ QuestKind.HuntGoblins, new[] { new[] { "{away} will raid a fuling village come morning.", "Out on the Plains? Brave. Or mad." } } },
+			{ QuestKind.SellTreasure, new[] { new[] { "{away} will take our treasure to {trader} come morning.", "Then we'll finally have room in the chests." } } },
+			{ QuestKind.BuyCirclet, new[] { new[] { "{away} will go to Haldor for a circlet come morning.", "A fortune for a light on the head." } } },
+			{ QuestKind.BuyBelt, new[] { new[] { "{away} will go to Haldor for a strength belt come morning.", "All those coins for a belt?" } } },
+			{ QuestKind.BuyWiderPockets, new[] { new[] { "{away} will go to Haldor for wider pockets come morning.", "Haldor would sell the wind if someone paid for it." } } },
+			{ QuestKind.BuyDeeperPockets, new[] { new[] { "{away} will go back to Haldor for deeper pockets come morning.", "Nothing's ever enough for some folk." } } },
+			{ QuestKind.KillEikthyr, new[] { new[] { "{away} will face Eikthyr at first light.", "Then we'll hear thunder over the meadow tomorrow." } } },
+			{ QuestKind.FindBees, new[] { new[] { "{away} will go looking for wild bees come morning.", "Then we'll have mead by winter." } } },
+			{ QuestKind.HuntGhosts, new[] { new[] { "{away} will go into the burial chambers after ghosts come morning.", "I won't sleep easy until they're back." } } },
+			{ QuestKind.RaidFrostCaves, new[] { new[] { "{away} will go up into the frost caves come morning.", "Colder than the mountain itself, they say." } } },
+			{ QuestKind.None, new[] { new[] { "{away} will be off at first light.", "Then we'll have their work to do as well." }, new[] { "Come morning, {away} will be gone, {name}.", "Let's give them a good meal tonight." } } }
 		};
 
 		/// <summary>
-		/// The talks about a quest waiting for the morning between two vikings staying, naming those going
+		/// What a viking going on a quest waiting for the morning says to a player about it, by the quest - with the
+		/// names of the others going, the lines naming them left out when it goes alone - and about any quest
 		/// </summary>
-		internal static readonly string[][] StayingTalks =
+		internal static readonly Dictionary<QuestKind, string[]> GoingAnswers = new Dictionary<QuestKind, string[]>
 		{
-			new[] { "{away} will be off at first light to {errand}.", "Then we'll have their work to do as well." },
-			new[] { "Come morning, {away} will go to {errand}, {name}.", "Let's give them a good meal tonight." },
-			new[] { "Would you go with {away} to {errand}, {name}?", "Someone has to stay and mind the fire." }
+			{ QuestKind.MineCopper, new[] { "I'm off mining copper at first light, {player}. We'll have bronze before long." } },
+			{ QuestKind.MineTin, new[] { "I'm going down to the shore for tin in the morning, {player}." } },
+			{ QuestKind.MineSilver, new[] { "I'm off up the mountain for silver at first light, {player}." } },
+			{ QuestKind.RaidCrypts, new[] { "I go into the sunken crypts for iron at first light. Wish me luck, {player}." } },
+			{ QuestKind.RaidBurialChambers, new[] { "I'm off to raid a burial chamber in the morning, {player}." } },
+			{ QuestKind.HuntTrolls, new[] { "I'm going troll hunting in the morning, {player}. Troll hunting!" } },
+			{ QuestKind.HuntGoblins, new[] { "I'm off to raid a fuling village at first light, {player}." } },
+			{ QuestKind.SellTreasure, new[] { "I'm taking our treasure to {trader} in the morning, {player}." } },
+			{ QuestKind.BuyCirclet, new[] { "I'm going to Haldor for a circlet at first light, {player}." } },
+			{ QuestKind.BuyBelt, new[] { "I'm off to Haldor for a strength belt at first light, {player}." } },
+			{ QuestKind.BuyWiderPockets, new[] { "I'm going to Haldor for wider pockets in the morning, {player}." } },
+			{ QuestKind.BuyDeeperPockets, new[] { "I'm going back to Haldor for deeper pockets in the morning, {player}." } },
+			{ QuestKind.KillEikthyr, new[] { "I go to face Eikthyr at first light, {player}. We need his antlers." } },
+			{ QuestKind.FindBees, new[] { "I'm off to find wild bees in the morning, {player}." } },
+			{ QuestKind.HuntGhosts, new[] { "I'm going after ghosts in the burial chambers at first light, {player}." } },
+			{ QuestKind.RaidFrostCaves, new[] { "I'm off to raid the frost caves at first light, {player}." } },
+			{ QuestKind.None, new[] { "I'm off at first light, {player}.", "{with} and I set out in the morning, {player}." } }
 		};
 
 		/// <summary>
-		/// What a viking going on a quest waiting for the morning says to a player about it, naming the others going, the
-		/// lines naming them left out when it goes alone
+		/// What a viking staying says to a player about a quest waiting for the morning, by the quest - with the names of
+		/// those going - and about any quest
 		/// </summary>
-		internal static readonly string[] GoingAnswers =
+		internal static readonly Dictionary<QuestKind, string[]> StayingAnswers = new Dictionary<QuestKind, string[]>
 		{
-			"I'm off at first light to {errand}, {player}.",
-			"{with} and I set out in the morning to {errand}, {player}."
-		};
-
-		/// <summary>
-		/// What a viking staying says to a player about a quest waiting for the morning, naming those going
-		/// </summary>
-		internal static readonly string[] StayingAnswers =
-		{
-			"{away} will be off at first light to {errand}, {player}.",
-			"Come morning, {away} will go to {errand}, {player}."
+			{ QuestKind.MineCopper, new[] { "{away} will be off mining copper in the morning, {player}." } },
+			{ QuestKind.MineTin, new[] { "{away} will go down to the shore after tin in the morning, {player}." } },
+			{ QuestKind.MineSilver, new[] { "{away} will be off up the mountain for silver in the morning, {player}." } },
+			{ QuestKind.RaidCrypts, new[] { "{away} will go into the sunken crypts for iron in the morning, {player}." } },
+			{ QuestKind.RaidBurialChambers, new[] { "{away} will be raiding a burial chamber come morning, {player}." } },
+			{ QuestKind.HuntTrolls, new[] { "{away} will go troll hunting at first light, {player}." } },
+			{ QuestKind.HuntGoblins, new[] { "{away} will raid a fuling village in the morning, {player}." } },
+			{ QuestKind.SellTreasure, new[] { "{away} will take our treasure to {trader} in the morning, {player}." } },
+			{ QuestKind.BuyCirclet, new[] { "{away} will go to Haldor for a Dverger circlet in the morning, {player}." } },
+			{ QuestKind.BuyBelt, new[] { "{away} will go to Haldor for a strength belt in the morning, {player}." } },
+			{ QuestKind.BuyWiderPockets, new[] { "{away} will go to Haldor for wider pockets in the morning, {player}." } },
+			{ QuestKind.BuyDeeperPockets, new[] { "{away} will go back to Haldor for deeper pockets in the morning, {player}." } },
+			{ QuestKind.KillEikthyr, new[] { "{away} will go to face Eikthyr in the morning, {player}. For his antlers." } },
+			{ QuestKind.FindBees, new[] { "{away} will go looking for wild bees in the morning, {player}." } },
+			{ QuestKind.HuntGhosts, new[] { "{away} will hunt ghosts in the burial chambers in the morning, {player}." } },
+			{ QuestKind.RaidFrostCaves, new[] { "{away} will raid the frost caves in the morning, {player}." } },
+			{ QuestKind.None, new[] { "{away} will be off at first light, {player}.", "{away} will be away on a quest come morning, {player}." } }
 		};
 
 		/// <summary>
@@ -301,8 +362,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks a talk about a quest waiting for the morning, by a roll - between one going and one staying naming the
-		/// others going, between two going, between one staying and one going, or between two staying naming those going
+		/// Picks a talk about a quest waiting for the morning, by a roll - one about the quest or about any quest, between
+		/// one going and one staying naming the others going, between two going, between one staying and one going, or
+		/// between two staying naming those going
 		/// </summary>
 		/// <param name="kind">The quest</param>
 		/// <param name="names">The names of the vikings going on it but the two talking</param>
@@ -312,31 +374,25 @@ namespace VikingVillages
 		/// <returns>The talk's lines, filled in but for the name of the one spoken to, or null when there's none</returns>
 		internal static string[] SoonTalk(QuestKind kind, List<string> names, bool leaderGoes, bool partnerGoes, int roll)
 		{
-			if (!Errands.TryGetValue(kind, out string errand))
-			{
-				return(null);
-			}
 			string joined = JoinNames(names);
 			string[][] talks;
 			if (leaderGoes)
 			{
-				talks = (partnerGoes ? FellowTalks : Fitting(GoingTalks, joined.Length > 0, WithToken));
+				talks = (partnerGoes ? Candidates(FellowTalks, kind, true, WithToken) : Candidates(GoingTalks, kind, joined.Length > 0, WithToken));
 			}
 			else if (partnerGoes)
 			{
-				talks = SeeOffTalks;
+				talks = Candidates(SeeOffTalks, kind, true, AwayToken);
 			}
 			else
 			{
-				talks = Fitting(StayingTalks, joined.Length > 0, AwayToken);
+				talks = Candidates(StayingTalks, kind, joined.Length > 0, AwayToken);
 			}
 			if (talks.Length == 0)
 			{
 				return(null);
 			}
-			string away = (leaderGoes ? "" : joined);
-			string with = (leaderGoes ? joined : "");
-			return(System.Array.ConvertAll(talks[roll % talks.Length], (string line) => Fill(line.Replace(ErrandToken, errand), "", away, with, "")));
+			return(FillAll(talks[roll % talks.Length], "", (leaderGoes ? "" : joined), (leaderGoes ? joined : ""), ""));
 		}
 
 		/// <summary>
@@ -353,8 +409,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks what a viking says to a player about a quest waiting for the morning, by a roll - one going naming the
-		/// others going, the lines naming them left out when it goes alone, or one staying naming those going
+		/// Picks what a viking says to a player about a quest waiting for the morning, by a roll - one about the quest or
+		/// about any quest, by one going naming the others going, the lines naming them left out when it goes alone, or by
+		/// one staying naming those going
 		/// </summary>
 		/// <param name="kind">The quest</param>
 		/// <param name="names">The names of the vikings going on it but the one speaking</param>
@@ -364,18 +421,13 @@ namespace VikingVillages
 		/// <returns>The line, or null when there's none</returns>
 		internal static string SoonAnswer(QuestKind kind, List<string> names, bool goes, string player, int roll)
 		{
-			if (!Errands.TryGetValue(kind, out string errand))
-			{
-				return(null);
-			}
 			string joined = JoinNames(names);
-			string token = (goes ? WithToken : AwayToken);
-			string[] lines = System.Array.FindAll((goes ? GoingAnswers : StayingAnswers), (string line) => joined.Length > 0 || !line.Contains(token));
-			if (lines.Length == 0)
+			List<string> lines = Lines((goes ? GoingAnswers : StayingAnswers), kind, joined.Length > 0, (goes ? WithToken : AwayToken));
+			if (lines.Count == 0)
 			{
 				return(null);
 			}
-			return(Fill(lines[roll % lines.Length].Replace(ErrandToken, errand), "", (goes ? "" : joined), (goes ? joined : ""), player));
+			return(Fill(lines[roll % lines.Count], "", (goes ? "" : joined), (goes ? joined : ""), player));
 		}
 
 		/// <summary>
