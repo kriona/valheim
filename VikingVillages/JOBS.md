@@ -395,9 +395,9 @@ They cook at the village's cooking stations - within 12 meters past its edge or 
 
 1. A station with done food on it, lit or not
 2. A lit station with raw food on it
-3. A lit station with room, when they carry raw meat or a chest has some
+3. A lit station with room, when they carry raw meat or a chest within reach has some
 
-They take done food off first, putting raw food on 0.8 seconds a piece, then wait by them for it to cook - each piece raising their cooking skill. What they take off may give a bonus piece, the way it does for you. They don't put on raw food the cauldron's meals need. Food over a fire gone out is left there. Once nothing is left cooking on their stations and they carry no more, they fetch as much from a chest as the stations hold - never while food is on them, which would burn while they're away, since no other Viking takes food off the stations they hold. Done food that turns up on their stations while they're on the way, like food you put on, has them go back for it first. A station they can't get to they leave alone, putting the raw meat they carry in a chest instead.
+They take done food off first, putting raw food on 0.8 seconds a piece, then wait by them for it to cook - each piece raising their cooking skill. What they take off may give a bonus piece, the way it does for you. They don't put on raw food the cauldron's meals need. Food over a fire gone out is left there. Once nothing is left cooking on their stations and they carry no more, they fetch as much from a chest as the stations hold - never while food is on them, which would burn while they're away, since no other Viking takes food off the stations they hold. They leave out a chest a Viking couldn't get to in the last 10 minutes, until one opens it, the way the village's food count does. Done food that turns up on their stations while they're on the way, like food you put on, has them go back for it first. A station they can't get to they leave alone, putting the raw meat they carry in a chest instead.
 
 From dusk, they finish what's on the stations without fetching more - see [How a Job Is Picked](#how-a-job-is-picked).
 

@@ -144,7 +144,7 @@ namespace VikingVillages
 				{
 					chestTried = true;
 					List<Container> chests = life.UsableChests();
-					chest = life.Nearest(chests.FindAll((Container candidate) => life.RawIn(candidate, roomy, chests) != null));
+					chest = life.Nearest(chests.FindAll((Container candidate) => life.FetchesRawFrom(candidate, roomy, chests)));
 					if (chest != null)
 					{
 						fetchFor = roomy;

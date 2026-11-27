@@ -28,7 +28,7 @@ namespace VikingVillages
 		/// couldn't get to lately (see Avoided) - unless only what it carries counts, one with food on it to tend first,
 		/// done food before food still cooking, so it's taken off before it burns, whoever put it on; then one lit, with
 		/// an empty slot, and raw food it cooks carried by the viking or, unless only what it carries counts, in one of
-		/// the village's chests
+		/// the village's chests within reach (see FetchesRawFrom)
 		/// </summary>
 		/// <param name="carriedOnly">True to only count the raw food the viking carries</param>
 		/// <returns>The station, or null when there's none</returns>
@@ -61,7 +61,7 @@ namespace VikingVillages
 					{
 						chests = UsableChests();
 					}
-					if (!chests.Exists((Container chest) => RawIn(chest, station, chests) != null))
+					if (!chests.Exists((Container chest) => FetchesRawFrom(chest, station, chests)))
 					{
 						continue;
 					}
@@ -150,6 +150,20 @@ namespace VikingVillages
 		private ItemDrop.ItemData RawIn(Container chest, CookingStation station, List<Container> chests)
 		{
 			return(chest.GetInventory().GetAllItems().Find((ItemDrop.ItemData item) => VillageCooking.Cooks(station, item) && SpareRaw(item.m_dropPrefab.name, chests) > 0));
+		}
+
+		/// <summary>
+		/// Checks whether a cook may fetch raw food for a cooking station from a chest - one holding some it may take (see
+		/// RawIn) that no viking of the village couldn't get to lately (see ChestOutOfReach), so a cook doesn't head off
+		/// for a chest out of reach and leave its stations for nothing
+		/// </summary>
+		/// <param name="chest">The chest</param>
+		/// <param name="station">The station</param>
+		/// <param name="chests">The village's chests the viking may use</param>
+		/// <returns>True when it may</returns>
+		private bool FetchesRawFrom(Container chest, CookingStation station, List<Container> chests)
+		{
+			return(!ChestOutOfReach(chest) && RawIn(chest, station, chests) != null);
 		}
 
 		/// <summary>
