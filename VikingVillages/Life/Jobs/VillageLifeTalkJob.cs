@@ -101,8 +101,8 @@ namespace VikingVillages
 			/// <summary>
 			/// Starts a talk, with the viking that started it speaking first, about what's going on around it - or now and
 			/// then about one of the village's dead (see VillageFallen.Remember), a newcomer, or a quest the one who started
-			/// it just came back from, that's out or that's waiting for the morning (see QuestTalk). In the rain, when the
-			/// partner isn't under
+			/// it just came back from, that's out or that's waiting for the morning (see QuestTalk), or the village going
+			/// by the name of the one who started it (see VillageNamesakeSpeech). In the rain, when the partner isn't under
 			/// a roof, they talk inside the leader's house, clear of its doors (see FloorSpot), with TalkWalkTime more to get
 			/// there
 			/// </summary>
@@ -136,7 +136,8 @@ namespace VikingVillages
 				}
 				string[] newcomerTalk = NewcomerTalk(leader, partner, VillageName.Length > 0, out NewcomerName, out NewcomerFrom);
 				string[] questTalk = ((newcomerTalk == null) ? QuestTalk(leader, partner) : null);
-				Lines = (newcomerTalk ?? questTalk ?? VikingSpeech.Talk(IsNight() || IsDusk(), EnvMan.IsWet(), Time.time - leader.lastFightAt < FightTalkTime, leader.Wounded(), OtherName.Length > 0, ItemName.Length > 0, FallenName.Length > 0, leader.body.HasBeard(), VillageName.Length > 0, linkedTalks));
+				string[] namesakeTalk = ((newcomerTalk == null && questTalk == null) ? VillageNamesakeSpeech.Talk(VikingNames.Get(leader.humanoid), VillageName) : null);
+				Lines = (newcomerTalk ?? questTalk ?? namesakeTalk ?? VikingSpeech.Talk(IsNight() || IsDusk(), EnvMan.IsWet(), Time.time - leader.lastFightAt < FightTalkTime, leader.Wounded(), OtherName.Length > 0, ItemName.Length > 0, FallenName.Length > 0, leader.body.HasBeard(), VillageName.Length > 0, linkedTalks));
 			}
 
 			/// <summary>
