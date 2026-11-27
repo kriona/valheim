@@ -389,6 +389,8 @@ An item that's come to rest within 10 meters past the village's edge - and lain 
 
 For 2 minutes after a fight, picking up loot also comes before standing about, strolling, petting a boar, talking, gathering at the fire and resting for the night - and before repairing, rebuilding, stacking the fire, stocking wood, crafting arrows and repairing gear, which the Viking drops for it - going on through dusk and night. Not for a Viking below three quarters of their health or keeping watch.
 
+Whatever their job, a Viking also grabs loot they go by - within 2 meters of them, the reach of your own autopickup, lying within 10 meters past the village's edge, that they'd pick up and have room for and no other Viking is after - looking every half second. It goes in their pack at once, and they put it away later, the way they put away any loot they carry. Not while there's danger near, they're seated, in bed or swimming, or they're lightening their load.
+
 ### Cook
 
 They cook at the village's cooking stations - within 12 meters past its edge or inside a house - nearest first, one Viking at a station and the other stations within 4 meters of it, the same fire:

@@ -2471,6 +2471,7 @@ namespace VikingVillages
 			{
 				return(true);
 			}
+			UpdateGrab();
 			if (Time.time >= nextMournCheck)
 			{
 				nextMournCheck = Time.time + MournCheckInterval;

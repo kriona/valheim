@@ -11,6 +11,73 @@ namespace VikingVillages
 	internal partial class VillageLife
 	{
 		/// <summary>
+		/// How near loot has to be for a viking going by it to grab it, the same as a player's autopickup reach, and
+		/// how often it looks, in meters and seconds
+		/// </summary>
+		internal const float GrabRange = 2f;
+		private const float GrabInterval = 0.5f;
+
+		/// <summary>
+		/// When the viking next looks for loot to grab as it goes by, in Time.time seconds (see UpdateGrab)
+		/// </summary>
+		private float nextGrab;
+
+		/// <summary>
+		/// Has a viking going about its job grab loot it passes - within GrabRange of it, lying in or near the village,
+		/// that no other viking is after and that it wants and has room for (see WantsLoot) - picking it up at once as
+		/// loot it carries, which it puts away later (see FindLootWork), every GrabInterval seconds on its owner. Not
+		/// while there's danger near, it's seated or swimming, or it's lightening its load
+		/// </summary>
+		private void UpdateGrab()
+		{
+			if (Time.time < nextGrab || nview == null || !nview.IsValid() || !nview.IsOwner() || village == null)
+			{
+				return;
+			}
+			nextGrab = Time.time + GrabInterval;
+			if (viking == null || !viking.NoDangerNear() || attachPoint != null || inBed || humanoid.IsSwimming() || job is UnburdenJob || body.IsEncumbered())
+			{
+				return;
+			}
+			List<Container> chests = null;
+			bool mayLeave = false;
+			foreach (ItemDrop drop in LoadedDrops())
+			{
+				ZNetView view = ((drop != null) ? drop.m_nview : null);
+				if (view == null || !view.IsValid() || Vector3.Distance(view.transform.position, transform.position) > GrabRange || village.DistanceOutside(view.transform.position) > LootReach || !IsLoot(view))
+				{
+					continue;
+				}
+				ZDOID id = view.GetZDO().m_uid;
+				if (workClaims.TryGetValue(id, out VillageLife holder) && holder != this && holder != null && holder.job != null)
+				{
+					continue;
+				}
+				ItemDrop.ItemData item = drop.m_itemData;
+				if (chests == null)
+				{
+					chests = UsableChests();
+					mayLeave = MayLeave();
+				}
+				if (CarryRoom(item, CarryLoot) <= 0 || !WantsLoot(item, chests, mayLeave))
+				{
+					continue;
+				}
+				// Another game's item is asked for, and grabbed on a later look once it's this client's
+				if (!OwnItem(view))
+				{
+					RequestItem(view);
+					continue;
+				}
+				if (PickUpLoot(view))
+				{
+					TestLog.Count("Looted", "grabbed going by");
+				}
+				return;
+			}
+		}
+
+		/// <summary>
 		/// Finds loot work for the viking - putting away the loot it carries, by day cooking the raw food among it first
 		/// at a cooking station with room, or else picking up the nearest loot lying around the village that it wants
 		/// </summary>
