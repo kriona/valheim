@@ -193,15 +193,17 @@ namespace VikingVillages
 				return(0);
 			}
 			bonus = Mathf.Min(bonus, room - amount);
+			// The bonus goes out before the pick, since picking something that doesn't grow back, like stone, destroys it
+			// and its ZDO at once on its owner
+			if (bonus > 0)
+			{
+				VillageSignals.SendForageBonus(pickable.m_nview.GetZDO().m_uid, nview.GetZDO().m_uid, bonus);
+			}
 			pickable.m_pickEffector.Create(pickable.transform.position, Quaternion.identity);
 			pickable.m_nview.InvokeRPC(ZNetView.Everybody, "RPC_SetPicked", true);
 			if (viking != null)
 			{
 				viking.RaiseSkill(skill, 1f);
-			}
-			if (bonus > 0)
-			{
-				VillageSignals.SendForageBonus(pickable.m_nview.GetZDO().m_uid, nview.GetZDO().m_uid, bonus);
 			}
 			int carried = Carry(food, amount + bonus, CarryLoot);
 			TestLog.Count("Gathered", TestLog.ItemName(food), carried);
