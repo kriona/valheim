@@ -50,6 +50,36 @@ namespace VikingVillages.Tests
 		}
 
 		[Fact]
+		public void TheNamesakeTalksAboutItAndIsTeasedAboutIt()
+		{
+			Assert.Same(VillageNamesakeSpeech.Talks, VillageNamesakeSpeech.TalksFor("Ragna the Bold", "Ulf", "Ragna"));
+			Assert.Same(VillageNamesakeSpeech.TeaseTalks, VillageNamesakeSpeech.TalksFor("Ulf", "Ragna the Bold", "Ragna"));
+			Assert.Same(VillageNamesakeSpeech.Talks, VillageNamesakeSpeech.TalksFor("Ragna", "Ragna the Red", "Ragna"));
+			Assert.Null(VillageNamesakeSpeech.TalksFor("Ulf", "Bjorn", "Ragna"));
+			Assert.Null(VillageNamesakeSpeech.TalksFor("Ulf", "", ""));
+		}
+
+		[Fact]
+		public void TeasingCallsTheNamesakeByNameAndTheNamesakeAnswersWithoutIt()
+		{
+			foreach (string[] talk in VillageNamesakeSpeech.TeaseTalks)
+			{
+				Assert.Contains("{name}", talk[0]);
+				for (int turn = 1; turn < talk.Length; turn += 2)
+				{
+					Assert.DoesNotContain("{name}", talk[turn]);
+				}
+				foreach (string line in talk)
+				{
+					foreach (Match token in Regex.Matches(line, "\\{[a-z]+\\}"))
+					{
+						Assert.Contains(token.Value, new[] { "{name}", "{village}" });
+					}
+				}
+			}
+		}
+
+		[Fact]
 		public void TalksOnlyUseTokensTheTalkFillsIn()
 		{
 			foreach (string[] talk in VillageNamesakeSpeech.Talks)

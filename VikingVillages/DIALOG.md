@@ -226,6 +226,13 @@ When two Vikings talk, they take turns saying the lines of one talk, starting wi
 | Their village going by their name | "{village} has a fine ring to it, {name}."<br>"You only say that because it's your name."<br>"That's why it has a fine ring to it." |
 | Their village going by their name | "A traveler asked if I was {village} of {village}."<br>"And were you?"<br>"I suppose I am." |
 | Their village going by their name | "Shouldn't the one the village is named after get the biggest house?"<br>"Shouldn't they do the most work, then?"<br>"Let's not get carried away." |
+| Teasing the Viking the village is named for, started by another Viking with them - 20% of the talks with them that aren't about a newcomer or a quest | "Shall I bow, {name}? It's your village, after all."<br>"Don't start."<br>"As you wish, Your Highness of {village}." |
+| Teasing the Viking the village is named for | "Someone was calling for {village} at the fence, {name}. Did they mean you or the village?"<br>"Very funny." |
+| Teasing the Viking the village is named for | "Is it true they named {village} after you, {name}?"<br>"Nobody tells me anything." |
+| Teasing the Viking the village is named for | "Mind the fence, {name}. It's yours, isn't it? Everything here is."<br>"I wish you'd all stop that." |
+| Teasing the Viking the village is named for | "Don't let it go to your head, {name}. It's only a village."<br>"My village."<br>"Here we go again." |
+| Teasing the Viking the village is named for | "Shouldn't you be leading us, {name}? Your name's on every rune stick that comes here."<br>"Gladly. First order: you fetch the wood." |
+| Teasing the Viking the village is named for | "I'm asking for the next village to be named after me, {name}."<br>"Good. Then you'll know what it's like." |
 | A quest waiting to set out in the morning, started by a Viking going on it with one staying - 30% of the other talks, not for hunting, foraging or cutting trees, {with} being the names of the others going, the talks with it left out when they go alone | "{with} and I set out at first light."<br>"Then get some sleep while you can." |
 | A quest waiting to set out in the morning, by a Viking going with one staying | "I'm off in the morning, {name}."<br>"Mind you come back in one piece." |
 | Mining copper, by a Viking going with one staying | "{with} and I go mining copper in the morning."<br>"Bring back enough to keep the smelter busy." |

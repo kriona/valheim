@@ -7,13 +7,13 @@ namespace VikingVillages
 	/// <summary>
 	/// What a viking says now and then when its village goes by its name - bewildered by it most of the time, and now
 	/// and then bragging that the village is named after it - to a player it knows and in the talks it starts with
-	/// the others. The lines are in DIALOG.md too
+	/// the others, and how the others tease it about it in the talks they start with it. The lines are in DIALOG.md too
 	/// </summary>
 	internal static class VillageNamesakeSpeech
 	{
 		/// <summary>
-		/// How likely a viking whose village goes by its name talks about it when a player it knows talks to it, and in
-		/// a talk it starts
+		/// How likely a viking whose village goes by its name talks about it when a player it knows talks to it, and how
+		/// likely a talk it starts or one started with it is about it
 		/// </summary>
 		private const float ChatChance = 0.2f;
 		private const float TalkChance = 0.2f;
@@ -60,6 +60,22 @@ namespace VikingVillages
 			new[] { "{village} has a fine ring to it, {name}.", "You only say that because it's your name.", "That's why it has a fine ring to it." },
 			new[] { "A traveler asked if I was {village} of {village}.", "And were you?", "I suppose I am." },
 			new[] { "Shouldn't the one the village is named after get the biggest house?", "Shouldn't they do the most work, then?", "Let's not get carried away." }
+		};
+
+		/// <summary>
+		/// The talks another viking of the village starts with the one it's named for, teasing it about it - filled in
+		/// by VikingSpeech.Address, so {name} is the namesake's name in the teaser's lines and the teaser's in the
+		/// namesake's, which leave it out
+		/// </summary>
+		internal static readonly string[][] TeaseTalks =
+		{
+			new[] { "Shall I bow, {name}? It's your village, after all.", "Don't start.", "As you wish, Your Highness of {village}." },
+			new[] { "Someone was calling for {village} at the fence, {name}. Did they mean you or the village?", "Very funny." },
+			new[] { "Is it true they named {village} after you, {name}?", "Nobody tells me anything." },
+			new[] { "Mind the fence, {name}. It's yours, isn't it? Everything here is.", "I wish you'd all stop that." },
+			new[] { "Don't let it go to your head, {name}. It's only a village.", "My village.", "Here we go again." },
+			new[] { "Shouldn't you be leading us, {name}? Your name's on every rune stick that comes here.", "Gladly. First order: you fetch the wood." },
+			new[] { "I'm asking for the next village to be named after me, {name}.", "Good. Then you'll know what it's like." }
 		};
 
 		/// <summary>
@@ -117,18 +133,37 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks a talk a viking starts about its village going by its name, now and then
+		/// Picks a talk about the village going by the name of one of the two talking, now and then
 		/// </summary>
-		/// <param name="viking">The viking's name, with any byname after it</param>
+		/// <param name="leader">The name of the viking starting the talk, with any byname after it</param>
+		/// <param name="partner">The name of the viking it talks to, with any byname after it</param>
 		/// <param name="village">The village's name</param>
 		/// <returns>The talk's lines, to be filled in by VikingSpeech.Address, or null for a talk about anything else</returns>
-		public static string[] Talk(string viking, string village)
+		public static string[] Talk(string leader, string partner, string village)
 		{
-			if (!IsNamesake(viking, village) || Random.value >= TalkChance)
+			string[][] talks = TalksFor(leader, partner, village);
+			if (talks == null || Random.value >= TalkChance)
 			{
 				return(null);
 			}
-			return(Talks[Random.Range(0, Talks.Length)]);
+			return(talks[Random.Range(0, talks.Length)]);
+		}
+
+		/// <summary>
+		/// Gets the talks about the village going by the name of one of the two talking - those of the one it's named for
+		/// when it starts the talk, or those teasing it when it's the one talked to
+		/// </summary>
+		/// <param name="leader">The name of the viking starting the talk, with any byname after it</param>
+		/// <param name="partner">The name of the viking it talks to, with any byname after it</param>
+		/// <param name="village">The village's name</param>
+		/// <returns>The talks, or null when the village goes by neither name</returns>
+		internal static string[][] TalksFor(string leader, string partner, string village)
+		{
+			if (IsNamesake(leader, village))
+			{
+				return(Talks);
+			}
+			return(IsNamesake(partner, village) ? TeaseTalks : null);
 		}
 
 		/// <summary>
