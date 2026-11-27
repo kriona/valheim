@@ -251,7 +251,7 @@ How PC Vikings see, fight, get around and look after themselves. What they do wi
 
 ### Picking Fights
 
-- They don't pick fights they don't need: a PC Viking only goes after a zombie or monster that's a threat - one in their village, within 10 meters of them, alerted, or after someone - and leaves the rest alone unless they attack the Viking or someone the Viking is called to help
+- They don't pick fights they don't need: a PC Viking only goes after a zombie or monster that's a threat - one in their village, within 10 meters of them, alerted, or after someone, and at night only one in their village or after them or someone or something in it - and leaves the rest alone unless they attack the Viking or someone the Viking is called to help
 - When a Viking or player within 30 meters is attacked by a zombie or monster, the Vikings rush to help, whatever they're doing - even asleep. They don't chase an enemy more than 40 meters past the village's edge (70 meters for one that hurt them or someone they're defending), or into the water - they stop at the shore, and leave alone an enemy out in water more than a meter deep, like a Neck swimming in a river, though archers still shoot at it from the shore - and walk back when they end up far outside it
 - A zombie or monster attacking a building piece in a village - one of the village's own, or one you built there - calls the Vikings within 30 meters of the piece to fight it, the same as when it hurts one of them, at most every 3 seconds for each attacker
 - A Viking with no enemy of their own who sees another Viking within 20 meters fighting one joins in, unless they're in bed, resting or badly hurt - though never a hunter's prey, which they leave to the hunter

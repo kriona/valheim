@@ -406,10 +406,10 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a monster is a threat a PC viking goes after - one in its village, within ThreatRange of
-		/// it, alerted, or after someone or something. A living animal that only ever runs, like a deer or a hare, is
-		/// never one, even alerted as it runs from a hunter's arrows - only the prey the viking is hunting itself, or a
-		/// zombie one, which comes after people instead. Neither is a leech that hasn't hurt anyone (see QuietMonsters)
+		/// Checks whether a monster is a threat a PC viking goes after (see CountsAsThreat). A living animal that only
+		/// ever runs, like a deer or a hare, is never one, even alerted as it runs from a hunter's arrows - only the prey
+		/// the viking is hunting itself, or a zombie one, which comes after people instead. Neither is a leech that
+		/// hasn't hurt anyone (see QuietMonsters)
 		/// </summary>
 		/// <param name="monster">The monster</param>
 		/// <returns>True when it is</returns>
@@ -425,12 +425,38 @@ namespace VikingVillages
 				return(false);
 			}
 			Vector3 position = monster.transform.position;
-			if ((village != null && village.Contains(position)) || Utils.DistanceXZ(position, transform.position) <= ThreatRange)
+			BaseAI other = monster.GetBaseAI();
+			MonsterAI hunter = other as MonsterAI;
+			Character target = ((other != null) ? other.GetTargetCreature() : null);
+			StaticTarget piece = ((hunter != null) ? hunter.m_targetStatic : null);
+			bool inVillage = (village != null && village.Contains(position));
+			bool near = (Utils.DistanceXZ(position, transform.position) <= ThreatRange);
+			bool alerted = (other != null && other.IsAlerted());
+			bool after = (target != null || piece != null);
+			bool afterVillage = (target == humanoid || (village != null && ((target != null && village.Contains(target.transform.position)) || (piece != null && village.Contains(piece.transform.position)))));
+			return(CountsAsThreat(IsNight(), inVillage, near, alerted, after, afterVillage));
+		}
+
+		/// <summary>
+		/// Works out whether a monster is a threat a viking goes after - by day, one in its village, within ThreatRange
+		/// of it, alerted, or after someone or something, and at night only one in its village or after the viking or
+		/// someone or something in its village, so the vikings don't go out in the dark picking fights with the night's
+		/// monsters that leave the village alone
+		/// </summary>
+		/// <param name="night">Whether it's night</param>
+		/// <param name="inVillage">Whether the monster is in the viking's village</param>
+		/// <param name="near">Whether it's within ThreatRange of the viking</param>
+		/// <param name="alerted">Whether it's alerted</param>
+		/// <param name="after">Whether it's after anyone or anything</param>
+		/// <param name="afterVillage">Whether it's after the viking, or someone or something in its village</param>
+		/// <returns>True when it's a threat</returns>
+		internal static bool CountsAsThreat(bool night, bool inVillage, bool near, bool alerted, bool after, bool afterVillage)
+		{
+			if (inVillage || afterVillage)
 			{
 				return(true);
 			}
-			BaseAI other = monster.GetBaseAI();
-			return(other != null && (other.IsAlerted() || other.GetTargetCreature() != null || (other is MonsterAI hunter && hunter.m_targetStatic != null)));
+			return(!night && (near || alerted || after));
 		}
 
 		/// <summary>

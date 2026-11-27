@@ -191,7 +191,7 @@ They run without fighting to the village's rally point - 4 meters from the fire,
 
 ### Fight
 
-They go after an enemy when it's a threat: inside the village, within 10 meters, alerted, after someone, or attacking a building. They leave alone:
+They go after an enemy when it's a threat: inside the village, within 10 meters, alerted, after someone, or attacking a building. At night, only one inside the village, or after them or someone or something in the village, is a threat - the night's monsters outside that leave the village alone are left alone, unless they attack a Viking or the Vikings are called to help. They leave alone:
 
 - Animals that only run, like deer, hares and birds - unless it's the prey they're hunting, or a zombie
 - Leeches that haven't hurt a player or Viking yet
