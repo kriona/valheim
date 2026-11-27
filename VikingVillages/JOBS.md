@@ -180,8 +180,8 @@ Home is the village's core, not its edge. A Viking away from it runs home:
 - Out of the village for wood or loot, when an enemy goes for them - or for wood, loot or forage, when an enemy is within 50 meters
 - Hunting, below half their health, or when an enemy that isn't their prey or a greyling goes for them
 - Fighting, checked twice a second, the first of these:
-  - Below a quarter of their health - or half, for a hunter
-  - A living Viking within 15 meters is below a quarter of their health and away from home too - they run home with them
+  - Badly hurt (see [Hanging Back](#hanging-back)) - and a hunter below half their health too
+  - A living Viking within 15 meters is badly hurt and away from home too - they run home with them
   - 4 or more enemies within 15 meters
   - No living Viking within 15 meters, and hurt in the last 5 seconds - unless they're hunting or it's a lone greyling
 
@@ -213,7 +213,7 @@ They call an enemy out by name at most every 15 seconds each - 2 seconds apart f
 
 #### Tough Monsters
 
-A monster is tough when it would take more of a Viking's swings to bring it down than of its hardest hits to bring down the Viking, each through the other's armor - a swing with the weapon they'd fight with, a bow counted at 60% for shooting more slowly, and fists only with no weapon - and a monster's bow with the best arrows it carries, and a zombie Viking's hits by its skill and its biome's melee scaling. It takes half again as many Vikings as those odds to fight it - rounded up. Until that many of the village above a quarter of their health are near it, they keep clear, as long as enough are near enough to come or an archer can shoot it:
+A monster is tough when it would take more of a Viking's swings to bring it down than of its hardest hits to bring down the Viking, each through the other's armor - a swing with the weapon they'd fight with, a bow counted at 60% for shooting more slowly, and fists only with no weapon - and a monster's bow with the best arrows it carries, and a zombie Viking's hits by its skill and its biome's melee scaling. It takes half again as many Vikings as those odds to fight it - rounded up. Until that many of the village who aren't badly hurt are near it, they keep clear, as long as enough are near enough to come or an archer can shoot it:
 
 - The Viking it's after lures it, keeping 1.5-4 meters beyond its reach, backing off at a run and turning 70° aside when cornered
 - The rest keep 8 meters beyond its reach, or as far as the lure plus 3 meters, up to 22 - archers shooting, the others facing it
@@ -223,7 +223,7 @@ Once enough have gathered, they all charge. With neither enough fellows nor an a
 
 #### Hanging Back
 
-A Viking at home below a quarter of their health hangs back until they're above 40%, as long as at least one fellow above half their health is within 15 meters and the enemies within 15 meters don't outnumber them - otherwise they fight on. Hanging back, they:
+A Viking is badly hurt below 1.5 times the hardest hit, through their armor, of an enemy fighting within 15 meters - at least a quarter of their health and at most 60%, rechecked twice a second in a fight and back to a quarter out of one. A badly hurt Viking at home hangs back until they're 15% of their health above that line - 40% when it's a quarter - as long as at least one fellow above half their health is within 15 meters and the enemies within 15 meters don't outnumber them - otherwise they fight on. Hanging back, they:
 
 - Keep 5 meters from enemies that fight hand to hand and 20 from those that shoot or throw, stepping back 3 meters at a time, across the core when a step would leave it
 - Run from any enemy within 20 meters that's after them, for 3 seconds after it stops coming

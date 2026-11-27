@@ -988,15 +988,31 @@ namespace VikingVillages
 
 		/// <summary>
 		/// How the viking weighs up a fight - how far it counts vikings with it and enemies on it, in meters, how many
-		/// enemies outnumber it, the share of its health below which it's badly hurt and above which it's recovered,
-		/// the share a healthy viking has, how long after it was hurt it counts as attacked, and seconds between looks
+		/// enemies outnumber it, the least share of its health below which it's badly hurt, the share a healthy viking
+		/// has, how long after it was hurt it counts as attacked, and seconds between looks
 		/// </summary>
 		private const float AllyRange = 15f;
 		private const float EnemyRange = 15f;
 		private const int FightOutnumbered = 4;
 		private const float BadlyHurtShare = 0.25f;
-		private const float RecoveredShare = 0.4f;
 		private const float HealthyShare = 0.5f;
+
+		/// <summary>
+		/// How the next hit raises the share of its health below which a viking is badly hurt (see BadlyHurtLine) - how
+		/// many of the hardest hit of an enemy fighting near it, through its armor, it wants to have left, the highest
+		/// share that puts the line at, so a monster that kills in one hit anyway is left to the tough-monster weigh-up
+		/// (see VikingCore.IsTough) rather than having vikings hang back from near full health, and how far above the
+		/// line it has to climb to count as recovered, so it doesn't flicker in and out of hanging back
+		/// </summary>
+		private const float NextHitMargin = 1.5f;
+		private const float BadlyHurtCap = 0.6f;
+		private const float RecoveredMargin = 0.15f;
+
+		/// <summary>
+		/// The share of its health below which the viking is badly hurt as it last weighed up its fight (see
+		/// WeighFight), BadlyHurtShare outside a fight
+		/// </summary>
+		private float badlyHurtLine = BadlyHurtShare;
 		private const float AttackedTime = 5f;
 		private const float TacticsInterval = 0.5f;
 
@@ -1065,6 +1081,14 @@ namespace VikingVillages
 		/// </summary>
 		private static readonly Dictionary<ZDOID, bool> rangedCache = new Dictionary<ZDOID, bool>();
 		private const int RangedCacheMax = 500;
+
+		/// <summary>
+		/// Each enemy's hardest hit before armor (see MonsterThreat.Hit), by its ZDO, with when it's weighed again, by
+		/// Time.time, since its gear can change - all forgotten once there are more than RangedCacheMax - and how long
+		/// one is kept, in seconds
+		/// </summary>
+		private static readonly Dictionary<ZDOID, KeyValuePair<float, float>> hitCache = new Dictionary<ZDOID, KeyValuePair<float, float>>();
+		private const float HitCacheTime = 10f;
 
 		/// <summary>
 		/// How the viking steers around those in its way - how far ahead it looks, how far it keeps beyond their sides

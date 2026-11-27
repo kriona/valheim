@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Kriona.Vikings;
 using UnityEngine;
 
@@ -16,12 +17,12 @@ namespace VikingVillages
 		/// </summary>
 		/// <remarks>
 		/// Away from home it runs back when it's foraging or getting wood or loot and an enemy comes for it, when it's
-		/// alone and attacked, when FightOutnumbered or more enemies are on it, when it's below BadlyHurtShare of its
-		/// health, or when a viking with it is - though a single greyling with no other enemy near it stays and fights. A viking that ran back for being alone turns to fight as soon as another viking is with it, and every
+		/// alone and attacked, when FightOutnumbered or more enemies are on it, when it's badly hurt (see BadlyHurtLine),
+		/// or when a viking with it is - though a single greyling with no other enemy near it stays and fights. A viking that ran back for being alone turns to fight as soon as another viking is with it, and every
 		/// other once it's home with another viking of its village within RegroupRange - home with no one beside it, it
-		/// runs on to the nearest of them, and only turns to fight alone when none of them is left. At home, a viking below BadlyHurtShare hangs back while its fellows can take the fight -
-		/// unless there are more enemies than healthy vikings near, or none of them are healthy - until it's back above
-		/// RecoveredShare. Hanging back, it runs from any enemy coming after it, and otherwise circles behind an enemy busy
+		/// runs on to the nearest of them, and only turns to fight alone when none of them is left. At home, a badly hurt viking hangs back while its fellows can take the fight -
+		/// unless there are more enemies than healthy vikings near, or none of them are healthy - until it's back
+		/// RecoveredMargin above its badly hurt line. Hanging back, it runs from any enemy coming after it, and otherwise circles behind an enemy busy
 		/// with someone else to strike it there. A viking running home, hanging back badly hurt or fighting a monster too
 		/// tough for it shouts for help, and one with no enemy of its own joins a fight it sees its fellows in (see
 		/// TryJoinFight)
@@ -69,6 +70,7 @@ namespace VikingVillages
 			if (!fighting)
 			{
 				hangingBack = false;
+				badlyHurtLine = BadlyHurtShare;
 				TryJoinFight();
 				return(false);
 			}
@@ -282,7 +284,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Decides whether the viking runs home, stops running, or hangs back, from who's around it
+		/// Decides whether the viking runs home, stops running, or hangs back, from who's around it - and works out how
+		/// low its health has to be for it to be badly hurt (see BadlyHurtLine), from the hardest hit of the enemies near
+		/// it that are fighting
 		/// </summary>
 		/// <param name="home">Whether it's in its village's core</param>
 		private void WeighFight(bool home)
@@ -291,6 +295,7 @@ namespace VikingVillages
 			int healthyAllies = 0;
 			bool woundedAlly = false;
 			int enemies = 0;
+			float hardest = 0f;
 			foreach (Character character in Character.GetAllCharacters())
 			{
 				if (character == null || character == humanoid || character.IsDead())
@@ -306,7 +311,7 @@ namespace VikingVillages
 					{
 						healthyAllies++;
 					}
-					if (share < BadlyHurtShare && !AtHome(character.transform.position))
+					if (share < BadlyHurtLineOf(character) && !AtHome(character.transform.position))
 					{
 						woundedAlly = true;
 					}
@@ -314,8 +319,16 @@ namespace VikingVillages
 				else if (distance <= EnemyRange && BaseAI.IsEnemy(humanoid, character))
 				{
 					enemies++;
+					BaseAI enemyAI = character.GetBaseAI();
+					if (enemyAI != null && (enemyAI.GetTargetCreature() != null || enemyAI.IsAlerted()))
+					{
+						hardest = Mathf.Max(hardest, CachedHit(character));
+					}
 				}
 			}
+			float armor = ((viking != null) ? viking.BodyArmor() : 0f);
+			float taken = ((hardest > 0f) ? HitData.DamageTypes.ApplyArmor(hardest, armor) : 0f);
+			badlyHurtLine = BadlyHurtLine(humanoid.GetMaxHealth(), taken, BadlyHurtShare, NextHitMargin, BadlyHurtCap);
 			float health = humanoid.GetHealthPercentage();
 			fleeTo = null;
 			if (home)
@@ -333,7 +346,7 @@ namespace VikingVillages
 					}
 				}
 				StopFleeing();
-				hangingBack = HangsBack(health, hangingBack, enemies, healthyAllies);
+				hangingBack = HangsBack(health, badlyHurtLine, hangingBack, enemies, healthyAllies);
 				return;
 			}
 			hangingBack = false;
@@ -347,7 +360,7 @@ namespace VikingVillages
 			}
 			bool hunting = (job is HuntJob);
 			bool attackedAlone = (allies == 0 && ai.m_timeSinceHurt < AttackedTime && !hunting && !LoneGreyling(ai.m_targetCreature));
-			FleeReason reason = FleeFor(health, hunting, woundedAlly, enemies, attackedAlone);
+			FleeReason reason = FleeFor(health, badlyHurtLine, hunting, woundedAlly, enemies, attackedAlone);
 			if (reason != FleeReason.None)
 			{
 				Flee(reason);
@@ -355,21 +368,92 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a viking at home hangs back from a fight - when it's below BadlyHurtShare of its health, or
-		/// still below RecoveredShare once hanging back, and its fellows can take the fight without it, with at least
-		/// one healthy ally and no more enemies than healthy allies
+		/// Checks whether a viking at home hangs back from a fight - when it's badly hurt, or still not recovered once
+		/// hanging back (see IsBadlyHurt), and its fellows can take the fight without it, with at least one healthy
+		/// ally and no more enemies than healthy allies
 		/// </summary>
 		/// <param name="health">Its share of its health</param>
+		/// <param name="line">The share of its health below which it's badly hurt (see BadlyHurtLine)</param>
 		/// <param name="hangingBack">Whether it's hanging back already</param>
 		/// <param name="enemies">How many enemies are near it</param>
 		/// <param name="healthyAllies">How many of the vikings beside it have at least HealthyShare of their
 		/// health</param>
 		/// <returns>True when it hangs back</returns>
-		internal static bool HangsBack(float health, bool hangingBack, int enemies, int healthyAllies)
+		internal static bool HangsBack(float health, float line, bool hangingBack, int enemies, int healthyAllies)
 		{
-			bool low = (health < (hangingBack ? RecoveredShare : BadlyHurtShare));
+			bool low = IsBadlyHurt(health, line, hangingBack, RecoveredMargin);
 			bool needed = (enemies > healthyAllies || healthyAllies == 0);
 			return(low && !needed);
+		}
+
+		/// <summary>
+		/// Works out the share of a viking's health below which it's badly hurt - where the next hit could bring it down:
+		/// margin times the hardest hit, through its armor, of an enemy fighting near it, but never below floor of its
+		/// health, and never above cap, so a monster that kills in one hit anyway is left to the tough-monster weigh-up
+		/// rather than having vikings hang back from near full health
+		/// </summary>
+		/// <param name="maxHealth">Its max health</param>
+		/// <param name="hardestTaken">The hardest hit of an enemy fighting near it, through its armor, or 0 with none</param>
+		/// <param name="floor">The least share the line is at, like BadlyHurtShare</param>
+		/// <param name="margin">How many of that hit it wants to have left, like NextHitMargin</param>
+		/// <param name="cap">The most share the line is at, like BadlyHurtCap</param>
+		/// <returns>The share of its health</returns>
+		internal static float BadlyHurtLine(float maxHealth, float hardestTaken, float floor, float margin, float cap)
+		{
+			if (maxHealth <= 0f)
+			{
+				return(floor);
+			}
+			float share = hardestTaken * margin / maxHealth;
+			return(Mathf.Max(floor, Mathf.Min(share, cap)));
+		}
+
+		/// <summary>
+		/// Checks whether a viking is badly hurt - below its line, or once it counts as badly hurt, until it's back
+		/// recoveredMargin above it, so it doesn't flicker in and out
+		/// </summary>
+		/// <param name="health">Its share of its health</param>
+		/// <param name="line">The share of its health below which it's badly hurt (see BadlyHurtLine)</param>
+		/// <param name="recovering">Whether it already counts as badly hurt</param>
+		/// <param name="recoveredMargin">How far above the line it has to climb to count as recovered, like
+		/// RecoveredMargin</param>
+		/// <returns>True when it is</returns>
+		internal static bool IsBadlyHurt(float health, float line, bool recovering, float recoveredMargin)
+		{
+			return(health < (recovering ? line + recoveredMargin : line));
+		}
+
+		/// <summary>
+		/// Gets the share of a living viking's health below which it's badly hurt, as it last weighed up its fight - or
+		/// BadlyHurtShare for one whose life doesn't run here
+		/// </summary>
+		/// <param name="fellow">The viking</param>
+		/// <returns>The share of its health</returns>
+		private static float BadlyHurtLineOf(Character fellow)
+		{
+			VillageLife life = fellow.GetComponent<VillageLife>();
+			return((life != null && life.active) ? life.badlyHurtLine : BadlyHurtShare);
+		}
+
+		/// <summary>
+		/// Gets an enemy's hardest hit before armor (see MonsterThreat.Hit), weighed again every HitCacheTime seconds
+		/// </summary>
+		/// <param name="enemy">The enemy</param>
+		/// <returns>The damage, or 0 when its hit is unknown</returns>
+		private static float CachedHit(Character enemy)
+		{
+			ZDOID id = enemy.GetZDOID();
+			if (hitCache.TryGetValue(id, out KeyValuePair<float, float> known) && Time.time < known.Value)
+			{
+				return(known.Key);
+			}
+			if (hitCache.Count > RangedCacheMax)
+			{
+				hitCache.Clear();
+			}
+			float hit = MonsterThreat.Hit(enemy);
+			hitCache[id] = new KeyValuePair<float, float>(hit, Time.time + HitCacheTime);
+			return(hit);
 		}
 
 		/// <summary>
@@ -385,20 +469,22 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out why a viking away from home runs home, if it does - first for being below BadlyHurtShare of its
-		/// health, or HuntRetreatShare for a hunter, who is out on its own to fight its prey and gives up sooner, then
-		/// to escort a badly hurt viking, then for FightOutnumbered or more enemies, then for being attacked alone
+		/// Works out why a viking away from home runs home, if it does - first for being badly hurt, below its line (see
+		/// BadlyHurtLine), or for a hunter, who is out on its own to fight its prey and gives up sooner, below
+		/// HuntRetreatShare when that's higher, then to escort a badly hurt viking, then for FightOutnumbered or more
+		/// enemies, then for being attacked alone
 		/// </summary>
 		/// <param name="health">Its share of its health</param>
+		/// <param name="line">The share of its health below which it's badly hurt (see BadlyHurtLine)</param>
 		/// <param name="hunting">Whether it's hunting</param>
-		/// <param name="woundedAlly">Whether a viking beside it, away from home, is below BadlyHurtShare</param>
+		/// <param name="woundedAlly">Whether a viking beside it, away from home, is badly hurt</param>
 		/// <param name="enemies">How many enemies are near it</param>
 		/// <param name="attackedAlone">Whether it was just attacked with no viking beside it, while not hunting and not
 		/// fighting a lone greyling</param>
 		/// <returns>Why it runs, or None when it stays</returns>
-		internal static FleeReason FleeFor(float health, bool hunting, bool woundedAlly, int enemies, bool attackedAlone)
+		internal static FleeReason FleeFor(float health, float line, bool hunting, bool woundedAlly, int enemies, bool attackedAlone)
 		{
-			if (health < (hunting ? HuntRetreatShare : BadlyHurtShare))
+			if (health < (hunting ? Mathf.Max(HuntRetreatShare, line) : line))
 			{
 				return(FleeReason.Wounded);
 			}

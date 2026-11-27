@@ -207,8 +207,8 @@ namespace VikingVillages
 		/// Weighs up who's with the viking against a tough monster - how many of its village's vikings it takes to fight
 		/// it hand to hand together (see VikingCore.FightersNeeded), how many have gathered within GatherReach past its
 		/// reach, and how many more are within DefendRange of the viking, where its shouts for help call them in - and
-		/// checks whether it keeps clear of the monster for now (see KeepsClear(int, int, int, bool)). A fellow below
-		/// BadlyHurtShare of its health hangs back, so it isn't counted, and a viking with no village counts only itself
+		/// checks whether it keeps clear of the monster for now (see KeepsClear(int, int, int, bool)). A badly hurt fellow
+		/// (see BadlyHurtLine) hangs back, so it isn't counted, and a viking with no village counts only itself
 		/// </summary>
 		/// <param name="monster">The tough monster</param>
 		/// <returns>True when it keeps clear</returns>
@@ -221,7 +221,7 @@ namespace VikingVillages
 			List<Character> fellows = ((village != null) ? village.Vikings() : new List<Character> { humanoid });
 			foreach (Character fellow in fellows)
 			{
-				if (fellow != humanoid && fellow.GetHealthPercentage() < BadlyHurtShare)
+				if (fellow != humanoid && fellow.GetHealthPercentage() < BadlyHurtLineOf(fellow))
 				{
 					continue;
 				}

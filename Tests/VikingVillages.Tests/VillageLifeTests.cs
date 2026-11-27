@@ -140,7 +140,63 @@ namespace VikingVillages.Tests
 		[InlineData(0.9f, true, false)]
 		public void HangsBackUntilRecovered(float health, bool hangingBack, bool expected)
 		{
-			Assert.Equal(expected, VillageLife.HangsBack(health, hangingBack, 1, 2));
+			Assert.Equal(expected, VillageLife.HangsBack(health, 0.25f, hangingBack, 1, 2));
+		}
+
+		/// <summary>
+		/// Checks that a viking hangs back below a higher line too, keeping on until it's back 15 points above it
+		/// </summary>
+		[Fact]
+		public void HangsBackBelowAHigherLine()
+		{
+			Assert.True(VillageLife.HangsBack(0.55f, 0.6f, false, 1, 2));
+			Assert.False(VillageLife.HangsBack(0.65f, 0.6f, false, 1, 2));
+			Assert.True(VillageLife.HangsBack(0.7f, 0.6f, true, 1, 2));
+			Assert.False(VillageLife.HangsBack(0.76f, 0.6f, true, 1, 2));
+		}
+
+		/// <summary>
+		/// Checks the badly hurt line against the run's enemies on a viking with 175 health - a one-star Mountains zombie
+		/// hitting for about 70 through Fenris armor gives 105, capped at 60%, an unstarred one at about 40 gives 60, and
+		/// a wolf at about 20 leaves it at the 25% floor
+		/// </summary>
+		/// <param name="taken">The enemy's hardest hit through the viking's armor</param>
+		/// <param name="expected">The health below which it's badly hurt</param>
+		[Theory]
+		[InlineData(70f, 105f)]
+		[InlineData(40f, 60f)]
+		[InlineData(20f, 43.75f)]
+		[InlineData(0f, 43.75f)]
+		[InlineData(200f, 105f)]
+		public void PutsTheBadlyHurtLineAboveTheNextHit(float taken, float expected)
+		{
+			Assert.Equal(expected, VillageLife.BadlyHurtLine(175f, taken, 0.25f, 1.5f, 0.6f) * 175f, 2);
+		}
+
+		/// <summary>
+		/// Checks that a viking with no max health is left at the floor rather than dividing by nothing
+		/// </summary>
+		[Fact]
+		public void LeavesTheLineAtTheFloorWithNoHealth()
+		{
+			Assert.Equal(0.25f, VillageLife.BadlyHurtLine(0f, 50f, 0.25f, 1.5f, 0.6f), 3);
+		}
+
+		/// <summary>
+		/// Checks that a viking counts as badly hurt below its line, and once it does, until it's back above the line
+		/// and the recovered margin
+		/// </summary>
+		/// <param name="health">Its share of its health</param>
+		/// <param name="recovering">Whether it already counts as badly hurt</param>
+		/// <param name="expected">Whether it's badly hurt</param>
+		[Theory]
+		[InlineData(0.3f, false, true)]
+		[InlineData(0.35f, false, false)]
+		[InlineData(0.45f, true, true)]
+		[InlineData(0.5f, true, false)]
+		public void StaysBadlyHurtUntilRecovered(float health, bool recovering, bool expected)
+		{
+			Assert.Equal(expected, VillageLife.IsBadlyHurt(health, 0.34f, recovering, 0.15f));
 		}
 
 		/// <summary>
@@ -150,11 +206,11 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void FightsOnWhenNeeded()
 		{
-			Assert.True(VillageLife.HangsBack(0.1f, false, 1, 1));
-			Assert.True(VillageLife.HangsBack(0.1f, false, 0, 1));
-			Assert.False(VillageLife.HangsBack(0.1f, false, 2, 1));
-			Assert.False(VillageLife.HangsBack(0.1f, false, 0, 0));
-			Assert.False(VillageLife.HangsBack(0.1f, true, 3, 2));
+			Assert.True(VillageLife.HangsBack(0.1f, 0.25f, false, 1, 1));
+			Assert.True(VillageLife.HangsBack(0.1f, 0.25f, false, 0, 1));
+			Assert.False(VillageLife.HangsBack(0.1f, 0.25f, false, 2, 1));
+			Assert.False(VillageLife.HangsBack(0.1f, 0.25f, false, 0, 0));
+			Assert.False(VillageLife.HangsBack(0.1f, 0.25f, true, 3, 2));
 		}
 
 		/// <summary>
@@ -176,12 +232,24 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void RunsWhenBadlyHurt()
 		{
-			Assert.Equal(VillageLife.FleeReason.Wounded, VillageLife.FleeFor(0.2f, false, false, 0, false));
-			Assert.Equal(VillageLife.FleeReason.None, VillageLife.FleeFor(0.25f, false, false, 0, false));
-			Assert.Equal(VillageLife.FleeReason.None, VillageLife.FleeFor(0.4f, false, false, 0, false));
-			Assert.Equal(VillageLife.FleeReason.Wounded, VillageLife.FleeFor(0.4f, true, false, 0, false));
-			Assert.Equal(VillageLife.FleeReason.Wounded, VillageLife.FleeFor(0.49f, true, false, 0, false));
-			Assert.Equal(VillageLife.FleeReason.None, VillageLife.FleeFor(0.5f, true, false, 0, false));
+			Assert.Equal(VillageLife.FleeReason.Wounded, VillageLife.FleeFor(0.2f, 0.25f, false, false, 0, false));
+			Assert.Equal(VillageLife.FleeReason.None, VillageLife.FleeFor(0.25f, 0.25f, false, false, 0, false));
+			Assert.Equal(VillageLife.FleeReason.None, VillageLife.FleeFor(0.4f, 0.25f, false, false, 0, false));
+			Assert.Equal(VillageLife.FleeReason.Wounded, VillageLife.FleeFor(0.4f, 0.25f, true, false, 0, false));
+			Assert.Equal(VillageLife.FleeReason.Wounded, VillageLife.FleeFor(0.49f, 0.25f, true, false, 0, false));
+			Assert.Equal(VillageLife.FleeReason.None, VillageLife.FleeFor(0.5f, 0.25f, true, false, 0, false));
+		}
+
+		/// <summary>
+		/// Checks that a viking away from home runs below a higher badly hurt line too, and a hunter below that line
+		/// when it's above half
+		/// </summary>
+		[Fact]
+		public void RunsBelowAHigherLine()
+		{
+			Assert.Equal(VillageLife.FleeReason.Wounded, VillageLife.FleeFor(0.4f, 0.6f, false, false, 0, false));
+			Assert.Equal(VillageLife.FleeReason.None, VillageLife.FleeFor(0.6f, 0.6f, false, false, 0, false));
+			Assert.Equal(VillageLife.FleeReason.Wounded, VillageLife.FleeFor(0.55f, 0.6f, true, false, 0, false));
 		}
 
 		/// <summary>
@@ -190,9 +258,9 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void RunsWhenOutnumbered()
 		{
-			Assert.Equal(VillageLife.FleeReason.None, VillageLife.FleeFor(1f, false, false, 3, false));
-			Assert.Equal(VillageLife.FleeReason.Outnumbered, VillageLife.FleeFor(1f, false, false, 4, false));
-			Assert.Equal(VillageLife.FleeReason.Outnumbered, VillageLife.FleeFor(1f, true, false, 9, false));
+			Assert.Equal(VillageLife.FleeReason.None, VillageLife.FleeFor(1f, 0.25f, false, false, 3, false));
+			Assert.Equal(VillageLife.FleeReason.Outnumbered, VillageLife.FleeFor(1f, 0.25f, false, false, 4, false));
+			Assert.Equal(VillageLife.FleeReason.Outnumbered, VillageLife.FleeFor(1f, 0.25f, true, false, 9, false));
 		}
 
 		/// <summary>
@@ -202,11 +270,11 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void WeighsReasonsInOrder()
 		{
-			Assert.Equal(VillageLife.FleeReason.Wounded, VillageLife.FleeFor(0.1f, false, true, 5, true));
-			Assert.Equal(VillageLife.FleeReason.Escort, VillageLife.FleeFor(1f, false, true, 5, true));
-			Assert.Equal(VillageLife.FleeReason.Outnumbered, VillageLife.FleeFor(1f, false, false, 5, true));
-			Assert.Equal(VillageLife.FleeReason.Alone, VillageLife.FleeFor(1f, false, false, 1, true));
-			Assert.Equal(VillageLife.FleeReason.None, VillageLife.FleeFor(1f, false, false, 1, false));
+			Assert.Equal(VillageLife.FleeReason.Wounded, VillageLife.FleeFor(0.1f, 0.25f, false, true, 5, true));
+			Assert.Equal(VillageLife.FleeReason.Escort, VillageLife.FleeFor(1f, 0.25f, false, true, 5, true));
+			Assert.Equal(VillageLife.FleeReason.Outnumbered, VillageLife.FleeFor(1f, 0.25f, false, false, 5, true));
+			Assert.Equal(VillageLife.FleeReason.Alone, VillageLife.FleeFor(1f, 0.25f, false, false, 1, true));
+			Assert.Equal(VillageLife.FleeReason.None, VillageLife.FleeFor(1f, 0.25f, false, false, 1, false));
 		}
 
 		/// <summary>
