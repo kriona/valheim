@@ -21,6 +21,11 @@ namespace VikingVillages.Tests
 		private const float CauldronUseDistance = 1.9f;
 
 		/// <summary>
+		/// How far the flames reach from the fire's middle in the bend tests, which keep 5 meters from it, in meters
+		/// </summary>
+		private const float Flames = 2f;
+
+		/// <summary>
 		/// How far apart the spots VillageCooking tries for a cauldron are, in meters - its OffsetStep
 		/// </summary>
 		private const float OffsetStep = 0.1f;
@@ -75,7 +80,7 @@ namespace VikingVillages.Tests
 		[InlineData(-5f)]
 		public void LegKeepingClearIsLeftAlone(float side)
 		{
-			Assert.Null(FireSafety.Bend(new Vector3(-10f, 0f, side), new Vector3(10f, 0f, side), Vector3.zero, 5f));
+			Assert.Null(FireSafety.Bend(new Vector3(-10f, 0f, side), new Vector3(10f, 0f, side), Vector3.zero, 5f, Flames));
 		}
 
 		/// <summary>
@@ -84,18 +89,84 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void LegHeadingAwayIsLeftAlone()
 		{
-			Assert.Null(FireSafety.Bend(new Vector3(-10f, 0f, 0f), new Vector3(-20f, 0f, 0f), Vector3.zero, 5f));
+			Assert.Null(FireSafety.Bend(new Vector3(-10f, 0f, 0f), new Vector3(-20f, 0f, 0f), Vector3.zero, 5f, Flames));
 		}
 
 		/// <summary>
-		/// Checks that a leg starting or ending inside the distance isn't bent, since the viking is running out of the
-		/// flames or headed for a spot beside them
+		/// Checks that a leg ending inside the distance isn't bent, since the viking is headed for a spot beside the
+		/// flames
 		/// </summary>
 		[Fact]
-		public void LegStartingOrEndingTooNearIsLeftAlone()
+		public void LegEndingTooNearIsLeftAlone()
 		{
-			Assert.Null(FireSafety.Bend(new Vector3(-4.9f, 0f, 0f), new Vector3(10f, 0f, 0f), Vector3.zero, 5f));
-			Assert.Null(FireSafety.Bend(new Vector3(-10f, 0f, 0f), new Vector3(0f, 0f, 2f), Vector3.zero, 5f));
+			Assert.Null(FireSafety.Bend(new Vector3(-10f, 0f, 0f), new Vector3(0f, 0f, 4f), Vector3.zero, 5f, Flames));
+		}
+
+		/// <summary>
+		/// Checks that a leg starting in the flames isn't bent, since the viking runs straight out of them
+		/// </summary>
+		[Fact]
+		public void LegStartingInTheFlamesIsLeftAlone()
+		{
+			Assert.Null(FireSafety.Bend(new Vector3(-1.5f, 0f, 0f), new Vector3(10f, 0f, 0f), Vector3.zero, 5f, Flames));
+			Assert.Null(FireSafety.Bend(Vector3.zero, new Vector3(10f, 0f, 0f), Vector3.zero, 5f, Flames));
+		}
+
+		/// <summary>
+		/// Checks that a leg starting between the flames and the distance and heading away from the fire isn't bent,
+		/// since it only gets clearer as it goes
+		/// </summary>
+		/// <param name="x">Where the leg ends across from the fire's middle</param>
+		/// <param name="z">Where it ends deep from it</param>
+		[Theory]
+		[InlineData(-20f, 0f)]
+		[InlineData(-10f, 8f)]
+		public void LegStartingNearAndHeadingAwayIsLeftAlone(float x, float z)
+		{
+			Assert.Null(FireSafety.Bend(new Vector3(-3f, 0f, 0f), new Vector3(x, 0f, z), Vector3.zero, 5f, Flames));
+		}
+
+		/// <summary>
+		/// Checks that a leg starting between the flames and the distance and heading through the fire steps straight
+		/// out to the distance first, at its start's height, and then goes round, keeping clear all along from there
+		/// </summary>
+		[Fact]
+		public void LegStartingNearStepsOutThenBendsAround()
+		{
+			Vector3 middle = new Vector3(100f, 20f, -50f);
+			Vector3 start = middle + new Vector3(-3f, 0f, 0f);
+			Vector3 end = middle + new Vector3(10f, 2f, 0f);
+			List<Vector3> corners = FireSafety.Bend(start, end, middle, 5f, Flames);
+			Assert.NotNull(corners);
+			Assert.True(corners.Count > 1);
+			Assert.True(corners[0].x <= middle.x - 5f);
+			Assert.Equal(middle.z, corners[0].z, 4);
+			Assert.Equal(start.y, corners[0].y, 4);
+			foreach (Vector3 corner in corners)
+			{
+				Assert.True(Utils.DistanceXZ(corner, middle) >= 5f - Tolerance);
+			}
+			AssertKeepsClear(corners[0], corners.GetRange(1, corners.Count - 1), end, middle, 5f);
+		}
+
+		/// <summary>
+		/// Checks that a viking pushed in beside a fire, heading past it on a slant, steps out and goes round on the
+		/// side it stands, keeping clear from there on
+		/// </summary>
+		[Fact]
+		public void LegStartingNearOnASlantGoesRoundItsOwnSide()
+		{
+			Vector3 start = new Vector3(0f, 0f, 3f);
+			Vector3 end = new Vector3(10f, 0f, -3f);
+			List<Vector3> corners = FireSafety.Bend(start, end, Vector3.zero, 5f, Flames);
+			Assert.NotNull(corners);
+			Assert.Equal(0f, corners[0].x, 4);
+			Assert.True(corners[0].z >= 5f);
+			for (int i = 1; i < corners.Count; i++)
+			{
+				Assert.True(corners[i].x > 0f);
+			}
+			AssertKeepsClear(corners[0], corners.GetRange(1, corners.Count - 1), end, Vector3.zero, 5f);
 		}
 
 		/// <summary>
@@ -108,7 +179,7 @@ namespace VikingVillages.Tests
 			Vector3 middle = new Vector3(100f, 20f, -50f);
 			Vector3 start = middle + new Vector3(-10f, 0f, 0f);
 			Vector3 end = middle + new Vector3(10f, 0f, 0f);
-			List<Vector3> corners = FireSafety.Bend(start, end, middle, 5f);
+			List<Vector3> corners = FireSafety.Bend(start, end, middle, 5f, Flames);
 			Assert.NotNull(corners);
 			// A half turn has a corner between each 30 degree stretch - 5, or 6 when rounding takes the turn just past 180
 			Assert.InRange(corners.Count, 5, 6);
@@ -132,7 +203,7 @@ namespace VikingVillages.Tests
 		{
 			Vector3 start = new Vector3(-10f, 0f, side);
 			Vector3 end = new Vector3(10f, 0f, side);
-			List<Vector3> corners = FireSafety.Bend(start, end, Vector3.zero, 5f);
+			List<Vector3> corners = FireSafety.Bend(start, end, Vector3.zero, 5f, Flames);
 			Assert.NotNull(corners);
 			Assert.NotEmpty(corners);
 			foreach (Vector3 corner in corners)
@@ -149,7 +220,7 @@ namespace VikingVillages.Tests
 		public void CornersClimbFromStartToEnd()
 		{
 			// The leg turns about 169 degrees around the middle, so it has 6 stretches and 5 corners
-			List<Vector3> corners = FireSafety.Bend(new Vector3(-10f, 0f, 1f), new Vector3(10f, 6f, 1f), Vector3.zero, 5f);
+			List<Vector3> corners = FireSafety.Bend(new Vector3(-10f, 0f, 1f), new Vector3(10f, 6f, 1f), Vector3.zero, 5f, Flames);
 			Assert.NotNull(corners);
 			Assert.Equal(5, corners.Count);
 			for (int i = 0; i < corners.Count; i++)

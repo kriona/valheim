@@ -57,8 +57,10 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Bends a PC viking's path around every lit fire whose flames it would pass within PathMargin of, going round
-		/// the fire on the shorter side - leaving a leg that starts or ends that near the flames as it is, since the
-		/// viking is running out of them, or headed for a spot by the fire that's clear of them
+		/// the fire on the shorter side - stepping straight out from the fire first when a leg starts that near the
+		/// flames, and leaving a leg that ends that near them as it is, since the viking is headed for a spot by the
+		/// fire that's clear of them, or one that starts in the flames, which the viking runs out of (see
+		/// VillageLife.UpdateFlames)
 		/// </summary>
 		/// <param name="viking">The viking</param>
 		/// <param name="path">Its path's corners, from where it stands, bent in place</param>
@@ -82,7 +84,7 @@ namespace VikingVillages
 				Vector3 from = viking.transform.position;
 				for (int i = 0; i < path.Count; i++)
 				{
-					List<Vector3> bend = Bend(from, path[i], middle, clear);
+					List<Vector3> bend = Bend(from, path[i], middle, clear, entry.Value);
 					from = path[i];
 					if (bend != null)
 					{
@@ -94,34 +96,58 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out the corners that take a leg of a path around a fire, keeping a distance from its middle
+		/// Works out the corners that take a leg of a path around a fire, keeping a distance from its middle - a leg that
+		/// starts nearer the fire than its corners stand, outside the flames, steps straight out to them first
 		/// </summary>
 		/// <param name="start">Where the leg starts</param>
 		/// <param name="end">Where it ends</param>
 		/// <param name="middle">The fire's middle</param>
 		/// <param name="clear">How far from the fire's middle the leg keeps, in meters</param>
-		/// <returns>The corners to put between the leg's ends, or null when it keeps clear already or starts or ends too
-		/// near</returns>
-		internal static List<Vector3> Bend(Vector3 start, Vector3 end, Vector3 middle, float clear)
+		/// <param name="flames">How far the fire's flames reach from its middle, in meters</param>
+		/// <returns>The corners to put between the leg's ends, or null when it keeps clear already, heads away from the
+		/// fire from nearer than the distance, starts in the flames or ends nearer than the distance</returns>
+		internal static List<Vector3> Bend(Vector3 start, Vector3 end, Vector3 middle, float clear, float flames)
 		{
 			Vector2 a = new Vector2(start.x - middle.x, start.z - middle.z);
 			Vector2 b = new Vector2(end.x - middle.x, end.z - middle.z);
-			if (a.magnitude < clear || b.magnitude < clear)
+			if (a.magnitude < flames || a.sqrMagnitude < 0.0001f || b.magnitude < clear)
 			{
 				return(null);
 			}
 			Vector2 leg = b - a;
-			float along = ((leg.sqrMagnitude > 0f) ? Mathf.Clamp01(-Vector2.Dot(a, leg) / leg.sqrMagnitude) : 0f);
-			if ((a + leg * along).magnitude >= clear)
+			bool near = (a.magnitude < clear);
+			if (near)
 			{
-				return(null);
+				// Heading away from the fire, it only gets clearer of the flames as it goes
+				if (Vector2.Dot(a, leg) >= 0f)
+				{
+					return(null);
+				}
+				a = a.normalized * clear;
+				leg = b - a;
+			}
+			List<Vector3> corners = new List<Vector3>();
+			float along = ((leg.sqrMagnitude > 0f) ? Mathf.Clamp01(-Vector2.Dot(a, leg) / leg.sqrMagnitude) : 0f);
+			// Nearest the fire where it starts, it keeps the distance all along
+			if (along <= 0f || (a + leg * along).magnitude >= clear)
+			{
+				if (!near)
+				{
+					return(null);
+				}
+				corners.Add(new Vector3(middle.x + a.x, start.y, middle.z + a.y));
+				return(corners);
 			}
 			float from = Mathf.Atan2(a.y, a.x) * Mathf.Rad2Deg;
 			float turn = Mathf.DeltaAngle(from, Mathf.Atan2(b.y, b.x) * Mathf.Rad2Deg);
 			int steps = Mathf.Max(2, Mathf.CeilToInt(Mathf.Abs(turn) / BendStep));
 			// Standing out by this much, the straight path between corners keeps the distance all along
 			float radius = clear / Mathf.Cos(Mathf.Abs(turn) / steps / 2f * Mathf.Deg2Rad);
-			List<Vector3> corners = new List<Vector3>();
+			// Starting inside that, the way to the first corner would cut in toward the fire, so it steps straight out
+			if (a.magnitude < radius)
+			{
+				corners.Add(new Vector3(middle.x + Mathf.Cos(from * Mathf.Deg2Rad) * radius, start.y, middle.z + Mathf.Sin(from * Mathf.Deg2Rad) * radius));
+			}
 			for (int i = 1; i < steps; i++)
 			{
 				float angle = (from + turn * i / steps) * Mathf.Deg2Rad;
