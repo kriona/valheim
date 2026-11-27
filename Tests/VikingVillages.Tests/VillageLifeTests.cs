@@ -875,6 +875,30 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a cook only sets off for a chest for more raw food with nothing on its stations done or still
+		/// cooking, room on them, none carried, no chest tried since it last took food off, and by day
+		/// </summary>
+		/// <param name="done">Whether done food is on its stations</param>
+		/// <param name="carries">Whether it carries raw food</param>
+		/// <param name="cooking">Whether food is still cooking on its stations</param>
+		/// <param name="room">Whether a station has room</param>
+		/// <param name="tried">Whether it has tried a chest</param>
+		/// <param name="evening">Whether it's dusk or night</param>
+		/// <param name="expected">Whether it fetches</param>
+		[Theory]
+		[InlineData(false, false, false, true, false, false, true)]
+		[InlineData(false, false, true, true, false, false, false)]
+		[InlineData(true, false, false, true, false, false, false)]
+		[InlineData(false, true, false, true, false, false, false)]
+		[InlineData(false, false, false, false, false, false, false)]
+		[InlineData(false, false, false, true, true, false, false)]
+		[InlineData(false, false, false, true, false, true, false)]
+		public void CookFetchesOnlyWithNothingCooking(bool done, bool carries, bool cooking, bool room, bool tried, bool evening, bool expected)
+		{
+			Assert.Equal(expected, VillageLife.FetchesRaw(done, carries, cooking, room, tried, evening));
+		}
+
+		/// <summary>
 		/// Checks that a viking 4m from a piece and 2m from its spot isn't within reach - the case that left vikings
 		/// standing still until they gave up on a repair
 		/// </summary>

@@ -397,7 +397,7 @@ They cook at the village's cooking stations - within 12 meters past its edge or 
 2. A lit station with raw food on it
 3. A lit station with room, when they carry raw meat or a chest has some
 
-They take done food off first, putting raw food on 0.8 seconds a piece, fetching as much from a chest as the stations hold, then wait by them for it to cook - each piece raising their cooking skill. What they take off may give a bonus piece, the way it does for you. They don't put on raw food the cauldron's meals need. Food over a fire gone out is left there.
+They take done food off first, putting raw food on 0.8 seconds a piece, then wait by them for it to cook - each piece raising their cooking skill. What they take off may give a bonus piece, the way it does for you. They don't put on raw food the cauldron's meals need. Food over a fire gone out is left there. Once nothing is left cooking on their stations and they carry no more, they fetch as much from a chest as the stations hold - never while food is on them, which would burn while they're away, since no other Viking takes food off the stations they hold. Done food that turns up on their stations while they're on the way, like food you put on, has them go back for it first.
 
 From dusk, they finish what's on the stations without fetching more - see [How a Job Is Picked](#how-a-job-is-picked).
 

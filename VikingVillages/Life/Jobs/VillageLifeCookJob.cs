@@ -9,10 +9,29 @@ namespace VikingVillages
 	internal partial class VillageLife
 	{
 		/// <summary>
+		/// Checks whether a cook sets off for a chest for more raw food - only with nothing on its stations done or still
+		/// cooking, since done food burns once it has been on as long again as it took to cook, and a trip to a chest
+		/// can take longer while the stations it holds are left to no other viking - with room on a lit station, carrying
+		/// none, not having tried a chest since it last took food off, and not from dusk on
+		/// </summary>
+		/// <param name="done">Whether done food is on its stations</param>
+		/// <param name="carries">Whether it carries raw food a station with room cooks</param>
+		/// <param name="cooking">Whether food is still cooking on its lit stations</param>
+		/// <param name="room">Whether a lit station of its has room</param>
+		/// <param name="tried">Whether it has tried a chest since it last took food off</param>
+		/// <param name="evening">Whether it's dusk or night</param>
+		/// <returns>True when it does</returns>
+		internal static bool FetchesRaw(bool done, bool carries, bool cooking, bool room, bool tried, bool evening)
+		{
+			return(!done && !carries && !cooking && room && !tried && !evening);
+		}
+
+		/// <summary>
 		/// Cooking at the village's cooking stations - at the one it set out for and the others at the same fire no other
 		/// viking is at, so it cooks all it can at once - putting the raw food it carries on, fetching more from the
-		/// village's chests while they have room, waiting by them while it cooks, and taking off what's done, coal
-		/// included, to put away - or only taking off what's done, for a viking pulled off other work
+		/// village's chests while they have room once nothing on them is cooking, waiting by them while it cooks, and
+		/// taking off what's done, coal included, to put away - or only taking off what's done, for a viking pulled off
+		/// other work
 		/// </summary>
 		private class CookJob : Job
 		{
@@ -74,8 +93,9 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Fetches raw food from a chest when it carries none, as much as its stations have room for, puts it on them a
-			/// piece at a time, waits while it cooks and takes off what's done - done food first, before it burns
+			/// Fetches raw food from a chest when it carries none and nothing on its stations is cooking (see FetchesRaw), as
+			/// much as its stations have room for, puts it on them a piece at a time, waits while it cooks and takes off
+			/// what's done - done food first, before it burns
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
 			/// <returns>True once nothing is left to cook or take off, or it can't get to a station</returns>
@@ -115,8 +135,11 @@ namespace VikingVillages
 					}
 				}
 				ItemDrop.ItemData raw = ((roomy != null) ? life.CarriedRaw(roomy) : null);
+				// Food over a fire that has gone out - burned down, or put out by the rain - would never cook, so it isn't
+				// waited on, and is left for when the fire is lit again (see FindTendStation)
+				CookingStation cooking = stations.Find((CookingStation cooker) => cooker.HaveUncookedItem() && VillageCooking.IsLit(cooker));
 				// From dusk on it only finishes what's on the stations, rather than fetching more to cook into the night
-				if (done == null && raw == null && roomy != null && !chestTried && !IsDusk() && !IsNight())
+				if (FetchesRaw(done != null, raw != null, cooking != null, roomy != null, chestTried, IsDusk() || IsNight()))
 				{
 					chestTried = true;
 					List<Container> chests = life.UsableChests();
@@ -128,9 +151,6 @@ namespace VikingVillages
 						return(false);
 					}
 				}
-				// Food over a fire that has gone out - burned down, or put out by the rain - would never cook, so it isn't
-				// waited on, and is left for when the fire is lit again (see FindTendStation)
-				CookingStation cooking = stations.Find((CookingStation cooker) => cooker.HaveUncookedItem() && VillageCooking.IsLit(cooker));
 				if (done == null && raw == null && cooking == null)
 				{
 					return(true);
@@ -237,7 +257,7 @@ namespace VikingVillages
 
 			/// <summary>
 			/// Walks to the chest, opens it and takes as much raw food as its stations have room for - leaving a chest it
-			/// can't get to alone
+			/// can't get to alone, and going back for done food on its stations, like food a player put on, before it burns
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
 			/// <returns>False, so the job goes on</returns>
@@ -246,6 +266,13 @@ namespace VikingVillages
 				if (!life.Usable(chest))
 				{
 					chest = null;
+					return(false);
+				}
+				if (stations.Exists((CookingStation cooker) => cooker.HaveDoneItem()))
+				{
+					chest = null;
+					actAt = -1f;
+					chestTried = false;
 					return(false);
 				}
 				if (!life.AtChest(chest))
