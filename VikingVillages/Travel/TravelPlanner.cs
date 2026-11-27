@@ -237,7 +237,7 @@ namespace VikingVillages
 			ZRoutedRpc.instance.Register<ZPackage>(SearchRpc, OnSearch);
 			ZRoutedRpc.instance.Register<ZPackage>(FoundRpc, OnFound);
 			ZRoutedRpc.instance.Register<ZPackage>(QuestRouteRpc, OnQuestRoute);
-			ZRoutedRpc.instance.Register<long, float, float, int, byte[]>(QuestRoutedRpc, OnQuestRouted);
+			ZRoutedRpc.instance.Register<long, float, float, int, ZPackage>(QuestRoutedRpc, OnQuestRouted);
 			searches.Clear();
 			running = null;
 			candidates = null;
@@ -875,7 +875,7 @@ namespace VikingVillages
 			if (targets.Count == 0)
 			{
 				Plugin.Log.LogInfo("Travel: a quest " + kind + " from the village at " + from.ToString("F0") + " has nowhere to go, so it takes " + QuestRules.DefaultTravel.ToString("F0") + "s each way");
-				ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, QuestRules.DefaultTravel, QuestRules.DefaultTravel, -1, new byte[0]);
+				ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, QuestRules.DefaultTravel, QuestRules.DefaultTravel, -1, new ZPackage());
 				return;
 			}
 			string label = "a quest " + kind + " from the village";
@@ -892,7 +892,7 @@ namespace VikingVillages
 				if (!outward.Found || outward.Road.PortalCount() == 0 || !home.Unteleportable)
 				{
 					Plugin.Log.LogInfo("Travel: " + label + " at " + from.ToString("F0") + " goes to " + target.ToString("F0") + ", " + seconds.ToString("F0") + "s each way");
-					ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, seconds, seconds, reached, sea);
+					ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, seconds, seconds, reached, new ZPackage(sea));
 					return;
 				}
 				Search back = new Search { From = target, Party = home, Targets = new List<Vector3> { from }, Label = label + " coming home with " + item };
@@ -900,7 +900,7 @@ namespace VikingVillages
 				{
 					float returning = (homeward.Found ? homeward.Seconds : TravelTime.Seconds(Utils.DistanceXZ(from, target)));
 					Plugin.Log.LogInfo("Travel: " + label + " at " + from.ToString("F0") + " goes to " + target.ToString("F0") + ", " + seconds.ToString("F0") + "s there and " + returning.ToString("F0") + "s back, as no portal on the way takes " + item);
-					ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, seconds, returning, reached, sea);
+					ZRoutedRpc.instance.InvokeRoutedRPC(sender, QuestRoutedRpc, id, seconds, returning, reached, new ZPackage(sea));
 				};
 				searches.Enqueue(back);
 			};
@@ -915,14 +915,14 @@ namespace VikingVillages
 		/// <param name="there">How long it takes there, in seconds</param>
 		/// <param name="back">How long it takes back, in seconds</param>
 		/// <param name="biome">The biome the road goes to, by VikingGear's order, or -1 when it goes nowhere</param>
-		/// <param name="sea">The sea the road sets out across from the village, as written (see TravelRoad.Encode), or
-		/// nothing when it goes on foot</param>
-		private static void OnQuestRouted(long sender, long id, float there, float back, int biome, byte[] sea)
+		/// <param name="sea">The sea the road sets out across from the village, as TravelRoad.Encode writes it, in a
+		/// package - empty when it goes on foot. It comes as a package since the game's RPCs can't carry a byte array</param>
+		internal static void OnQuestRouted(long sender, long id, float there, float back, int biome, ZPackage sea)
 		{
 			if (askedRoutes.TryGetValue(id, out System.Action<float, float, int, TravelRoad> done))
 			{
 				askedRoutes.Remove(id);
-				done(there, back, biome, TravelRoad.Decode(sea));
+				done(there, back, biome, TravelRoad.Decode(sea.GetArray()));
 			}
 		}
 
