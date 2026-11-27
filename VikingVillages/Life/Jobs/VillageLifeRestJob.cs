@@ -353,18 +353,10 @@ namespace VikingVillages
 					return;
 				}
 				settled = false;
-				if (bed != null)
-				{
-					VikingPoses.SetLying(life.humanoid, false);
-				}
-				else if (chair != null)
-				{
-					VikingPoses.SetChair(life.humanoid, false);
-				}
-				else
-				{
-					VikingPoses.SetSitting(life.humanoid, false);
-				}
+				// Every pose is ended, whichever it took, since the bed or chair can be broken while the viking is on it
+				VikingPoses.SetLying(life.humanoid, false);
+				VikingPoses.SetChair(life.humanoid, false);
+				VikingPoses.SetSitting(life.humanoid, false);
 				// Standing up on top of the bed, where the game puts a player getting out of one, can leave a viking on a
 				// patch of navmesh on the bed with no way down to the floor
 				if (bed != null && life.attachPoint != null && Utils.DistanceXZ(settledAt, bed.m_spawnPoint.position) <= BedLeaveReach)
