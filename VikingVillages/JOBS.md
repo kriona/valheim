@@ -213,7 +213,7 @@ They call an enemy out by name at most every 15 seconds each - 2 seconds apart f
 
 #### Tough Monsters
 
-A monster is tough when it would take more of a Viking's hardest hits to bring it down than of its hardest hits to bring down the Viking, through their armor. It takes half again as many Vikings as those odds to fight it - rounded up. Until that many of the village above a quarter of their health are near it, they keep clear, as long as enough are near enough to come or an archer can shoot it:
+A monster is tough when it would take more of a Viking's swings to bring it down than of its hardest hits to bring down the Viking, each through the other's armor - a swing with the weapon they'd fight with, a bow counted at 60% for shooting more slowly, and fists only with no weapon. It takes half again as many Vikings as those odds to fight it - rounded up. Until that many of the village above a quarter of their health are near it, they keep clear, as long as enough are near enough to come or an archer can shoot it:
 
 - The Viking it's after lures it, keeping 1.5-4 meters beyond its reach, backing off at a run and turning 70° aside when cornered
 - The rest keep 8 meters beyond its reach, or as far as the lure plus 3 meters, up to 22 - archers shooting, the others facing it

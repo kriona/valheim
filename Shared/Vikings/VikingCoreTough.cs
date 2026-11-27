@@ -14,10 +14,11 @@ namespace Kriona.Vikings
 		private const float ToughMargin = 1f;
 
 		/// <summary>
-		/// Weighs a monster up against the viking - it's tough when it would take more of the viking's hardest hits to
-		/// bring down than the viking could take of its hardest, through the viking's armor (see MonsterThreat.Hit), so
-		/// a troll, bear or brute is tough for a viking in the Meadows' rags and flint, and not for one in the Plains'
-		/// padded armor and black metal. A root, a player or a monster whose hit is unknown never is
+		/// Weighs a monster up against the viking - it's tough when it would take more of the viking's swings to bring
+		/// down, through the monster's armor, than the viking could take of its hardest hits, through the viking's
+		/// armor (see MonsterThreat.Hit and SwingDamage), so a troll, bear or brute is tough for a viking in the
+		/// Meadows' rags and flint, and not for one in the Plains' padded armor and black metal. A root, a player or a
+		/// monster whose hit is unknown never is
 		/// </summary>
 		/// <param name="monster">The monster</param>
 		/// <returns>True when it's tough</returns>
@@ -32,40 +33,45 @@ namespace Kriona.Vikings
 			{
 				return(false);
 			}
-			// Its hits are weighed through the monster's resistances, so one that shrugs off its weapons is tougher for it
-			return(Outlasts(monster.GetMaxHealth(), hit, humanoid.GetMaxHealth(), BodyArmor(), StrikeDamage(monster)));
+			// Its swings are weighed through the monster's resistances and armor, so one that shrugs off its weapons, like
+			// a zombie viking in armor against a spear, is tougher for it
+			return(Outlasts(monster.GetMaxHealth(), hit, monster.GetBodyArmor(), humanoid.GetMaxHealth(), BodyArmor(), SwingDamage(monster.GetDamageModifiers())));
 		}
 
 		/// <summary>
-		/// Checks whether a monster outlasts a viking - it would take more of the viking's hardest hits to bring down
-		/// than ToughMargin times as many of the monster's hardest as the viking could take, through its armor. Each
-		/// side's hit counts for at least 1, so neither takes endless hits
+		/// Checks whether a monster outlasts a viking - it would take more of the viking's swings to bring down, through
+		/// the monster's armor, than ToughMargin times as many of the monster's hardest hits as the viking could take,
+		/// through the viking's armor. Each side's hit counts for at least 1, so neither takes endless hits
 		/// </summary>
 		/// <param name="monsterHealth">The monster's health</param>
 		/// <param name="monsterHit">The monster's hardest hit, before armor</param>
+		/// <param name="monsterArmor">The monster's armor</param>
 		/// <param name="vikingHealth">The viking's health</param>
 		/// <param name="vikingArmor">The viking's armor</param>
-		/// <param name="vikingStrike">The viking's hardest hit (see StrikeDamage)</param>
+		/// <param name="vikingStrike">What the viking deals in a swing, before armor (see SwingDamage)</param>
 		/// <returns>True when it does, so the monster is tough</returns>
-		internal static bool Outlasts(float monsterHealth, float monsterHit, float vikingHealth, float vikingArmor, float vikingStrike)
+		internal static bool Outlasts(float monsterHealth, float monsterHit, float monsterArmor, float vikingHealth, float vikingArmor, float vikingStrike)
 		{
-			return(Odds(monsterHealth, monsterHit, vikingHealth, vikingArmor, vikingStrike) > 1f);
+			return(Odds(monsterHealth, monsterHit, monsterArmor, vikingHealth, vikingArmor, vikingStrike) > 1f);
 		}
 
 		/// <summary>
-		/// Works out how far a monster outlasts a viking - how many of the viking's hardest hits it takes to bring down,
-		/// over ToughMargin times as many of the monster's hardest as the viking could take, through its armor. Each
-		/// side's hit counts for at least 1, so neither takes endless hits
+		/// Works out how far a monster outlasts a viking - how many of the viking's swings it takes to bring down,
+		/// through the monster's armor, over ToughMargin times as many of the monster's hardest hits as the viking could
+		/// take, through the viking's armor. Each side's hit counts for at least 1, so neither takes endless hits
 		/// </summary>
 		/// <param name="monsterHealth">The monster's health</param>
 		/// <param name="monsterHit">The monster's hardest hit, before armor</param>
+		/// <param name="monsterArmor">The monster's armor</param>
 		/// <param name="vikingHealth">The viking's health</param>
 		/// <param name="vikingArmor">The viking's armor</param>
-		/// <param name="vikingStrike">The viking's hardest hit (see StrikeDamage)</param>
+		/// <param name="vikingStrike">What the viking deals in a swing, before armor (see SwingDamage)</param>
 		/// <returns>Above 1 when the monster outlasts the viking, as many times over as it does</returns>
-		internal static float Odds(float monsterHealth, float monsterHit, float vikingHealth, float vikingArmor, float vikingStrike)
+		internal static float Odds(float monsterHealth, float monsterHit, float monsterArmor, float vikingHealth, float vikingArmor, float vikingStrike)
 		{
-			float hitsToKill = monsterHealth / Mathf.Max(1f, vikingStrike);
+			// Counted as at least 1 before the armor too, since the game's armor works out nothing sensible for no damage
+			float dealt = Mathf.Max(1f, HitData.DamageTypes.ApplyArmor(Mathf.Max(1f, vikingStrike), monsterArmor));
+			float hitsToKill = monsterHealth / dealt;
 			float taken = Mathf.Max(1f, HitData.DamageTypes.ApplyArmor(monsterHit, vikingArmor));
 			float hitsToDie = vikingHealth / taken;
 			return(hitsToKill / (hitsToDie * ToughMargin));
@@ -90,7 +96,7 @@ namespace Kriona.Vikings
 			{
 				return(1);
 			}
-			return(FightersNeeded(monster.GetHealth(), MonsterThreat.Hit(monster), humanoid.GetMaxHealth(), BodyArmor(), StrikeDamage(monster)));
+			return(FightersNeeded(monster.GetHealth(), MonsterThreat.Hit(monster), monster.GetBodyArmor(), humanoid.GetMaxHealth(), BodyArmor(), SwingDamage(monster.GetDamageModifiers())));
 		}
 
 		/// <summary>
@@ -99,13 +105,14 @@ namespace Kriona.Vikings
 		/// </summary>
 		/// <param name="monsterHealth">The monster's health</param>
 		/// <param name="monsterHit">The monster's hardest hit, before armor</param>
+		/// <param name="monsterArmor">The monster's armor</param>
 		/// <param name="vikingHealth">A viking's health</param>
 		/// <param name="vikingArmor">A viking's armor</param>
-		/// <param name="vikingStrike">A viking's hardest hit (see StrikeDamage)</param>
+		/// <param name="vikingStrike">What a viking deals in a swing, before armor (see SwingDamage)</param>
 		/// <returns>How many vikings</returns>
-		internal static int FightersNeeded(float monsterHealth, float monsterHit, float vikingHealth, float vikingArmor, float vikingStrike)
+		internal static int FightersNeeded(float monsterHealth, float monsterHit, float monsterArmor, float vikingHealth, float vikingArmor, float vikingStrike)
 		{
-			float odds = Odds(monsterHealth, monsterHit, vikingHealth, vikingArmor, vikingStrike);
+			float odds = Odds(monsterHealth, monsterHit, monsterArmor, vikingHealth, vikingArmor, vikingStrike);
 			return((odds <= 1f) ? 1 : Mathf.CeilToInt(odds * GroupMargin));
 		}
 

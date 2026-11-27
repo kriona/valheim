@@ -284,8 +284,9 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Measures the hardest the viking hits a creature with its best melee weapon, its best bow or crossbow or its
-		/// fists, through the creature's resistances and its skill
+		/// Measures the hardest the viking hits a creature with its best melee weapon or its best bow or crossbow, or
+		/// with its fists when it has neither it can use, through the creature's resistances and its skill (see
+		/// BestStrike)
 		/// </summary>
 		/// <param name="resistances">The creature's resistances, or null for the damage as it is</param>
 		/// <param name="rangedShare">The share of a bow's or crossbow's damage it's counted for</param>
@@ -296,14 +297,36 @@ namespace Kriona.Vikings
 			ItemDrop.ItemData ranged = BestRanged(resistances);
 			HitData.DamageTypes fists = new HitData.DamageTypes();
 			fists.m_blunt = ((GetData() != null) ? VikingGear.Get(BiomeIndex()).Unarmed : 0f);
-			float best = SkillScaled(CombatDamage(Resisted(fists, resistances)), SkillLevel(Skills.SkillType.Unarmed));
+			float unarmed = SkillScaled(CombatDamage(Resisted(fists, resistances)), SkillLevel(Skills.SkillType.Unarmed));
+			float? meleeDamage = ((melee != null) ? Hurt(melee, resistances) : (float?)null);
+			float? rangedDamage = ((ranged != null) ? Hurt(ranged, resistances) : (float?)null);
+			return(BestStrike(unarmed, meleeDamage, rangedDamage, rangedShare));
+		}
+
+		/// <summary>
+		/// Picks the hardest a viking hits with what it would fight with - the more of its melee weapon's damage and its
+		/// bow's or crossbow's at its share, and its fists' only when it has neither, since a viking with a weapon it can
+		/// use never fights unarmed (see ChooseWeapon)
+		/// </summary>
+		/// <param name="fists">What its fists deal</param>
+		/// <param name="melee">What its best melee weapon deals, or null with none it can use</param>
+		/// <param name="ranged">What its best bow or crossbow deals, or null with none it can shoot</param>
+		/// <param name="rangedShare">The share of the bow's or crossbow's damage it's counted for</param>
+		/// <returns>The damage</returns>
+		internal static float BestStrike(float fists, float? melee, float? ranged, float rangedShare)
+		{
+			if (melee == null && ranged == null)
+			{
+				return(fists);
+			}
+			float best = 0f;
 			if (melee != null)
 			{
-				best = Mathf.Max(best, Hurt(melee, resistances));
+				best = Mathf.Max(best, melee.Value);
 			}
 			if (ranged != null)
 			{
-				best = Mathf.Max(best, Hurt(ranged, resistances) * rangedShare);
+				best = Mathf.Max(best, ranged.Value * rangedShare);
 			}
 			return(best);
 		}

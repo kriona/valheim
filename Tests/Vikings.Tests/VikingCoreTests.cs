@@ -194,7 +194,7 @@ namespace Kriona.Vikings.Tests
 		[Fact]
 		public void FindsATrollTough()
 		{
-			Assert.True(VikingCore.Outlasts(600f, 70f, 100f, 6f, 20f));
+			Assert.True(VikingCore.Outlasts(600f, 70f, 0f, 100f, 6f, 20f));
 		}
 
 		/// <summary>
@@ -203,7 +203,30 @@ namespace Kriona.Vikings.Tests
 		[Fact]
 		public void FindsAWeakMonsterEasy()
 		{
-			Assert.False(VikingCore.Outlasts(50f, 10f, 100f, 20f, 25f));
+			Assert.False(VikingCore.Outlasts(50f, 10f, 0f, 100f, 20f, 25f));
+		}
+
+		/// <summary>
+		/// Checks that a monster's own armor takes off the viking's swings - an even fight against one with no armor is
+		/// a tough one once it wears some
+		/// </summary>
+		[Fact]
+		public void CountsTheMonstersArmorAgainstTheViking()
+		{
+			// 10 through 2 armor is 8 a swing, so 100 health takes 12.5 swings against the viking's 10
+			Assert.False(VikingCore.Outlasts(100f, 10f, 0f, 100f, 0f, 10f));
+			Assert.True(VikingCore.Outlasts(100f, 10f, 2f, 100f, 0f, 10f));
+		}
+
+		/// <summary>
+		/// Checks that a zombie viking of the Mountains at one star is tough enough for more vikings than a village of
+		/// 8 has - 600 health in half-strength Fenris armor against vikings in Fenris whose spears do 45 a swing
+		/// </summary>
+		[Fact]
+		public void StarredMountainZombieTakesMoreThanAVillage()
+		{
+			// 45 through 15.5 armor is 29.5 a swing, 20 swings, against 2.9 of its 91.5 through 31 armor
+			Assert.True(VikingCore.FightersNeeded(600f, 91.5f, 15.5f, 175f, 31f, 45f) > 8);
 		}
 
 		/// <summary>
@@ -213,8 +236,8 @@ namespace Kriona.Vikings.Tests
 		[Fact]
 		public void FindsAnEvenFightNotTough()
 		{
-			Assert.False(VikingCore.Outlasts(100f, 10f, 100f, 0f, 10f));
-			Assert.True(VikingCore.Outlasts(101f, 10f, 100f, 0f, 10f));
+			Assert.False(VikingCore.Outlasts(100f, 10f, 0f, 100f, 0f, 10f));
+			Assert.True(VikingCore.Outlasts(101f, 10f, 0f, 100f, 0f, 10f));
 		}
 
 		/// <summary>
@@ -227,8 +250,20 @@ namespace Kriona.Vikings.Tests
 		[InlineData(0.5f)]
 		public void CountsTheVikingsHitAsAtLeastOne(float strike)
 		{
-			Assert.False(VikingCore.Outlasts(5f, 2f, 10f, 0f, strike));
-			Assert.True(VikingCore.Outlasts(6f, 2f, 10f, 0f, strike));
+			Assert.False(VikingCore.Outlasts(5f, 2f, 0f, 10f, 0f, strike));
+			Assert.True(VikingCore.Outlasts(6f, 2f, 0f, 10f, 0f, strike));
+		}
+
+		/// <summary>
+		/// Checks that a viking's hit through the monster's armor counts for at least 1, so heavy armor on the monster
+		/// doesn't make it last forever
+		/// </summary>
+		[Fact]
+		public void CountsTheVikingsHitThroughArmorAsAtLeastOne()
+		{
+			// 10 through 1000 armor is 0.025, counted as 1, so the monster takes 5 hits
+			Assert.False(VikingCore.Outlasts(5f, 2f, 1000f, 10f, 0f, 10f));
+			Assert.True(VikingCore.Outlasts(6f, 2f, 1000f, 10f, 0f, 10f));
 		}
 
 		/// <summary>
@@ -239,8 +274,30 @@ namespace Kriona.Vikings.Tests
 		public void CountsTheMonstersHitAsAtLeastOne()
 		{
 			// 10 through 1000 armor is 0.025, counted as 1, so the viking takes 100 hits
-			Assert.False(VikingCore.Outlasts(1000f, 10f, 100f, 1000f, 10f));
-			Assert.True(VikingCore.Outlasts(1010f, 10f, 100f, 1000f, 10f));
+			Assert.False(VikingCore.Outlasts(1000f, 10f, 0f, 100f, 1000f, 10f));
+			Assert.True(VikingCore.Outlasts(1010f, 10f, 0f, 100f, 1000f, 10f));
+		}
+
+		/// <summary>
+		/// Checks that a viking's fists count only when it has no weapon it can use, since it never fights unarmed with
+		/// one in its pack
+		/// </summary>
+		[Fact]
+		public void CountsTheFistsOnlyWithNoWeapon()
+		{
+			Assert.Equal(63f, VikingCore.BestStrike(63f, null, null, 1f));
+			Assert.Equal(45f, VikingCore.BestStrike(63f, 45f, null, 1f));
+			Assert.Equal(25f, VikingCore.BestStrike(63f, null, 50f, 0.5f));
+		}
+
+		/// <summary>
+		/// Checks that a bow counts at its share against a melee weapon, and wins only when that share hurts more
+		/// </summary>
+		[Fact]
+		public void CountsTheBowAtItsShare()
+		{
+			Assert.Equal(45f, VikingCore.BestStrike(0f, 45f, 58f, 0.6f));
+			Assert.Equal(58f, VikingCore.BestStrike(0f, 45f, 58f, 1f));
 		}
 
 		/// <summary>
@@ -282,9 +339,9 @@ namespace Kriona.Vikings.Tests
 		[Fact]
 		public void EvenFightTakesOneViking()
 		{
-			Assert.Equal(1, VikingCore.FightersNeeded(50f, 10f, 100f, 20f, 25f));
-			Assert.Equal(1, VikingCore.FightersNeeded(100f, 10f, 100f, 0f, 10f));
-			Assert.Equal(2, VikingCore.FightersNeeded(101f, 10f, 100f, 0f, 10f));
+			Assert.Equal(1, VikingCore.FightersNeeded(50f, 10f, 0f, 100f, 20f, 25f));
+			Assert.Equal(1, VikingCore.FightersNeeded(100f, 10f, 0f, 100f, 0f, 10f));
+			Assert.Equal(2, VikingCore.FightersNeeded(101f, 10f, 0f, 100f, 0f, 10f));
 		}
 
 		/// <summary>
@@ -295,8 +352,8 @@ namespace Kriona.Vikings.Tests
 		public void ToughMonsterTakesAGroup()
 		{
 			// 400 health at 10 a hit is 40 hits, against 10 hits of 10 the viking can take
-			Assert.Equal(6, VikingCore.FightersNeeded(400f, 10f, 100f, 0f, 10f));
-			Assert.Equal(5, VikingCore.FightersNeeded(300f, 10f, 100f, 0f, 10f));
+			Assert.Equal(6, VikingCore.FightersNeeded(400f, 10f, 0f, 100f, 0f, 10f));
+			Assert.Equal(5, VikingCore.FightersNeeded(300f, 10f, 0f, 100f, 0f, 10f));
 		}
 
 		/// <summary>
@@ -306,7 +363,7 @@ namespace Kriona.Vikings.Tests
 		[Fact]
 		public void WoundedMonsterTakesFewer()
 		{
-			Assert.True(VikingCore.FightersNeeded(150f, 10f, 100f, 0f, 10f) < VikingCore.FightersNeeded(400f, 10f, 100f, 0f, 10f));
+			Assert.True(VikingCore.FightersNeeded(150f, 10f, 0f, 100f, 0f, 10f) < VikingCore.FightersNeeded(400f, 10f, 0f, 100f, 0f, 10f));
 		}
 
 		/// <summary>
