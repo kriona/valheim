@@ -49,6 +49,12 @@ namespace VikingVillages
 		public const float DefaultTravel = 300f;
 
 		/// <summary>
+		/// How long a village waits for the server's answer about a quest's road before it asks again, in seconds - long
+		/// enough for the server's searches waiting ahead of it to run
+		/// </summary>
+		public const float RouteAnswerWait = 300f;
+
+		/// <summary>
 		/// How a hunt goes - the fewest and most prey each hunter takes, how long each takes, in seconds, and how far
 		/// through the day night falls, which the hunters are always home before (see EnvMan.CalculateNight)
 		/// </summary>
@@ -66,6 +72,20 @@ namespace VikingVillages
 		public static float SecondsToNight(float dayFraction, float dayLength)
 		{
 			return(System.Math.Max(0f, (NightFalls - dayFraction) * dayLength));
+		}
+
+		/// <summary>
+		/// Whether a village asks the server about a quest's road - when what it said is missing or stale, and the
+		/// village hasn't asked, or asked RouteAnswerWait ago or longer with no answer, as an answer can be lost
+		/// </summary>
+		/// <param name="fresh">Whether the village has the server's answer, and it's recent enough to go by</param>
+		/// <param name="asked">Whether the village asked and hasn't heard back</param>
+		/// <param name="askedAt">When it asked, in seconds</param>
+		/// <param name="now">The time now, in seconds</param>
+		/// <returns>Whether to ask</returns>
+		public static bool AskForRoute(bool fresh, bool asked, float askedAt, float now)
+		{
+			return(!fresh && (!asked || now - askedAt >= RouteAnswerWait));
 		}
 
 		/// <summary>

@@ -833,11 +833,12 @@ namespace VikingVillages
 		/// <param name="done">What to do with the answer - the time there and the time back, in seconds, the biome the road
 		/// goes to, by VikingGear's order, or -1 when it goes nowhere, and the sea it sets out across from the village (see
 		/// BoatRules.QuestSea), with no waypoints when it goes on foot</param>
-		public static void AskQuestRoute(Vector3 from, int biome, QuestKind kind, string item, System.Action<float, float, int, TravelRoad> done)
+		/// <returns>The question's ID, to forget it by (see ForgetQuestRoute), or 0 when there's no server to ask</returns>
+		public static long AskQuestRoute(Vector3 from, int biome, QuestKind kind, string item, System.Action<float, float, int, TravelRoad> done)
 		{
 			if (ZRoutedRpc.instance == null)
 			{
-				return;
+				return(0L);
 			}
 			long id = NewId();
 			askedRoutes[id] = done;
@@ -848,6 +849,16 @@ namespace VikingVillages
 			pkg.Write((int)kind);
 			pkg.Write(item);
 			ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.instance.GetServerPeerID(), QuestRouteRpc, pkg);
+			return(id);
+		}
+
+		/// <summary>
+		/// Forgets a question about a quest's road the server hasn't answered, so an answer that still comes is left alone
+		/// </summary>
+		/// <param name="id">The question's ID, from AskQuestRoute</param>
+		public static void ForgetQuestRoute(long id)
+		{
+			askedRoutes.Remove(id);
 		}
 
 		/// <summary>

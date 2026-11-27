@@ -23,6 +23,27 @@ namespace VikingVillages.Tests
 			Assert.Equal(expected, QuestRules.CanSetOut(dayFraction));
 		}
 
+		/// <summary>
+		/// Checks that a village asks for a quest's road when it has no recent answer and isn't waiting on one, or has
+		/// waited RouteAnswerWait or longer, and never while its answer is recent
+		/// </summary>
+		/// <param name="fresh">Whether the village's answer is recent</param>
+		/// <param name="asked">Whether it's waiting on an answer</param>
+		/// <param name="askedAt">When it asked, in seconds</param>
+		/// <param name="expected">Whether it asks at 1000 seconds</param>
+		[Theory]
+		[InlineData(false, false, 0f, true)]
+		[InlineData(false, true, 900f, false)]
+		[InlineData(false, true, 1000f - QuestRules.RouteAnswerWait + 1f, false)]
+		[InlineData(false, true, 1000f - QuestRules.RouteAnswerWait, true)]
+		[InlineData(false, true, 100f, true)]
+		[InlineData(true, false, 0f, false)]
+		[InlineData(true, true, 100f, false)]
+		public void RoadsAreAskedForAgainOnceTheAnswerLooksLost(bool fresh, bool asked, float askedAt, bool expected)
+		{
+			Assert.Equal(expected, QuestRules.AskForRoute(fresh, asked, askedAt, 1000f));
+		}
+
 		[Fact]
 		public void DurationIsThereAndBackAndTheWork()
 		{

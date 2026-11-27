@@ -78,10 +78,20 @@ namespace VikingVillages
 		private static readonly Dictionary<ZDOID, float> nextLook = new Dictionary<ZDOID, float>();
 
 		/// <summary>
-		/// The roads to quests this client has asked the server for and not heard back about, by the key they're noted at
-		/// on their village (see RouteKey) mixed with the village's ZDO
+		/// A question this client asked the server about a quest's road - its ID (see TravelPlanner.AskQuestRoute) and when
+		/// it was asked, in Time.time seconds
 		/// </summary>
-		private static readonly HashSet<int> routesAsked = new HashSet<int>();
+		private struct RouteAsk
+		{
+			public long Id;
+			public float At;
+		}
+
+		/// <summary>
+		/// The roads to quests this client has asked the server for and not heard back about, by the key they're noted at
+		/// on their village (see RouteKeys) mixed with the village's ZDO
+		/// </summary>
+		private static readonly Dictionary<int, RouteAsk> routesAsked = new Dictionary<int, RouteAsk>();
 
 		/// <summary>
 		/// How long a road to a quest is kept on its village before the server is asked for it again, in game days - so
@@ -172,7 +182,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Gets how long the road to a quest takes from a village, there and back - asking the server the first time, and
-		/// again once what it said is RouteKeepDays old, going by what it said before until it answers
+		/// again once what it said is RouteKeepDays old, going by what it said before until it answers, or once it's heard
+		/// nothing back for QuestRules.RouteAnswerWait
 		/// </summary>
 		/// <param name="village">The village, run by this client</param>
 		/// <param name="kind">The quest</param>
@@ -186,16 +197,24 @@ namespace VikingVillages
 			back = village.Zdo.GetFloat(backKey, -1f);
 			long at = village.Zdo.GetLong(atKey, 0L);
 			bool fresh = (there >= 0f && EnvMan.instance != null && NetTime.Now() - at < NetTime.Ticks((float)(EnvMan.instance.m_dayLengthSec * RouteKeepDays)));
-			// Asked once per village and road until the server answers
+			// Asked once per village and road until the server answers, or until the answer looks lost
 			int asked = thereKey ^ village.Zdo.m_uid.GetHashCode();
-			if (fresh || routesAsked.Contains(asked))
+			bool waiting = routesAsked.TryGetValue(asked, out RouteAsk ask);
+			if (!QuestRules.AskForRoute(fresh, waiting, ask.At, Time.time))
 			{
 				return(there);
 			}
-			routesAsked.Add(asked);
+			if (waiting)
+			{
+				TravelPlanner.ForgetQuestRoute(ask.Id);
+				Plugin.Log.LogInfo("Quest: the village at " + village.Farm.ToString("F0") + " heard nothing back about the road to " + kind + (!string.IsNullOrEmpty(item) ? " for " + item : "") + " in " + (Time.time - ask.At).ToString("F0") + "s, so it asks the server again");
+				TestLog.Count("Quests", "roads asked again");
+			}
+			// Noted before asking, since a host with nowhere for the quest to go answers before AskQuestRoute returns
+			routesAsked[asked] = new RouteAsk { At = Time.time };
 			ZDOID id = village.Zdo.m_uid;
 			int seaKey = SeaKey(kind, item);
-			TravelPlanner.AskQuestRoute(village.Farm, VillageCooking.VillageBiome(village), kind, item, (float answerThere, float answerBack, int answerBiome, TravelRoad answerSea) =>
+			long askId = TravelPlanner.AskQuestRoute(village.Farm, VillageCooking.VillageBiome(village), kind, item, (float answerThere, float answerBack, int answerBiome, TravelRoad answerSea) =>
 			{
 				routesAsked.Remove(asked);
 				ZDO zdo = ((ZDOMan.instance != null) ? ZDOMan.instance.GetZDO(id) : null);
@@ -208,6 +227,10 @@ namespace VikingVillages
 					zdo.Set(seaKey, answerSea.Encode());
 				}
 			});
+			if (routesAsked.ContainsKey(asked))
+			{
+				routesAsked[asked] = new RouteAsk { Id = askId, At = Time.time };
+			}
 			return(there);
 		}
 
