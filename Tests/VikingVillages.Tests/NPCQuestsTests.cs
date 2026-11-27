@@ -94,24 +94,50 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that buying from Haldor takes a PC viking who lacks it before an NPC viking who does, first, with an
-		/// NPC viking beside it
+		/// Checks that a trip for circlets and belts takes an NPC viking first, who carries the purse and hands out what it
+		/// buys at home, with a PC viking beside them - whoever lacks it, since they needn't go to get it
 		/// </summary>
 		[Fact]
-		public void BuysForAPCFirst()
+		public void BuysGearWithAnNPCCarrying()
 		{
-			List<Candidate> fit = new List<Candidate> { Fit("Sigrid", true, true), Fit("Ulf", false), Fit("Ragna", false, true), Fit("Hakon", true) };
-			Assert.Equal(new List<string> { "Ragna", "Sigrid" }, Picked(QuestKind.BuyBelt, fit, 2));
+			List<Candidate> fit = new List<Candidate> { Fit("Ulf", false), Fit("Ragna", false, true), Fit("Sigrid", true, true), Fit("Hakon", true) };
+			Assert.Equal(new List<string> { "Sigrid", "Ulf" }, Picked(QuestKind.BuyBelt, fit, 2));
+			Assert.Equal(new List<string> { "Sigrid", "Ulf" }, Picked(QuestKind.BuyCirclet, fit, 2));
 		}
 
 		/// <summary>
-		/// Checks that buying for an NPC viking, when every PC viking has it, takes a PC viking beside it
+		/// Checks that a trip for circlets and belts with no NPC viking to spare takes two PC vikings, the first carrying
+		/// the purse
 		/// </summary>
 		[Fact]
-		public void BuysForAnNPCWithAPC()
+		public void BuysGearWithPCsWithoutNPCs()
 		{
-			List<Candidate> fit = new List<Candidate> { Fit("Sigrid", true, true), Fit("Hakon", true), Fit("Ulf", false) };
-			Assert.Equal(new List<string> { "Sigrid", "Ulf" }, Picked(QuestKind.BuyCirclet, fit, 2));
+			List<Candidate> fit = new List<Candidate> { Fit("Ulf", false), Fit("Ragna", false, true) };
+			Assert.Equal(new List<string> { "Ulf", "Ragna" }, Picked(QuestKind.BuyCirclet, fit, 2));
+		}
+
+		/// <summary>
+		/// Checks that a trip for pockets takes every viking who lacks them, PC vikings first, as many as go, with NPC
+		/// vikings in the places left
+		/// </summary>
+		[Fact]
+		public void BuysPocketsForEveryoneWhoLacksThem()
+		{
+			List<Candidate> fit = new List<Candidate> { Fit("Ulf", false), Fit("Sigrid", true, true), Fit("Ragna", false, true), Fit("Astrid", false, true), Fit("Hakon", true) };
+			Assert.Equal(new List<string> { "Ragna", "Astrid", "Sigrid" }, Picked(QuestKind.BuyWiderPockets, fit, 3));
+			Assert.Equal(new List<string> { "Ragna", "Astrid", "Sigrid", "Hakon" }, Picked(QuestKind.BuyDeeperPockets, fit, 4));
+		}
+
+		/// <summary>
+		/// Checks that a trip for pockets only NPC vikings lack takes a PC viking beside them - in place of the last of
+		/// them when there's no room left
+		/// </summary>
+		[Fact]
+		public void BuysPocketsWithAPC()
+		{
+			List<Candidate> fit = new List<Candidate> { Fit("Sigrid", true, true), Fit("Hakon", true, true), Fit("Ulf", false) };
+			Assert.Equal(new List<string> { "Sigrid", "Hakon", "Ulf" }, Picked(QuestKind.BuyWiderPockets, fit, 3));
+			Assert.Equal(new List<string> { "Sigrid", "Ulf" }, Picked(QuestKind.BuyWiderPockets, fit, 2));
 		}
 
 		/// <summary>

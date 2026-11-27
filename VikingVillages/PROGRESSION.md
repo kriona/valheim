@@ -259,7 +259,7 @@ A PC or NPC Viking of each biome starts with a Dverger circlet by these odds. A 
 | Ashlands | Always | No |
 | Deep North | Always | No |
 
-From the Black Forest on, a village buys a circlet from Haldor for a Viking still using torches, a PC Viking before an NPC Viking (see [Quests by Biome](#quests-by-biome)), and a spare circlet or strength belt in its chests goes to a PC Viking without one before any NPC Viking.
+From the Black Forest on, a village buys circlets from Haldor for every Viking still using torches, as many as its coins and treasure pay for on one trip, and hands them out to PC Vikings before NPC Vikings (see [Quests by Biome](#quests-by-biome)), and a spare circlet or strength belt in its chests goes to a PC Viking without one before any NPC Viking.
 
 ### Strength Belt
 
@@ -278,7 +278,7 @@ A strength belt (Megingjord) raises how much a Viking carries from 300 to 450, t
 
 ### Wider Pockets
 
-Haldor's wider pockets give a Viking a 5th row in their inventory, as they give you. From the Mountains on, a village buys them from Haldor for a Viking without them.
+Haldor's wider pockets give a Viking a 5th row in their inventory, as they give you. From the Mountains on, a village buys them from Haldor for every Viking without them that its coins and treasure pay for, all of them going on one trip while 2 stay home.
 
 | Biome | Starts with them |
 | --- | --- |
@@ -291,7 +291,7 @@ Haldor's wider pockets give a Viking a 5th row in their inventory, as they give 
 
 ### Deeper Pockets
 
-Haldor's deeper pockets give a Viking a 6th row, on top of wider pockets - a Viking only has deeper pockets along with wider ones, and both come from one roll, so the odds in each table hold on their own. From the Mistlands on, a village buys them from Haldor for a Viking with wider pockets but no deeper ones.
+Haldor's deeper pockets give a Viking a 6th row, on top of wider pockets - a Viking only has deeper pockets along with wider ones, and both come from one roll, so the odds in each table hold on their own. From the Mistlands on, a village buys them from Haldor for every Viking with wider pockets but no deeper ones that its coins and treasure pay for, all of them going on one trip while 2 stay home.
 
 | Biome | Starts with them |
 | --- | --- |
@@ -506,11 +506,11 @@ A village goes on a quest only from the quest's biome on, by the village's biome
 
 ### Buying From Haldor
 
-Each at most once every 7 game days, when the village's coins and treasure will pay for it - Haldor's own price, read from his list. The Viking who lacks it goes, a PC Viking before an NPC Viking, so an NPC Viking only has it bought for them once every PC Viking has it, and comes home wearing it or with the pockets sewn in. Unlike you, they don't need to have beaten Moder for wider pockets or the Queen for deeper ones.
+Each at most once every 7 game days, as many as the village's coins and treasure will pay for - Haldor's own price, read from his list. One trip buys circlets and belts for every Viking who lacks them, circlets first, and hands them out at home, PC Vikings first, so an NPC Viking only gets one once every PC Viking has one. Pockets are sewn in at Haldor's, so every Viking they're bought for goes along, as many as the village can spare. Unlike you, they don't need to have beaten Moder for wider pockets or the Queen for deeper ones.
 
 | Purchase | Biome from | Price | For a Viking with |
 | --- | --- | --- | --- |
 | Dverger circlet | Black Forest | 620 | Only torches |
-| Strength belt | Black Forest | 950 | No strength belt, while the chests hold no spare one |
+| Strength belt | Black Forest | 950 | No strength belt, for each one the chests hold no spare for |
 | Wider pockets | Mountains | 1000 | No pockets |
 | Deeper pockets | Mistlands | 2000 | Wider pockets only |

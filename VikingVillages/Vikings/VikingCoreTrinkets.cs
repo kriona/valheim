@@ -205,6 +205,32 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
+		/// Takes a new Dverger circlet or strength belt another of the village's vikings hands it - a circlet kept for when
+		/// it wants light (see UpdateTorch), and a belt put on when its utility slot is free
+		/// </summary>
+		/// <param name="prefab">The item's prefab name</param>
+		/// <returns>False when it has no room for it, or the game has no such item</returns>
+		public bool Receive(string prefab)
+		{
+			Inventory inventory = humanoid.GetInventory();
+			if (!loaded || !inventory.HaveEmptySlot())
+			{
+				return(false);
+			}
+			ItemDrop.ItemData item = inventory.AddItem(prefab, 1, 1, 0, 0L, "", false);
+			if (item == null)
+			{
+				return(false);
+			}
+			if (prefab == VikingUpgrades.BeltPrefab && humanoid.m_utilityItem == null)
+			{
+				humanoid.EquipItem(item, false);
+			}
+			SaveInventory();
+			return(true);
+		}
+
+		/// <summary>
 		/// Gives the viking's inventory a number of rows, saving them with its data, where every client and a zombie
 		/// viking risen from it read them
 		/// </summary>

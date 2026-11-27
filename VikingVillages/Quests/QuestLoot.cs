@@ -541,7 +541,7 @@ namespace VikingVillages
 		{
 			if (ResourceBook.IsTrade(record.Kind))
 			{
-				PlanSpending(village, record);
+				PlanSpending(village, record, members);
 				return(0);
 			}
 			System.Random rng = new System.Random(record.Id.GetHashCode());
@@ -784,12 +784,14 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Has the first of a quest trading with Haldor take along what it spends - every piece of treasure in the
-		/// village's chests to sell, and to buy something, the coins too
+		/// Has a quest trading with Haldor take along what it spends - the first of them every piece of treasure in the
+		/// village's chests to sell, and to buy circlets and belts, the coins too, or on a trip for pockets, each of them
+		/// who lacks them a share of the coins and treasure that pays for theirs (see HaldorTrade.SplitPurse)
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="record">The quest, its plans made</param>
-		private static void PlanSpending(Village village, QuestRecord record)
+		/// <param name="members">Its vikings, in the order of its plans</param>
+		private static void PlanSpending(Village village, QuestRecord record, List<Humanoid> members)
 		{
 			if (record.Plans.Count == 0)
 			{
@@ -809,7 +811,31 @@ namespace VikingVillages
 					}
 				}
 			}
-			record.Plans[0].Spend = new List<KeyValuePair<string, int>>(spend);
+			if (!ResourceBook.BuysPockets(record.Kind))
+			{
+				record.Plans[0].Spend = new List<KeyValuePair<string, int>>(spend);
+				return;
+			}
+			List<PurseStack> purse = new List<PurseStack>();
+			foreach (KeyValuePair<string, int> stack in spend)
+			{
+				ItemDrop.ItemData data = QuestGame.ItemData(stack.Key);
+				int value = ((stack.Key == ResourceBook.Coins) ? 1 : ((data != null) ? data.m_shared.m_value : 0));
+				purse.Add(new PurseStack { Item = stack.Key, Count = stack.Value, Value = value });
+			}
+			List<int> buyers = new List<int>();
+			for (int i = 0; i < members.Count && i < record.Plans.Count; i++)
+			{
+				if (VillageQuests.Lacks(record.Kind, members[i]))
+				{
+					buyers.Add(i);
+				}
+			}
+			List<List<KeyValuePair<string, int>>> shares = HaldorTrade.SplitPurse(purse, buyers.Count, QuestGame.PriceOf(record.Kind));
+			for (int i = 0; i < buyers.Count; i++)
+			{
+				record.Plans[buyers[i]].Spend = shares[i];
+			}
 		}
 
 		/// <summary>

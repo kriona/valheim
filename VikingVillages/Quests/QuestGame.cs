@@ -240,7 +240,7 @@ namespace VikingVillages
 				if (ResourceBook.IsTrade(record.Kind) && record.Plans[i].Spend.Count > 0)
 				{
 					// What a trade brings home is worked out again as the viking leaves, from what it really took along
-					record.Plans[i].Loot = PlannedTrade(record.Kind, record.Plans[i].Spend);
+					record.Plans[i].Loot = PlannedTrade(record, record.Plans[i].Spend);
 				}
 			}
 			FightResult fight = QuestFightGame.Fight(record.Kind, members);
@@ -795,7 +795,7 @@ namespace VikingVillages
 			}
 			if (ResourceBook.IsTrade(record.Kind))
 			{
-				Trade(record.Kind, carried, outcome);
+				Trade(record, carried, outcome);
 			}
 			else
 			{
@@ -854,13 +854,48 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out what a viking trading with Haldor brings home for the coins and treasure it took along (see
-		/// QuestLoot.Trade), spending all it took when it trades
+		/// Works out what a viking trading with Haldor brings home for what it took along - coins for the treasure sold
+		/// (see QuestLoot.Trade), or as much of what the trip buys as that pays for (see TradeFor)
 		/// </summary>
-		/// <param name="kind">The quest - selling treasure or buying something</param>
+		/// <param name="record">The quest - selling treasure or buying something</param>
+		/// <param name="coins">The coins it took along</param>
+		/// <param name="value">What the treasure it took along sells for</param>
+		/// <param name="spends">Set to whether it spends what it took along</param>
+		/// <returns>What it brings home, each item and how many</returns>
+		private static List<KeyValuePair<string, int>> TradeFor(QuestRecord record, int coins, int value, out bool spends)
+		{
+			if (!ResourceBook.IsPurchase(record.Kind))
+			{
+				return(QuestLoot.Trade(record.Kind, coins, value, PriceOf(record.Kind), out spends));
+			}
+			return(HaldorTrade.Buy(Wants(record), coins + value, out spends));
+		}
+
+		/// <summary>
+		/// Lists what a viking on a trip to Haldor buys with the coins and treasure it took along - on a trip for pockets,
+		/// the pockets for itself, and on one for circlets and belts, everything the trip buys, in order (see
+		/// QuestRecord.Buys)
+		/// </summary>
+		/// <param name="record">The quest</param>
+		/// <returns>What it buys, first first, each with its price</returns>
+		private static List<Purchase> Wants(QuestRecord record)
+		{
+			if (ResourceBook.BuysPockets(record.Kind))
+			{
+				return(new List<Purchase> { new Purchase { Item = ResourceBook.Bought(record.Kind), Count = 1, Price = PriceOf(record.Kind) } });
+			}
+			List<KeyValuePair<string, int>> buys = ((record.Buys.Count > 0) ? record.Buys : new List<KeyValuePair<string, int>> { new KeyValuePair<string, int>(ResourceBook.Bought(record.Kind), 1) });
+			return(buys.ConvertAll((KeyValuePair<string, int> buy) => new Purchase { Item = buy.Key, Count = buy.Value, Price = PriceOf(ResourceBook.PurchaseOf(buy.Key)) }));
+		}
+
+		/// <summary>
+		/// Works out what a viking trading with Haldor brings home for the coins and treasure it took along (see
+		/// TradeFor), spending all it took when it trades
+		/// </summary>
+		/// <param name="record">The quest - selling treasure or buying something</param>
 		/// <param name="carried">What it took along</param>
 		/// <param name="outcome">How the quest goes for it, its loot and what it used filled in</param>
-		private static void Trade(QuestKind kind, List<ItemDrop.ItemData> carried, QuestOutcome outcome)
+		private static void Trade(QuestRecord record, List<ItemDrop.ItemData> carried, QuestOutcome outcome)
 		{
 			int coins = 0;
 			int value = 0;
@@ -879,7 +914,7 @@ namespace VikingVillages
 					purse.Add(item);
 				}
 			}
-			outcome.Loot = QuestLoot.Trade(kind, coins, value, PriceOf(kind), out bool spends);
+			outcome.Loot = TradeFor(record, coins, value, out bool spends);
 			if (!spends)
 			{
 				return;
@@ -892,12 +927,12 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out what a viking trading with Haldor is planned to bring home for what it's to take along from the
-		/// village's chests (see QuestLoot.Trade), the way Trade works it out as it leaves
+		/// village's chests (see TradeFor), the way Trade works it out as it leaves
 		/// </summary>
-		/// <param name="kind">The quest - selling treasure or buying something</param>
+		/// <param name="record">The quest - selling treasure or buying something</param>
 		/// <param name="spend">What it's to take along, each item's prefab name and how many</param>
 		/// <returns>What it brings home, each item and how many</returns>
-		private static List<KeyValuePair<string, int>> PlannedTrade(QuestKind kind, List<KeyValuePair<string, int>> spend)
+		private static List<KeyValuePair<string, int>> PlannedTrade(QuestRecord record, List<KeyValuePair<string, int>> spend)
 		{
 			int coins = 0;
 			int value = 0;
@@ -913,7 +948,7 @@ namespace VikingVillages
 					value += ((data != null) ? entry.Value * data.m_shared.m_value : 0);
 				}
 			}
-			return(QuestLoot.Trade(kind, coins, value, PriceOf(kind), out bool _));
+			return(TradeFor(record, coins, value, out bool _));
 		}
 
 		/// <summary>
@@ -921,7 +956,7 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="kind">The quest</param>
 		/// <returns>The price in coins, or int.MaxValue when it isn't known</returns>
-		private static int PriceOf(QuestKind kind)
+		internal static int PriceOf(QuestKind kind)
 		{
 			ResourceBook book = ResourceBookGame.Get();
 			QuestRule rule = ((book != null && ResourceBook.IsPurchase(kind)) ? book.RuleOf(kind) : null);

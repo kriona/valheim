@@ -230,6 +230,34 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Gets the quest that buys something from Haldor (see Bought)
+		/// </summary>
+		/// <param name="bought">The item's prefab name, or the key of the pockets</param>
+		/// <returns>The quest, or None for something no quest buys</returns>
+		public static QuestKind PurchaseOf(string bought)
+		{
+			foreach (QuestKind kind in Purchases)
+			{
+				if (Bought(kind) == bought)
+				{
+					return(kind);
+				}
+			}
+			return(QuestKind.None);
+		}
+
+		/// <summary>
+		/// Checks whether a quest buys pockets, which are sewn into the buyer's clothes, so each viking who needs them
+		/// goes along itself
+		/// </summary>
+		/// <param name="kind">The quest</param>
+		/// <returns>True when it does</returns>
+		public static bool BuysPockets(QuestKind kind)
+		{
+			return(kind == QuestKind.BuyWiderPockets || kind == QuestKind.BuyDeeperPockets);
+		}
+
+		/// <summary>
 		/// Checks whether a quest buys something from Haldor
 		/// </summary>
 		/// <param name="kind">The quest</param>

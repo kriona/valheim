@@ -143,6 +143,12 @@ namespace VikingVillages
 		public List<string> Tools = new List<string>();
 
 		/// <summary>
+		/// For a trip to Haldor, what it buys - each item's prefab name, or the key of the pockets (see
+		/// ResourceBook.WiderPockets), and how many, the first first
+		/// </summary>
+		public List<KeyValuePair<string, int>> Buys = new List<KeyValuePair<string, int>>();
+
+		/// <summary>
 		/// What each viking does on the quest, by the same index as Members, once it has set out
 		/// </summary>
 		public List<MemberPlan> Plans = new List<MemberPlan>();
@@ -189,7 +195,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The version of how a record is written, which a reader skips a record written another way by
 		/// </summary>
-		private const int FormatVersion = 5;
+		private const int FormatVersion = 6;
 
 		/// <summary>
 		/// Gets the tool a viking on the quest takes from a chest
@@ -300,6 +306,7 @@ namespace VikingVillages
 			pkg.Write(ActiveSeconds);
 			pkg.Write(QuestBiome);
 			pkg.Write(Wanted);
+			WriteItems(pkg, Buys);
 			pkg.Write(Plans.Count);
 			foreach (MemberPlan plan in Plans)
 			{
@@ -352,6 +359,7 @@ namespace VikingVillages
 				record.ActiveSeconds = pkg.ReadSingle();
 				record.QuestBiome = pkg.ReadInt();
 				record.Wanted = pkg.ReadInt();
+				record.Buys = ReadItems(pkg);
 				int plans = pkg.ReadInt();
 				for (int i = 0; i < plans; i++)
 				{

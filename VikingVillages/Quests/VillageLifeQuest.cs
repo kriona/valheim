@@ -717,6 +717,7 @@ namespace VikingVillages
 			if (outcome != null)
 			{
 				PlayOut(outcome);
+				HandOutBought();
 				zdo.Set(VillageQuests.StoryKey, outcome.Encode());
 				zdo.Set(VillageQuests.BackAtKey, NetTime.Now());
 				zdo.Set(VillageQuests.QuestOutcomeKey, new byte[0]);
@@ -785,8 +786,9 @@ namespace VikingVillages
 				// A circlet bought for one still using torches is theirs to wear, in place of a torch, and a strength belt
 				// bought for one without is theirs to put on (see VillageLife.UpdatePutOn), or to carry in the Mistlands,
 				// where its wisp light takes the belt's slot
+				// An NPC viking who carried the purse hands what it bought out to the PC vikings first (see HandOutBought)
 				int count = found.Value;
-				bool own = (found.Key == ResourceBook.Circlet || found.Key == ResourceBook.Belt);
+				bool own = ((found.Key == ResourceBook.Circlet || found.Key == ResourceBook.Belt) && !Peaceful());
 				if (own && OwnTool(found.Key) == null && inventory.AddItem(found.Key, 1, 1, 0, 0L, "", false) != null)
 				{
 					count--;
@@ -805,6 +807,65 @@ namespace VikingVillages
 				RaiseSkill((Skills.SkillType)skill.Key, skill.Value);
 			}
 			Plugin.Log.LogInfo(TestLog.Name(nview.GetZDO()) + " came home from " + outcome.Kind + " at " + (outcome.HealthShare * 100f).ToString("F0") + "% health with " + outcome.Loot.Count + " kinds of loot, having used " + outcome.Used.Count + " kinds of supplies");
+		}
+
+		/// <summary>
+		/// Hands out the Dverger circlets and strength belts the viking bought from Haldor and brought home - one each to
+		/// the village's vikings this client runs who lack them, PC vikings first (see VillageQuests.Lacks), the viking
+		/// itself among them when it lacks one too. What's left over it puts away in a chest, where a viking who lacks it
+		/// takes it up
+		/// </summary>
+		private void HandOutBought()
+		{
+			if (village == null)
+			{
+				return;
+			}
+			Inventory inventory = humanoid.GetInventory();
+			foreach (QuestKind kind in new[] { QuestKind.BuyCirclet, QuestKind.BuyBelt })
+			{
+				string prefab = ResourceBook.Bought(kind);
+				List<Character> needing = village.Vikings().FindAll((Character other) => other is Humanoid fellow && other.m_nview != null && other.m_nview.IsOwner() && VillageQuests.Lacks(kind, fellow));
+				if (!needing.Contains(humanoid) && VillageQuests.Lacks(kind, humanoid))
+				{
+					needing.Add(humanoid);
+				}
+				needing.Sort((Character a, Character b) => VikingCore.IsNPCViking(a).CompareTo(VikingCore.IsNPCViking(b)));
+				foreach (ItemDrop.ItemData item in inventory.GetAllItems().FindAll((ItemDrop.ItemData carried) => IsCarriedFor(carried, CarryLoot) && carried.m_dropPrefab != null && carried.m_dropPrefab.name == prefab))
+				{
+					while (item.m_stack > 0 && needing.Count > 0)
+					{
+						Character taker = needing[0];
+						needing.RemoveAt(0);
+						// What it keeps for itself stops being loot to put away, and is its own
+						if (taker == humanoid)
+						{
+							item.m_customData.Remove(VikingItems.CarryKey);
+							if (prefab == VikingUpgrades.BeltPrefab && humanoid.m_utilityItem == null)
+							{
+								humanoid.EquipItem(item, false);
+							}
+							break;
+						}
+						if (!taker.TryGetComponent(out VikingCore core) || !core.Receive(prefab))
+						{
+							continue;
+						}
+						TestLog.Count("Quests", "bought item handed out");
+						Plugin.Log.LogInfo("Quest: " + TestLog.Name(humanoid) + " handed " + prefab + " from Haldor to " + TestLog.Name(taker));
+						if (item.m_stack > 1)
+						{
+							item.m_stack--;
+						}
+						else
+						{
+							inventory.RemoveItem(item);
+							break;
+						}
+					}
+				}
+			}
+			inventory.Changed();
 		}
 
 		/// <summary>

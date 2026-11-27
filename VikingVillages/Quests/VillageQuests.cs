@@ -421,6 +421,11 @@ namespace VikingVillages
 			public string Item = "";
 			public int Amount;
 			public ResourceSource Source;
+
+			/// <summary>
+			/// For a trip to Haldor, what it buys, the first first (see QuestRecord.Buys)
+			/// </summary>
+			public List<KeyValuePair<string, int>> Buys = new List<KeyValuePair<string, int>>();
 		}
 
 		/// <summary>
@@ -455,7 +460,7 @@ namespace VikingVillages
 			{
 				return;
 			}
-			QuestRecord record = Plan(village, choice.Kind, choice.Item, choice.Amount, choice.Source);
+			QuestRecord record = Plan(village, choice.Kind, choice.Item, choice.Amount, choice.Source, choice.Buys);
 			if (record == null)
 			{
 				return;
@@ -464,9 +469,14 @@ namespace VikingVillages
 			{
 				village.Zdo.Set(LastHuntKey, choice.Kind == QuestKind.Hunt);
 			}
-			if (ResourceBook.IsPurchase(choice.Kind))
+			// Each thing the trip buys waits BuyDays before it's bought again
+			foreach (KeyValuePair<string, int> bought in record.Buys)
 			{
-				village.Zdo.Set(LastBoughtKey(choice.Kind), now);
+				QuestKind purchase = ResourceBook.PurchaseOf(bought.Key);
+				if (purchase != QuestKind.None)
+				{
+					village.Zdo.Set(LastBoughtKey(purchase), now);
+				}
 			}
 			Plugin.Log.LogInfo("Quest: the village at " + village.Farm.ToString("F0") + " picked " + record.Kind + (!string.IsNullOrEmpty(record.Item) ? " for " + record.Item : "") + " with " + string.Join(", ", record.Names) + (CanSetOutNow(village, record) ? "" : ", waiting for the morning"));
 			if (CanSetOutNow(village, record))
@@ -548,12 +558,17 @@ namespace VikingVillages
 					return(sell);
 				}
 			}
-			foreach (QuestKind kind in ResourceBook.Purchases)
+			Choice gear = GearChoice(village, book, holdings);
+			if (gear != null)
 			{
-				Choice purchase = PurchaseChoice(village, book, holdings, kind);
-				if (purchase != null)
+				return(gear);
+			}
+			foreach (QuestKind kind in new[] { QuestKind.BuyWiderPockets, QuestKind.BuyDeeperPockets })
+			{
+				Choice pockets = PocketsChoice(village, book, holdings, kind);
+				if (pockets != null)
 				{
-					return(purchase);
+					return(pockets);
 				}
 			}
 			return(null);
@@ -570,32 +585,112 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds a quest to buy something from Haldor (see ResourceBook.Bought), for a village of the quest's biome or
-		/// harder that hasn't bought it in the last BuyDays days, with a viking that lacks it (see Lacks), and the coins
-		/// and treasure to pay for it - a strength belt only while the village's chests hold no spare one
+		/// Counts how many of something from Haldor a village wants (see ResourceBook.Bought) - one for each of its vikings
+		/// that lacks it (see Lacks), less the spare strength belts its chests hold, when the village's biome is the
+		/// quest's or harder, it has the coins and treasure to pay for one, and it hasn't bought it in the last BuyDays
+		/// days
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="book">Every way to get each item</param>
 		/// <param name="holdings">What the village has</param>
-		/// <param name="kind">The quest</param>
-		/// <returns>The quest, or null when it shouldn't buy it</returns>
-		private static Choice PurchaseChoice(Village village, ResourceBook book, VillageHoldings holdings, QuestKind kind)
+		/// <param name="kind">The quest that buys it</param>
+		/// <returns>How many it wants, or 0 when it shouldn't buy any</returns>
+		private static int Wanting(Village village, ResourceBook book, VillageHoldings holdings, QuestKind kind)
 		{
 			long last = village.Zdo.GetLong(LastBoughtKey(kind), 0L);
 			if (last > 0L && NetTime.Now() < last + NetTime.Ticks(EnvMan.instance.m_dayLengthSec * BuyDays))
 			{
-				return(null);
-			}
-			if (kind == QuestKind.BuyBelt && holdings.Count(ResourceBook.Belt) > 0)
-			{
-				return(null);
-			}
-			if (!village.Vikings().Exists((Character viking) => viking is Humanoid humanoid && Lacks(kind, humanoid)))
-			{
-				return(null);
+				return(0);
 			}
 			string item = ResourceBook.BoughtItem(kind);
-			return(Possible(book, holdings, kind, (item ?? ""), ((item != null) ? 1 : 0)));
+			if (Possible(book, holdings, kind, (item ?? ""), 1) == null)
+			{
+				return(0);
+			}
+			int lacking = village.Vikings().FindAll((Character viking) => viking is Humanoid humanoid && Lacks(kind, humanoid)).Count;
+			if (kind == QuestKind.BuyBelt)
+			{
+				lacking -= holdings.Count(ResourceBook.Belt);
+			}
+			return(Mathf.Max(0, lacking));
+		}
+
+		/// <summary>
+		/// Gets what something a quest buys costs at Haldor's (see QuestRule.Coins)
+		/// </summary>
+		/// <param name="book">Every way to get each item</param>
+		/// <param name="kind">The quest that buys it</param>
+		/// <returns>The price in coins, or 0 when it isn't known</returns>
+		private static int PriceOf(ResourceBook book, QuestKind kind)
+		{
+			QuestRule rule = book.RuleOf(kind);
+			return((rule != null) ? rule.Coins : 0);
+		}
+
+		/// <summary>
+		/// Finds a trip to Haldor to buy the Dverger circlets and strength belts a village wants (see Wanting), all at
+		/// once - as many as its coins and treasure pay for, circlets first (see HaldorTrade.Shopping) - which the one
+		/// carrying the purse hands out to the vikings who lack them once it's home (see VillageLife.HandOutBought)
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="book">Every way to get each item</param>
+		/// <param name="holdings">What the village has</param>
+		/// <returns>The quest - buying a circlet when it buys any, else a strength belt - or null when it buys neither</returns>
+		private static Choice GearChoice(Village village, ResourceBook book, VillageHoldings holdings)
+		{
+			List<Purchase> wanted = new List<Purchase>();
+			foreach (QuestKind kind in new[] { QuestKind.BuyCirclet, QuestKind.BuyBelt })
+			{
+				int count = Wanting(village, book, holdings, kind);
+				if (count > 0)
+				{
+					wanted.Add(new Purchase { Item = ResourceBook.Bought(kind), Count = count, Price = PriceOf(book, kind) });
+				}
+			}
+			List<Purchase> bought = HaldorTrade.Shopping(wanted, holdings.Coins);
+			if (bought.Count == 0)
+			{
+				return(null);
+			}
+			QuestKind trip = ResourceBook.PurchaseOf(bought[0].Item);
+			int total = 0;
+			foreach (Purchase purchase in bought)
+			{
+				total += purchase.Count;
+			}
+			Choice choice = Possible(book, holdings, trip, bought[0].Item, total);
+			if (choice != null)
+			{
+				choice.Buys = bought.ConvertAll((Purchase purchase) => new KeyValuePair<string, int>(purchase.Item, purchase.Count));
+			}
+			return(choice);
+		}
+
+		/// <summary>
+		/// Finds a trip to Haldor for the wider or deeper pockets a village's vikings lack (see Wanting), as many as its
+		/// coins and treasure pay for - each viking who's to have them goes along, since they're sewn into its own clothes
+		/// there (see Plan)
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="book">Every way to get each item</param>
+		/// <param name="holdings">What the village has</param>
+		/// <param name="kind">The quest - wider or deeper pockets</param>
+		/// <returns>The quest, or null when it buys none</returns>
+		private static Choice PocketsChoice(Village village, ResourceBook book, VillageHoldings holdings, QuestKind kind)
+		{
+			int count = Wanting(village, book, holdings, kind);
+			int price = PriceOf(book, kind);
+			int paid = ((price > 0) ? Mathf.Min(count, holdings.Coins / price) : 0);
+			if (paid <= 0)
+			{
+				return(null);
+			}
+			Choice choice = Possible(book, holdings, kind, "", paid);
+			if (choice != null)
+			{
+				choice.Buys = new List<KeyValuePair<string, int>> { new KeyValuePair<string, int>(ResourceBook.Bought(kind), paid) };
+			}
+			return(choice);
 		}
 
 		/// <summary>
@@ -675,19 +770,22 @@ namespace VikingVillages
 		/// <summary>
 		/// Picks the vikings for a quest - those fit to go, leaving home any whose gear is so far behind the quest's biome
 		/// that it would be expected to lose all its health there (see QuestSim.ExpectedToDie), or on a quest that
-		/// kills creatures, in the fight (see QuestFightGame.ExpectedToDie), for something bought from Haldor the one
-		/// that lacks it first (see Lacks), since the first takes the coins and comes home with it, then the ones with a tool good enough for it, then on a quest that kills creatures
-		/// the ones of the hardest biome, then the healthiest - and the tool
-		/// each takes, as many as the village can spare (see QuestRules.GroupSize). A quest that takes a tool needs at
-		/// least one
+		/// kills creatures, in the fight (see QuestFightGame.ExpectedToDie), for something bought from Haldor the ones
+		/// that lack it first (see Lacks), then the ones with a tool good enough for it, then on a quest that kills
+		/// creatures the ones of the hardest biome, then the healthiest - and the tool each takes, as many as the village
+		/// can spare (see QuestRules.GroupSize), and on a trip for pockets, every viking it buys them for (see
+		/// QuestRules.PocketsGroup). Who goes of NPC and PC vikings is picked by NPCQuests.Pick. A quest that takes a tool
+		/// needs at least one
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="kind">The quest</param>
 		/// <param name="item">What it's for</param>
 		/// <param name="amount">How many of it the village wants</param>
 		/// <param name="source">The way the quest gets it, with the tool it takes</param>
+		/// <param name="buys">For a trip to Haldor for circlets and belts, what it buys (see GearChoice), or null for one
+		/// of what the quest buys</param>
 		/// <returns>The quest, not noted yet, or null when the village can't spare the vikings</returns>
-		internal static QuestRecord Plan(Village village, QuestKind kind, string item, int amount, ResourceSource source)
+		internal static QuestRecord Plan(Village village, QuestKind kind, string item, int amount, ResourceSource source, List<KeyValuePair<string, int>> buys = null)
 		{
 			ResourceBook book = ResourceBookGame.Get();
 			QuestRule rule = ((book != null) ? book.RuleOf(kind) : null);
@@ -761,6 +859,16 @@ namespace VikingVillages
 			{
 				return(null);
 			}
+			// Pockets are sewn into the buyer's own clothes, so every viking the trip buys them for goes along, as many as
+			// the village can spare
+			bool pockets = ResourceBook.BuysPockets(kind);
+			if (pockets)
+			{
+				List<Humanoid> lacking = fit.FindAll((Humanoid viking) => Lacks(kind, viking));
+				int buyers = Mathf.Min(Mathf.Max(1, amount), lacking.Count);
+				bool pcBuys = lacking.Exists((Humanoid viking) => !VikingCore.IsNPCViking(viking));
+				size = QuestRules.PocketsGroup(size, buyers, pcBuys, fit.Count, vikings.Count);
+			}
 			QuestRecord record = new QuestRecord();
 			record.Id = System.Guid.NewGuid().ToString("N");
 			record.Kind = kind;
@@ -772,6 +880,17 @@ namespace VikingVillages
 			if (going.Count == 0)
 			{
 				return(null);
+			}
+			if (pockets)
+			{
+				// It buys pockets for each of those going who lacks them
+				int buying = going.FindAll((Humanoid viking) => Lacks(kind, viking)).Count;
+				record.Amount = buying;
+				record.Buys = new List<KeyValuePair<string, int>> { new KeyValuePair<string, int>(ResourceBook.Bought(kind), buying) };
+			}
+			else if (ResourceBook.IsPurchase(kind))
+			{
+				record.Buys = (((buys != null) && (buys.Count > 0)) ? new List<KeyValuePair<string, int>>(buys) : new List<KeyValuePair<string, int>> { new KeyValuePair<string, int>(ResourceBook.Bought(kind), 1) });
 			}
 			foreach (Humanoid member in going)
 			{

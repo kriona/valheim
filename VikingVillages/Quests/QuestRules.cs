@@ -284,5 +284,27 @@ namespace VikingVillages
 			size = System.Math.Min(size, System.Math.Min(available, village - MinHome));
 			return((size >= wanted) ? size : 0);
 		}
+
+		/// <summary>
+		/// Works out how many vikings go on a trip to Haldor for pockets - every viking it buys them for, and a PC viking
+		/// beside them when none of them is one (see NPCQuests.Pick), or the quest's own number when that's more, as long
+		/// as MinHome stay home
+		/// </summary>
+		/// <param name="ruleSize">How many go by the quest's own rule (see GroupSize), or 0 when the village can't spare
+		/// them</param>
+		/// <param name="buyers">How many vikings it buys pockets for</param>
+		/// <param name="pcBuys">Whether a PC viking is among those it could buy them for</param>
+		/// <param name="available">How many of the village's vikings are fit to go</param>
+		/// <param name="village">How many vikings the village has, all told</param>
+		/// <returns>How many go, or 0 when the village can't spare enough</returns>
+		public static int PocketsGroup(int ruleSize, int buyers, bool pcBuys, int available, int village)
+		{
+			if (ruleSize <= 0)
+			{
+				return(0);
+			}
+			int wanted = System.Math.Max(ruleSize, buyers + (pcBuys ? 0 : 1));
+			return(System.Math.Max(ruleSize, System.Math.Min(wanted, System.Math.Min(available, village - MinHome))));
+		}
 	}
 }

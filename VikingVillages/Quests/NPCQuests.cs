@@ -40,10 +40,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks the vikings who go on a quest, from those fit to go in the order they'd go (see VillageQuests.Plan) - on a
-		/// trip to Haldor to buy something, the one who lacks it first, a PC viking before an NPC viking, and on any trip
-		/// to a trader one PC viking, with NPC vikings in every other place while there are any - and a trip to a trader
-		/// never goes without a PC viking; NPC vikings first on a forage or bee quest; and the order as it is on any other
+		/// Picks the vikings who go on a quest, from those fit to go in the order they'd go (see VillageQuests.Plan):
+		/// - On a trip to Haldor for pockets, every viking who lacks them, PC vikings first, up to how many go, since
+		///   they're sewn into the buyer's own clothes
+		/// - On one for circlets and belts, an NPC viking first when one can go, who carries the purse and hands out what
+		///   it buys once it's home
+		/// - On any trip to a trader one PC viking - in place of the last of those who lack pockets when none of them is
+		///   one and there's no room left - with NPC vikings in every other place while there are any, and never without a
+		///   PC viking
+		/// - NPC vikings first on a forage or bee quest, and the order as it is on any other
 		/// </summary>
 		/// <typeparam name="T">The vikings</typeparam>
 		/// <param name="kind">The quest</param>
@@ -51,8 +56,8 @@ namespace VikingVillages
 		/// <param name="npc">Whether a viking is an NPC viking</param>
 		/// <param name="lacks">Whether a viking lacks what the quest buys</param>
 		/// <param name="size">How many go</param>
-		/// <returns>Those who go, the first of them the one the quest is for when it buys something, or none for a trip
-		/// to a trader when no PC viking is fit to go</returns>
+		/// <returns>Those who go, the first of them the one who carries the purse on a trip to a trader, or none for a
+		/// trip to a trader when no PC viking is fit to go</returns>
 		internal static List<T> Pick<T>(QuestKind kind, List<T> fit, System.Predicate<T> npc, System.Predicate<T> lacks, int size) where T : class
 		{
 			List<T> left = new List<T>(fit);
@@ -63,16 +68,31 @@ namespace VikingVillages
 			}
 			if (TradesWith(kind))
 			{
-				if (Buys(kind))
+				if (ResourceBook.BuysPockets(kind))
 				{
-					T buyer = (left.Find((T viking) => lacks(viking) && !npc(viking)) ?? left.Find((T viking) => lacks(viking)));
-					if (buyer != null)
+					List<T> buyers = left.FindAll((T other) => lacks(other) && !npc(other));
+					buyers.AddRange(left.FindAll((T other) => lacks(other) && npc(other)));
+					foreach (T viking in buyers)
 					{
-						Take(buyer, left, going);
+						if (going.Count < size)
+						{
+							Take(viking, left, going);
+						}
 					}
 				}
-				if (going.Count < size && !going.Exists((T viking) => !npc(viking)))
+				else if (Buys(kind))
 				{
+					T carrier = (left.Find(npc) ?? left[0]);
+					Take(carrier, left, going);
+				}
+				if (!going.Exists((T viking) => !npc(viking)))
+				{
+					if (going.Count >= size && going.Count > 0)
+					{
+						T last = going[going.Count - 1];
+						going.RemoveAt(going.Count - 1);
+						left.Add(last);
+					}
 					T pc = left.Find((T viking) => !npc(viking));
 					if (pc != null)
 					{
