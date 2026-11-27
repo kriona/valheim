@@ -439,9 +439,11 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Furnishes a village's houses, giving each crafting station it doesn't have to a house of its core - each a
-		/// different house while there are enough - and the beds only in its core, where the vikings live, not its
-		/// outposts. A station its house has no room for is left to AddStations, which tries the rest of the core next
+		/// Furnishes a village's houses in three passes - first a bed in each house of its core that has none, then each
+		/// crafting station it doesn't have in a house of its core with room for it, each a different house while there
+		/// are enough (see PlaceAnywhere), then the rest of each house (see FurnishRest) - with the beds only in its core,
+		/// where the vikings live, not its outposts. A station no house has room for is left to AddStations, which
+		/// writes why to the log and tries elsewhere
 		/// </summary>
 		/// <param name="village">The village</param>
 		private static void Furnish(Village village)
@@ -450,18 +452,9 @@ namespace VikingVillages
 			Prepare();
 			List<string> missing = MissingStations(village);
 			List<int> core = ShuffledCore(village);
-			Dictionary<int, List<string>> assigned = new Dictionary<int, List<string>>();
-			for (int s = 0; s < missing.Count && core.Count > 0; s++)
-			{
-				int house = core[s % core.Count];
-				if (!assigned.TryGetValue(house, out List<string> stations))
-				{
-					stations = new List<string>();
-					assigned[house] = stations;
-				}
-				stations.Add(missing[s]);
-			}
 			List<Layout> layouts = new List<Layout>();
+			int[] heads = new int[houses.Count];
+			int[] beds = new int[houses.Count];
 			for (int i = 0; i < houses.Count; i++)
 			{
 				// A house built from a blueprint is left as it was designed, furniture and all
@@ -477,9 +470,17 @@ namespace VikingVillages
 					Plugin.Log.LogWarning("Couldn't lay out the house at " + houses[i].Center.ToString("F0") + " to furnish it");
 					continue;
 				}
-				int heads = (core.Contains(i) ? VillageRespawn.PlannedHeads(houses[i].Center) : 0);
-				List<string> stations = (assigned.TryGetValue(i, out List<string> given) ? given : new List<string>());
-				Furnish(layout, heads, stations);
+				heads[i] = (core.Contains(i) ? VillageRespawn.PlannedHeads(houses[i].Center) : 0);
+				beds[i] = FurnishFirstBed(layout, heads[i]);
+			}
+			// The stations go in before the chests and the other beds take up the walls of every house
+			PlaceAnywhere(core, layouts, missing, false);
+			for (int i = 0; i < houses.Count; i++)
+			{
+				if (layouts[i] != null)
+				{
+					FurnishRest(layouts[i], heads[i], beds[i]);
+				}
 			}
 			foreach (Layout layout in layouts)
 			{
@@ -511,7 +512,7 @@ namespace VikingVillages
 			{
 				layouts.Add(core.Contains(i) ? Layout.Measure(village.Houses[i]) : null);
 			}
-			PlaceAnywhere(core, layouts, missing);
+			PlaceAnywhere(core, layouts, missing, true);
 			if (missing.Count > 0)
 			{
 				List<int> designed = new List<int>();
@@ -526,7 +527,7 @@ namespace VikingVillages
 				}
 				if (designed.Count > 0)
 				{
-					PlaceAnywhere(HiddenFirst(village, designed), layouts, missing);
+					PlaceAnywhere(HiddenFirst(village, designed), layouts, missing, true);
 				}
 			}
 			List<PieceRecord> built = new List<PieceRecord>();
@@ -1355,13 +1356,15 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Places each of some crafting stations against a wall in the first house of a village's core with room for it,
-		/// spreading them across different houses while there are enough - writing to the log why each house tried had
-		/// no room for a station none had room for, and in a test run or debug mode, each such house's floor
+		/// spreading them across different houses while there are enough - writing to the log, when asked to, why each
+		/// house tried had no room for a station none had room for, and in a test run or debug mode, each such house's
+		/// floor
 		/// </summary>
 		/// <param name="core">The indexes of the village's core houses</param>
 		/// <param name="layouts">Each house's layout, or null</param>
 		/// <param name="missing">The stations' prefabs, with each placed one taken out</param>
-		private static void PlaceAnywhere(List<int> core, List<Layout> layouts, List<string> missing)
+		/// <param name="log">True to write why a station found no room to the log</param>
+		private static void PlaceAnywhere(List<int> core, List<Layout> layouts, List<string> missing, bool log)
 		{
 			HashSet<int> used = new HashSet<int>();
 			foreach (string station in new List<string>(missing))
@@ -1390,6 +1393,10 @@ namespace VikingVillages
 					misses.Add(layouts[i].DescribeMisses());
 					missed.Add(layouts[i]);
 				}
+				if (!log)
+				{
+					continue;
+				}
 				if (core.Count == 0)
 				{
 					misses.Add("the village, which has no core houses");
@@ -1407,24 +1414,32 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Lays out a house's pieces, most needed first - a bed for its first viking, a chest, the crafting stations it
-		/// gets, a bed for its second viking, a table with stools, and another chest - each as fits
+		/// Lays out a bed for a house's first viking when no bed the vikings can get to already stands in it, as fits
 		/// </summary>
 		/// <param name="layout">The house's layout</param>
 		/// <param name="heads">How many vikings call the house home</param>
-		/// <param name="stations">The crafting stations the house gets</param>
-		private static void Furnish(Layout layout, int heads, List<string> stations)
+		/// <returns>How many of its vikings have a bed in it, up to its heads</returns>
+		private static int FurnishFirstBed(Layout layout, int heads)
 		{
-			int beds = 0;
-			if (heads > 0 && layout.PlaceAgainstWall(BedPrefab))
+			int beds = Mathf.Min(heads, layout.StandingBeds);
+			if (beds == 0 && heads > 0 && layout.PlaceAgainstWall(BedPrefab))
 			{
 				beds++;
 			}
+			return(beds);
+		}
+
+		/// <summary>
+		/// Lays out the rest of a house's pieces once its first bed and the village's crafting stations are in, most
+		/// needed first - a chest, a bed for each of its vikings still without one, a table with stools, and another
+		/// chest - each as fits
+		/// </summary>
+		/// <param name="layout">The house's layout</param>
+		/// <param name="heads">How many vikings call the house home</param>
+		/// <param name="beds">How many of its vikings already have a bed in it (see FurnishFirstBed)</param>
+		private static void FurnishRest(Layout layout, int heads, int beds)
+		{
 			int chests = (layout.PlaceAgainstWall(ChestPrefab) ? 1 : 0);
-			foreach (string station in stations)
-			{
-				layout.PlaceAgainstWall(station);
-			}
 			for (int i = beds; i < heads; i++)
 			{
 				layout.PlaceAgainstWall(BedPrefab);
@@ -1621,6 +1636,17 @@ namespace VikingVillages
 			/// anything was laid out, so nothing laid out shuts it off
 			/// </summary>
 			private readonly List<List<Vector2Int>> standingBeds = new List<List<Vector2Int>>();
+
+			/// <summary>
+			/// How many beds already stand in the house that could be walked up to before anything was laid out
+			/// </summary>
+			public int StandingBeds
+			{
+				get
+				{
+					return(standingBeds.Count);
+				}
+			}
 
 			/// <summary>
 			/// The cells each chest already standing in the house takes, like the treasure chest it came with or one
