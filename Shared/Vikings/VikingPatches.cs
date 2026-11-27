@@ -377,99 +377,107 @@ namespace Kriona.Vikings
 	}
 
 	/// <summary>
-	/// Empties the game's list of the AIs being updated when one of them throws, which the game only empties once
-	/// every AI has run
+	/// Keeps the game's update going when one of the AIs it updates throws - logging the exception, emptying the
+	/// game's list of the AIs being updated, which the game only empties once every AI has run, and stopping the
+	/// exception there
 	/// </summary>
 	/// <remarks>
 	/// Left full, the next frame's AIs are added behind the ones already there, so the same AI throws first every
-	/// frame from then on - even a destroyed one - and none after it is updated again. Emptied, a throw costs only the
-	/// rest of that frame
+	/// frame from then on - even a destroyed one - and none after it is updated again. Thrown on, the exception also
+	/// leaves MonoUpdaters.FixedUpdate before it lowers its AI timer, so the AIs run, and throw, on every fixed step
+	/// from then on, and everything it updates after them - every creature's and player's movement, layer and fall
+	/// through the ground (Character), and the Aoe and EffectArea updates - never runs again. Stopped here, a throw
+	/// costs only the AIs after it in that update
 	/// </remarks>
 	[HarmonyPatch(typeof(MonoUpdatersExtra), nameof(MonoUpdatersExtra.UpdateAI))]
 	internal static class MonoUpdaterAIClearPatch
 	{
 		/// <summary>
-		/// Empties the list when an AI threw
+		/// Logs the exception an AI threw, empties the list and stops the exception
 		/// </summary>
 		/// <param name="__exception">An exception an AI threw, or null</param>
 		/// <param name="container">The list of AIs being updated</param>
-		/// <returns>The exception, so it's still thrown</returns>
+		/// <returns>Null, so the game's update goes on</returns>
 		private static Exception Finalizer(Exception __exception, List<IUpdateAI> container)
 		{
 			if (__exception != null)
 			{
+				UnityEngine.Debug.LogException(__exception);
 				container.Clear();
 			}
-			return(__exception);
+			return(null);
 		}
 	}
 
 	/// <summary>
-	/// Empties the game's list of the objects being given their fixed update when one of them throws, as
-	/// MonoUpdaterAIClearPatch does for the AIs
+	/// Keeps the game's update going when one of the objects it gives their fixed update throws, as
+	/// MonoUpdaterAIClearPatch does for the AIs, so the updates MonoUpdaters.FixedUpdate runs after it still run
 	/// </summary>
 	[HarmonyPatch(typeof(MonoUpdatersExtra), nameof(MonoUpdatersExtra.CustomFixedUpdate))]
 	internal static class MonoUpdaterFixedClearPatch
 	{
 		/// <summary>
-		/// Empties the list when an object threw
+		/// Logs the exception an object threw, empties the list and stops the exception
 		/// </summary>
 		/// <param name="__exception">An exception an object threw, or null</param>
 		/// <param name="container">The list of objects being updated</param>
-		/// <returns>The exception, so it's still thrown</returns>
+		/// <returns>Null, so the game's update goes on</returns>
 		private static Exception Finalizer(Exception __exception, List<IMonoUpdater> container)
 		{
 			if (__exception != null)
 			{
+				UnityEngine.Debug.LogException(__exception);
 				container.Clear();
 			}
-			return(__exception);
+			return(null);
 		}
 	}
 
 	/// <summary>
-	/// Empties the game's list of the objects being given their update when one of them throws, as
-	/// MonoUpdaterAIClearPatch does for the AIs
+	/// Keeps the game's update going when one of the objects it gives their update throws, as
+	/// MonoUpdaterAIClearPatch does for the AIs, so the updates MonoUpdaters.Update runs after it still run
 	/// </summary>
 	[HarmonyPatch(typeof(MonoUpdatersExtra), nameof(MonoUpdatersExtra.CustomUpdate))]
 	internal static class MonoUpdaterUpdateClearPatch
 	{
 		/// <summary>
-		/// Empties the list when an object threw
+		/// Logs the exception an object threw, empties the list and stops the exception
 		/// </summary>
 		/// <param name="__exception">An exception an object threw, or null</param>
 		/// <param name="container">The list of objects being updated</param>
-		/// <returns>The exception, so it's still thrown</returns>
+		/// <returns>Null, so the game's update goes on</returns>
 		private static Exception Finalizer(Exception __exception, List<IMonoUpdater> container)
 		{
 			if (__exception != null)
 			{
+				UnityEngine.Debug.LogException(__exception);
 				container.Clear();
 			}
-			return(__exception);
+			return(null);
 		}
 	}
 
 	/// <summary>
-	/// Empties the game's list of the objects being given their late update when one of them throws, as
-	/// MonoUpdaterAIClearPatch does for the AIs
+	/// Keeps the game's update going when one of the objects it gives their late update throws, as
+	/// MonoUpdaterAIClearPatch does for the AIs, so the updates MonoUpdaters.LateUpdate runs after it still run
 	/// </summary>
 	[HarmonyPatch(typeof(MonoUpdatersExtra), nameof(MonoUpdatersExtra.CustomLateUpdate))]
 	internal static class MonoUpdaterLateClearPatch
 	{
 		/// <summary>
-		/// Empties the list when an object threw
+		/// Logs the exception an object threw, empties the list and stops the exception
 		/// </summary>
 		/// <param name="__exception">An exception an object threw, or null</param>
 		/// <param name="container">The list of objects being updated</param>
-		/// <returns>The exception, so it's still thrown</returns>
+		/// <returns>Null, so the game's update goes on</returns>
 		private static Exception Finalizer(Exception __exception, List<IMonoUpdater> container)
 		{
 			if (__exception != null)
 			{
+				UnityEngine.Debug.LogException(__exception);
 				container.Clear();
 			}
-			return(__exception);
+			return(null);
 		}
 	}
 }
