@@ -1297,10 +1297,14 @@ namespace VikingVillages
 			Vector3 from = village.RallyPoint();
 			Vector3 lastTried = Vector3.zero;
 			List<Vector3> path = new List<Vector3>();
+			List<string> failed = new List<string>();
+			bool noSpot = false;
 			for (int i = 0; i < TrappedTries && Pathfinding.instance != null; i++)
 			{
 				if (!village.ArrivalSpot(out Vector3 spot))
 				{
+					noSpot = true;
+					TestLog.Count("Trapped villages, by why a way out failed", "no spot outside found");
 					break;
 				}
 				lastTried = spot;
@@ -1310,19 +1314,69 @@ namespace VikingVillages
 					exit.Spot = spot;
 					break;
 				}
+				failed.Add(spot.ToString("F0") + ", " + PathFailure(from, spot, path));
 			}
 			if (exit.Trapped)
 			{
 				// The farthest it can get toward a spot outside is as near the edge as it gets
 				Vector3 toward = ((lastTried != Vector3.zero) ? lastTried : village.Farm + Vector3.forward * (village.Radius + 10f));
-				if (Pathfinding.instance != null && Pathfinding.instance.GetPath(from, toward, path, Pathfinding.AgentType.Humanoid, false) && path.Count > 0)
+				string fallback = "no navmesh";
+				if (Pathfinding.instance != null)
 				{
-					exit.Spot = path[path.Count - 1];
+					fallback = "no path at all toward " + toward.ToString("F0");
+					if (Pathfinding.instance.GetPath(from, toward, path, Pathfinding.AgentType.Humanoid, false) && path.Count > 0)
+					{
+						exit.Spot = path[path.Count - 1];
+						fallback = "the farthest it gets toward " + toward.ToString("F0") + " is " + Utils.DistanceXZ(exit.Spot, toward).ToString("F1") + "m short of it";
+					}
 				}
-				Plugin.Log.LogInfo("Quest: the village at " + village.Farm.ToString("F0") + " is trapped, so its vikings leave from " + exit.Spot.ToString("F0"));
+				string why = ((failed.Count > 0) ? failed.Count + " of " + TrappedTries + " spots outside it tried from " + from.ToString("F0") + " had no whole path there - " + string.Join("; ", failed) : "no spot outside it tried from " + from.ToString("F0")) + (noSpot ? ", then no open spot outside it was found" : "");
+				Plugin.Log.LogInfo("Quest: the village at " + village.Farm.ToString("F0") + " is trapped, so its vikings leave from " + exit.Spot.ToString("F0") + " - " + why + ", and " + fallback);
 			}
 			exits[id] = exit;
 			return(exit);
+		}
+
+		/// <summary>
+		/// Works out why there's no whole path between two spots, for the log and counted - one of them not snapping to
+		/// the navmesh the way the game's path finding snaps them, only a partial path, ending how far short, or no path
+		/// at all
+		/// </summary>
+		/// <param name="from">Where the path starts</param>
+		/// <param name="to">Where it ends</param>
+		/// <param name="path">A list for the path's corners, cleared</param>
+		/// <returns>Why, like "only a partial path, ending 12.0m short of it"</returns>
+		private static string PathFailure(Vector3 from, Vector3 to, List<Vector3> path)
+		{
+			Pathfinding pathfinding = Pathfinding.instance;
+			Pathfinding.AgentSettings settings = pathfinding.GetSettings(Pathfinding.AgentType.Humanoid);
+			string why;
+			string kind;
+			Vector3 start = from;
+			Vector3 end = to;
+			if (!pathfinding.SnapToNavMesh(ref start, true, settings))
+			{
+				why = "the start off the navmesh";
+				kind = why;
+			}
+			else if (!pathfinding.SnapToNavMesh(ref end, true, settings))
+			{
+				why = "the spot off the navmesh";
+				kind = why;
+			}
+			else if (pathfinding.GetPath(from, to, path, Pathfinding.AgentType.Humanoid, false) && path.Count > 0)
+			{
+				why = "only a partial path, ending " + Utils.DistanceXZ(path[path.Count - 1], to).ToString("F1") + "m short of it";
+				kind = "only a partial path";
+			}
+			else
+			{
+				why = "no path at all";
+				kind = why;
+			}
+			path.Clear();
+			TestLog.Count("Trapped villages, by why a way out failed", kind);
+			return(why);
 		}
 
 		/// <summary>
