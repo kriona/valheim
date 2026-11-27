@@ -1301,7 +1301,7 @@ namespace CreatureMarker
 		/// <summary>
 		/// Whether a creature that leaves players alone until they provoke it has been provoked - the game's own
 		/// aggravation, which turns the Dvergr against players once one is hurt, and which other mods' friendly creatures,
-		/// like Viking Villages' living Vikings, can share
+		/// like Viking Villages' PC Vikings, can share
 		/// </summary>
 		/// <remarks>
 		/// The game keeps whether a creature is aggravated in its ZDO, so this holds on every player's game, not only on

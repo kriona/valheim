@@ -8,17 +8,17 @@ namespace Kriona.Vikings
 	/// <summary>
 	/// The core of every viking, living or zombie - who it is, how it looks, its gear and skills and how it fights. A
 	/// zombie viking is a player killed by a zombie, risen from their corpse with their looks, health, armor and things,
-	/// or one of the world's, with a random look and gear from VikingGear, and a living viking is one of the world's too
+	/// or one of the world's, with a random look and gear from VikingGear, and a PC viking is one of the world's too
 	/// </summary>
 	/// <remarks>
 	/// Each kind is its own prefab, built from the player's prefab with the player's parts swapped for a monster's and
-	/// the draugr's AI - the living viking by Viking Villages and the zombie viking by Zombie Apocalypse, each with its
+	/// the draugr's AI - the PC viking by Viking Villages and the zombie viking by Zombie Apocalypse, each with its
 	/// own copy of this class, finished by a part of its own that does what only its kind does. A zombie viking is in
-	/// the Undead faction. A living viking is in the dvergr's, so it fights zombies and monsters and leaves players alone
+	/// the Undead faction. A PC viking is in the dvergr's, so it fights zombies and monsters and leaves players alone
 	/// until one attacks it or another viking nearby, and with Zombie Apocalypse its corpse rises as a zombie viking with
 	/// its looks and gear, handed over in the corpse's ZDO, which drops its coins when it's killed in turn. Viking
-	/// Villages adds the dvergr viking too, a living viking the dvergr have hired, which keeps to their outposts and
-	/// patrols and fights the way a zombie viking does, and rises the same way a living viking does. A tombstone
+	/// Villages adds the dvergr viking too, a viking the dvergr have hired, which keeps to their outposts and
+	/// patrols and fights the way a zombie viking does, and rises the same way a PC viking does. A tombstone
 	/// viking carries everything the player had but food, silver and spirit weapons, and keeps it in its ZDO as it's
 	/// used up, so it never despawns or loses it. It drops it in a tombstone of the player's when it's killed. Equipment
 	/// the world let the player keep is copied to it marked as kept, so it fights with it but never drops it. A viking of
@@ -35,13 +35,13 @@ namespace Kriona.Vikings
 		public static readonly int ZombiePrefabHash = ZombiePrefabName.GetStableHashCode();
 
 		/// <summary>
-		/// The living viking's prefab
+		/// The PC viking's prefab
 		/// </summary>
-		public const string LivingPrefabName = "Viking";
-		public static readonly int LivingPrefabHash = LivingPrefabName.GetStableHashCode();
+		public const string PCPrefabName = "Viking";
+		public static readonly int PCPrefabHash = PCPrefabName.GetStableHashCode();
 
 		/// <summary>
-		/// The dvergr viking's prefab - a living viking hired by the dvergr, which Viking Villages adds beside its village
+		/// The dvergr viking's prefab - a viking hired by the dvergr, which Viking Villages adds beside its village
 		/// vikings and Zombie Apocalypse raises as a zombie viking, whose name saved worlds store, so it can't change
 		/// </summary>
 		public const string DvergrPrefabName = "DvergrViking";
@@ -69,7 +69,7 @@ namespace Kriona.Vikings
 		private const float DebugAnswerLife = 3f;
 
 		/// <summary>
-		/// On a viking and the corpse it rises from, its VikingData - written by Viking Villages for a living viking and
+		/// On a viking and the corpse it rises from, its VikingData - written by Viking Villages for a PC viking and
 		/// read by Zombie Apocalypse for the zombie it rises as, so it can't change
 		/// </summary>
 		public static readonly int DataKey = "kriona.Vikings.vikingData".GetStableHashCode();
@@ -90,8 +90,8 @@ namespace Kriona.Vikings
 		private const float GuardRange = 3f;
 
 		/// <summary>
-		/// On a living viking whose gear isn't rolled yet, that it's to be given a bow when its gear is rolled, so every
-		/// village has one who can shoot (see VikingGear.LivingArms) - taken off once its gear is rolled (see Load)
+		/// On a PC viking whose gear isn't rolled yet, that it's to be given a bow when its gear is rolled, so every
+		/// village has one who can shoot (see VikingGear.PCArms) - taken off once its gear is rolled (see Load)
 		/// </summary>
 		public static readonly int ArcherKey = "kriona.VikingVillages.vikingArcher".GetStableHashCode();
 
@@ -140,7 +140,7 @@ namespace Kriona.Vikings
 		private static Dictionary<Skills.SkillType, float> increaseSteps;
 
 		/// <summary>
-		/// How a living viking runs up a slope it would only walk elsewhere - the least the ground has to slope, in
+		/// How a PC viking runs up a slope it would only walk elsewhere - the least the ground has to slope, in
 		/// degrees, how straight up it has to be heading, as the share of its way that goes up the slope, and how long it
 		/// keeps running once it's no longer climbing, in seconds, so it doesn't slow down on a bump halfway up
 		/// </summary>
@@ -149,7 +149,7 @@ namespace Kriona.Vikings
 		private const float ClimbHold = 1f;
 
 		/// <summary>
-		/// How long a living viking runs or swims for each rise of its Run or Swim skill, in seconds, the same as a
+		/// How long a PC viking runs or swims for each rise of its Run or Swim skill, in seconds, the same as a
 		/// player, how much faster it runs and harder it jumps at full Run and Jump skill, the same as a player, and how
 		/// much faster it swims at full Swim skill - a player's Swim only eases their stamina, which a viking has none of
 		/// </summary>
@@ -159,7 +159,7 @@ namespace Kriona.Vikings
 		private const float SwimSkillBonus = 0.25f;
 
 		/// <summary>
-		/// How long after it's hurt a living viking still counts itself in danger, in seconds
+		/// How long after it's hurt a PC viking still counts itself in danger, in seconds
 		/// </summary>
 		private const float DangerHurtTime = 10f;
 
@@ -214,7 +214,7 @@ namespace Kriona.Vikings
 		private static GameObject prefabHolder;
 
 		/// <summary>
-		/// The viking prefab this mod adds - the living viking's in Viking Villages and the zombie viking's in Zombie
+		/// The viking prefab this mod adds - the PC viking's in Viking Villages and the zombie viking's in Zombie
 		/// Apocalypse
 		/// </summary>
 		private static GameObject prefab;
@@ -225,7 +225,7 @@ namespace Kriona.Vikings
 		private VikingData data;
 
 		/// <summary>
-		/// A living viking's life in its village, added with the viking's parts (see AddParts), or null for a zombie
+		/// A PC viking's life in its village, added with the viking's parts (see AddParts), or null for a zombie
 		/// viking
 		/// </summary>
 		private IVikingLife life = null;
@@ -243,7 +243,7 @@ namespace Kriona.Vikings
 		private float ownerAnsweredAt = float.NegativeInfinity;
 
 		/// <summary>
-		/// Whether a living viking has its weapon and shield sheathed on its back
+		/// Whether a PC viking has its weapon and shield sheathed on its back
 		/// </summary>
 		private bool sheathed;
 
@@ -271,12 +271,12 @@ namespace Kriona.Vikings
 		private float grudgeUntil;
 
 		/// <summary>
-		/// Until when a living viking keeps running up the slope it's climbing
+		/// Until when a PC viking keeps running up the slope it's climbing
 		/// </summary>
 		private float climbUntil;
 
 		/// <summary>
-		/// How long a living viking has been running and swimming since its Run and Swim skills last rose, and how fast
+		/// How long a PC viking has been running and swimming since its Run and Swim skills last rose, and how fast
 		/// it swims before its Swim skill, or a negative number before that's read
 		/// </summary>
 		private float runSkillTimer;
@@ -336,13 +336,13 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether a creature is a living viking
+		/// Checks whether a creature is a PC viking
 		/// </summary>
 		/// <param name="character">The creature</param>
 		/// <returns>True when it is</returns>
-		public static bool IsLivingViking(Character character)
+		public static bool IsPCViking(Character character)
 		{
-			return(IsPrefab(character, LivingPrefabHash));
+			return(IsPrefab(character, PCPrefabHash));
 		}
 
 		/// <summary>
@@ -356,14 +356,14 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether a creature is a viking that's alive - a living viking or a dvergr viking - which raises its
+		/// Checks whether a creature is a viking that's alive - a PC viking or a dvergr viking - which raises its
 		/// skills, keeps its gear repaired and rises as a zombie viking with its looks and gear
 		/// </summary>
 		/// <param name="character">The creature</param>
 		/// <returns>True when it is</returns>
-		public static bool IsLivingOrDvergr(Character character)
+		public static bool IsPCOrDvergr(Character character)
 		{
-			return(IsLivingViking(character) || IsDvergrViking(character));
+			return(IsPCViking(character) || IsDvergrViking(character));
 		}
 
 		/// <summary>
@@ -474,7 +474,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Adds what only the viking's kind has as it wakes, like a living viking's life in its village
+		/// Adds what only the viking's kind has as it wakes, like a PC viking's life in its village
 		/// </summary>
 		partial void AddParts();
 
@@ -551,7 +551,7 @@ namespace Kriona.Vikings
 		/// </remarks>
 		private void Load()
 		{
-			// Read again, since another client may have changed it while it owned the viking - like the rows a living
+			// Read again, since another client may have changed it while it owned the viking - like the rows a PC
 			// viking's inventory has, which its saved inventory needs to fit in
 			data = null;
 			if (GetData() == null)
@@ -608,8 +608,8 @@ namespace Kriona.Vikings
 					humanoid.EquipItem(item, false);
 				}
 			}
-			// A living viking's shield is saved on its back rather than in its hand while its weapon is sheathed
-			if (shield == null && IsLivingViking(humanoid))
+			// A PC viking's shield is saved on its back rather than in its hand while its weapon is sheathed
+			if (shield == null && IsPCViking(humanoid))
 			{
 				shield = BestShield();
 			}
@@ -618,7 +618,7 @@ namespace Kriona.Vikings
 			SetHome();
 			SetLooks(humanoid.m_visEquipment);
 			float health = BaseHealth();
-			LivingMaxHealth(ref health);
+			PCMaxHealth(ref health);
 			bool unhurt = humanoid.GetHealth() >= humanoid.GetMaxHealth();
 			if (health > 0f)
 			{
@@ -633,8 +633,8 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Gets the viking's health from its data - a viking of the world's is multiplied by its stars like any
-		/// creature's, and a tombstone viking's is the player's own. A living viking's biome and food set its health
-		/// instead (see LivingMaxHealth)
+		/// creature's, and a tombstone viking's is the player's own. A PC viking's biome and food set its health
+		/// instead (see PCMaxHealth)
 		/// </summary>
 		/// <returns>The health, or 0 before the viking's data is read</returns>
 		public float BaseHealth()
@@ -643,10 +643,10 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Sets a living viking's max health, which its biome and what it has eaten decide
+		/// Sets a PC viking's max health, which its biome and what it has eaten decide
 		/// </summary>
 		/// <param name="health">Its max health, set here</param>
-		partial void LivingMaxHealth(ref float health);
+		partial void PCMaxHealth(ref float health);
 
 		/// <summary>
 		/// Gives a body the player's model, skin and hair
@@ -691,7 +691,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Has a living or dvergr viking use a forsaken power now - its animation, then the power for it, the creatures
+		/// Has a PC or dvergr viking use a forsaken power now - its animation, then the power for it, the creatures
 		/// of its faction that aren't angry at players and the players it isn't hostile to around it (see UsePower)
 		/// </summary>
 		/// <param name="power">The power's status effect name hash</param>
@@ -702,7 +702,7 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Plays the forsaken power animation, then gives the power to the viking and the creatures of its faction around
-		/// it that aren't angry at players - for a living or dvergr viking, the dvergr and the other vikings like it - and,
+		/// it that aren't angry at players - for a PC or dvergr viking, the dvergr and the other vikings like it - and,
 		/// for one of those, the players around it it isn't hostile to, the way a player's reaches the players near them
 		/// </summary>
 		/// <param name="power">The power's status effect name hash</param>

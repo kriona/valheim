@@ -2,7 +2,7 @@ namespace Kriona.Vikings
 {
 	/// <summary>
 	/// What Zombie Apocalypse marks on a zombie, and on a corpse that's going to rise, in their ZDOs - read by both mods,
-	/// so a living viking can tell a zombie from the creature it was and keep watch over a corpse about to get up
+	/// so a PC viking can tell a zombie from the creature it was and keep watch over a corpse about to get up
 	/// </summary>
 	/// <remarks>
 	/// A zombie is the creature's own prefab marked with ZombieKey, so it's turned into a zombie again whenever it

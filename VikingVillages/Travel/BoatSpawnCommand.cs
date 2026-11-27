@@ -6,7 +6,7 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// The kri_vv_spawnboat console command, for testing where the vikings sit on their boats - spawning one of the boats
-	/// they build on the water in front of the player, moored, with living vikings in its seats, a full crew or as many
+	/// they build on the water in front of the player, moored, with PC vikings in its seats, a full crew or as many
 	/// as asked for (see BoatSeats)
 	/// </summary>
 	/// <remarks>
@@ -123,7 +123,7 @@ namespace VikingVillages
 				return;
 			}
 			GameObject boatPrefab = ZNetScene.instance.GetPrefab(TravelTime.BoatPrefab(biome));
-			GameObject vikingPrefab = ZNetScene.instance.GetPrefab(VikingCore.LivingPrefabHash);
+			GameObject vikingPrefab = ZNetScene.instance.GetPrefab(VikingCore.PCPrefabHash);
 			if (boatPrefab == null || vikingPrefab == null)
 			{
 				args.Context.AddString("Couldn't find the boat's or the viking's prefab");

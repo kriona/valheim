@@ -477,7 +477,7 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that every line thanking a stranger for a power, a living or dvergr viking's, and every concern called
+		/// Checks that every line thanking a stranger for a power, a PC or dvergr viking's, and every concern called
 		/// out to one, starts each sentence with a capital letter
 		/// </summary>
 		[Fact]

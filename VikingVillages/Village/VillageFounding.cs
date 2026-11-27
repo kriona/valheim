@@ -27,12 +27,12 @@ namespace VikingVillages
 		public static readonly int AnchorHash = PrefabName.GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, that it's leaving a village that was disbanded, which it no longer belongs to
+		/// On a PC viking, that it's leaving a village that was disbanded, which it no longer belongs to
 		/// </summary>
 		public static readonly int LeavingKey = "kriona.VikingVillages.vikingLeaving".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, that it turned back to a village started again at the bonfire it was leaving, and has yet
+		/// On a PC viking, that it turned back to a village started again at the bonfire it was leaving, and has yet
 		/// to be given one of the village's beds (see VillageBeds.Invite)
 		/// </summary>
 		public static readonly int TurnedBackKey = "kriona.VikingVillages.vikingTurnedBack".GetStableHashCode();
@@ -348,7 +348,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Sends a village's living vikings away with everything they have - those this client has, in the village or out
+		/// Sends a village's PC vikings away with everything they have - those this client has, in the village or out
 		/// to DisbandReach past its edge. Each one loaded here is marked as leaving, so it says goodbye to a player near
 		/// it and runs off until it's out of every player's reach, and is kept at the bonfire as it goes (see
 		/// VillageLife.UpdateLeaving). One another client owns is marked as leaving by that client (see OnSendAway),
@@ -397,7 +397,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a ZDO is a living viking of a village that isn't already leaving one, to send away as the village
+		/// Checks whether a ZDO is a PC viking of a village that isn't already leaving one, to send away as the village
 		/// is disbanded
 		/// </summary>
 		/// <param name="prefab">The ZDO's prefab's hash</param>
@@ -407,11 +407,11 @@ namespace VikingVillages
 		/// <returns>True when it is - noting a village within FarmMatch of the village's across the ground</returns>
 		internal static bool BelongsTo(int prefab, Vector3 farm, Vector3 villageFarm, bool leaving)
 		{
-			return(prefab == VikingCore.LivingPrefabHash && farm != Vector3.zero && Utils.DistanceXZ(farm, villageFarm) <= FarmMatch && !leaving);
+			return(prefab == VikingCore.PCPrefabHash && farm != Vector3.zero && Utils.DistanceXZ(farm, villageFarm) <= FarmMatch && !leaving);
 		}
 
 		/// <summary>
-		/// Marks a living viking as leaving a disbanded village, so it says goodbye and runs off, to be kept at the
+		/// Marks a PC viking as leaving a disbanded village, so it says goodbye and runs off, to be kept at the
 		/// bonfire as it goes
 		/// </summary>
 		/// <param name="zdo">The viking's ZDO, owned by this client</param>
@@ -477,7 +477,7 @@ namespace VikingVillages
 			int turned = 0;
 			foreach (ZDO zdo in zdos)
 			{
-				if (zdo.GetPrefab() != VikingCore.LivingPrefabHash || !zdo.GetBool(LeavingKey) || VillageDeparted.LeftFire(zdo) != fire)
+				if (zdo.GetPrefab() != VikingCore.PCPrefabHash || !zdo.GetBool(LeavingKey) || VillageDeparted.LeftFire(zdo) != fire)
 				{
 					continue;
 				}

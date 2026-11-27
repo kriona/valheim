@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Keeps each village's head count - how many living vikings it was generated with - and brings back the ones it's
+	/// Keeps each village's head count - how many PC vikings it was generated with - and brings back the ones it's
 	/// missing after they die, one at a time
 	/// </summary>
 	/// <remarks>
@@ -20,7 +20,7 @@ namespace VikingVillages
 	internal static class VillageRespawn
 	{
 		/// <summary>
-		/// On a farm's generator, how many living vikings its village was generated with, and that its houses were
+		/// On a farm's generator, how many PC vikings its village was generated with, and that its houses were
 		/// given their planned number of vikings each, so its head count can be worked out from them
 		/// </summary>
 		public static readonly int HeadCountKey = "kriona.VikingVillages.villageHeadCount".GetStableHashCode();
@@ -39,13 +39,13 @@ namespace VikingVillages
 		public static readonly int LastRespawnKey = "kriona.VikingVillages.villageLastRespawn".GetStableHashCode();
 
 		/// <summary>
-		/// The routed RPC that tells every client a living viking died, with where its village's farm stands, when it
+		/// The routed RPC that tells every client a PC viking died, with where its village's farm stands, when it
 		/// died in ZNet time ticks and whether a player killed it
 		/// </summary>
 		public const string DeathRpc = "kriona.VikingVillages.VillageDeath";
 
 		/// <summary>
-		/// The fewest and most living vikings a house is planned to hold
+		/// The fewest and most PC vikings a house is planned to hold
 		/// </summary>
 		private const int HouseHeadsMin = 2;
 		private const int HouseHeadsMax = 2;
@@ -322,7 +322,7 @@ namespace VikingVillages
 		/// ones to fight
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns, with everything across it loaded</param>
-		/// <param name="vikings">Its living vikings' ZDOs, added to as they come</param>
+		/// <param name="vikings">Its PC vikings' ZDOs, added to as they come</param>
 		/// <returns>True once the village has had every viking it starts with</returns>
 		private static bool Populated(Village village, List<ZDO> vikings)
 		{
@@ -402,7 +402,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Registers the routed RPC that reports living vikings' deaths
+		/// Registers the routed RPC that reports PC vikings' deaths
 		/// </summary>
 		public static void RegisterRpc()
 		{
@@ -410,7 +410,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Works out how many living vikings a house is planned to hold, the same every time for the same house
+		/// Works out how many PC vikings a house is planned to hold, the same every time for the same house
 		/// </summary>
 		/// <remarks>
 		/// The number comes from where the house stands and the world's seed, so the village's head count can be added
@@ -442,13 +442,13 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Reports a living viking's death to every client as it dies on its owner, so the owner of its village's
+		/// Reports a PC viking's death to every client as it dies on its owner, so the owner of its village's
 		/// generator can note it
 		/// </summary>
 		/// <param name="character">The dying creature</param>
 		public static void OnVikingDeath(Character character)
 		{
-			if (character == null || !VikingCore.IsLivingViking(character) || !character.m_nview.IsOwner() || ZRoutedRpc.instance == null)
+			if (character == null || !VikingCore.IsPCViking(character) || !character.m_nview.IsOwner() || ZRoutedRpc.instance == null)
 			{
 				return;
 			}
@@ -461,7 +461,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds where the farm of a living viking's village stands - the village it notes, or else the one it's in. One
+		/// Finds where the farm of a PC viking's village stands - the village it notes, or else the one it's in. One
 		/// leaving a disbanded village or on the road to another belongs to none, even passing through one
 		/// </summary>
 		/// <param name="character">The viking</param>
@@ -511,7 +511,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Notes a living viking's death in its village's generator when this client owns it - or, on the server, when
+		/// Notes a PC viking's death in its village's generator when this client owns it - or, on the server, when
 		/// no one does, taking it over to note the death
 		/// </summary>
 		/// <param name="sender">The client the viking died on</param>
@@ -539,7 +539,7 @@ namespace VikingVillages
 			death.ByPlayer = byPlayer;
 			InsertByTime(deaths, death);
 			WriteDeaths(generator, deaths);
-			Plugin.Log.LogInfo("A living viking of the village at " + farm.ToString("F0") + " died" + (byPlayer ? " by a player's hand" : "") + ", " + deaths.Count + " waiting to come back");
+			Plugin.Log.LogInfo("A PC viking of the village at " + farm.ToString("F0") + " died" + (byPlayer ? " by a player's hand" : "") + ", " + deaths.Count + " waiting to come back");
 		}
 
 		/// <summary>
@@ -769,7 +769,7 @@ namespace VikingVillages
 				if (planned > noted)
 				{
 					zdo.Set(HeadCountKey, planned);
-					Plugin.Log.LogInfo("The village at " + village.Farm.ToString("F0") + " now has " + planned + " living vikings, up from " + noted);
+					Plugin.Log.LogInfo("The village at " + village.Farm.ToString("F0") + " now has " + planned + " PC vikings, up from " + noted);
 				}
 				return(true);
 			}
@@ -788,7 +788,7 @@ namespace VikingVillages
 			}
 			heads = Mathf.Max(1, heads);
 			zdo.Set(HeadCountKey, heads);
-			Plugin.Log.LogInfo("The village at " + village.Farm.ToString("F0") + " has " + heads + " living vikings");
+			Plugin.Log.LogInfo("The village at " + village.Farm.ToString("F0") + " has " + heads + " PC vikings");
 			return(true);
 		}
 
@@ -813,7 +813,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Counts the living vikings of a village generated without planned numbers, at least one for each house
+		/// Counts the PC vikings of a village generated without planned numbers, at least one for each house
 		/// </summary>
 		/// <param name="village">The village, with everything across it loaded</param>
 		/// <returns>Its head count</returns>
@@ -832,7 +832,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Lists the living vikings this client has that belong to a village - those that note it as their village, and
+		/// Lists the PC vikings this client has that belong to a village - those that note it as their village, and
 		/// those inside it that note none, which are taken in when this client owns them
 		/// </summary>
 		/// <param name="village">The village</param>
@@ -845,7 +845,7 @@ namespace VikingVillages
 			List<ZDO> homeless = new List<ZDO>();
 			foreach (ZDO zdo in zdos)
 			{
-				if (zdo.GetPrefab() != VikingCore.LivingPrefabHash || zdo.GetBool(VillageFounding.LeavingKey))
+				if (zdo.GetPrefab() != VikingCore.PCPrefabHash || zdo.GetBool(VillageFounding.LeavingKey))
 				{
 					continue;
 				}
@@ -928,7 +928,7 @@ namespace VikingVillages
 		/// deaths when there are too many. Its vikings out on a quest count as its own (see VillageQuests.AwayCount)
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns</param>
-		/// <param name="vikings">Its living vikings' ZDOs</param>
+		/// <param name="vikings">Its PC vikings' ZDOs</param>
 		private static void CheckCount(Village village, List<ZDO> vikings)
 		{
 			ZDOID id = village.Zdo.m_uid;
@@ -956,7 +956,7 @@ namespace VikingVillages
 			Reconcile(deaths, gap, NetTime.Now());
 			if (gap > 0)
 			{
-				Plugin.Log.LogInfo("The village at " + village.Farm.ToString("F0") + " is missing " + gap + " living vikings");
+				Plugin.Log.LogInfo("The village at " + village.Farm.ToString("F0") + " is missing " + gap + " PC vikings");
 			}
 			WriteDeaths(village.Zdo, deaths);
 		}
@@ -996,7 +996,7 @@ namespace VikingVillages
 		/// in alone against more than it can take
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns</param>
-		/// <param name="vikings">Its living vikings' ZDOs</param>
+		/// <param name="vikings">Its PC vikings' ZDOs</param>
 		private static void TryRespawn(Village village, List<ZDO> vikings)
 		{
 			ZDOID id = village.Zdo.m_uid;
@@ -1117,7 +1117,7 @@ namespace VikingVillages
 		/// those at home they outnumber the enemies, but never more than are waiting, so all come once all are due
 		/// </summary>
 		/// <param name="enemies">The hostile creatures in the village or within EnemyReach of it</param>
-		/// <param name="home">The village's living vikings there</param>
+		/// <param name="home">The village's PC vikings there</param>
 		/// <param name="waiting">The vikings waiting to come back, as many as there's room for</param>
 		/// <returns>How many have to be due, at least 1</returns>
 		internal static int GroupNeeded(int enemies, int home, int waiting)
@@ -1154,11 +1154,11 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Brings a new living viking to a village to call a house home, when no enemy is near and there's a spot out of
+		/// Brings a new PC viking to a village to call a house home, when no enemy is near and there's a spot out of
 		/// every player's sight for it to walk in from (see FindArrivalSpot)
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns</param>
-		/// <param name="vikings">Its living vikings' ZDOs, added to</param>
+		/// <param name="vikings">Its PC vikings' ZDOs, added to</param>
 		/// <param name="home">The house it calls home</param>
 		/// <param name="why">Set to why it couldn't come yet, for the debug hover text</param>
 		/// <returns>Its ZDO, or null when it couldn't come yet</returns>
@@ -1363,20 +1363,20 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Spawns a living viking of a village at a spot, never starred, calling a house of its core home - the one given,
+		/// Spawns a PC viking of a village at a spot, never starred, calling a house of its core home - the one given,
 		/// or else the one the fewest vikings call home - as the next viking that left a village disbanded where it
 		/// stands when there's one coming back (see VillageDeparted), or else a new one, marked as an archer when the
 		/// village has none, and named for its place among the village's first vikings when it's one of those it starts
 		/// with (see VikingNames.FirstVikings)
 		/// </summary>
 		/// <param name="village">The village</param>
-		/// <param name="vikings">Its living vikings' ZDOs</param>
+		/// <param name="vikings">Its PC vikings' ZDOs</param>
 		/// <param name="spot">Where it comes</param>
 		/// <param name="chosen">The house it calls home, or null to pick one</param>
 		/// <returns>Its ZDO, or null when it couldn't be spawned</returns>
 		private static ZDO SpawnVillager(Village village, List<ZDO> vikings, Vector3 spot, VillagePaths.House? chosen)
 		{
-			GameObject prefab = ZNetScene.instance.GetPrefab(VikingCore.LivingPrefabHash);
+			GameObject prefab = ZNetScene.instance.GetPrefab(VikingCore.PCPrefabHash);
 			if (prefab == null)
 			{
 				return(null);
@@ -1416,7 +1416,7 @@ namespace VikingVillages
 		/// the spot it left from
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns</param>
-		/// <param name="vikings">Its living vikings' ZDOs, added to</param>
+		/// <param name="vikings">Its PC vikings' ZDOs, added to</param>
 		/// <param name="snapshot">The viking's values (see VillageDeparted.SnapshotOf)</param>
 		/// <param name="from">Where it comes from</param>
 		/// <returns>Its ZDO, or null when it couldn't come yet</returns>
@@ -1462,7 +1462,7 @@ namespace VikingVillages
 		/// ArrivalSpotFor and SpawnArrival)
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns</param>
-		/// <param name="vikings">Its living vikings' ZDOs, added to</param>
+		/// <param name="vikings">Its PC vikings' ZDOs, added to</param>
 		/// <param name="snapshot">The viking's values (see VillageDeparted.SnapshotOf)</param>
 		/// <param name="spot">Where it comes in</param>
 		/// <param name="outside">Whether that's outside the fence, so it walks in</param>
@@ -1470,7 +1470,7 @@ namespace VikingVillages
 		public static ZDO SpawnArrivalAt(Village village, List<ZDO> vikings, byte[] snapshot, Vector3 spot, bool outside)
 		{
 			bool questHome = VillageQuests.ComingHome(snapshot, village);
-			GameObject prefab = ZNetScene.instance.GetPrefab(VikingCore.LivingPrefabHash);
+			GameObject prefab = ZNetScene.instance.GetPrefab(VikingCore.PCPrefabHash);
 			if (prefab == null)
 			{
 				return(null);

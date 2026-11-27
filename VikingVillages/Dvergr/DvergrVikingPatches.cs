@@ -4,8 +4,8 @@ using Kriona.Vikings;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Keeps the dvergr, the dvergr vikings and the living vikings from hurting each other - a dvergr mage's fireball
-	/// landing among living vikings, or a viking's sledge swung among the dvergr - while they aren't enemies, which as
+	/// Keeps the dvergr, the dvergr vikings and the PC vikings from hurting each other - a dvergr mage's fireball
+	/// landing among PC vikings, or a viking's sledge swung among the dvergr - while they aren't enemies, which as
 	/// one faction they never are
 	/// </summary>
 	/// <remarks>
@@ -34,7 +34,7 @@ namespace VikingVillages
 			}
 			bool victimSide = (__instance.GetFaction() == Character.Faction.Dverger && !__instance.IsTamed());
 			bool attackerSide = (attacker.GetFaction() == Character.Faction.Dverger && !attacker.IsTamed());
-			bool viking = (VikingCore.IsLivingOrDvergr(__instance) || VikingCore.IsLivingOrDvergr(attacker));
+			bool viking = (VikingCore.IsPCOrDvergr(__instance) || VikingCore.IsPCOrDvergr(attacker));
 			return(!DvergrFriendlyFireRules.Spared(victimSide, attackerSide, viking, BaseAI.IsEnemy(attacker, __instance)));
 		}
 	}
@@ -45,12 +45,12 @@ namespace VikingVillages
 	internal static class DvergrFriendlyFireRules
 	{
 		/// <summary>
-		/// Checks whether a hit is kept from landing - one of the dvergr's side on another, one of them a living or dvergr
+		/// Checks whether a hit is kept from landing - one of the dvergr's side on another, one of them a PC or dvergr
 		/// viking, while they aren't enemies
 		/// </summary>
 		/// <param name="victimSide">Whether the creature hit is of the dvergr's faction, and not tamed</param>
 		/// <param name="attackerSide">Whether the one who hit it is</param>
-		/// <param name="viking">Whether either is a living or dvergr viking</param>
+		/// <param name="viking">Whether either is a PC or dvergr viking</param>
 		/// <param name="enemies">Whether the one who hit it takes it for an enemy</param>
 		/// <returns>True to keep it from landing</returns>
 		internal static bool Spared(bool victimSide, bool attackerSide, bool viking, bool enemies)

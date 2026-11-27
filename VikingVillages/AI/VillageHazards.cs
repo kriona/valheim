@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// What the living vikings watch out for that isn't an enemy yet - corpses about to rise as zombies, and the poison
+	/// What the PC vikings watch out for that isn't an enemy yet - corpses about to rise as zombies, and the poison
 	/// clouds zombies' corpses leave, and the corpses that might leave one - all of which come from Zombie Apocalypse,
 	/// read through ZombieState and ZombieLink, so there are none without it
 	/// </summary>

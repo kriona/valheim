@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Calms an aggravated living viking once it has slept on it - angered by day, it forgives the next morning, and
+	/// Calms an aggravated PC viking once it has slept on it - angered by day, it forgives the next morning, and
 	/// angered at night, as the next night falls - with no player hurting it since
 	/// </summary>
 	/// <remarks>
@@ -47,7 +47,7 @@ namespace VikingVillages
 		private static readonly ConditionalWeakTable<MonsterAI, NextCheck> checks = new ConditionalWeakTable<MonsterAI, NextCheck>();
 
 		/// <summary>
-		/// Restarts a living viking's day when a player hurts it, on the viking's owner where its damage is applied
+		/// Restarts a PC viking's day when a player hurts it, on the viking's owner where its damage is applied
 		/// </summary>
 		/// <param name="ai">The AI of the creature hurt</param>
 		/// <param name="attacker">Who hurt it, or null</param>
@@ -59,7 +59,7 @@ namespace VikingVillages
 			}
 			ZNetView view = ai.m_nview;
 			Character character = ai.m_character;
-			if (view == null || !view.IsValid() || !view.IsOwner() || character == null || !VikingCore.IsLivingViking(character))
+			if (view == null || !view.IsValid() || !view.IsOwner() || character == null || !VikingCore.IsPCViking(character))
 			{
 				return;
 			}
@@ -67,7 +67,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks a living viking every CheckInterval seconds on its owner - notes when it was angered when it's
+		/// Checks a PC viking every CheckInterval seconds on its owner - notes when it was angered when it's
 		/// aggravated with no time kept, calms it once it forgives (see CalmAt), and clears the time once it's calm
 		/// </summary>
 		/// <param name="ai">The AI updating</param>
@@ -85,7 +85,7 @@ namespace VikingVillages
 			}
 			next.Time = Time.time + CheckInterval;
 			Character character = ai.m_character;
-			if (character == null || character.IsDead() || !VikingCore.IsLivingViking(character))
+			if (character == null || character.IsDead() || !VikingCore.IsPCViking(character))
 			{
 				return;
 			}

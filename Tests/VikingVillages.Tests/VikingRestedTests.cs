@@ -1,7 +1,7 @@
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests a living viking's rest - when it's still resting, how long being rested lasts, and how it's put off while
+	/// Tests a PC viking's rest - when it's still resting, how long being rested lasts, and how it's put off while
 	/// players sleep
 	/// </summary>
 	public class VikingRestedTests

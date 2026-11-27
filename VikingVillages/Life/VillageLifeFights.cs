@@ -388,16 +388,16 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether the viking only picks fights with monsters that are a threat - any living viking
+		/// Checks whether the viking only picks fights with monsters that are a threat - any PC viking
 		/// </summary>
 		/// <returns>True when it does</returns>
 		public bool PicksFightsWithThreats()
 		{
-			return(humanoid != null && VikingCore.IsLivingViking(humanoid));
+			return(humanoid != null && VikingCore.IsPCViking(humanoid));
 		}
 
 		/// <summary>
-		/// Checks whether a monster is a threat a living viking goes after - one in its village, within ThreatRange of
+		/// Checks whether a monster is a threat a PC viking goes after - one in its village, within ThreatRange of
 		/// it, alerted, or after someone or something. A living animal that only ever runs, like a deer or a hare, is
 		/// never one, even alerted as it runs from a hunter's arrows - only the prey the viking is hunting itself, or a
 		/// zombie one, which comes after people instead. Neither is a leech that hasn't hurt anyone (see QuietMonsters)

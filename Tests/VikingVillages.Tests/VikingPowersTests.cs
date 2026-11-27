@@ -4,7 +4,7 @@ using Kriona.Vikings;
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests a living viking's forsaken powers - which it knows from its biome, which it picks for a fight or its work,
+	/// Tests a PC viking's forsaken powers - which it knows from its biome, which it picks for a fight or its work,
 	/// and how an attack's damage is read
 	/// </summary>
 	public class VikingPowersTests
@@ -47,7 +47,7 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that a zombie viking's power, from the gear tables, is the hardest power a living viking of the same
+		/// Checks that a zombie viking's power, from the gear tables, is the hardest power a PC viking of the same
 		/// biome knows, so both go by the same progression
 		/// </summary>
 		[Fact]

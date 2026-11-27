@@ -20,7 +20,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Marks a living viking's corpse with its village and its name, so the vikings near it know whose it is
+	/// Marks a PC viking's corpse with its village and its name, so the vikings near it know whose it is
 	/// </summary>
 	[HarmonyPatch(typeof(Humanoid), nameof(Humanoid.OnRagdollCreated))]
 	public static class VillageFallenMarkPatch

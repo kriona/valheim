@@ -39,9 +39,9 @@ namespace VikingVillages
 			Log = new StampedLog(Logger);
 			TestLog.Start(Logger);
 			VikingMod.Init(PluginGuid, PluginName, PluginVersion, Logger);
-			VikingSettings.HelmetChance = Config.Bind(VikingGearSection, "HelmetChance", 50, new ConfigDescription("Percent chance that a living viking also wears its armor set's helmet - from the Mountains on, every one wears one", new AcceptableValueRange<int>(0, 100)));
-			VikingSettings.CapeChance = Config.Bind(VikingGearSection, "CapeChance", 50, new ConfigDescription("Percent chance that a living viking also wears its armor set's cape - from the Mountains on, every one wears one", new AcceptableValueRange<int>(0, 100)));
-			VikingSettings.ShieldChance = Config.Bind(VikingGearSection, "ShieldChance", 40, new ConfigDescription("Percent chance that a living viking carries a shield, unless its weapon takes both hands", new AcceptableValueRange<int>(0, 100)));
+			VikingSettings.HelmetChance = Config.Bind(VikingGearSection, "HelmetChance", 50, new ConfigDescription("Percent chance that a PC viking also wears its armor set's helmet - from the Mountains on, every one wears one", new AcceptableValueRange<int>(0, 100)));
+			VikingSettings.CapeChance = Config.Bind(VikingGearSection, "CapeChance", 50, new ConfigDescription("Percent chance that a PC viking also wears its armor set's cape - from the Mountains on, every one wears one", new AcceptableValueRange<int>(0, 100)));
+			VikingSettings.ShieldChance = Config.Bind(VikingGearSection, "ShieldChance", 40, new ConfigDescription("Percent chance that a PC viking carries a shield, unless its weapon takes both hands", new AcceptableValueRange<int>(0, 100)));
 			DvergrGearDropChance = Config.Bind(DvergrVikingsSection, "GearDropChance", 5f, new ConfigDescription("Percent chance that a dvergr viking drops each piece of its gear when it dies", new AcceptableValueRange<float>(0f, 100f)));
 			DvergrGearDropMax = Config.Bind(DvergrVikingsSection, "GearDropMax", 2, new ConfigDescription("Most pieces of gear a dvergr viking drops", new AcceptableValueRange<int>(0, 10)));
 			watcher = new ConfigWatcher(Config, Logger, PluginName);

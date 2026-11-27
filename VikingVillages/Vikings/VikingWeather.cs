@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Gives a living viking the game's weather effects the way a player gets them - Wet in the rain out from under a
+	/// Gives a PC viking the game's weather effects the way a player gets them - Wet in the rain out from under a
 	/// roof, Cold and Freezing in cold weather away from a fire's warmth or out of shelter, unless its armor resists
 	/// frost or it stands somewhere warm and cozy, and Sheltered and Campfire, a fire drying it off faster - muttering
 	/// now and then as the weather gets to it - and tells the vikings what the weather is doing
@@ -25,7 +25,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The viking the weather gets to
 		/// </summary>
-		private readonly LivingVikingBody viking;
+		private readonly PCVikingBody viking;
 
 		/// <summary>
 		/// When the viking's surroundings are next checked on this client, in Time.time seconds
@@ -41,10 +41,10 @@ namespace VikingVillages
 		private float nextRemark;
 
 		/// <summary>
-		/// Starts the weather getting to a living viking
+		/// Starts the weather getting to a PC viking
 		/// </summary>
 		/// <param name="viking">The viking</param>
-		public VikingWeather(LivingVikingBody viking)
+		public VikingWeather(PCVikingBody viking)
 		{
 			this.viking = viking;
 		}
@@ -259,7 +259,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Checks whether a viking's armor, or anything else on it, resists frost, which keeps the cold off it the way it
-		/// does a player - or it's immune to frost (see LivingVikingBody.FrostImmune), which the game's check for a
+		/// does a player - or it's immune to frost (see PCVikingBody.FrostImmune), which the game's check for a
 		/// player leaves out, since no player is
 		/// </summary>
 		/// <param name="viking">The viking</param>

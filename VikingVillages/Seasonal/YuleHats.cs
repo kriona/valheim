@@ -6,7 +6,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Shows every helmet a living or dvergr viking wears as a Yule hat on Christmas Day, by the date on the computer it
+	/// Shows every helmet a PC or dvergr viking wears as a Yule hat on Christmas Day, by the date on the computer it
 	/// shows on - all but a Dverger circlet, which stays as it is. Players, zombie vikings, armor stands and creatures
 	/// keep their helmets. Only how the helmet looks changes: what's worn, its armor and what's sent to other clients
 	/// stay the game's own. The Command console command, left out of the console's help, shows or hides the hats
@@ -86,7 +86,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Gets the helmet a character's equipment shows for the one it wears - the Yule hat in its place while the hats
-		/// show, on a living or dvergr viking only
+		/// show, on a PC or dvergr viking only
 		/// </summary>
 		/// <param name="visual">The character's equipment</param>
 		/// <param name="hash">The item hash of the helmet worn, or 0 for none</param>
@@ -94,7 +94,7 @@ namespace VikingVillages
 		public static int Swap(VisEquipment visual, int hash)
 		{
 			// The date is looked at first, so the rest of the year no character is looked up
-			if (hash == 0 || !Showing() || !VikingCore.IsLivingOrDvergr(visual.GetComponent<Character>()))
+			if (hash == 0 || !Showing() || !VikingCore.IsPCOrDvergr(visual.GetComponent<Character>()))
 			{
 				return(hash);
 			}

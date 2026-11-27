@@ -77,7 +77,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Adds the empty houses within reach of a farm, which its living vikings have taken in, to a village's houses -
+		/// Adds the empty houses within reach of a farm, which its PC vikings have taken in, to a village's houses -
 		/// found on the server, or from the server's answer on a client
 		/// </summary>
 		/// <param name="generator">The farm's generator</param>

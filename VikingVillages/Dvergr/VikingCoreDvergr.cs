@@ -7,7 +7,7 @@ namespace Kriona.Vikings
 	/// What only a dvergr viking's core does - its prefab, how it's rolled up and the loot it drops
 	/// </summary>
 	/// <remarks>
-	/// A dvergr viking is a living viking the dvergr have hired, with a living viking's body and gear but no village -
+	/// A dvergr viking is a viking the dvergr have hired, with a PC viking's body and gear but no village -
 	/// it keeps to the dvergr's outposts and patrols, and fights, takes hits and drops loot the way a zombie viking of
 	/// the world does
 	/// </remarks>
@@ -44,7 +44,7 @@ namespace Kriona.Vikings
 		/// <summary>
 		/// Sets up what only a dvergr viking's prefab has - provoked like the dvergr, by a player hurting it or a dvergr
 		/// near it, quiet, wandering around where it stands as far and as often as the dvergr do, and waving and moving
-		/// its mouth as it talks the way a living viking does (see VikingPoses)
+		/// its mouth as it talks the way a PC viking does (see VikingPoses)
 		/// </summary>
 		/// <param name="scene">The world's ZNetScene</param>
 		/// <param name="viking">The prefab</param>
@@ -66,7 +66,7 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Rolls a new dvergr viking's look, health, skill, power and gear for the Mistlands, where the dvergr hire them -
-		/// its gear all of the Mistlands and fully repaired like a living viking's, maybe silver-lined with Zombie
+		/// its gear all of the Mistlands and fully repaired like a PC viking's, maybe silver-lined with Zombie
 		/// Apocalypse (see VikingSilver.Arm), with a dverger circlet for light and a wisp light against the mist - and
 		/// names it, with the looks its name comes with (see StyleAfterName)
 		/// </summary>
@@ -74,10 +74,10 @@ namespace Kriona.Vikings
 		{
 			int index = VikingGear.IndexOf(Heightmap.Biome.Mistlands);
 			VikingData rolled = VikingGear.RollData(index);
-			Arms arms = VikingGear.LivingArms(index, false, Random.value);
+			Arms arms = VikingGear.PCArms(index, false, Random.value);
 			Inventory gear = VikingGear.RollLoadout(index, humanoid.GetLevel(), rolled, true, arms, true, true);
 			VikingSilver.Arm(gear, index);
-			gear.AddItem((VikingGear.LivingCirclet(index, Random.value) ? VikingGear.CircletPrefab : TorchPrefab), 1, 1, 0, 0L, "", false);
+			gear.AddItem((VikingGear.PCCirclet(index, Random.value) ? VikingGear.CircletPrefab : TorchPrefab), 1, 1, 0, 0L, "", false);
 			VikingGear.AddWisp(gear);
 			ZDO zdo = nview.GetZDO();
 			VikingNames.GiveName(zdo, rolled, false);

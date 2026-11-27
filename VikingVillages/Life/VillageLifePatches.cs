@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Counts a chair a living viking sits on, or holds on to like a boat's mast, as in use, so a player can't sit on
+	/// Counts a chair a PC viking sits on, or holds on to like a boat's mast, as in use, so a player can't sit on
 	/// it too and the two overlap - the game turning them away the way it does from a chair another player sits on
 	/// </summary>
 	[HarmonyPatch(typeof(Chair), nameof(Chair.IsInUse))]
@@ -42,7 +42,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Keeps living vikings from picking fights with monsters that aren't a threat, or that are out in water too deep
+	/// Keeps PC vikings from picking fights with monsters that aren't a threat, or that are out in water too deep
 	/// to fight them in - each goes after the nearest one it can fight instead, or none. A viking archer slightly
 	/// prefers enemy archers (see VillageLife.NearestThreat)
 	/// </summary>
@@ -191,7 +191,7 @@ namespace VikingVillages
 		/// <param name="__instance">The game's inventory window</param>
 		private static void Postfix(InventoryGui __instance)
 		{
-			if (VikingInventory.Showing(__instance) && VikingInventory.OpenViking() is LivingVikingBody viking)
+			if (VikingInventory.Showing(__instance) && VikingInventory.OpenViking() is PCVikingBody viking)
 			{
 				__instance.m_containerWeight.text = viking.WeightText();
 			}
@@ -225,7 +225,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Keeps a living viking's name over its health bar clear of the bar while it has its job under it (see
+	/// Keeps a PC viking's name over its health bar clear of the bar while it has its job under it (see
 	/// VikingHudName)
 	/// </summary>
 	[HarmonyPatch(typeof(EnemyHud), nameof(EnemyHud.UpdateHuds))]
@@ -261,7 +261,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Keeps a living viking fighting hand to hand from taking a root, or any other monster that can't move, as an
+	/// Keeps a PC viking fighting hand to hand from taking a root, or any other monster that can't move, as an
 	/// enemy, so its AI never walks into the root's reach to strike it - it keeps clear and calls an archer instead
 	/// (see VillageLife.UpdateRoots). The root still takes the viking as an enemy, and an archer shoots it
 	/// </summary>
@@ -276,7 +276,7 @@ namespace VikingVillages
 		/// <param name="__result">Whether a takes b as an enemy</param>
 		private static void Postfix(Character a, Character b, ref bool __result)
 		{
-			if (__result && MonsterThreat.IsRoot(b) && VikingCore.IsLivingViking(a) && !VillageLife.HasBow(a))
+			if (__result && MonsterThreat.IsRoot(b) && VikingCore.IsPCViking(a) && !VillageLife.HasBow(a))
 			{
 				__result = false;
 			}
@@ -285,19 +285,19 @@ namespace VikingVillages
 
 	/// <summary>
 	/// Makes a hunting viking and its prey enemies, so its AI goes for prey it would otherwise leave alone, like a deer,
-	/// and keeps the living vikings and the village's livestock at peace otherwise - the livestock never takes a viking
+	/// and keeps the PC vikings and the village's livestock at peace otherwise - the livestock never takes a viking
 	/// for an enemy, so it doesn't fight back when it's slaughtered, and a viking only takes the animal it's
 	/// slaughtering for one
 	/// </summary>
 	/// <remarks>
-	/// The living vikings are of the Dverger faction, which the game sets against tamed animals while it's aggravated,
+	/// The PC vikings are of the Dverger faction, which the game sets against tamed animals while it's aggravated,
 	/// as a viking is after a player hurts it
 	/// </remarks>
 	[HarmonyPatch(typeof(BaseAI), nameof(BaseAI.IsEnemy), typeof(Character), typeof(Character))]
 	public static class HuntEnemyPatch
 	{
 		/// <summary>
-		/// Turns the pair into enemies when one hunts the other, and keeps a living viking and livestock apart unless
+		/// Turns the pair into enemies when one hunts the other, and keeps a PC viking and livestock apart unless
 		/// the viking hunts it
 		/// </summary>
 		/// <param name="a">One creature</param>
@@ -309,17 +309,17 @@ namespace VikingVillages
 			{
 				return;
 			}
-			bool vikingAndLivestock = (VikingCore.IsLivingViking(a) && FarmSpawns.IsLivestock(b));
-			bool livestockAndViking = (!vikingAndLivestock && VikingCore.IsLivingViking(b) && FarmSpawns.IsLivestock(a));
+			bool vikingAndLivestock = (VikingCore.IsPCViking(a) && FarmSpawns.IsLivestock(b));
+			bool livestockAndViking = (!vikingAndLivestock && VikingCore.IsPCViking(b) && FarmSpawns.IsLivestock(a));
 			__result = Enemies(vikingAndLivestock, livestockAndViking, VillageLife.Hunts(a, b), VillageLife.Hunts(b, a), __result);
 		}
 
 		/// <summary>
-		/// Works out whether a pair are enemies - a living viking and livestock only when the viking hunts it, livestock
-		/// and a living viking never, and any other pair when the game has them as enemies or one hunts the other
+		/// Works out whether a pair are enemies - a PC viking and livestock only when the viking hunts it, livestock
+		/// and a PC viking never, and any other pair when the game has them as enemies or one hunts the other
 		/// </summary>
-		/// <param name="vikingAndLivestock">Whether the first is a living viking and the other livestock</param>
-		/// <param name="livestockAndViking">Whether the first is livestock and the other a living viking</param>
+		/// <param name="vikingAndLivestock">Whether the first is a PC viking and the other livestock</param>
+		/// <param name="livestockAndViking">Whether the first is livestock and the other a PC viking</param>
 		/// <param name="firstHunts">Whether the first hunts the other</param>
 		/// <param name="otherHunts">Whether the other hunts the first</param>
 		/// <param name="enemies">Whether the game has them as enemies</param>
@@ -339,7 +339,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Keeps the village's livestock calm when a living viking hurts it - slaughtering it, or with a stray blow - so it
+	/// Keeps the village's livestock calm when a PC viking hurts it - slaughtering it, or with a stray blow - so it
 	/// doesn't turn on the viking or run from it, as it would from anything else that hurts it
 	/// </summary>
 	/// <remarks>
@@ -350,19 +350,19 @@ namespace VikingVillages
 	public static class LivestockCalmPatch
 	{
 		/// <summary>
-		/// Skips the creature's reaction when it's livestock and a living viking hurt it
+		/// Skips the creature's reaction when it's livestock and a PC viking hurt it
 		/// </summary>
 		/// <param name="__instance">The AI of the creature hurt</param>
 		/// <param name="attacker">Who hurt it, or null</param>
-		/// <returns>False for livestock hurt by a living viking, to skip its reaction</returns>
+		/// <returns>False for livestock hurt by a PC viking, to skip its reaction</returns>
 		private static bool Prefix(MonsterAI __instance, Character attacker)
 		{
-			return(attacker == null || !VikingCore.IsLivingViking(attacker) || !FarmSpawns.IsLivestock(__instance));
+			return(attacker == null || !VikingCore.IsPCViking(attacker) || !FarmSpawns.IsLivestock(__instance));
 		}
 	}
 
 	/// <summary>
-	/// Calls the living vikings to help when a player or living viking is hurt by a zombie or monster
+	/// Calls the PC vikings to help when a player or PC viking is hurt by a zombie or monster
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
 	public static class VillageDistressPatch
@@ -383,13 +383,13 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Wakes a sleeping monster for a living viking that comes near, the way it wakes for a player (see MonsterWake)
+	/// Wakes a sleeping monster for a PC viking that comes near, the way it wakes for a player (see MonsterWake)
 	/// </summary>
 	[HarmonyPatch(typeof(MonsterAI), nameof(MonsterAI.UpdateSleep))]
 	public static class MonsterWakePatch
 	{
 		/// <summary>
-		/// Looks for living vikings near the monster once the game has checked for players
+		/// Looks for PC vikings near the monster once the game has checked for players
 		/// </summary>
 		/// <param name="__instance">The monster's AI</param>
 		private static void Postfix(MonsterAI __instance)
@@ -399,7 +399,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Calls the living vikings to help when a zombie or monster hits a building piece in a village
+	/// Calls the PC vikings to help when a zombie or monster hits a building piece in a village
 	/// </summary>
 	[HarmonyPatch(typeof(WearNTear), nameof(WearNTear.RPC_Damage))]
 	public static class VillagePieceDistressPatch
@@ -420,7 +420,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Holds a living viking still on the bed or chair it's on after the game's motion update, which turns its gravity
+	/// Holds a PC viking still on the bed or chair it's on after the game's motion update, which turns its gravity
 	/// back on
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.UpdateMotion))]

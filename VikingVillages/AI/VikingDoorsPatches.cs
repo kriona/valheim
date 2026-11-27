@@ -3,7 +3,7 @@ using HarmonyLib;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Keeps track of the doors in the world, for living vikings to walk through
+	/// Keeps track of the doors in the world, for PC vikings to walk through
 	/// </summary>
 	[HarmonyPatch(typeof(Door), nameof(Door.Awake))]
 	public static class VikingDoorsPatch

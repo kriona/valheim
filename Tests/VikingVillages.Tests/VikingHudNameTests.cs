@@ -3,7 +3,7 @@ using Xunit;
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests how far a living viking's name over its health bar is lifted while it runs to more than one line
+	/// Tests how far a PC viking's name over its health bar is lifted while it runs to more than one line
 	/// </summary>
 	public class VikingHudNameTests
 	{

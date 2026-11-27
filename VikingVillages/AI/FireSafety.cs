@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Keeps the living vikings out of fires' flames - their paths bend around a lit fire, PathMargin clear of its
+	/// Keeps the PC vikings out of fires' flames - their paths bend around a lit fire, PathMargin clear of its
 	/// flames, and they find where flames are, to run out of them and to cook and add fuel from outside them
 	/// </summary>
 	/// <remarks>
@@ -56,7 +56,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Bends a living viking's path around every lit fire whose flames it would pass within PathMargin of, going round
+		/// Bends a PC viking's path around every lit fire whose flames it would pass within PathMargin of, going round
 		/// the fire on the shorter side - leaving a leg that starts or ends that near the flames as it is, since the
 		/// viking is running out of them, or headed for a spot by the fire that's clear of them
 		/// </summary>

@@ -31,7 +31,7 @@ namespace Kriona.Vikings
 	}
 
 	/// <summary>
-	/// Has a zombie viking wield its own choice of weapon instead of a monster's random pick, and leaves a living
+	/// Has a zombie viking wield its own choice of weapon instead of a monster's random pick, and leaves a PC
 	/// viking's sheathed while there's no danger
 	/// </summary>
 	[HarmonyPatch(typeof(Humanoid), nameof(Humanoid.EquipBestWeapon))]
@@ -73,7 +73,7 @@ namespace Kriona.Vikings
 	}
 
 	/// <summary>
-	/// Keeps a zombie viking with nothing to fight standing by its home instead of wandering, and has a living viking go
+	/// Keeps a zombie viking with nothing to fight standing by its home instead of wandering, and has a PC viking go
 	/// about its life in its village
 	/// </summary>
 	[HarmonyPatch(typeof(BaseAI), nameof(BaseAI.IdleMovement))]
@@ -352,7 +352,7 @@ namespace Kriona.Vikings
 
 	/// <summary>
 	/// Drops a viking's things in the player's tombstone, or its coins and gear, as it dies on its owner, or keeps a
-	/// living viking's things for the zombie it rises as
+	/// PC viking's things for the zombie it rises as
 	/// </summary>
 	/// <remarks>
 	/// Runs after Zombie Apocalypse's DeathPatch has decided whether the viking rises (see VikingCore.Rises), whichever

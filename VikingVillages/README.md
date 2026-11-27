@@ -2,15 +2,15 @@
 
 NOTE: this mod has not been released, there are no existing villages, and breaking changes just mean I need to delete my test worlds.
 
-The Meadows' abandoned farms aren't abandoned anymore. Living Vikings move in, keep their village in repair, go about their lives, fight off whatever comes for them and come back after they die.
+The Meadows' abandoned farms aren't abandoned anymore. Vikings move in, keep their village in repair, go about their lives, fight off whatever comes for them and come back after they die.
 
 Viking Villages works on its own, and with [Zombie Apocalypse](https://thunderstore.io/c/valheim/p/Kriona/ZombieApocalypse/) the two know about each other - see With Zombie Apocalypse below.
 
-This page gives a short tour of each feature. Every detail of how it works is in [LOGIC.md](LOGIC.md), and every job the Vikings do, in the order they pick them, is in [JOBS.md](JOBS.md). How living Vikings, Dvergr Vikings and Zombie Apocalypse's zombie Vikings compare is in [VIKINGS.md](VIKINGS.md).
+This page gives a short tour of each feature. Every detail of how it works is in [LOGIC.md](LOGIC.md), and every job the Vikings do, in the order they pick them, is in [JOBS.md](JOBS.md). How PC Vikings (Player Character), Dvergr Vikings and Zombie Apocalypse's zombie Vikings compare is in [VIKINGS.md](VIKINGS.md).
 
 ## Villages
 
-- Every farm in the Meadows becomes a village, home to 2 living Vikings for each farmhouse. Farms come in a range of sizes, bigger near harder biomes, and are built around their oaks rather than clearing them (see [Farms](LOGIC.md#farms))
+- Every farm in the Meadows becomes a village, home to 2 PC Vikings for each farmhouse. Farms come in a range of sizes, bigger near harder biomes, and are built around their oaks rather than clearing them (see [Farms](LOGIC.md#farms))
 - Its houses are fixed up and furnished - beds, chests stocked with food and supplies, tables, and a workbench and forge upgraded for the village's biome - and the abandoned houses nearby are taken in, as homes or as outposts. Half the farmhouses can be built from your own PlanBuild blueprints (see [Houses, Core and Outposts](LOGIC.md#houses-core-and-outposts) and [Furnishing](LOGIC.md#furnishing))
 - The ground is flattened and dirt paths join the houses, crossing rivers on bridges, and run on to any village close by (see [Ground, Paths and Bridges](LOGIC.md#ground-paths-and-bridges))
 - A bonfire burns in the middle of the village, with cooking stations, a cauldron and sitting logs around it, pushing back the fog (see [The Fire](LOGIC.md#the-fire))
@@ -20,7 +20,7 @@ This page gives a short tour of each feature. Every detail of how it works is in
 - Each village has a Norse name of its own, pinned on your map and shown as you walk in, and you can rename it (see [Village Names](LOGIC.md#village-names))
 - A village counts as a player base - no random spawns inside it, and nothing dropped there despawns - and you can show how far it reaches as rings on the ground (see [Village Rings](LOGIC.md#village-rings))
 
-## Living Vikings
+## PC Vikings (Player Character)
 
 - Each is a Viking of their village's biome - from the Meadows' rags and flint up to the Deep North's best gear, the harder the biome the likelier a strength belt and Haldor's wider and deeper pockets - and their skills rise as they use them, the way yours do (see [Who They Are](LOGIC.md#who-they-are), [Skills](LOGIC.md#skills), [Gear](LOGIC.md#gear) and [PROGRESSION.md](PROGRESSION.md))
 - They have Norse names of their own, each village has a leader, and you can rename them (see [Names](LOGIC.md#names))
@@ -60,9 +60,9 @@ This page gives a short tour of each feature. Every detail of how it works is in
 
 | Key | Look at | What it does |
 | --- | --- | --- |
-| E | A living Viking | Talk to them |
-| Shift+E | A living Viking | Rename them |
-| I | A living Viking | Open their inventory |
+| E | A PC Viking | Talk to them |
+| Shift+E | A PC Viking | Rename them |
+| I | A PC Viking | Open their inventory |
 | I | A village's bonfire or campfire | Show the village's stock |
 | N | A village's bonfire or campfire | Rename the village |
 | V | A village's bonfire or campfire | Show or hide the village's rings |
@@ -96,9 +96,9 @@ In multiplayer, every player uses the server's settings while connected to it, a
 
 Viking Gear:
 
-- `HelmetChance` - percent chance that a living Viking also wears their armor set's helmet - from the Mountains on, every one wears one (default `50`)
-- `CapeChance` - percent chance that a living Viking also wears their armor set's cape - from the Mountains on, every one wears one (default `50`)
-- `ShieldChance` - percent chance that a living Viking carries a shield, unless their weapon takes both hands (default `40`)
+- `HelmetChance` - percent chance that a PC Viking also wears their armor set's helmet - from the Mountains on, every one wears one (default `50`)
+- `CapeChance` - percent chance that a PC Viking also wears their armor set's cape - from the Mountains on, every one wears one (default `50`)
+- `ShieldChance` - percent chance that a PC Viking carries a shield, unless their weapon takes both hands (default `40`)
 
 Dvergr Vikings:
 

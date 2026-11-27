@@ -275,7 +275,7 @@ namespace ZombieApocalypse
 
 		/// <summary>
 		/// Puts one or two zombie vikings in an abandoned house with no creatures of its own, by HouseChance, as it's
-		/// generated - which happens once, the first time its zone is - unless Viking Villages' living vikings take the
+		/// generated - which happens once, the first time its zone is - unless Viking Villages' PC vikings take the
 		/// house in, as one near an abandoned farm (see VillageLink.ClaimsHouse)
 		/// </summary>
 		/// <param name="location">The location just placed</param>

@@ -4,37 +4,37 @@ using VikingVillages;
 namespace Kriona.Vikings
 {
 	/// <summary>
-	/// What only a living viking's core does - its prefab and its life in its village, how its gear is rolled, its
+	/// What only a PC viking's core does - its prefab and its life in its village, how its gear is rolled, its
 	/// skills rising with its rest and showing as it reaches a new level, the health its food gives it, and its paths
 	/// around danger
 	/// </summary>
 	internal partial class VikingCore
 	{
 		/// <summary>
-		/// The torch a living viking carries at night, which it starts with one of unless it starts with a dverger circlet
+		/// The torch a PC viking carries at night, which it starts with one of unless it starts with a dverger circlet
 		/// (see Generate)
 		/// </summary>
 		private const string TorchPrefab = "Torch";
 
 		/// <summary>
-		/// Builds the living viking's prefab, in the dvergr's faction
+		/// Builds the PC viking's prefab, in the dvergr's faction
 		/// </summary>
 		/// <param name="scene">The world's ZNetScene</param>
 		/// <returns>The prefab, or null when the player's or draugr's prefab is missing</returns>
 		private static partial GameObject BuildOwnPrefab(ZNetScene scene)
 		{
-			return(BuildPrefab<LivingVikingBody, LivingVikingAI>(scene, LivingPrefabName, Character.Faction.Dverger, FinishLiving));
+			return(BuildPrefab<PCVikingBody, PCVikingAI>(scene, PCPrefabName, Character.Faction.Dverger, FinishPC));
 		}
 
 		/// <summary>
-		/// Sets up what only a living viking's prefab has - provoked like the dvergr, by a player hurting it or another
+		/// Sets up what only a PC viking's prefab has - provoked like the dvergr, by a player hurting it or another
 		/// viking near it, quiet, wary of lava, and posing as it goes about its life (see VikingPoses)
 		/// </summary>
 		/// <param name="viking">The prefab</param>
 		/// <param name="ai">Its AI</param>
-		private static void FinishLiving(GameObject viking, MonsterAI ai)
+		private static void FinishPC(GameObject viking, MonsterAI ai)
 		{
-			// A living viking doesn't groan like the draugr its AI comes from
+			// A PC viking doesn't groan like the draugr its AI comes from
 			ai.m_aggravatable = true;
 			ai.m_idleSound = new EffectList();
 			ai.m_alertedEffects = new EffectList();
@@ -48,7 +48,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether a living viking dying on this client will rise as a zombie, which only Zombie Apocalypse decides
+		/// Checks whether a PC viking dying on this client will rise as a zombie, which only Zombie Apocalypse decides
 		/// </summary>
 		/// <param name="dying">The viking</param>
 		/// <returns>True when it will</returns>
@@ -58,7 +58,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether a living viking wears its armor the way a player does, which it does, so its armor reduces
+		/// Checks whether a PC viking wears its armor the way a player does, which it does, so its armor reduces
 		/// poison, fire and spirit damage too
 		/// </summary>
 		/// <returns>True</returns>
@@ -98,7 +98,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Gives the living viking its life in its village, or a dvergr viking its life with the dvergr
+		/// Gives the PC viking its life in its village, or a dvergr viking its life with the dvergr
 		/// </summary>
 		partial void AddParts()
 		{
@@ -111,7 +111,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Rolls a new living viking's look, health, skill, power and gear for its village's biome (see
+		/// Rolls a new PC viking's look, health, skill, power and gear for its village's biome (see
 		/// VillageCooking.BiomeAt), wherever around the village it appears - or out in the wild with no village, the
 		/// biome where it stands worked out the same way - as a woman or a man to suit a name it was given before it was rolled (see VikingNames.PresetFirst), and names
 		/// it, with the looks its name comes with (see StyleAfterName) - or a dvergr viking's for the Mistlands (see
@@ -133,28 +133,28 @@ namespace Kriona.Vikings
 				VikingGear.SetModel(rolled, model);
 			}
 			// The harder its biome, the likelier it has bought Haldor's wider and deeper pockets, a row more each
-			rolled.Height = VikingUpgrades.LivingRows(index, Random.value);
-			// A living viking has kept its armor and weapon in repair, all of it from its own biome, and its village's
+			rolled.Height = VikingUpgrades.PCRows(index, Random.value);
+			// A PC viking has kept its armor and weapon in repair, all of it from its own biome, and its village's
 			// archer has a bow
-			Arms arms = VikingGear.LivingArms(index, nview.GetZDO().GetBool(ArcherKey), Random.value);
+			Arms arms = VikingGear.PCArms(index, nview.GetZDO().GetBool(ArcherKey), Random.value);
 			Inventory gear = VikingGear.RollLoadout(index, humanoid.GetLevel(), rolled, true, arms, true, true);
 			// With Zombie Apocalypse, from the Mountains on, its weapons may be silver-lined and its bow come with silver
 			// arrows
 			VikingSilver.Arm(gear, index);
 			// It starts with a torch of its own for the night, or a dverger circlet, more often the harder its biome
-			gear.AddItem((VikingGear.LivingCirclet(index, Random.value) ? VikingGear.CircletPrefab : TorchPrefab), 1, 1, 0, 0L, "", false);
+			gear.AddItem((VikingGear.PCCirclet(index, Random.value) ? VikingGear.CircletPrefab : TorchPrefab), 1, 1, 0, 0L, "", false);
 			// A viking of the Mistlands wears a wisp light against the mist
-			if (VikingGear.LivingWisp(index))
+			if (VikingGear.PCWisp(index))
 			{
 				VikingGear.AddWisp(gear);
 			}
 			// And the likelier it has a strength belt, which goes in the same slot as a wisp light - so a viking of the
 			// Mistlands keeps its belt in its pack, and wears it for a quest that leaves the mist (see
 			// VikingUpgrades.QuestCarryBonus)
-			if (VikingUpgrades.LivingBelt(index, Random.value))
+			if (VikingUpgrades.PCBelt(index, Random.value))
 			{
 				ItemDrop.ItemData belt = gear.AddItem(VikingUpgrades.BeltPrefab, 1, 1, 0, 0L, "", false);
-				if (belt != null && !VikingGear.LivingWisp(index))
+				if (belt != null && !VikingGear.PCWisp(index))
 				{
 					belt.m_equipped = true;
 				}
@@ -194,7 +194,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Finds where the farm of the living viking's village stands - the one it belongs to, or else the nearest to it,
+		/// Finds where the farm of the PC viking's village stands - the one it belongs to, or else the nearest to it,
 		/// for one spawned with its village that hasn't been taken in yet
 		/// </summary>
 		/// <returns>Where the farm stands, or where the viking stands when there's none</returns>
@@ -210,20 +210,20 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Raises the living viking's skills faster while it's rested, the way a player's do
+		/// Raises the PC viking's skills faster while it's rested, the way a player's do
 		/// </summary>
 		/// <param name="skill">The skill</param>
 		/// <param name="multiplier">How much it rises, changed here</param>
 		partial void ModifySkillGain(Skills.SkillType skill, ref float multiplier)
 		{
-			if (humanoid is LivingVikingBody living)
+			if (humanoid is PCVikingBody pc)
 			{
-				living.Rest.ModifyRaiseSkill(skill, ref multiplier);
+				pc.Rest.ModifyRaiseSkill(skill, ref multiplier);
 			}
 		}
 
 		/// <summary>
-		/// Glows around the living viking's head on every client as it reaches a new level, the way a player does, and
+		/// Glows around the PC viking's head on every client as it reaches a new level, the way a player does, and
 		/// has it say so
 		/// </summary>
 		/// <param name="skill">The skill</param>
@@ -235,20 +235,20 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Sets the living viking's max health from its biome and what it has eaten (see VikingFood.MaxHealth) - a
+		/// Sets the PC viking's max health from its biome and what it has eaten (see VikingFood.MaxHealth) - a
 		/// dvergr viking's is its biome's and its stars', the same as a zombie viking of the world's
 		/// </summary>
 		/// <param name="health">Its max health, set here</param>
-		partial void LivingMaxHealth(ref float health)
+		partial void PCMaxHealth(ref float health)
 		{
-			if (humanoid is LivingVikingBody living && IsLivingViking(humanoid))
+			if (humanoid is PCVikingBody pc && IsPCViking(humanoid))
 			{
-				health = living.Food.MaxHealth();
+				health = pc.Food.MaxHealth();
 			}
 		}
 
 		/// <summary>
-		/// Adds the living viking's ID (see VikingIdentity) and door line (see VikingDoors.DebugLine) to its debug summary
+		/// Adds the PC viking's ID (see VikingIdentity) and door line (see VikingDoors.DebugLine) to its debug summary
 		/// </summary>
 		/// <param name="text">The summary so far</param>
 		partial void AddDebugLines(System.Text.StringBuilder text)
@@ -259,7 +259,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Names the living viking for the log by the name its village knows it by (see VikingNames)
+		/// Names the PC viking for the log by the name its village knows it by (see VikingNames)
 		/// </summary>
 		/// <param name="label">Set to its name</param>
 		partial void NameForLog(ref string label)
@@ -268,7 +268,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Has the living viking keep out of the water while it has an enemy or is hunting and isn't on fire - its paths
+		/// Has the PC viking keep out of the water while it has an enemy or is hunting and isn't on fire - its paths
 		/// leave the water out, so a chase into it ends at the shore and a hunter shoots prey in the water, like a leech,
 		/// from the bank - and walk the usual paths otherwise, which are the ones kept off roofs (see NavmeshRoofs)
 		/// </summary>
@@ -285,7 +285,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether the living viking keeps off roofs - unless it's in a fight, as it only walks over a roof to get
+		/// Checks whether the PC viking keeps off roofs - unless it's in a fight, as it only walks over a roof to get
 		/// at an enemy: it has a target, is wary (see IVikingLife.IsWary) or has a deathsquito after it. Being alerted or
 		/// hurt a moment ago with no enemy to fight doesn't take it onto a roof
 		/// </summary>
@@ -296,7 +296,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether the living viking is in a fight - it has a target, is wary (see IVikingLife.IsWary) or has a
+		/// Checks whether the PC viking is in a fight - it has a target, is wary (see IVikingLife.IsWary) or has a
 		/// deathsquito after it
 		/// </summary>
 		/// <returns>True when it is</returns>
@@ -306,7 +306,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether the living viking has no danger near - not alerted, without a target, not hurt in the last few
+		/// Checks whether the PC viking has no danger near - not alerted, without a target, not hurt in the last few
 		/// seconds, not waiting for a corpse to rise and with no deathsquito after it
 		/// </summary>
 		/// <returns>True when it has none</returns>
@@ -316,7 +316,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Gets the navmesh areas the living viking's paths leave out - always the lava and the boiling sea (see
+		/// Gets the navmesh areas the PC viking's paths leave out - always the lava and the boiling sea (see
 		/// DangerousGround), and roofs while it keeps off them (see AvoidsRoofs)
 		/// </summary>
 		/// <returns>The areas, as a navmesh area mask</returns>

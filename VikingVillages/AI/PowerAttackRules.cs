@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// The rules for a living viking's power attacks - its melee weapon's secondary attack: which ones stagger, which
+	/// The rules for a PC viking's power attacks - its melee weapon's secondary attack: which ones stagger, which
 	/// hit harder than the weapon's normal blow, when each is a smart move and how often it can use one - worked out
 	/// apart from the game so they can be tested
 	/// </summary>

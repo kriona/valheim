@@ -6,7 +6,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// The abandoned farms living vikings come to - noted as they're generated, for living vikings to come to once each
+	/// The abandoned farms PC vikings come to - noted as they're generated, for PC vikings to come to once each
 	/// has its bonfire (see VillageRespawn.Populated) - the empty abandoned houses near them the vikings take in, the
 	/// livestock their pens spawn, and the chests they're generated with, which are the vikings' own
 	/// </summary>
@@ -34,13 +34,13 @@ namespace VikingVillages
 		private const float FenceMargin = 4f;
 
 		/// <summary>
-		/// How close a living viking has to be to a farm's pen for the animals it spawns to be tamed, in meters - about
+		/// How close a PC viking has to be to a farm's pen for the animals it spawns to be tamed, in meters - about
 		/// the farm's size
 		/// </summary>
 		private const float FarmKeeperRange = 40f;
 
 		/// <summary>
-		/// How far from an abandoned farm an empty abandoned house is taken in by its living vikings, in meters
+		/// How far from an abandoned farm an empty abandoned house is taken in by its PC vikings, in meters
 		/// </summary>
 		private const float FarmGuardRange = 100f;
 
@@ -100,7 +100,7 @@ namespace VikingVillages
 		private static readonly List<Vector3> hives = new List<Vector3>();
 
 		/// <summary>
-		/// Whether an abandoned farm, or an empty abandoned house near one that its living vikings take in, is being
+		/// Whether an abandoned farm, or an empty abandoned house near one that its PC vikings take in, is being
 		/// generated for the first time, so its pieces start out whole
 		/// </summary>
 		private static bool generatingFarm;
@@ -162,7 +162,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether an abandoned farm stands, or will stand, within FarmGuardRange of a point, so its living vikings
+		/// Checks whether an abandoned farm stands, or will stand, within FarmGuardRange of a point, so its PC vikings
 		/// take in an empty abandoned house there
 		/// </summary>
 		/// <remarks>
@@ -177,7 +177,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Lists the empty abandoned houses the world plans near a farm that its living vikings take in - those whose
+		/// Lists the empty abandoned houses the world plans near a farm that its PC vikings take in - those whose
 		/// nearest farm it is - whether or not they've been generated yet
 		/// </summary>
 		/// <param name="farm">Where the farm stands, its planned spot or near it</param>
@@ -204,7 +204,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Finds the planned spot of the abandoned farm nearest a point, within FarmGuardRange of it - the farm whose
-		/// living vikings take in an empty house there
+		/// PC vikings take in an empty house there
 		/// </summary>
 		/// <param name="point">The point</param>
 		/// <param name="farm">The farm's planned spot, or the point when there's none</param>
@@ -261,7 +261,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Adds the empty abandoned houses within FarmGuardRange of a farm, which its living vikings have taken in, to a
+		/// Adds the empty abandoned houses within FarmGuardRange of a farm, which its PC vikings have taken in, to a
 		/// village's houses
 		/// </summary>
 		/// <param name="farm">Where the farm stands</param>
@@ -362,15 +362,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a living viking is within FarmKeeperRange of a point
+		/// Checks whether a PC viking is within FarmKeeperRange of a point
 		/// </summary>
 		/// <param name="point">The point</param>
 		/// <returns>True when one is</returns>
-		public static bool LivingVikingNear(Vector3 point)
+		public static bool PCVikingNear(Vector3 point)
 		{
 			List<Character> nearby = new List<Character>();
 			Character.GetCharactersInRange(point, FarmKeeperRange, nearby);
-			return(nearby.Any((Character character) => !character.IsDead() && VikingCore.IsLivingViking(character)));
+			return(nearby.Any((Character character) => !character.IsDead() && VikingCore.IsPCViking(character)));
 		}
 
 		/// <summary>
@@ -418,7 +418,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// For a farm or house its living vikings keep in repair, puts back a building piece it left out by chance, like
+		/// For a farm or house its PC vikings keep in repair, puts back a building piece it left out by chance, like
 		/// a roof tile or a door, clears the vines it's overgrown with, and takes out the wild beehive, noting where it
 		/// would have hung so a beehive piece can stand outside instead - its other furnishings are still left to chance
 		/// </summary>
@@ -474,7 +474,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Keeps the pieces of a farm, or a house its living vikings have taken in, from starting out damaged as it's
+		/// Keeps the pieces of a farm, or a house its PC vikings have taken in, from starting out damaged as it's
 		/// generated, since the vikings have kept it in repair
 		/// </summary>
 		public static void OnPieceAwake()
@@ -486,7 +486,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Makes one of the game's treasure chests that a farm, or a house its living vikings take in, is generated with
+		/// Makes one of the game's treasure chests that a farm, or a house its PC vikings take in, is generated with
 		/// one of the village's own chests - starting empty, as a chest built as a piece does, and no longer counted as a
 		/// treasure chest (see VillageLife.IsTreasureChest) - so its vikings keep their things in it. A buried one, which
 		/// the vikings can't reach and the wishbone finds, stays the world's
@@ -513,7 +513,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Notes a house built in an abandoned farm being generated as one of its farmhouses, for living vikings to live
+		/// Notes a house built in an abandoned farm being generated as one of its farmhouses, for PC vikings to live
 		/// in
 		/// </summary>
 		/// <param name="center">Where the house's middle stands</param>
@@ -531,7 +531,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Notes where an abandoned farm's farmhouses stand as its rooms are generated, for living vikings to live in
+		/// Notes where an abandoned farm's farmhouses stand as its rooms are generated, for PC vikings to live in
 		/// </summary>
 		/// <param name="rooms">The rooms just placed</param>
 		public static void OnRoomsGenerated(List<Room> rooms)
@@ -553,7 +553,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Notes an abandoned farm's farmhouses for living vikings to come to as the location is generated - which
+		/// Notes an abandoned farm's farmhouses for PC vikings to come to as the location is generated - which
 		/// happens once, the first time its zone is - and fixes up an empty house near a farm for the farm's vikings
 		/// </summary>
 		/// <param name="location">The location just placed</param>
@@ -585,7 +585,7 @@ namespace VikingVillages
 			}
 			if (farm && houses.Count == 0)
 			{
-				Plugin.Log.LogWarning("Found no farmhouses for living vikings in " + location.m_prefabName + " at " + position.ToString("F0"));
+				Plugin.Log.LogWarning("Found no farmhouses for PC vikings in " + location.m_prefabName + " at " + position.ToString("F0"));
 			}
 			if (location == null || ZNetScene.instance == null || (!farm && !outpost) || houses.Count == 0)
 			{
@@ -604,7 +604,7 @@ namespace VikingVillages
 				VillagePaths.RecordVillage(position, villageHouses);
 				VillageRespawn.MarkPlanned(position);
 			}
-			Plugin.Log.LogInfo((farm ? "Farm for living vikings: " : "Fixed up for living vikings: ") + name + " at " + position.ToString("F0"));
+			Plugin.Log.LogInfo((farm ? "Farm for PC vikings: " : "Fixed up for PC vikings: ") + name + " at " + position.ToString("F0"));
 		}
 
 		/// <summary>

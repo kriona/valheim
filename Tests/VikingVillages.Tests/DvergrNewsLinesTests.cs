@@ -4,7 +4,7 @@ using Xunit;
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests the pools dvergr vikings tell news from - their own for every kind of event, and the living vikings' for
+	/// Tests the pools dvergr vikings tell news from - their own for every kind of event, and the PC vikings' for
 	/// the Mistlands' news
 	/// </summary>
 	public class DvergrNewsLinesTests
@@ -59,7 +59,7 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that the Mistlands' news is told with the living vikings' lines
+		/// Checks that the Mistlands' news is told with the PC vikings' lines
 		/// </summary>
 		[Theory]
 		[InlineData(VikingNews.Biome, "Mistlands", "biome/Mistlands")]
@@ -89,7 +89,7 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that no living viking's pool is one a dvergr viking tells news from, but for the Mistlands' shared
+		/// Checks that no PC viking's pool is one a dvergr viking tells news from, but for the Mistlands' shared
 		/// ones, so the two kinds' words stay apart
 		/// </summary>
 		[Fact]

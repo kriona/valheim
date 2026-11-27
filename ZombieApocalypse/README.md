@@ -1,5 +1,7 @@
 # Zombie Apocalypse
 
+NOTE: this mod has not been released, there are no existing villages, and breaking changes just mean I need to delete my test worlds.
+
 Slain creatures don't stay dead - a few seconds after a creature dies, its corpse raises from the dead as a zombie that keeps fighting.
 
 <img src="images/troll.jpg" alt="Zombie troll" width="750">
@@ -54,7 +56,7 @@ Zombie Vikings roam the world, each with gear appropriate to the biome it spawns
 - Night zombie Vikings flee at dawn like other night creatures
 - An Ashlands zombie Viking takes no damage from the lava or the boiling sea, though fire from anything else still burns it
 - Draugr body piles spawn zombie Vikings, too
-- An abandoned house with no creatures of its own has a 66% chance to hold 1-2 Vikings - with Viking Villages, unless it's within 100 meters of an abandoned farm, whose living Vikings have taken it in
+- An abandoned house with no creatures of its own has a 66% chance to hold 1-2 Vikings - with Viking Villages, unless it's within 100 meters of an abandoned farm, whose PC Vikings have taken it in
 - A Viking has a 65% chance of wearing armor (always the chest and legs, with a 50% chance each of the set's helmet and cape), an 85% chance of wielding a weapon and a 40% chance of wearing a shield, unless its weapon takes both hands. From the Mountains on, every Viking wears a cape - the set's, or else the biome's own (a wolf fur cape in the Mountains, a lox cape in the Plains, a feather cape in the Mistlands, an Asksvin cloak in the Ashlands and a moose hide cape in the Deep North). Every star upgrades its gear one level, and everything is worn (50-95% durability)
 - A Viking with a bow or crossbow carries 100 arrows or bolts appropriate to its biome. It never carries weapons or ammo that deal spirit damage, and a Deep North Viking never carries Dyrnwyn
 - Its health, skills, fists and coins depend on its biome - from 50 health, skills of 0-12 and 0-10 coins in the Meadows to 1200 health, skills of 88-100 and 200-300 coins in the Deep North, each skill rolled on its own within the range, every one at least 1 - and stars multiply its health and coins
@@ -108,14 +110,14 @@ Creatures that do not turn into zombies:
 
 ## With Viking Villages
 
-With [Viking Villages](https://thunderstore.io/c/valheim/p/Kriona/VikingVillages/) installed too, the living Vikings of its villages live through the apocalypse:
+With [Viking Villages](https://thunderstore.io/c/valheim/p/Kriona/VikingVillages/) installed too, the PC Vikings of its villages live through the apocalypse:
 
-- A living Viking who dies rises as a zombie Viking with their looks, name, gear and skills - Zombie Ragnar to the players they knew, and plain Zombie Viking to anyone else - by the same rules as any slain creature - `RiseChance`, `FireStaysDead` and spirit damage - and drops coins like any zombie Viking when killed in turn, along with the wood and loot they carried for their village. So does a Dvergr Viking, one of the living Vikings the Dvergr hire in the Mistlands
+- A PC Viking who dies rises as a zombie Viking with their looks, name, gear and skills - Zombie Ragnar to the players they knew, and plain Zombie Viking to anyone else - by the same rules as any slain creature - `RiseChance`, `FireStaysDead` and spirit damage - and drops coins like any zombie Viking when killed in turn, along with the wood and loot they carried for their village. So does a Dvergr Viking, one of the Vikings the Dvergr hire in the Mistlands
 - They stand ready over corpses about to rise and keep clear of poison clouds
 - What they talk about follows the world's zombies - the dead walking while `RiseChance` is above 0, burning the dead while `FireStaysDead` is above 0 (and silver always), dead deer while `AnimalsRise` is on, the dead raiding while `VikingRaids` is on, and newcomers rising while `TombstoneZombies` is on
-- The empty abandoned houses within 100 meters of a farm are its living Vikings', so zombie Vikings never hold them
-- From the Mountains on, living and Dvergr Vikings may start with silver-lined weapons and silver arrows, and their villages line more weapons at the forge, hunting ghosts for the ectoplasm
-- A living Viking rising as a zombie drops their silver-lined weapons and silver arrows on the spot, since the undead can't bear them
+- The empty abandoned houses within 100 meters of a farm are its PC Vikings', so zombie Vikings never hold them
+- From the Mountains on, PC and Dvergr Vikings may start with silver-lined weapons and silver arrows, and their villages line more weapons at the forge, hunting ghosts for the ectoplasm
+- A PC Viking rising as a zombie drops their silver-lined weapons and silver arrows on the spot, since the undead can't bear them
 
 Any version of Zombie Apocalypse works with any version of Viking Villages - what one has that the other doesn't know about yet is left out.
 
@@ -127,8 +129,8 @@ In multiplayer, every player uses the server's settings while connected to it, a
 
 Rising:
 
-- `RiseChance` - percent chance that a slain creature rises - with Viking Villages, the living Vikings talk of the dead rising and stand ready over their village's dead while it's above 0 (default `100`)
-- `FireStaysDead` - a creature that took at least this percent of its damage as fire stays dead, or `0` to let burned creatures rise too, which also keeps Viking Villages' living Vikings from talking of burning the dead (default `25`)
+- `RiseChance` - percent chance that a slain creature rises - with Viking Villages, the PC Vikings talk of the dead rising and stand ready over their village's dead while it's above 0 (default `100`)
+- `FireStaysDead` - a creature that took at least this percent of its damage as fire stays dead, or `0` to let burned creatures rise too, which also keeps Viking Villages' PC Vikings from talking of burning the dead (default `25`)
 - `RiseDelay` - seconds a corpse lies on the ground before it starts to get up (default `5`)
 - `RiseDuration` - seconds a corpse takes to get up (default `2.5`)
 - `WakeUpAnimation` - creatures that can sleep get up with their own wake-up animation (default `true`)

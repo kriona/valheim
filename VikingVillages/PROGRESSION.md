@@ -18,7 +18,7 @@ Everything that changes with a Viking's or a village's biome, in one place - fir
 
 ## Vikings by Biome
 
-What a living Viking of each biome starts with. Odds are rolled once, when they're rolled up, and a Viking who comes back after dying is rolled again. Dvergr Vikings are always of the Mistlands (see [Dvergr Vikings](#dvergr-vikings)).
+What a PC Viking of each biome starts with. Odds are rolled once, when they're rolled up, and a Viking who comes back after dying is rolled again. Dvergr Vikings are always of the Mistlands (see [Dvergr Vikings](#dvergr-vikings)).
 
 ### Meadows Viking
 
@@ -136,7 +136,7 @@ Each skill is rolled on its own within the range, and rises with use from there 
 
 ### Health
 
-A living Viking's max health is what their food gives them, the way yours is, but never below their biome's least (see [Eating](LOGIC.md#eating)).
+A PC Viking's max health is what their food gives them, the way yours is, but never below their biome's least (see [Eating](LOGIC.md#eating)).
 
 | Biome | Least max health | Fully fed on their own biome's best 3 foods |
 | --- | --- | --- |
@@ -151,7 +151,7 @@ A living Viking's max health is what their food gives them, the way yours is, bu
 
 ### Melee Damage
 
-A living or Dvergr Viking's melee weapons hit as hard as yours do at their skill. With Zombie Apocalypse, a zombie Viking of the world's melee weapons hit harder than yours in the easier biomes, so its weaker gear keeps up with the monsters there - a zombie risen from a living Viking included, and a tombstone zombie, who fights as you did, not. Every Viking's bows and crossbows hit as yours do, and their bare fists hit for a set amount in place of yours.
+A PC or Dvergr Viking's melee weapons hit as hard as yours do at their skill. With Zombie Apocalypse, a zombie Viking of the world's melee weapons hit harder than yours in the easier biomes, so its weaker gear keeps up with the monsters there - a zombie risen from a PC Viking included, and a tombstone zombie, who fights as you did, not. Every Viking's bows and crossbows hit as yours do, and their bare fists hit for a set amount in place of yours.
 
 | Biome | A zombie Viking's melee hits | Fists |
 | --- | --- | --- |
@@ -166,9 +166,9 @@ A living or Dvergr Viking's melee weapons hit as hard as yours do at their skill
 
 ### Forsaken Powers
 
-A living Viking knows the power of their own biome's boss and every biome's before it, and learns any other they're given (see [Forsaken Powers](LOGIC.md#forsaken-powers)). With Zombie Apocalypse, a zombie Viking of the world has a chance of using their biome's boss's power - the last one in the list - the first time they spot an enemy.
+A PC Viking knows the power of their own biome's boss and every biome's before it, and learns any other they're given (see [Forsaken Powers](LOGIC.md#forsaken-powers)). With Zombie Apocalypse, a zombie Viking of the world has a chance of using their biome's boss's power - the last one in the list - the first time they spot an enemy.
 
-| Biome | A living Viking knows | A zombie Viking uses |
+| Biome | A PC Viking knows | A zombie Viking uses |
 | --- | --- | --- |
 | Meadows | Eikthyr's | Eikthyr's |
 | Black Forest | Eikthyr's and the Elder's | The Elder's |

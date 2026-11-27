@@ -3,7 +3,7 @@ using Xunit;
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests the strength belt and pockets a living viking starts with by its biome, the pockets Haldor can sew for it,
+	/// Tests the strength belt and pockets a PC viking starts with by its biome, the pockets Haldor can sew for it,
 	/// and the belt a Mistlands viking wears for a quest outside the mist
 	/// </summary>
 	public class VikingUpgradesTests
@@ -20,8 +20,8 @@ namespace VikingVillages.Tests
 		public void BeltsAreLikelierTheHarderTheBiome(int biome, float chance)
 		{
 			Assert.Equal(chance, VikingUpgrades.ChanceOf(VikingUpgrades.BeltChances, biome));
-			Assert.Equal(chance > 0f, VikingUpgrades.LivingBelt(biome, 0f));
-			Assert.False(VikingUpgrades.LivingBelt(biome, chance));
+			Assert.Equal(chance > 0f, VikingUpgrades.PCBelt(biome, 0f));
+			Assert.False(VikingUpgrades.PCBelt(biome, chance));
 		}
 
 		[Theory]
@@ -53,7 +53,7 @@ namespace VikingVillages.Tests
 		[InlineData(0.6f, VikingUpgrades.PlainRows)]
 		public void AMistlandsVikingsRowsComeFromOneRoll(float roll, int rows)
 		{
-			Assert.Equal(rows, VikingUpgrades.LivingRows(ResourceBook.Mistlands, roll));
+			Assert.Equal(rows, VikingUpgrades.PCRows(ResourceBook.Mistlands, roll));
 		}
 
 		[Fact]
@@ -65,7 +65,7 @@ namespace VikingVillages.Tests
 			const int rolls = 1000;
 			for (int i = 0; i < rolls; i++)
 			{
-				int rows = VikingUpgrades.LivingRows(ResourceBook.AshLands, (i + 0.5f) / rolls);
+				int rows = VikingUpgrades.PCRows(ResourceBook.AshLands, (i + 0.5f) / rolls);
 				wider += ((rows >= VikingUpgrades.WiderRows) ? 1 : 0);
 				deeper += ((rows >= VikingUpgrades.DeeperRows) ? 1 : 0);
 			}
@@ -76,10 +76,10 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void AVikingOfTheEasierBiomesHasNoPockets()
 		{
-			Assert.Equal(VikingUpgrades.PlainRows, VikingUpgrades.LivingRows(ResourceBook.Meadows, 0f));
-			Assert.Equal(VikingUpgrades.PlainRows, VikingUpgrades.LivingRows(ResourceBook.Swamp, 0f));
-			Assert.Equal(VikingUpgrades.DeeperRows, VikingUpgrades.LivingRows(ResourceBook.DeepNorth, 0.59f));
-			Assert.Equal(VikingUpgrades.WiderRows, VikingUpgrades.LivingRows(ResourceBook.DeepNorth, 0.99f));
+			Assert.Equal(VikingUpgrades.PlainRows, VikingUpgrades.PCRows(ResourceBook.Meadows, 0f));
+			Assert.Equal(VikingUpgrades.PlainRows, VikingUpgrades.PCRows(ResourceBook.Swamp, 0f));
+			Assert.Equal(VikingUpgrades.DeeperRows, VikingUpgrades.PCRows(ResourceBook.DeepNorth, 0.59f));
+			Assert.Equal(VikingUpgrades.WiderRows, VikingUpgrades.PCRows(ResourceBook.DeepNorth, 0.99f));
 		}
 
 		[Theory]

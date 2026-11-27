@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// What living and dvergr vikings say to a player they know about the runestones of the biome they stand in - each
+	/// What PC and dvergr vikings say to a player they know about the runestones of the biome they stand in - each
 	/// line about what one of the game's own runestones there says, from the boar stone of the Meadows to the stones
 	/// of the Deep North - and about the runestones carved by someone of their own name, like Ulf's
 	/// </summary>

@@ -3,7 +3,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// What a living viking says to a player wearing nothing on their chest or legs - asking whether they're cold, and
+	/// What a PC viking says to a player wearing nothing on their chest or legs - asking whether they're cold, and
 	/// offering to lend them something to wear, kindly and never poking fun - as it calls out to them (see
 	/// VikingConcernSpeech) and now and then when they talk to it. In the Ashlands, the lines about the cold are left
 	/// out for lines about the ash. The lines are in DIALOG.md too

@@ -3,7 +3,7 @@ using Kriona.Vikings;
 namespace ZombieApocalypse
 {
 	/// <summary>
-	/// A zombie viking's AI, which fights like a monster's apart from what it shares with a living viking's, held still
+	/// A zombie viking's AI, which fights like a monster's apart from what it shares with a PC viking's, held still
 	/// while it gets up and hunting players while it's in a raid
 	/// </summary>
 	internal class ZombieVikingAI : VikingAI

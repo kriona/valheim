@@ -5,7 +5,7 @@ using Kriona.Vikings;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Who each living viking is, apart from its name - a GUID of its own, given by its owner the first time it loads and
+	/// Who each PC viking is, apart from its name - a GUID of its own, given by its owner the first time it loads and
 	/// shown in debug mode - when it last talked to each player it knows, so it only brings up news that's new to them
 	/// (see VikingNewsStore), and when it met each of them and how many times they've talked to it, so it knows its old
 	/// friends
@@ -17,19 +17,19 @@ namespace VikingVillages
 	internal static class VikingIdentity
 	{
 		/// <summary>
-		/// On a living viking, its GUID
+		/// On a PC viking, its GUID
 		/// </summary>
 		private static readonly int IdKey = "kriona.VikingVillages.vikingId".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, when it last talked to each player it knows, by player ID, in ZNet time ticks - the one it
+		/// On a PC viking, when it last talked to each player it knows, by player ID, in ZNet time ticks - the one it
 		/// talked to longest ago first - and the most it remembers
 		/// </summary>
 		private static readonly int TalkedKey = "kriona.VikingVillages.vikingTalked".GetStableHashCode();
 		private const int TalkedMax = 64;
 
 		/// <summary>
-		/// On a living viking, when it met each player it knows and how many times they've talked to it, by player ID -
+		/// On a PC viking, when it met each player it knows and how many times they've talked to it, by player ID -
 		/// the one it heard from longest ago first - and the most it remembers
 		/// </summary>
 		private static readonly int MetKey = "kriona.VikingVillages.vikingMet".GetStableHashCode();

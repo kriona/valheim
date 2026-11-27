@@ -13,7 +13,7 @@ namespace VikingVillages
 	public static class Link
 	{
 		/// <summary>
-		/// Checks whether the living vikings take in an abandoned house, as one near an abandoned farm (see
+		/// Checks whether the PC vikings take in an abandoned house, as one near an abandoned farm (see
 		/// FarmSpawns.FarmNear), so zombie vikings leave it to them
 		/// </summary>
 		/// <param name="position">Where the house stands</param>

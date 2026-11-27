@@ -10,14 +10,14 @@ namespace Kriona.Vikings
 	internal partial class VikingCore
 	{
 		/// <summary>
-		/// Hands a dying living or dvergr viking's data, inventory, name and the players it knows to its corpse, for the
+		/// Hands a dying PC or dvergr viking's data, inventory, name and the players it knows to its corpse, for the
 		/// zombie viking it rises as
 		/// </summary>
 		/// <param name="creature">The dying creature</param>
 		/// <param name="corpse">Its corpse's ZDO, owned by this client</param>
 		public static void HandToCorpse(Character creature, ZDO corpse)
 		{
-			if (creature == null || !IsLivingOrDvergr(creature))
+			if (creature == null || !IsPCOrDvergr(creature))
 			{
 				return;
 			}
@@ -134,9 +134,9 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// As the viking dies on its owner, drops everything a tombstone viking carries but kept items in a tombstone of
-		/// the player's, everything a living viking has, or the coins and maybe some of the gear of a viking of the
+		/// the player's, everything a PC viking has, or the coins and maybe some of the gear of a viking of the
 		/// world or a dvergr viking, along with the wood and loot it carried from its life in a village, on the ground -
-		/// or, for a living or dvergr viking that will rise, keeps everything for its zombie, which drops it in turn
+		/// or, for a PC or dvergr viking that will rise, keeps everything for its zombie, which drops it in turn
 		/// </summary>
 		/// <param name="rises">Whether the viking's corpse will rise</param>
 		public void DropGrave(bool rises)
@@ -150,7 +150,7 @@ namespace Kriona.Vikings
 				return;
 			}
 			VikingItems.RemoveProps(humanoid.GetInventory());
-			if (rises && IsLivingOrDvergr(humanoid))
+			if (rises && IsPCOrDvergr(humanoid))
 			{
 				// Its zombie takes up the shield it had equipped, and a shield sheathed on its back isn't
 				if (shield != null && humanoid.GetInventory().ContainsItem(shield))
@@ -165,7 +165,7 @@ namespace Kriona.Vikings
 			{
 				SpawnGrave(humanoid.GetCenterPoint(), transform.rotation, humanoid.GetInventory(), data);
 			}
-			else if (IsLivingViking(humanoid))
+			else if (IsPCViking(humanoid))
 			{
 				DropEverything();
 			}
@@ -177,7 +177,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Drops everything a living viking that stays dead has on the ground around it - all of its gear and what's in
+		/// Drops everything a PC viking that stays dead has on the ground around it - all of its gear and what's in
 		/// its inventory, ammo included, and nothing else, no coins or remains
 		/// </summary>
 		private void DropEverything()

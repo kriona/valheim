@@ -14,7 +14,7 @@ namespace VikingVillages
 	internal class TripStory
 	{
 		/// <summary>
-		/// On a living viking, its last trip, and when it got where it was going, in ZNet time ticks, or 0 while it's still
+		/// On a PC viking, its last trip, and when it got where it was going, in ZNet time ticks, or 0 while it's still
 		/// on the road
 		/// </summary>
 		public static readonly int TripKey = "kriona.VikingVillages.vikingTrip".GetStableHashCode();

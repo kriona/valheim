@@ -313,7 +313,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// The share of a biome's living vikings that start with only a bow or crossbow and the share that start with
+		/// The share of a biome's PC vikings that start with only a bow or crossbow and the share that start with
 		/// only a melee weapon, the rest starting with both
 		/// </summary>
 		internal class ArmsSplit
@@ -323,7 +323,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// How the living vikings of the biomes before the Mountains are split between bows, melee weapons and both -
+		/// How the PC vikings of the biomes before the Mountains are split between bows, melee weapons and both -
 		/// a biome not listed, like the Meadows, gives its village's archer both and the rest one weapon of any kind
 		/// </summary>
 		internal static readonly Dictionary<Heightmap.Biome, ArmsSplit> ArmsSplits = new Dictionary<Heightmap.Biome, ArmsSplit>()
@@ -333,7 +333,7 @@ namespace Kriona.Vikings
 		};
 
 		/// <summary>
-		/// Picks the weapons a living viking of a biome starts with. From the Mountains on, every one has a bow or
+		/// Picks the weapons a PC viking of a biome starts with. From the Mountains on, every one has a bow or
 		/// crossbow and a melee weapon. A biome in ArmsSplits splits them by its shares - except one marked as its
 		/// village's archer, which has a bow either way, alone or with a melee weapon in the same proportion as the
 		/// rest. Elsewhere one marked as its village's archer has both, and the rest one weapon of any kind
@@ -342,7 +342,7 @@ namespace Kriona.Vikings
 		/// <param name="marked">Whether it's marked as its village's archer (see VikingCore.ArcherKey)</param>
 		/// <param name="roll">A random number from 0 to 1</param>
 		/// <returns>Its weapons</returns>
-		internal static Arms LivingArms(int index, bool marked, float roll)
+		internal static Arms PCArms(int index, bool marked, float roll)
 		{
 			if (index >= IndexOf(Heightmap.Biome.Mountain))
 			{
@@ -364,13 +364,13 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// The dverger circlet a living viking can start with in place of a torch, which lights its way as it wears it
+		/// The dverger circlet a PC viking can start with in place of a torch, which lights its way as it wears it
 		/// (see VikingCore.UpdateTorch)
 		/// </summary>
 		public const string CircletPrefab = "HelmetDverger";
 
 		/// <summary>
-		/// The chance that a living viking of a biome before the Mistlands starts with a dverger circlet rather than a
+		/// The chance that a PC viking of a biome before the Mistlands starts with a dverger circlet rather than a
 		/// torch - a biome not listed, like the Meadows, never has one, and from the Mistlands on every one has
 		/// </summary>
 		internal static readonly Dictionary<Heightmap.Biome, float> CircletChances = new Dictionary<Heightmap.Biome, float>()
@@ -382,12 +382,12 @@ namespace Kriona.Vikings
 		};
 
 		/// <summary>
-		/// Checks whether a living viking of a biome starts with a dverger circlet rather than a torch, by CircletChances
+		/// Checks whether a PC viking of a biome starts with a dverger circlet rather than a torch, by CircletChances
 		/// </summary>
 		/// <param name="index">The index of its biome</param>
 		/// <param name="roll">A random number from 0 to 1</param>
 		/// <returns>True for a circlet</returns>
-		internal static bool LivingCirclet(int index, float roll)
+		internal static bool PCCirclet(int index, float roll)
 		{
 			if (index >= IndexOf(Heightmap.Biome.Mistlands))
 			{
@@ -397,16 +397,16 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// The wisp light a living viking of the Mistlands wears, which pushes back the mist around it
+		/// The wisp light a PC viking of the Mistlands wears, which pushes back the mist around it
 		/// </summary>
 		public const string WispPrefab = "Demister";
 
 		/// <summary>
-		/// Checks whether a living viking of a biome starts with a wisp light - one of the Mistlands
+		/// Checks whether a PC viking of a biome starts with a wisp light - one of the Mistlands
 		/// </summary>
 		/// <param name="index">The index of its biome</param>
 		/// <returns>True when it does</returns>
-		internal static bool LivingWisp(int index)
+		internal static bool PCWisp(int index)
 		{
 			return(index == IndexOf(Heightmap.Biome.Mistlands));
 		}
@@ -434,9 +434,9 @@ namespace Kriona.Vikings
 		/// (see AlwaysHelmeted)</param>
 		/// <param name="arms">The weapons it wields - any but Any always gives it one, skipping ZombieWeaponChance, and
 		/// a bow or crossbow comes with its arrows or bolts</param>
-		/// <param name="repaired">True for gear that's fully repaired, like a living viking's, rather than worn down
+		/// <param name="repaired">True for gear that's fully repaired, like a PC viking's, rather than worn down
 		/// between ZombieDurabilityMin and ZombieDurabilityMax like a zombie viking's</param>
-		/// <param name="ownBiome">True for gear only from its own biome, like a living viking's, each piece falling back
+		/// <param name="ownBiome">True for gear only from its own biome, like a PC viking's, each piece falling back
 		/// to the nearest biome below with some that will do only when its own has none - like a bow, for a biome with
 		/// none</param>
 		/// <returns>The inventory holding the gear</returns>
@@ -447,7 +447,7 @@ namespace Kriona.Vikings
 			bool deepNorth = (Get(index).Biome == Heightmap.Biome.DeepNorth);
 			int quality = (VikingSettings.Get(VikingSettings.ZombieStarsUpgradeGear, true) ? level : 1);
 			System.Predicate<string> allowed = (string name) => !(deepNorth && name == DeepNorthBanned) && IsAllowed(name);
-			// A living viking from the Mountains on always wears its set's helmet, which every set there has, and every
+			// A PC viking from the Mountains on always wears its set's helmet, which every set there has, and every
 			// viking from there on wears a cape
 			bool helmeted = (armed && AlwaysHelmeted(index));
 			bool caped = AlwaysCaped(index);
@@ -582,7 +582,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether every living viking of a biome wears a helmet - the Mountains and every biome after, by Biomes'
+		/// Checks whether every PC viking of a biome wears a helmet - the Mountains and every biome after, by Biomes'
 		/// order
 		/// </summary>
 		/// <param name="index">The index of the biome</param>

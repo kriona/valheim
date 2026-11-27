@@ -4,7 +4,7 @@ using Splatform;
 namespace Kriona.Vikings
 {
 	/// <summary>
-	/// A living or dvergr viking's name and the players it knows, kept in its ZDO under keys that never change - so its
+	/// A PC or dvergr viking's name and the players it knows, kept in its ZDO under keys that never change - so its
 	/// zombie carries them when it rises (see VikingCore.HandToCorpse and HandOver), and shows its name to the players
 	/// the viking knew, and is plain Zombie Viking to the rest
 	/// </summary>

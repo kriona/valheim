@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests how a living viking works out where it stands against a door, which side of it is a room, and when it
+	/// Tests how a PC viking works out where it stands against a door, which side of it is a room, and when it
 	/// walks through, opens, waits at and is through a door
 	/// </summary>
 	public class DoorGeometryTests

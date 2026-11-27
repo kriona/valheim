@@ -270,7 +270,7 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Drops the weapons and ammo that deal spirit damage from what a corpse holds for its viking, on the ground where
-		/// it rises, since the undead can't bear them - a living viking's silver-lined weapons and shields and silver
+		/// it rises, since the undead can't bear them - a PC viking's silver-lined weapons and shields and silver
 		/// arrows. A
 		/// player's tombstone already kept theirs back (see StaysInGrave)
 		/// </summary>

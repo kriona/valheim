@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// What a living viking says to a player with one of the game's wooden training weapons in hand - encouraging them,
+	/// What a PC viking says to a player with one of the game's wooden training weapons in hand - encouraging them,
 	/// glad to see them keep their skill sharp, and training too - as it calls out to them (see VikingConcernSpeech)
 	/// and now and then when they talk to it. The lines are in DIALOG.md too
 	/// </summary>

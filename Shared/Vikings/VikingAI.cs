@@ -78,7 +78,7 @@ namespace Kriona.Vikings
 				return(true);
 			}
 			StartPathing();
-			// A deathsquito diving at a living viking is met first, even as it runs home - there's no outrunning one
+			// A deathsquito diving at a PC viking is met first, even as it runs home - there's no outrunning one
 			if (viking.UpdateDiveDefense(dt) || TakeOver(dt) || viking.UpdateReturn(dt))
 			{
 				return(false);
@@ -90,7 +90,7 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Runs the parts of the game's update every AI needs while the rest of it is skipped - the creature's healing,
-		/// with a living viking's food and rest (see VikingRegenPatch), how long it's been since it was hurt, and what
+		/// with a PC viking's food and rest (see VikingRegenPatch), how long it's been since it was hurt, and what
 		/// the viking's kind adds (see OnSkippedUpdate)
 		/// </summary>
 		/// <param name="dt">Seconds since the last update</param>
@@ -104,7 +104,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Sets up the viking's paths before the game's update, on its owner, like the navmesh areas a living viking
+		/// Sets up the viking's paths before the game's update, on its owner, like the navmesh areas a PC viking
 		/// keeps off
 		/// </summary>
 		protected virtual void StartPathing()

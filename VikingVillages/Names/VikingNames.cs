@@ -7,7 +7,7 @@ using Splatform;
 namespace VikingVillages
 {
 	/// <summary>
-	/// The names players give living vikings, the way they name a tamed creature - kept in the viking's ZDO with who
+	/// The names players give PC vikings, the way they name a tamed creature - kept in the viking's ZDO with who
 	/// named it, so the name is filtered for that player's words wherever it shows, over its health bar, when it's
 	/// looked at and when other vikings talk to it - and the names a viking won't take: a creature's, a legend's, a
 	/// place's, a player's who has been in the world, another viking's of its village, or text markup
@@ -15,7 +15,7 @@ namespace VikingVillages
 	internal static class VikingNames
 	{
 		/// <summary>
-		/// On a living viking, the name a player gave it and who gave it, by platform user ID or "host"
+		/// On a PC viking, the name a player gave it and who gave it, by platform user ID or "host"
 		/// </summary>
 		private static readonly int NameKey = VikingName.NameKey;
 		private static readonly int AuthorKey = VikingName.AuthorKey;
@@ -78,7 +78,7 @@ namespace VikingVillages
 		};
 
 		/// <summary>
-		/// The names a new living viking is given, picked at random for whether it's a woman or a man (see GiveName) -
+		/// The names a new PC viking is given, picked at random for whether it's a woman or a man (see GiveName) -
 		/// among them the names carved on the game's runestones, which a viking talks about having (see
 		/// VikingLoreSpeech.NamesakeLines)
 		/// </summary>
@@ -298,7 +298,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gives a living viking a name of its own when it has none - one picked at random for whether it's a man or a
+		/// Gives a PC viking a name of its own when it has none - one picked at random for whether it's a man or a
 		/// woman, that no other viking of its village goes by, with or without a byname, and that it wouldn't turn down
 		/// (see Judge), noted as given by no player, with one of Bynames after it more often the harder its biome (see
 		/// BynameChanceFor), like "Rolf the Red". The first of a village's vikings named once its village is known,
@@ -402,7 +402,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// The names whose vikings take after Frozen's sisters - an Elsa immune to frost (see LivingVikingBody.FrostImmune)
+		/// The names whose vikings take after Frozen's sisters - an Elsa immune to frost (see PCVikingBody.FrostImmune)
 		/// and rolled with a long blond braid, an Anna rolled with red twin braids (see VikingCore.StyleAfterName)
 		/// </summary>
 		internal const string ElsaName = "Elsa";
@@ -557,7 +557,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Lists the names the other living vikings of a viking's village go by, in lowercase - the vikings whose ZDOs
+		/// Lists the names the other PC vikings of a viking's village go by, in lowercase - the vikings whose ZDOs
 		/// this client has around the village that note it as theirs
 		/// </summary>
 		/// <param name="viking">The viking's ZDO</param>
@@ -582,7 +582,7 @@ namespace VikingVillages
 			}
 			foreach (ZDO other in zdos)
 			{
-				if (other == viking || other.GetPrefab() != VikingCore.LivingPrefabHash || Utils.DistanceXZ(other.GetVec3(Village.VillageKey, UnityEngine.Vector3.zero), farm) > FarmMatch)
+				if (other == viking || other.GetPrefab() != VikingCore.PCPrefabHash || Utils.DistanceXZ(other.GetVec3(Village.VillageKey, UnityEngine.Vector3.zero), farm) > FarmMatch)
 				{
 					continue;
 				}

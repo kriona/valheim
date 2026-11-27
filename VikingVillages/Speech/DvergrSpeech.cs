@@ -5,8 +5,8 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// What dvergr vikings say - a set of their own, about working for the dvergr and being hired by them, apart from
-	/// the living vikings' (see VikingSpeech) but for what both say about the Mistlands in the news (see
-	/// DvergrNewsLines) - shown over their heads the way the living vikings' words are
+	/// the PC vikings' (see VikingSpeech) but for what both say about the Mistlands in the news (see
+	/// DvergrNewsLines) - shown over their heads the way the PC vikings' words are
 	/// </summary>
 	/// <remarks>
 	/// Every line here is listed in the mod's DIALOG.md, which changes along with them

@@ -21,7 +21,7 @@ namespace Kriona.Vikings
 		private static readonly ModLink link = new ModLink(Guid, "VikingVillages.Link");
 
 		/// <summary>
-		/// Checks whether the living vikings take in an abandoned house being generated, as one near an abandoned farm,
+		/// Checks whether the PC vikings take in an abandoned house being generated, as one near an abandoned farm,
 		/// so it's left for them - asked as the house is placed, once Viking Villages has looked at it
 		/// </summary>
 		/// <param name="position">Where the house stands</param>

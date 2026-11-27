@@ -281,7 +281,7 @@ namespace Kriona.Vikings.Tests
 
 		/// <summary>
 		/// Checks that only a zombie viking of the world's hits hand to hand are scaled by its biome's MeleeScale - not a
-		/// living or dvergr viking's, a tombstone viking's, a shot, or a viking with no data yet
+		/// PC or dvergr viking's, a tombstone viking's, a shot, or a viking with no data yet
 		/// </summary>
 		[Fact]
 		public void ScalesOnlyAZombieVikingsMeleeHits()

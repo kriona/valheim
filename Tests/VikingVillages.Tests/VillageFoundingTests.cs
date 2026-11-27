@@ -60,7 +60,7 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that a living viking noting a village up to 16 meters from the village's anchor across the ground is
+		/// Checks that a PC viking noting a village up to 16 meters from the village's anchor across the ground is
 		/// sent away, however high it was noted, and one noting a village farther off isn't
 		/// </summary>
 		/// <param name="east">How far east of the anchor its noted village is, in meters</param>
@@ -76,17 +76,17 @@ namespace VikingVillages.Tests
 		public void SendsAwayTheVillagesVikings(float east, float up, bool expected)
 		{
 			Vector3 noted = Farm + new Vector3(east, up, 0f);
-			Assert.Equal(expected, VillageFounding.BelongsTo(VikingCore.LivingPrefabHash, noted, Farm, false));
+			Assert.Equal(expected, VillageFounding.BelongsTo(VikingCore.PCPrefabHash, noted, Farm, false));
 		}
 
 		/// <summary>
-		/// Checks that a viking already leaving, one noting no village, and anything but a living viking aren't sent away
+		/// Checks that a viking already leaving, one noting no village, and anything but a PC viking aren't sent away
 		/// </summary>
 		[Fact]
 		public void LeavesOutTheRest()
 		{
-			Assert.False(VillageFounding.BelongsTo(VikingCore.LivingPrefabHash, Farm, Farm, true));
-			Assert.False(VillageFounding.BelongsTo(VikingCore.LivingPrefabHash, Vector3.zero, Farm, false));
+			Assert.False(VillageFounding.BelongsTo(VikingCore.PCPrefabHash, Farm, Farm, true));
+			Assert.False(VillageFounding.BelongsTo(VikingCore.PCPrefabHash, Vector3.zero, Farm, false));
 			Assert.False(VillageFounding.BelongsTo(VikingCore.ZombiePrefabHash, Farm, Farm, false));
 			Assert.False(VillageFounding.BelongsTo("Boar".GetStableHashCode(), Farm, Farm, false));
 		}
@@ -98,8 +98,8 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void LeavesOutAVillageAtZero()
 		{
-			Assert.False(VillageFounding.BelongsTo(VikingCore.LivingPrefabHash, Vector3.zero, Vector3.zero, false));
-			Assert.True(VillageFounding.BelongsTo(VikingCore.LivingPrefabHash, new Vector3(1f, 0f, 0f), Vector3.zero, false));
+			Assert.False(VillageFounding.BelongsTo(VikingCore.PCPrefabHash, Vector3.zero, Vector3.zero, false));
+			Assert.True(VillageFounding.BelongsTo(VikingCore.PCPrefabHash, new Vector3(1f, 0f, 0f), Vector3.zero, false));
 		}
 	}
 }

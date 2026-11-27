@@ -80,7 +80,7 @@ namespace VikingVillages
 		private const float QuestGoneOut = 40f;
 
 		/// <summary>
-		/// On a living viking, the boat it's crossing the sea in, as its group and the boat's index, or "", and how far
+		/// On a PC viking, the boat it's crossing the sea in, as its group and the boat's index, or "", and how far
 		/// along its crossing it is (see Crossing and BoardOf)
 		/// </summary>
 		public static readonly int BoatKey = "kriona.VikingVillages.vikingBoat".GetStableHashCode();

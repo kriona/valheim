@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// A living viking's forsaken powers - the ones it knows, which are its biome's and those of every biome before it
+	/// A PC viking's forsaken powers - the ones it knows, which are its biome's and those of every biome before it
 	/// along with any it has been given by a player or another viking, and using them the way a player does, each use
 	/// putting every power out of reach for the power's cooldown
 	/// </summary>
@@ -38,29 +38,29 @@ namespace VikingVillages
 		private static readonly int[] Hashes = HashNames();
 
 		/// <summary>
-		/// On a living viking, the powers it has learned beyond its biome's, one bit for each in the order of Names
+		/// On a PC viking, the powers it has learned beyond its biome's, one bit for each in the order of Names
 		/// </summary>
 		private static readonly int LearnedKey = "kriona.VikingVillages.vikingPowersLearned".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, the powers it's under, one bit for each, as its owner last saw them
+		/// On a PC viking, the powers it's under, one bit for each, as its owner last saw them
 		/// </summary>
 		private static readonly int UnderKey = "kriona.VikingVillages.vikingPowersUnder".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, when it may use a power again, in ZNet time ticks
+		/// On a PC viking, when it may use a power again, in ZNet time ticks
 		/// </summary>
 		private static readonly int ReadyKey = "kriona.VikingVillages.vikingPowerReady".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, the power it's in the act of using, as its index in Names plus one, or 0, and until when it
+		/// On a PC viking, the power it's in the act of using, as its index in Names plus one, or 0, and until when it
 		/// is, in ZNet time ticks
 		/// </summary>
 		private static readonly int UsingKey = "kriona.VikingVillages.vikingPowerUsing".GetStableHashCode();
 		private static readonly int UsingUntilKey = "kriona.VikingVillages.vikingPowerUsingUntil".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, the viking it's on its way to teach a power, and until when that holds, in ZNet time ticks
+		/// On a PC viking, the viking it's on its way to teach a power, and until when that holds, in ZNet time ticks
 		/// </summary>
 		private const string PupilKey = "kriona.VikingVillages.vikingPowerPupil";
 		private static readonly int PupilUntilKey = "kriona.VikingVillages.vikingPowerPupilUntil".GetStableHashCode();
@@ -131,7 +131,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The viking whose powers these are, and its looks, gear and skills
 		/// </summary>
-		private readonly LivingVikingBody viking;
+		private readonly PCVikingBody viking;
 		private VikingCore core;
 
 		/// <summary>
@@ -142,10 +142,10 @@ namespace VikingVillages
 		private float nextUnderCheck;
 
 		/// <summary>
-		/// Starts a living viking's powers
+		/// Starts a PC viking's powers
 		/// </summary>
 		/// <param name="viking">The viking</param>
-		public VikingPowers(LivingVikingBody viking)
+		public VikingPowers(PCVikingBody viking)
 		{
 			this.viking = viking;
 		}
@@ -242,13 +242,13 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets the powers another living viking knows
+		/// Gets the powers another PC viking knows
 		/// </summary>
 		/// <param name="other">The viking</param>
-		/// <returns>The powers, one bit for each, or none for a character that isn't a living viking</returns>
+		/// <returns>The powers, one bit for each, or none for a character that isn't a PC viking</returns>
 		public static int KnownBy(Character other)
 		{
-			return((other is LivingVikingBody body && body.Powers != null) ? body.Powers.Known() : 0);
+			return((other is PCVikingBody body && body.Powers != null) ? body.Powers.Known() : 0);
 		}
 
 		/// <summary>
@@ -366,7 +366,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a living viking is under a power - for the viking itself, by its own status effects, and for
+		/// Checks whether a PC viking is under a power - for the viking itself, by its own status effects, and for
 		/// another, as its owner last noted
 		/// </summary>
 		/// <param name="other">The viking</param>
@@ -486,7 +486,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether another living viking within UseWaitRange is in the act of using a power, on any client
+		/// Checks whether another PC viking within UseWaitRange is in the act of using a power, on any client
 		/// </summary>
 		/// <param name="power">The power's index in Names</param>
 		/// <returns>True when one is</returns>
@@ -495,7 +495,7 @@ namespace VikingVillages
 			long now = NetTime.Now();
 			foreach (Character other in Character.GetAllCharacters())
 			{
-				if (other == viking || !(other is LivingVikingBody) || other.IsDead() || other.m_nview == null || !other.m_nview.IsValid())
+				if (other == viking || !(other is PCVikingBody) || other.IsDead() || other.m_nview == null || !other.m_nview.IsValid())
 				{
 					continue;
 				}
@@ -509,7 +509,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Counts the other living vikings within Reach of the viking who aren't under a power, so would gain by it
+		/// Counts the other PC vikings within Reach of the viking who aren't under a power, so would gain by it
 		/// </summary>
 		/// <param name="power">The power's index in Names</param>
 		/// <returns>How many</returns>
@@ -518,7 +518,7 @@ namespace VikingVillages
 			int count = 0;
 			foreach (Character other in Character.GetAllCharacters())
 			{
-				if (other != viking && other is LivingVikingBody && !other.IsDead() && Vector3.Distance(other.transform.position, viking.transform.position) <= Reach && !Under(other, power))
+				if (other != viking && other is PCVikingBody && !other.IsDead() && Vector3.Distance(other.transform.position, viking.transform.position) <= Reach && !Under(other, power))
 				{
 					count++;
 				}
@@ -840,7 +840,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks a power the viking knows that one of the other living vikings of its village doesn't, and the nearest of
+		/// Picks a power the viking knows that one of the other PC vikings of its village doesn't, and the nearest of
 		/// them to teach it to - awake, in the village and with no other viking teaching them - for the village's
 		/// gathering at dusk, once the viking's cooldown is over
 		/// </summary>

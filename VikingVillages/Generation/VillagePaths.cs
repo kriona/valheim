@@ -6,7 +6,7 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// Flattens the ground around a village and lays dirt paths between its houses - an abandoned farm's farmhouses and
-	/// the abandoned houses near it that its living vikings have taken in - with a fire in its middle
+	/// the abandoned houses near it that its PC vikings have taken in - with a fire in its middle
 	/// </summary>
 	/// <remarks>
 	/// A farm notes its farmhouses in its generator's ZDO as it's generated. The paths can only be laid once everything
@@ -17,7 +17,7 @@ namespace VikingVillages
 	/// water and the Ashlands' lava, which it treats as water - or, when there's no way around them, goes through as few
 	/// of them and as little water as it can. It's
 	/// painted with the hoe's path, and the branches, stones, small trees and small rocks on it are cleared. A farm with
-	/// no open ground for its bonfire stays abandoned - nothing is built or painted, and no living vikings come to it.
+	/// no open ground for its bonfire stays abandoned - nothing is built or painted, and no PC vikings come to it.
 	/// An Ashlands or Deep North village, and the village its portal leads to, get the portal as their paths are laid,
 	/// with a path of its own (see VillagePortals)
 	/// </remarks>
@@ -36,7 +36,7 @@ namespace VikingVillages
 		public static readonly int AbandonedKey = "kriona.VikingVillages.villageAbandoned".GetStableHashCode();
 
 		/// <summary>
-		/// How far past the area a village's paths are laid across its living vikings are looked for, when it stays
+		/// How far past the area a village's paths are laid across its PC vikings are looked for, when it stays
 		/// abandoned and they're taken away, in meters
 		/// </summary>
 		private const float AbandonReach = 50f;
@@ -724,7 +724,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Leaves a farm with no open ground for its bonfire as an abandoned farm - marking its generator so it's no
-		/// village, its paths are never laid and no other village's path leads to it, and taking away any living vikings
+		/// village, its paths are never laid and no other village's path leads to it, and taking away any PC vikings
 		/// that came to it before it was found to have no room
 		/// </summary>
 		/// <param name="generator">The generator's ZDO, owned by this client</param>
@@ -740,7 +740,7 @@ namespace VikingVillages
 			foreach (ZDO zdo in zdos)
 			{
 				Vector3 village = zdo.GetVec3(Village.VillageKey, Vector3.zero);
-				if (zdo.GetPrefab() != VikingCore.LivingPrefabHash || village == Vector3.zero || Utils.DistanceXZ(village, farm) > GeneratorReach)
+				if (zdo.GetPrefab() != VikingCore.PCPrefabHash || village == Vector3.zero || Utils.DistanceXZ(village, farm) > GeneratorReach)
 				{
 					continue;
 				}
@@ -757,7 +757,7 @@ namespace VikingVillages
 				}
 				removed++;
 			}
-			Plugin.Log.LogWarning("Found no open ground for a bonfire near " + farm.ToString("F0") + ", so the farm stays abandoned - took away its " + removed + " living vikings");
+			Plugin.Log.LogWarning("Found no open ground for a bonfire near " + farm.ToString("F0") + ", so the farm stays abandoned - took away its " + removed + " PC vikings");
 		}
 
 		/// <summary>

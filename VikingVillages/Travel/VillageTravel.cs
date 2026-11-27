@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Keeps living vikings on the road while no player is near them - the server's side of the vikings' travels once
+	/// Keeps PC vikings on the road while no player is near them - the server's side of the vikings' travels once
 	/// they've set out on a road planned for them (see TravelPlanner), and the calls each client makes to it
 	/// </summary>
 	/// <remarks>
@@ -27,12 +27,12 @@ namespace VikingVillages
 	internal static class VillageTravel
 	{
 		/// <summary>
-		/// On a living viking, that it was spawned out in the wild with a console command and is still lost
+		/// On a PC viking, that it was spawned out in the wild with a console command and is still lost
 		/// </summary>
 		public static readonly int ConfusedKey = "kriona.VikingVillages.vikingConfused".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking on the road, where the village it's going to stands, its name and who gave it, its road (see
+		/// On a PC viking on the road, where the village it's going to stands, its name and who gave it, its road (see
 		/// TravelRoad.Encode), the index of the waypoint it's heading for, the group it set out with, or "", the easiest
 		/// biome of its group, which the road keeps to, the hardest, which picks the boat they cross the sea in, whether
 		/// any of them carries something a portal won't take, and that it has reached the sea and is setting sail, or
@@ -51,7 +51,7 @@ namespace VikingVillages
 		public static readonly int PortalKey = "kriona.VikingVillages.vikingPortal".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking that left a village a player disbanded, the village's name, kept until it joins another (see
+		/// On a PC viking that left a village a player disbanded, the village's name, kept until it joins another (see
 		/// VillageNewcomers)
 		/// </summary>
 		public static readonly int FromNameKey = "kriona.VikingVillages.vikingFromVillage".GetStableHashCode();
@@ -195,7 +195,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Notes a living viking just made as lost when a console command made it, so it stands about confused before it
+		/// Notes a PC viking just made as lost when a console command made it, so it stands about confused before it
 		/// sets out for a village (see VillageLife.UpdateRoad) - called from its Awake, which runs inside the command, as
 		/// its Start, where its gear is first rolled, only runs once the command is done. One with data already isn't new
 		/// </summary>
@@ -414,7 +414,7 @@ namespace VikingVillages
 		/// ArriveTogether)
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns, with every viking it starts with</param>
-		/// <param name="vikings">Its living vikings' ZDOs, added to as they come</param>
+		/// <param name="vikings">Its PC vikings' ZDOs, added to as they come</param>
 		public static void Arrive(Village village, List<ZDO> vikings)
 		{
 			for (int i = held.Count - 1; i >= 0; i--)
@@ -461,7 +461,7 @@ namespace VikingVillages
 		/// who died on it never come, their deaths noted as the rest come home (see VillageQuests.FellOnQuest)
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns</param>
-		/// <param name="vikings">Its living vikings' ZDOs, added to</param>
+		/// <param name="vikings">Its PC vikings' ZDOs, added to</param>
 		/// <param name="entry">The group, emptied as they come</param>
 		private static void ArriveTogether(Village village, List<ZDO> vikings, TravelEntry entry)
 		{
@@ -610,7 +610,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Looks through the world for living vikings a few batches of sectors at a time, and once it has looked through
+		/// Looks through the world for PC vikings a few batches of sectors at a time, and once it has looked through
 		/// all of them, takes the groups out of every player's reach off the road and hands over the groups that are due
 		/// </summary>
 		private static void UpdateSweep()
@@ -626,7 +626,7 @@ namespace VikingVillages
 			}
 			for (int i = 0; i < SweepCalls; i++)
 			{
-				if (ZDOMan.instance.GetAllZDOsWithPrefabIterative(VikingCore.LivingPrefabName, sweepFound, ref sweepIndex))
+				if (ZDOMan.instance.GetAllZDOsWithPrefabIterative(VikingCore.PCPrefabName, sweepFound, ref sweepIndex))
 				{
 					sweepIndex = -1;
 					nextSweep = Time.time + SweepInterval;
@@ -836,7 +836,7 @@ namespace VikingVillages
 		private static void OnEmerge(long sender, ZPackage pkg)
 		{
 			TravelEntry entry = TravelEntry.Decode(pkg.GetArray());
-			GameObject prefab = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(VikingCore.LivingPrefabHash) : null);
+			GameObject prefab = ((ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(VikingCore.PCPrefabHash) : null);
 			TravelRoad road = ((entry != null && entry.Journey != null && entry.Journey.Stages.Count > 0) ? entry.Journey.Stages[0].Road : null);
 			if (entry == null || road == null || road.Count < 2)
 			{

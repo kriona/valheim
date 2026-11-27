@@ -78,7 +78,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// How a living viking meets a deathsquito diving at it - the diver's prefab, how near one after the viking is
+		/// How a PC viking meets a deathsquito diving at it - the diver's prefab, how near one after the viking is
 		/// watched for, in meters, and how often, in seconds, how near it comes before the viking raises its shield and
 		/// holds it, in meters, how long after its sting the viking has to strike back, in seconds, how fast it closes
 		/// in on the viking to count as diving, in meters a second, and how long after it comes within reach a
@@ -100,7 +100,7 @@ namespace Kriona.Vikings
 		private const float SwingDelayLearn = 0.3f;
 
 		/// <summary>
-		/// How long each weapon's swing takes to land after it starts, by the weapon's name, learned from living vikings'
+		/// How long each weapon's swing takes to land after it starts, by the weapon's name, learned from PC vikings'
 		/// swings (see NoteSwing)
 		/// </summary>
 		private static readonly Dictionary<string, float> swingDelays = new Dictionary<string, float>();
@@ -117,7 +117,7 @@ namespace Kriona.Vikings
 		private float nextDiverCheck;
 
 		/// <summary>
-		/// Meets a deathsquito diving at a living viking, taking the AI's update over while it does - with a shield
+		/// Meets a deathsquito diving at a PC viking, taking the AI's update over while it does - with a shield
 		/// beside a one-handed weapon it raises the shield as the deathsquito comes within ShieldUpRange and holds it, then
 		/// strikes back once the sting is spent, and with a two-handed weapon it stands its ground as the deathsquito
 		/// dives and times its swing to land just after it comes within reach (see SwingNow). Its weapon is picked for
@@ -127,7 +127,7 @@ namespace Kriona.Vikings
 		/// <returns>True while it's meeting the dive, so the AI's own update is skipped</returns>
 		public bool UpdateDiveDefense(float dt)
 		{
-			if (!IsLivingViking(humanoid) || ai == null || humanoid.IsDead() || humanoid.IsAttached() || GearHeld())
+			if (!IsPCViking(humanoid) || ai == null || humanoid.IsDead() || humanoid.IsAttached() || GearHeld())
 			{
 				EndDiveDefense();
 				return(false);
@@ -286,7 +286,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Finds how long a weapon's swing takes to land after it starts, from living vikings' swings with it (see
+		/// Finds how long a weapon's swing takes to land after it starts, from PC vikings' swings with it (see
 		/// NoteSwing), or SwingDelayDefault before any
 		/// </summary>
 		/// <param name="weapon">The weapon</param>
@@ -297,7 +297,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Notes how long a living viking's swing took to land after it started, moving what's remembered for the weapon
+		/// Notes how long a PC viking's swing took to land after it started, moving what's remembered for the weapon
 		/// SwingDelayLearn of the way toward it
 		/// </summary>
 		/// <param name="weapon">The weapon swung</param>
@@ -344,7 +344,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Picks the weapon a living viking meets a deathsquito with - its best one-handed melee weapon while it has a
+		/// Picks the weapon a PC viking meets a deathsquito with - its best one-handed melee weapon while it has a
 		/// shield that works, so the shield goes beside it, or else its best two-handed melee weapon
 		/// </summary>
 		/// <returns>The weapon, or null when it has neither</returns>

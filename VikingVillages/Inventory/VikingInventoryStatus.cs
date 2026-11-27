@@ -77,10 +77,10 @@ namespace VikingVillages
 			if (vikingRow != null && viking != null)
 			{
 				shown.Clear();
-				if (viking is LivingVikingBody living)
+				if (viking is PCVikingBody pc)
 				{
-					Add(VikingRested.RestingEffect(), living.Rest.RestingLeft());
-					Add(VikingRested.RestedEffect(), living.Rest.RestedLeft());
+					Add(VikingRested.RestingEffect(), pc.Rest.RestingLeft());
+					Add(VikingRested.RestedEffect(), pc.Rest.RestedLeft());
 				}
 				AddEffects(viking);
 				Fill(vikingRow);

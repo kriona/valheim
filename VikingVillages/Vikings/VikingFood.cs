@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// What a living viking has eaten, the way a player's foods work - up to MaxMeals different foods at once, each
+	/// What a PC viking has eaten, the way a player's foods work - up to MaxMeals different foods at once, each
 	/// lasting its burn time at the world's food rate, adding its health to the viking's max health, fading as it
 	/// wears off, and healing its food regen every TickTime seconds, boosted by resting and being rested the same as a
 	/// player's, and eaten again once half of it has worn off while it's wounded, or once it has nearly run out to keep
@@ -19,12 +19,12 @@ namespace VikingVillages
 	internal class VikingFood
 	{
 		/// <summary>
-		/// On a living viking, the foods it has eaten - each food's prefab and until when in ZNet time ticks it lasts
+		/// On a PC viking, the foods it has eaten - each food's prefab and until when in ZNet time ticks it lasts
 		/// </summary>
 		internal static readonly int MealsKey = "kriona.VikingVillages.vikingMeals".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, when its owner last noted it was loaded, in ZNet time ticks - so its food doesn't wear off
+		/// On a PC viking, when its owner last noted it was loaded, in ZNet time ticks - so its food doesn't wear off
 		/// while it's out of every player's reach, when it does nothing (see CatchUp)
 		/// </summary>
 		internal static readonly int SeenKey = "kriona.VikingVillages.vikingFoodSeen".GetStableHashCode();
@@ -104,7 +104,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The viking whose food this is
 		/// </summary>
-		private readonly LivingVikingBody viking;
+		private readonly PCVikingBody viking;
 
 		/// <summary>
 		/// How long since the viking was last healed by its food on this client, and since its max health last followed
@@ -121,10 +121,10 @@ namespace VikingVillages
 		private float sinceSeen;
 
 		/// <summary>
-		/// Starts a living viking's food
+		/// Starts a PC viking's food
 		/// </summary>
 		/// <param name="viking">The viking</param>
-		public VikingFood(LivingVikingBody viking)
+		public VikingFood(PCVikingBody viking)
 		{
 			this.viking = viking;
 		}

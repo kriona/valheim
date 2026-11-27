@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Opens a living viking's inventory beside the player's, the way a chest opens - the player's on the left and the
+	/// Opens a PC viking's inventory beside the player's, the way a chest opens - the player's on the left and the
 	/// viking's on the right - with InventoryKey while looking at the viking, so the player can move things between them
 	/// by dragging or with ctrl-click, and make the viking take off what it has equipped with right-click
 	/// </summary>
@@ -138,7 +138,7 @@ namespace VikingVillages
 		/// <returns>True when it starts taking it off</returns>
 		public static bool Unequip(ItemDrop.ItemData item)
 		{
-			LivingVikingBody body = OpenBody();
+			PCVikingBody body = OpenBody();
 			if (!IsWorn(item) || body == null)
 			{
 				return(false);
@@ -155,7 +155,7 @@ namespace VikingVillages
 		/// <param name="item">The item, or null</param>
 		public static void Toggle(ItemDrop.ItemData item)
 		{
-			LivingVikingBody body = OpenBody();
+			PCVikingBody body = OpenBody();
 			if (item == null || body == null)
 			{
 				return;
@@ -178,7 +178,7 @@ namespace VikingVillages
 		/// <returns>True when it is</returns>
 		public static bool IsQueued(ItemDrop.ItemData item)
 		{
-			LivingVikingBody body = OpenBody();
+			PCVikingBody body = OpenBody();
 			return(body != null && item != null && body.GearQueued(item));
 		}
 
@@ -186,9 +186,9 @@ namespace VikingVillages
 		/// Gets the body of the viking whose inventory is open, for its gear
 		/// </summary>
 		/// <returns>The body, or null when no viking's is open</returns>
-		private static LivingVikingBody OpenBody()
+		private static PCVikingBody OpenBody()
 		{
-			return((life != null) ? viking as LivingVikingBody : null);
+			return((life != null) ? viking as PCVikingBody : null);
 		}
 
 		/// <summary>
@@ -226,7 +226,7 @@ namespace VikingVillages
 			VikingItems.RemoveProps(inventory);
 			inventoryName = inventory.m_name;
 			// Its name shows only once it knows the player
-			string name = ((target is LivingVikingBody body) ? body.ShownName() : VikingNames.Get(target));
+			string name = ((target is PCVikingBody body) ? body.ShownName() : VikingNames.Get(target));
 			inventory.m_name = ((name.Length > 0) ? name : "Viking");
 			// The chest stays asleep, so it never makes an inventory of its own or saves one to the viking
 			GameObject holder = new GameObject("VikingInventory");

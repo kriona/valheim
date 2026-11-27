@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Wakes a sleeping monster - like an abomination lying disguised in the Swamp - when a living viking it would fight
+	/// Wakes a sleeping monster - like an abomination lying disguised in the Swamp - when a PC viking it would fight
 	/// comes within its wake-up range, the way the game wakes it for a player, so it goes for the viking and the viking,
 	/// which leaves a sleeping monster alone, sees it to fight it
 	/// </summary>
@@ -16,7 +16,7 @@ namespace VikingVillages
 	internal static class MonsterWake
 	{
 		/// <summary>
-		/// Seconds between a sleeping monster's looks for living vikings near it
+		/// Seconds between a sleeping monster's looks for PC vikings near it
 		/// </summary>
 		private const float CheckInterval = 0.5f;
 
@@ -26,7 +26,7 @@ namespace VikingVillages
 		private static readonly Dictionary<MonsterAI, float> nextCheck = new Dictionary<MonsterAI, float>();
 
 		/// <summary>
-		/// Wakes a sleeping monster when a living viking it would fight is within its wake-up range
+		/// Wakes a sleeping monster when a PC viking it would fight is within its wake-up range
 		/// </summary>
 		/// <param name="ai">The monster's AI</param>
 		public static void Check(MonsterAI ai)
@@ -53,7 +53,7 @@ namespace VikingVillages
 			Character.GetCharactersInRange(monster.transform.position, ai.m_wakeupRange, near);
 			foreach (Character other in near)
 			{
-				if (other != monster && !other.IsDead() && VikingCore.IsLivingViking(other) && BaseAI.IsEnemy(monster, other))
+				if (other != monster && !other.IsDead() && VikingCore.IsPCViking(other) && BaseAI.IsEnemy(monster, other))
 				{
 					ai.Wakeup();
 					nextCheck.Remove(ai);

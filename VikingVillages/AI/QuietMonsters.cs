@@ -3,11 +3,11 @@ using System.Collections.Generic;
 namespace VikingVillages
 {
 	/// <summary>
-	/// The monsters living vikings leave alone until they hurt someone - leeches, which lie in the water and only come
+	/// The monsters PC vikings leave alone until they hurt someone - leeches, which lie in the water and only come
 	/// after whoever wades in, so going after one would only take a viking into the Swamp's water
 	/// </summary>
 	/// <remarks>
-	/// A leech counts as having hurt someone once it hurts a player or a living viking, from the call for help every
+	/// A leech counts as having hurt someone once it hurts a player or a PC viking, from the call for help every
 	/// client hears (see VillageSignals.OnHurt), and from then on for as long as it's loaded. A hunter after one as
 	/// its prey goes after it anyway, and a viking it attacks fights back, since the AI takes on its attacker
 	/// </remarks>
@@ -34,7 +34,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether living vikings leave a monster alone - one of the kinds left alone that hasn't hurt anyone
+		/// Checks whether PC vikings leave a monster alone - one of the kinds left alone that hasn't hurt anyone
 		/// </summary>
 		/// <param name="monster">The monster</param>
 		/// <returns>True when they do</returns>

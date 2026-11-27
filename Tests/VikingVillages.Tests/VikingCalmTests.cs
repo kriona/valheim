@@ -1,7 +1,7 @@
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests when an angered living viking forgives
+	/// Tests when an angered PC viking forgives
 	/// </summary>
 	public class VikingCalmTests
 	{

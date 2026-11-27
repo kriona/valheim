@@ -101,7 +101,7 @@ namespace Kriona.Vikings.Tests
 
 		/// <summary>
 		/// Checks that a Mountains zombie viking fighting with its fists - 300 health, about 63 a punch, in half-strength
-		/// Fenris armor - is tough for a living viking in Fenris q1 with 175 health, whose best swing against it is a
+		/// Fenris armor - is tough for a PC viking in Fenris q1 with 175 health, whose best swing against it is a
 		/// frost arrow's 37 at the bow's pace, and takes 4 of them
 		/// </summary>
 		[Fact]

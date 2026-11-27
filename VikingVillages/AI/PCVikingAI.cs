@@ -3,10 +3,10 @@ using Kriona.Vikings;
 namespace VikingVillages
 {
 	/// <summary>
-	/// A living viking's AI, which lets its village life go first and calms it down once it has slept on being hurt by
+	/// A PC viking's AI, which lets its village life go first and calms it down once it has slept on being hurt by
 	/// a player (see VikingCalm)
 	/// </summary>
-	internal class LivingVikingAI : VikingAI
+	internal class PCVikingAI : VikingAI
 	{
 		/// <summary>
 		/// The viking's life in its village, found once VikingCore has added it

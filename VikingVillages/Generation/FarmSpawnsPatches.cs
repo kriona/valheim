@@ -6,11 +6,11 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Tames the animals an abandoned farm's pens spawn, as the living vikings' livestock, while a living viking is
+	/// Tames the animals an abandoned farm's pens spawn, as the PC vikings' livestock, while a PC viking is
 	/// still there to keep them - one near the pen, or any in the village the pen stands in
 	/// </summary>
 	/// <remarks>
-	/// A tamed animal and a living viking leave each other alone unless the viking has been provoked, and a tamed
+	/// A tamed animal and a PC viking leave each other alone unless the viking has been provoked, and a tamed
 	/// animal fights zombies and monsters
 	/// </remarks>
 	[HarmonyPatch(typeof(CreatureSpawner), nameof(CreatureSpawner.Spawn))]
@@ -24,7 +24,7 @@ namespace VikingVillages
 		private static void Postfix(CreatureSpawner __instance, ZNetView __result)
 		{
 			Vector3 position = __instance.transform.position;
-			if (__result == null || !FarmSpawns.InFarm(position) || (!FarmSpawns.LivingVikingNear(position) && !VillageLivestock.InKeptVillage(position)))
+			if (__result == null || !FarmSpawns.InFarm(position) || (!FarmSpawns.PCVikingNear(position) && !VillageLivestock.InKeptVillage(position)))
 			{
 				return;
 			}
@@ -207,7 +207,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Readies abandoned farms and the empty houses near them for living vikings as they're generated
+	/// Readies abandoned farms and the empty houses near them for PC vikings as they're generated
 	/// </summary>
 	[HarmonyPatch(typeof(ZoneSystem), nameof(ZoneSystem.SpawnLocation))]
 	public static class VikingFarmLocationPatch

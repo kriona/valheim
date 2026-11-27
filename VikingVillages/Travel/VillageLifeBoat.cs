@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// A living viking on the road crossing the sea in the world - its group gathering at the shore, the one of the
+	/// A PC viking on the road crossing the sea in the world - its group gathering at the shore, the one of the
 	/// hardest biome among them building the boats, the rest getting on board, riding to the far shore and swimming in
 	/// (see VikingBoat)
 	/// </summary>
@@ -17,7 +17,7 @@ namespace VikingVillages
 	/// have passed, those still off it are put on board. On board it sits where it's put until the boat reaches the far
 	/// shore, then jumps off and swims in, the one at the helm breaking the boat up once it's ashore. A viking in the water
 	/// - wrecked, or swimming in - swims as long as its stamina lasts, by its food and Swim skill, and drowns after that
-	/// the way a player does, as any viking in the water does (see LivingVikingBody.OnSwimming). One wrecked plans its
+	/// the way a player does, as any viking in the water does (see PCVikingBody.OnSwimming). One wrecked plans its
 	/// road again once it's ashore, building another boat when it still has sea to cross. Where there's no water deep
 	/// enough for a boat by the shore, its group sets sail out of the world (see SetSail)
 	/// </remarks>
@@ -170,7 +170,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Its swim ashore - where it swims to, whether it climbs onto a ship nearer than that on the way, as one swimming
 		/// for the nearest land does, and how long it has been out of the water - drowning on the way as any viking in the
-		/// water does once its stamina runs out (see LivingVikingBody.OnSwimming)
+		/// water does once its stamina runs out (see PCVikingBody.OnSwimming)
 		/// </summary>
 		private Vector3 swimTo;
 		private bool swimForShips;
@@ -774,7 +774,7 @@ namespace VikingVillages
 		private string seatPose = VikingPoses.FloorPose;
 
 		/// <summary>
-		/// Checks whether a living or dvergr viking sits at a spot, like a chair's or a boat's mast's - one within
+		/// Checks whether a PC or dvergr viking sits at a spot, like a chair's or a boat's mast's - one within
 		/// SeatTakenReach of it, on any client, since a viking sitting is held right at its seat (see VikingChairPatch)
 		/// </summary>
 		/// <param name="point">The spot</param>
@@ -783,7 +783,7 @@ namespace VikingVillages
 		{
 			foreach (Character character in Character.GetAllCharacters())
 			{
-				if (character != null && !character.IsDead() && VikingCore.IsLivingOrDvergr(character) && Vector3.Distance(character.transform.position, point) <= SeatTakenReach)
+				if (character != null && !character.IsDead() && VikingCore.IsPCOrDvergr(character) && Vector3.Distance(character.transform.position, point) <= SeatTakenReach)
 				{
 					return(true);
 				}
@@ -1532,7 +1532,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Swims the viking for the shore - drowning on the way once its stamina runs out, as any viking in the water does
-		/// (see LivingVikingBody.OnSwimming) - and once it has been out of the water a moment, goes on along its road from
+		/// (see PCVikingBody.OnSwimming) - and once it has been out of the water a moment, goes on along its road from
 		/// the far shore, or plans its road again from where it washed up. One swimming for the nearest land climbs onto
 		/// any ship whose ladder is nearer than that instead, a player's too, and rides along on it (see BoardAsPassenger)
 		/// </summary>

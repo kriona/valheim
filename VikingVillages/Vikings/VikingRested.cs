@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// A living viking's rest the way a player's works - resting while it sits by a fire or stands sheltered by one,
+	/// A PC viking's rest the way a player's works - resting while it sits by a fire or stands sheltered by one,
 	/// which after the game's resting delay makes it rested for as long as the comfort around it gives, and rested on
 	/// waking from a bed - each boosting its healing by as much as the game's own Resting and Rested effects boost a
 	/// player's
@@ -17,7 +17,7 @@ namespace VikingVillages
 	internal class VikingRested
 	{
 		/// <summary>
-		/// On a living viking, until when in ZNet time ticks it's rested
+		/// On a PC viking, until when in ZNet time ticks it's rested
 		/// </summary>
 		private static readonly int RestedKey = "kriona.VikingVillages.vikingRested".GetStableHashCode();
 
@@ -43,7 +43,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The viking whose rest this is
 		/// </summary>
-		private readonly LivingVikingBody viking;
+		private readonly PCVikingBody viking;
 
 		/// <summary>
 		/// Since when the viking has rested on this client without a break and when it was last seen resting, in
@@ -53,10 +53,10 @@ namespace VikingVillages
 		private float restingLastSeen = -1f;
 
 		/// <summary>
-		/// Starts a living viking's rest
+		/// Starts a PC viking's rest
 		/// </summary>
 		/// <param name="viking">The viking</param>
-		public VikingRested(LivingVikingBody viking)
+		public VikingRested(PCVikingBody viking)
 		{
 			this.viking = viking;
 		}

@@ -6,7 +6,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// A living viking's everyday body language - a morning stretch, the head moving as it speaks or listens, the
+	/// A PC viking's everyday body language - a morning stretch, the head moving as it speaks or listens, the
 	/// player's conversational emotes and emotes of grief, sitting on the floor, lying in bed, sitting in a chair, a roar with a shout, a
 	/// hammer swing and the player's short reach to use something
 	/// </summary>
@@ -38,17 +38,17 @@ namespace VikingVillages
 		public const float StretchDuration = 2.4f;
 
 		/// <summary>
-		/// On a living viking, when its stretch started in ZNet time ticks, or 0
+		/// On a PC viking, when its stretch started in ZNet time ticks, or 0
 		/// </summary>
 		private static readonly int StretchKey = "kriona.VikingVillages.vikingStretch".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, its TalkMode
+		/// On a PC viking, its TalkMode
 		/// </summary>
 		private static readonly int TalkKey = "kriona.VikingVillages.vikingTalk".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, its emote - its name without "emote_", or "" for none - whether it plays once, when it
+		/// On a PC viking, its emote - its name without "emote_", or "" for none - whether it plays once, when it
 		/// started in ZNet time ticks, and a counter that goes up each time it changes
 		/// </summary>
 		private static readonly int EmoteKey = "kriona.VikingVillages.vikingEmote".GetStableHashCode();
@@ -326,10 +326,10 @@ namespace VikingVillages
 		private float noiseSeed;
 
 		/// <summary>
-		/// Gets a living viking's prefab ready for the poses, making sure its ZSyncAnimation syncs the bed and chair
+		/// Gets a PC viking's prefab ready for the poses, making sure its ZSyncAnimation syncs the bed and chair
 		/// bools and the crafting int, and adds them
 		/// </summary>
-		/// <param name="prefab">The living viking's prefab, before its parts wake</param>
+		/// <param name="prefab">The PC viking's prefab, before its parts wake</param>
 		public static void AddTo(GameObject prefab)
 		{
 			ZSyncAnimation sync = prefab.GetComponent<ZSyncAnimation>();
@@ -358,7 +358,7 @@ namespace VikingVillages
 		/// Starts a morning stretch - the arms reach overhead, the back arches and the head tilts back - once the viking
 		/// is standing
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		public static void Stretch(Character viking)
 		{
 			VikingPoses poses = Owned(viking);
@@ -372,7 +372,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Sets how the viking's head moves in a conversation, until it's set back to None
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		/// <param name="mode">Speaking, listening or neither</param>
 		public static void SetTalk(Character viking, TalkMode mode)
 		{
@@ -392,7 +392,7 @@ namespace VikingVillages
 		/// Plays one of the player's conversational emotes at random - point, shrug, laugh, thumbs up, no no no or come
 		/// here - unless the viking is sitting, lying or in a chair
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		public static void Gesture(Character viking)
 		{
 			VikingPoses poses = Owned(viking);
@@ -408,7 +408,7 @@ namespace VikingVillages
 		/// Plays one of the player's emotes of grief at random - kneel, cry, despair or bow - unless the viking is
 		/// sitting, lying or in a chair
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		public static void Grieve(Character viking)
 		{
 			VikingPoses poses = Owned(viking);
@@ -441,7 +441,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Sits the viking on the floor with the player's sit emote, or stands it back up
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		/// <param name="sitting">Whether it sits</param>
 		public static void SetSitting(Character viking, bool sitting)
 		{
@@ -467,7 +467,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Lays the viking down in the player's bed pose, or gets it back up - its position on the bed is the caller's
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		/// <param name="lying">Whether it lies down</param>
 		public static void SetLying(Character viking, bool lying)
 		{
@@ -477,7 +477,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Sits the viking in the player's chair pose, or gets it back up - its position on the chair is the caller's
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		/// <param name="seated">Whether it sits</param>
 		public static void SetChair(Character viking, bool seated)
 		{
@@ -488,7 +488,7 @@ namespace VikingVillages
 		/// Puts the viking in the pose of a seat on a ship - the seat's own animation, like the stool's sit or the mast's
 		/// hold (see Chair.m_attachAnimation), or the floor sit for a spot on the deck - or takes it out of every ship pose
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		/// <param name="pose">The seat's animation, or FloorPose, or "" to take it out of every ship pose</param>
 		/// <param name="on">Whether it takes the pose, or comes out of it</param>
 		public static void SetShipPose(Character viking, string pose, bool on)
@@ -529,7 +529,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Checks whether the viking is in the pose of a seat on a ship (see SetShipPose)
 		/// </summary>
-		/// <param name="viking">The living viking</param>
+		/// <param name="viking">The PC viking</param>
 		/// <param name="pose">The seat's animation, or FloorPose</param>
 		/// <returns>True when it is</returns>
 		public static bool InShipPose(Character viking, string pose)
@@ -561,7 +561,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Has the viking wave with the player's wave emote, unless it's sitting, lying or in a chair
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		public static void Wave(Character viking)
 		{
 			VikingPoses poses = Owned(viking);
@@ -577,7 +577,7 @@ namespace VikingVillages
 		/// Has the viking throw its head back in the player's roar emote with a war cry every client nearby hears,
 		/// unless it's sitting, lying or in a chair
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		public static void Roar(Character viking)
 		{
 			VikingPoses poses = Owned(viking);
@@ -593,7 +593,7 @@ namespace VikingVillages
 		/// Swings the viking's arm once the way the player swings a hammer to build and repair, unless it's sitting,
 		/// lying or in a chair
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		public static void Swing(Character viking)
 		{
 			VikingPoses poses = Owned(viking);
@@ -609,7 +609,7 @@ namespace VikingVillages
 		/// Swings a tool the viking holds once the way the player swings it, like a hoe making a path - or the way the
 		/// player swings a hammer, for a tool with no swing of its own - unless it's sitting, lying or in a chair
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		/// <param name="tool">The tool</param>
 		public static void Swing(Character viking, ItemDrop.ItemData tool)
 		{
@@ -628,7 +628,7 @@ namespace VikingVillages
 		/// Has the viking reach out the way the player does to pick something up or use it, unless it's sitting, lying
 		/// or in a chair
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		public static void Interact(Character viking)
 		{
 			VikingPoses poses = Owned(viking);
@@ -643,7 +643,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Ends at once whatever pose, emote, talk or stretch the viking is in, standing it up
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		public static void StopAll(Character viking)
 		{
 			VikingPoses poses = Owned(viking);
@@ -654,14 +654,14 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds a living or dvergr viking's poses when this client owns it and it's alive, clearing what an earlier owner
+		/// Finds a PC or dvergr viking's poses when this client owns it and it's alive, clearing what an earlier owner
 		/// left first
 		/// </summary>
 		/// <param name="viking">The viking</param>
 		/// <returns>Its poses, or null</returns>
 		private static VikingPoses Owned(Character viking)
 		{
-			if (viking == null || !VikingCore.IsLivingOrDvergr(viking) || !viking.m_nview.IsOwner() || viking.IsDead())
+			if (viking == null || !VikingCore.IsPCOrDvergr(viking) || !viking.m_nview.IsOwner() || viking.IsDead())
 			{
 				return(null);
 			}
@@ -678,7 +678,7 @@ namespace VikingVillages
 		/// Turns the bed or chair pose on or off, taking the viking out of the other pose, the floor sit and a stretch
 		/// as it goes into one
 		/// </summary>
-		/// <param name="viking">The living viking, owned by this client</param>
+		/// <param name="viking">The PC viking, owned by this client</param>
 		/// <param name="hash">The pose's animator bool</param>
 		/// <param name="otherHash">The other attach pose's animator bool</param>
 		/// <param name="on">Whether the pose is on</param>
@@ -1043,7 +1043,7 @@ namespace VikingVillages
 				if (!loggedShoutFallback)
 				{
 					loggedShoutFallback = true;
-					Plugin.Log.LogInfo(ShoutSound + " isn't loaded, so living vikings shout with " + FallbackShoutSound);
+					Plugin.Log.LogInfo(ShoutSound + " isn't loaded, so PC vikings shout with " + FallbackShoutSound);
 				}
 				prefab = GamePrefabs.Find(FallbackShoutSound);
 				if (prefab == null)
@@ -1373,7 +1373,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// The timing and shape of a living viking's poses - how its stretch eases in and out, how its head nods, what a
+	/// The timing and shape of a PC viking's poses - how its stretch eases in and out, how its head nods, what a
 	/// client does with the emote in the ZDO, when a stretch is fresh enough to play, and when it's on its feet
 	/// </summary>
 	internal static class PoseCurves

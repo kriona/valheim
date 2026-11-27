@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests the rules a living viking's daily life follows - storing things in chests, sharing out jobs, running from
+	/// Tests the rules a PC viking's daily life follows - storing things in chests, sharing out jobs, running from
 	/// fights, gathering around fires, jumping fences, filling a quiver and claiming beds, chairs and fires
 	/// </summary>
 	public class VillageLifeTests
@@ -614,7 +614,7 @@ namespace VikingVillages.Tests
 
 		/// <summary>
 		/// Checks when a bed, chair or fire is free for a viking - unclaimed, claimed by itself, its claim run out or
-		/// its holder dead, and not while another living viking's claim lasts
+		/// its holder dead, and not while another PC viking's claim lasts
 		/// </summary>
 		[Fact]
 		public void FreesClaimsThatLapse()

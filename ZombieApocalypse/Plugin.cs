@@ -73,8 +73,8 @@ namespace ZombieApocalypse
 		{
 			Log = Logger;
 			VikingMod.Init(PluginGuid, PluginName, PluginVersion, Logger);
-			RiseChance = Config.Bind(RisingSection, "RiseChance", 100, new ConfigDescription("Percent chance that a slain creature rises as a zombie - with Viking Villages, living vikings talk of the dead rising and stand ready over their village's dead while it's above 0", new AcceptableValueRange<int>(0, 100)));
-			FireStaysDead = Config.Bind(RisingSection, "FireStaysDead", 25, new ConfigDescription("A creature that took at least this percent of the damage that killed it as fire (e.g., burning, fire arrows or a fire staff) stays dead - 0 to let burned creatures rise too, and to keep Viking Villages' living vikings from talking of burning the dead", new AcceptableValueRange<int>(0, 100)));
+			RiseChance = Config.Bind(RisingSection, "RiseChance", 100, new ConfigDescription("Percent chance that a slain creature rises as a zombie - with Viking Villages, PC vikings talk of the dead rising and stand ready over their village's dead while it's above 0", new AcceptableValueRange<int>(0, 100)));
+			FireStaysDead = Config.Bind(RisingSection, "FireStaysDead", 25, new ConfigDescription("A creature that took at least this percent of the damage that killed it as fire (e.g., burning, fire arrows or a fire staff) stays dead - 0 to let burned creatures rise too, and to keep Viking Villages' PC vikings from talking of burning the dead", new AcceptableValueRange<int>(0, 100)));
 			RiseDelay = Config.Bind(RisingSection, "RiseDelay", 5f, new ConfigDescription("Seconds a corpse lies on the ground before it starts to get up", new AcceptableValueRange<float>(0f, 120f)));
 			RiseDuration = Config.Bind(RisingSection, "RiseDuration", 2.5f, new ConfigDescription("Seconds a corpse takes to get up", new AcceptableValueRange<float>(0.5f, 10f)));
 			WakeUpAnimation = Config.Bind(RisingSection, "WakeUpAnimation", true, "Creatures that can sleep (e.g., trolls and bears) get up with their own wake-up animation");

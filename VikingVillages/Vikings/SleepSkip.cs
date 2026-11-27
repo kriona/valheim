@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Keeps the night players sleep through from wearing down living vikings' food, rest and forsaken power cooldown -
+	/// Keeps the night players sleep through from wearing down PC vikings' food, rest and forsaken power cooldown -
 	/// the world's clock skips ahead to morning, which a player's food, rest and cooldown don't count, since they wear
 	/// down with the time that passes for the player rather than with the world's clock - and notes that the night was
 	/// slept through, so no viking goes to bed in the morning after
@@ -100,7 +100,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Puts off the food, rest and forsaken power cooldown of every living viking this client owns
+		/// Puts off the food, rest and forsaken power cooldown of every PC viking this client owns
 		/// </summary>
 		/// <param name="skipped">How far the world skipped ahead, in ZNet time ticks</param>
 		private static void Postpone(long skipped)

@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Has living and dvergr vikings scare off birds the way players do - a bird on the ground takes off when one comes
+	/// Has PC and dvergr vikings scare off birds the way players do - a bird on the ground takes off when one comes
 	/// within its danger distance, and never lands near one (see RandomFlyingBird.DangerNearby)
 	/// </summary>
 	/// <remarks>
@@ -14,7 +14,7 @@ namespace VikingVillages
 	internal static class BirdScare
 	{
 		/// <summary>
-		/// Where each loaded living or dvergr viking stands, as of the physics step it was listed at
+		/// Where each loaded PC or dvergr viking stands, as of the physics step it was listed at
 		/// </summary>
 		private static readonly List<Vector3> spots = new List<Vector3>();
 
@@ -24,7 +24,7 @@ namespace VikingVillages
 		private static float listedAt = -1f;
 
 		/// <summary>
-		/// Checks whether a living or dvergr viking stands within a bird's danger distance of a spot
+		/// Checks whether a PC or dvergr viking stands within a bird's danger distance of a spot
 		/// </summary>
 		/// <param name="point">The spot</param>
 		/// <param name="range">The bird's danger distance, in meters</param>
@@ -37,7 +37,7 @@ namespace VikingVillages
 				spots.Clear();
 				foreach (Character character in Character.GetAllCharacters())
 				{
-					if (character != null && !character.IsDead() && VikingCore.IsLivingOrDvergr(character))
+					if (character != null && !character.IsDead() && VikingCore.IsPCOrDvergr(character))
 					{
 						spots.Add(character.transform.position);
 					}

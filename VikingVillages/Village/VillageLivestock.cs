@@ -5,11 +5,11 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Tames the animals an abandoned farm's pens spawned that came out wild, while the farm's village has living
+	/// Tames the animals an abandoned farm's pens spawned that came out wild, while the farm's village has PC
 	/// vikings to keep them
 	/// </summary>
 	/// <remarks>
-	/// A pen's animal is tamed as it spawns when its village has living vikings (see VikingFarmAnimalsPatch), but the
+	/// A pen's animal is tamed as it spawns when its village has PC vikings (see VikingFarmAnimalsPatch), but the
 	/// pens spawn before a new village's first vikings come, and can spawn before the village's vikings have loaded. A
 	/// new village's pens are tamed right before its first vikings are spawned (see VillageRespawn.Populated), so they
 	/// never see the animals as wild ones to fight, and each farm's spawners are looked through every CheckInterval
@@ -37,7 +37,7 @@ namespace VikingVillages
 		private static float nextCheck;
 
 		/// <summary>
-		/// Tames the wild animals the loaded farms' pens spawned, in villages with living vikings, and sets their
+		/// Tames the wild animals the loaded farms' pens spawned, in villages with PC vikings, and sets their
 		/// livestock up to fight off enemies - call it from the plugin's Update
 		/// </summary>
 		public static void Update()
@@ -72,7 +72,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a point is in a loaded village with living vikings, whose pens' animals are its livestock
+		/// Checks whether a point is in a loaded village with PC vikings, whose pens' animals are its livestock
 		/// </summary>
 		/// <param name="position">The point</param>
 		/// <returns>True when it is</returns>

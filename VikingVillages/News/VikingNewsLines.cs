@@ -5,7 +5,7 @@ using Kriona.Vikings;
 namespace VikingVillages
 {
 	/// <summary>
-	/// What living vikings say about the news (see VikingNews) - the lines for each event, kept in pools by what the
+	/// What PC vikings say about the news (see VikingNews) - the lines for each event, kept in pools by what the
 	/// event was about (see VikingNewsLinesDeeds, VikingNewsLinesDeaths and VikingNewsLinesFeats) - and the tables that
 	/// sort what happened into those pools: the bosses and the biome each is from, Hildir's minibosses, the traders,
 	/// dungeons, sea creatures and what kills a player
@@ -197,7 +197,7 @@ namespace VikingVillages
 			{ "FallenValkyrie", "valkyrie" },
 			{ "Serpent", "serpent" },
 			{ "BonemawSerpent", "bonemaw" },
-			{ VikingCore.LivingPrefabName, "viking" },
+			{ VikingCore.PCPrefabName, "viking" },
 			{ VikingCore.DvergrPrefabName, "dvergr" },
 			{ VikingCore.ZombiePrefabName, "zombieviking" }
 		};
@@ -400,7 +400,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks what a living or dvergr viking says about an event - a line of its kind's pool no viking has said about
+		/// Picks what a PC or dvergr viking says about an event - a line of its kind's pool no viking has said about
 		/// it yet (see PoolKey and DvergrPoolKey), with a sentence of its kind's after it when it's a boss or biome beyond
 		/// the viking's own - and fills in the player's and creature's names
 		/// </summary>

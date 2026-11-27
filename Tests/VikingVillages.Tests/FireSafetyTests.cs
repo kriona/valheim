@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests how a living viking's path bends around a fire and where it stands to cook over one
+	/// Tests how a PC viking's path bends around a fire and where it stands to cook over one
 	/// </summary>
 	public class FireSafetyTests
 	{

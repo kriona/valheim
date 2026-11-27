@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// A living viking's life in its village - what it does with nothing to fight, chosen by the time of day, on the
+	/// A PC viking's life in its village - what it does with nothing to fight, chosen by the time of day, on the
 	/// client that owns it
 	/// </summary>
 	/// <remarks>
@@ -52,12 +52,12 @@ namespace VikingVillages
 		private static float nextNamingPing;
 
 		/// <summary>
-		/// On a living viking, that it came to its village from outside the fence and has yet to walk in
+		/// On a PC viking, that it came to its village from outside the fence and has yet to walk in
 		/// </summary>
 		public static readonly int ArrivingKey = "kriona.VikingVillages.vikingArriving".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, when it was last found away from its village, in ZNet time ticks, or 0 while it's there
+		/// On a PC viking, when it was last found away from its village, in ZNet time ticks, or 0 while it's there
 		/// </summary>
 		private static readonly int AwaySinceKey = "kriona.VikingVillages.vikingAwaySince".GetStableHashCode();
 
@@ -93,7 +93,7 @@ namespace VikingVillages
 		private static readonly int BranchHash = "Pickable_Branch".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, until when in ZNet time ticks it's stocking its village's chests with wood, until when
+		/// On a PC viking, until when in ZNet time ticks it's stocking its village's chests with wood, until when
 		/// it's foraging, until when it's hunting, and until when it's petting a boar, each renewed every ClaimRenew
 		/// seconds as it goes, so only a few vikings of the village do each at once (see VikingsPerJob)
 		/// </summary>
@@ -177,7 +177,7 @@ namespace VikingVillages
 		private static readonly Dictionary<Character, Character> hunts = new Dictionary<Character, Character>();
 
 		/// <summary>
-		/// On a living viking, until when in ZNet time ticks it's out of its village or heading out, renewed every
+		/// On a PC viking, until when in ZNet time ticks it's out of its village or heading out, renewed every
 		/// RestCheckInterval while it is, so a village with more than HomeGuardFrom vikings always keeps one at home
 		/// </summary>
 		private static readonly int OutingKey = "kriona.VikingVillages.vikingOuting".GetStableHashCode();
@@ -224,7 +224,7 @@ namespace VikingVillages
 		private const float AlarmPose = 1.5f;
 
 		/// <summary>
-		/// How near a living viking a monster outside the village has to come to be a threat it goes after, when the
+		/// How near a PC viking a monster outside the village has to come to be a threat it goes after, when the
 		/// monster isn't alerted or after anyone, in meters
 		/// </summary>
 		private const float ThreatRange = 10f;
@@ -756,7 +756,7 @@ namespace VikingVillages
 		private const int ForageLoad = 10;
 
 		/// <summary>
-		/// How far a living viking sees, in meters
+		/// How far a PC viking sees, in meters
 		/// </summary>
 		private const float SightRange = 50f;
 
@@ -1373,7 +1373,7 @@ namespace VikingVillages
 		private static int hopMask;
 
 		/// <summary>
-		/// The living vikings this client has loaded
+		/// The PC vikings this client has loaded
 		/// </summary>
 		public static readonly HashSet<VillageLife> All = new HashSet<VillageLife>();
 
@@ -1391,7 +1391,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The viking's body, the same component as humanoid, for what it eats, its rest, its load and its gear changes
 		/// </summary>
-		private LivingVikingBody body;
+		private PCVikingBody body;
 
 		private Village village;
 		private float nextVillageCheck;
@@ -1830,10 +1830,10 @@ namespace VikingVillages
 			nview = GetComponent<ZNetView>();
 			ai = GetComponent<MonsterAI>();
 			viking = GetComponent<VikingCore>();
-			body = GetComponent<LivingVikingBody>();
+			body = GetComponent<PCVikingBody>();
 			if (ai != null)
 			{
-				// A living viking keeps a sharp lookout, so it spots monsters before they're on it
+				// A PC viking keeps a sharp lookout, so it spots monsters before they're on it
 				ai.m_viewRange = Mathf.Max(ai.m_viewRange, SightRange);
 				viewRange = ai.m_viewRange;
 				hearRange = ai.m_hearRange;
@@ -1882,7 +1882,7 @@ namespace VikingVillages
 			{
 				HoldAttached();
 			}
-			if (owner && body != null && VikingCore.IsLivingViking(body))
+			if (owner && body != null && VikingCore.IsPCViking(body))
 			{
 				body.UpdateGearChanges(ChangeGear);
 				UpdatePutOn();

@@ -85,7 +85,7 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Forgets an enemy the viking has picked that's too far from its home to go after - beyond its leash, or beyond
-		/// GrudgeRange for an enemy that has just hurt it - or, for a living viking in its village, too far from the
+		/// GrudgeRange for an enemy that has just hurt it - or, for a PC viking in its village, too far from the
 		/// village
 		/// </summary>
 		public void LeashTarget()
@@ -162,7 +162,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Runs a living viking's life in its village while it has nothing to fight, or keeps a viking with a home by it
+		/// Runs a PC viking's life in its village while it has nothing to fight, or keeps a viking with a home by it
 		/// - walking straight back when it has strayed, and otherwise standing still, with a short stroll now and then
 		/// </summary>
 		/// <remarks>

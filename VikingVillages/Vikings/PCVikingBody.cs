@@ -5,11 +5,11 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// A living viking's body, which works like a player's where the game only gives a player what a living viking
+	/// A PC viking's body, which works like a player's where the game only gives a player what a PC viking
 	/// needs - what it eats, its rest and the weather getting to it, how much it carries, sitting down and putting its
 	/// gear on and taking it off
 	/// </summary>
-	internal class LivingVikingBody : VikingBody
+	internal class PCVikingBody : VikingBody
 	{
 		/// <summary>
 		/// The color the viking's job shows in under its name in debug mode, so it stands apart from the name - in the
@@ -118,7 +118,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether the viking is immune to frost by its name (see LivingVikingBodyRules.FrostImmune) - frost
+		/// Checks whether the viking is immune to frost by its name (see PCVikingBodyRules.FrostImmune) - frost
 		/// damage, the frost effect a hit gives and the weather's cold and freezing - keeping its own frost modifier Immune
 		/// while it is, since that's the one the game checks before a hit gives it the frost effect
 		/// </summary>
@@ -133,7 +133,7 @@ namespace VikingVillages
 			if (name != frostName)
 			{
 				frostName = name;
-				frostImmune = LivingVikingBodyRules.FrostImmune(name);
+				frostImmune = PCVikingBodyRules.FrostImmune(name);
 				m_damageModifiers.m_frost = (frostImmune ? HitData.DamageModifier.Immune : ownFrost);
 			}
 			return(frostImmune);
@@ -242,7 +242,7 @@ namespace VikingVillages
 		{
 			int weight = Mathf.CeilToInt(GetInventory().GetTotalWeight());
 			int max = Mathf.CeilToInt(GetMaxCarryWeight());
-			return(LivingVikingBodyRules.FormatWeight(weight, max, Mathf.Sin(Time.time * 10f) > 0f));
+			return(PCVikingBodyRules.FormatWeight(weight, max, Mathf.Sin(Time.time * 10f) > 0f));
 		}
 
 		/// <summary>
@@ -555,7 +555,7 @@ namespace VikingVillages
 		/// <param name="height">How far it fell, in meters</param>
 		public void Land(float height)
 		{
-			float damage = LivingVikingBodyRules.FallDamage(height);
+			float damage = PCVikingBodyRules.FallDamage(height);
 			if (damage <= 0f)
 			{
 				return;
@@ -585,7 +585,7 @@ namespace VikingVillages
 		{
 			Weather.Update();
 			float multiplier = Rest.RegenMultiplier();
-			float delta = LivingVikingBodyRules.RegenDelta(GetHealth() - before, multiplier);
+			float delta = PCVikingBodyRules.RegenDelta(GetHealth() - before, multiplier);
 			if (delta > 0f)
 			{
 				Heal(delta, false);
@@ -655,7 +655,7 @@ namespace VikingVillages
 			{
 				return;
 			}
-			GearChange queued = LivingVikingBodyRules.QueueChange(gearChanges, Time.time, item.m_shared.m_itemType, item.m_shared.m_equipDuration, putOn, chosen, found);
+			GearChange queued = PCVikingBodyRules.QueueChange(gearChanges, Time.time, item.m_shared.m_itemType, item.m_shared.m_equipDuration, putOn, chosen, found);
 			if (queued.Paired)
 			{
 				queued.Partner = item;
@@ -795,11 +795,11 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// What a living viking's body works out without its body - when its gear changes start and are done, how much its
+	/// What a PC viking's body works out without its body - when its gear changes start and are done, how much its
 	/// rest changes what the game heals it by, how much a fall hurts it, how its weight shows and whose name makes it
 	/// immune to frost
 	/// </summary>
-	internal static class LivingVikingBodyRules
+	internal static class PCVikingBodyRules
 	{
 		/// <summary>
 		/// Checks whether a viking's name makes it immune to frost - Elsa, whatever its case and byname (see
@@ -827,10 +827,10 @@ namespace VikingVillages
 		/// <param name="found">Whether the viking found it as loot or in a chest</param>
 		/// <returns>The change the piece is part of - the last one, Paired, when it joined it as the other hand's piece,
 		/// or else a new one for it</returns>
-		internal static LivingVikingBody.GearChange QueueChange(List<LivingVikingBody.GearChange> changes, float now, ItemDrop.ItemData.ItemType type, float equipDuration, bool putOn, bool chosen, bool found)
+		internal static PCVikingBody.GearChange QueueChange(List<PCVikingBody.GearChange> changes, float now, ItemDrop.ItemData.ItemType type, float equipDuration, bool putOn, bool chosen, bool found)
 		{
 			float duration = Mathf.Max(0f, equipDuration);
-			LivingVikingBody.GearChange last = ((changes.Count > 0) ? changes[changes.Count - 1] : null);
+			PCVikingBody.GearChange last = ((changes.Count > 0) ? changes[changes.Count - 1] : null);
 			if (last != null && !last.Paired && last.PutOn == putOn && last.Chosen == chosen && last.Found == found && HandPair(last.Type, type))
 			{
 				last.Paired = true;
@@ -838,7 +838,7 @@ namespace VikingVillages
 				return(last);
 			}
 			float start = ((last != null) ? last.DoneAt : now);
-			LivingVikingBody.GearChange change = new LivingVikingBody.GearChange { Type = type, PutOn = putOn, Chosen = chosen, Found = found, Start = start, DoneAt = start + duration };
+			PCVikingBody.GearChange change = new PCVikingBody.GearChange { Type = type, PutOn = putOn, Chosen = chosen, Found = found, Start = start, DoneAt = start + duration };
 			changes.Add(change);
 			return(change);
 		}

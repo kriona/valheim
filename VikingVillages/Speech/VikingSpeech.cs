@@ -6,7 +6,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// What living vikings say - words over their heads that every client nearby sees, the way the game shows a
+	/// What PC vikings say - words over their heads that every client nearby sees, the way the game shows a
 	/// trader's - and the lines they pick from: the night watch's alarm, a call when one spots an enemy, a badly hurt
 	/// viking's shout for help, a greeting for a player arriving - as a stranger until it has met them, which it
 	/// remembers - what it says when a player talks to it, the talks they have with each other, and what they say by the
@@ -459,7 +459,7 @@ namespace VikingVillages
 		};
 
 		/// <summary>
-		/// On a living viking, the players it knows - having greeted them - by player ID, and the most it remembers
+		/// On a PC viking, the players it knows - having greeted them - by player ID, and the most it remembers
 		/// </summary>
 		private static readonly int KnownKey = VikingName.KnownKey;
 		private const int KnownMax = 64;
@@ -1328,7 +1328,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks what a viking says when a player talks to it while it's swimming - living and dvergr vikings alike
+		/// Picks what a viking says when a player talks to it while it's swimming - PC and dvergr vikings alike
 		/// </summary>
 		/// <returns>The line</returns>
 		public static string Swimming()

@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// A living viking's life away from any village - lost for a while when a console command spawned it out in the
+	/// A PC viking's life away from any village - lost for a while when a console command spawned it out in the
 	/// wild, then on the road to the nearest village it can reach (see VillageTravel), or wandering when there's none -
 	/// and the gathering at the fire of a village a player disbanded before its vikings set out together for another
 	/// </summary>
@@ -1243,7 +1243,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Checks whether the viking fights an enemy rather than running from it - a viking on the road runs unless it
 		/// can't get away or someone near it needs help, and a lost or wandering viking runs only from a monster it can't
-		/// take on. It fights a player who hurt it, an enemy attacking a player or living viking near it, one that's
+		/// take on. It fights a player who hurt it, an enemy attacking a player or PC viking near it, one that's
 		/// faster than it, and one that has it cornered or caught
 		/// </summary>
 		/// <param name="target">The enemy</param>
@@ -1268,7 +1268,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether an enemy is attacking a player or another living viking within HelpRange of the viking
+		/// Checks whether an enemy is attacking a player or another PC viking within HelpRange of the viking
 		/// </summary>
 		/// <param name="enemy">The enemy</param>
 		/// <returns>True when it is</returns>

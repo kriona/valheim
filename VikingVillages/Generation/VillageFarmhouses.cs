@@ -52,7 +52,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// How far from a farm's middle a biome harder than the Meadows can be for the farm to be one of the larger ones
-		/// with more houses, and for its living vikings to be that biome's, close enough for its creatures to come into
+		/// with more houses, and for its PC vikings to be that biome's, close enough for its creatures to come into
 		/// the village, in meters
 		/// </summary>
 		private const float HardBiomeReach = 150f;
@@ -70,7 +70,7 @@ namespace VikingVillages
 		/// Finds the hardest biome at a point or within a distance of it, from the world's plan, so the answer is the same
 		/// however much of the world has been generated - by VikingGear's order, from the Meadows to the Deep North, with
 		/// the ocean counting as the Meadows. A farm with one harder than the Meadows within HardBiomeReach is one of the
-		/// larger ones, with more houses, and its living vikings are of the hardest within HardBiomeVikingReach
+		/// larger ones, with more houses, and its PC vikings are of the hardest within HardBiomeVikingReach
 		/// </summary>
 		/// <param name="point">The point</param>
 		/// <param name="reach">How far from it to look, in meters</param>

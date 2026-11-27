@@ -1,6 +1,6 @@
 # Viking Villages - What Vikings Say
 
-Every line the living Vikings of [Viking Villages](README.md) say, and when they say it - to you, to each other, and as they pass on the news of what you've done.
+Every line the PC Vikings of [Viking Villages](README.md) say, and when they say it - to you, to each other, and as they pass on the news of what you've done.
 
 ## Speech
 
@@ -566,7 +566,7 @@ A death is told with the lines of what killed you - the creature or player that 
 | You were killed by Geirrhafa | "Geirrhafa, {player}? That frost cave is cold enough without her in it."<br>"I heard Geirrhafa got you. Wrap up warm before you go back down there."<br>"Glad you're back. Hildir asks a lot, sending you after Geirrhafa."<br>"Geirrhafa! Take a friend or two next time, {player}. She doesn't fight fair." |
 | You were killed by Zil or Thungr | "Zil and Thungr, {player}? Two at once is too many for anyone."<br>"I heard the fuling brothers got you. Split them up if you can."<br>"Glad you're back. Hildir's chest will keep - you'll get it next time."<br>"Zil and Thungr! Bring a friend - it's only fair, since there are two of them." |
 | You were killed by another player, {creature} being their name | "{creature} got you, {player}? With friends like that, who needs trolls?"<br>"I heard {creature} cut you down. I hope it was only a sparring match."<br>"{creature} did that? Shake hands and share a mead - that's the Viking way."<br>"Watch your back around {creature}, {player} - friendly or not, a blade's a blade."<br>"Word is {creature} bested you. Train hard and you'll have your revenge in good time." |
-| You were killed by a living Viking | "I'm sorry it came to blows with one of our own, {player}. Tempers run hot sometimes."<br>"I heard one of us struck you down. Whatever happened, I hope it's forgiven."<br>"That should never have happened. We're all on the same side out here."<br>"A Viking turning on a friend... it shames us all. I'm glad you're back, {player}."<br>"Let's put it behind us. Come, have a mead with us and no hard feelings." |
+| You were killed by a PC Viking | "I'm sorry it came to blows with one of our own, {player}. Tempers run hot sometimes."<br>"I heard one of us struck you down. Whatever happened, I hope it's forgiven."<br>"That should never have happened. We're all on the same side out here."<br>"A Viking turning on a friend... it shames us all. I'm glad you're back, {player}."<br>"Let's put it behind us. Come, have a mead with us and no hard feelings." |
 | You were killed by a zombie Viking | "A zombie Viking got you, {player}? Once one of us, now one of them."<br>"I heard the dead got you. It's worse when they wear a face you might have known."<br>"Glad you're back. Burn them or bring silver - nothing else keeps a zombie Viking down."<br>"A walking corpse with an axe... I'd have fallen too, {player}." |
 | You were killed by any other creature, {creature} being its name | "That {creature} got you, {player}? I've never even heard of one before."<br>"I heard the {creature} brought you down. Glad you made it back to us."<br>"The {creature}? Tell me all about it by the fire - and how to stay clear of it."<br>"Whatever that {creature} was, {player}, I hope you gave it a few scars of its own."<br>"{creature}... the world grows stranger every day. Rest up, friend." |
 | You died from a fall | "I heard you took a bad fall, {player}. The ground always wins in the end."<br>"A fall? Watch your footing on the cliffs - they're steeper than they look."<br>"Glad you're back. Next time, take the long way down."<br>"Even Odin's ravens would have thought twice about that drop, {player}." |
@@ -595,7 +595,7 @@ A death is told with the lines of what killed you - the creature or player that 
 
 ## Dvergr Vikings
 
-The Dvergr Vikings the Dvergr hire in the Mistlands (see [Dvergr Vikings](LOGIC.md#dvergr-vikings) in LOGIC.md) have a set of lines of their own, about working for the Dvergr - none of the living Vikings' lines above but the news about the Mistlands, which they tell in the same words, and the lines for old friends, asking how you're doing, the runestones where they stand and the runestones of someone with their name, which they say the same way, in place of the lines below. They say them over their heads the way the living Vikings do. {player} is your name, {name} their own name, {enemy} the enemy's name, {skill} and {level} the skill and its new level, and {power} the forsaken power's name.
+The Dvergr Vikings the Dvergr hire in the Mistlands (see [Dvergr Vikings](LOGIC.md#dvergr-vikings) in LOGIC.md) have a set of lines of their own, about working for the Dvergr - none of the PC Vikings' lines above but the news about the Mistlands, which they tell in the same words, and the lines for old friends, asking how you're doing, the runestones where they stand and the runestones of someone with their name, which they say the same way, in place of the lines below. They say them over their heads the way the PC Vikings do. {player} is your name, {name} their own name, {enemy} the enemy's name, {skill} and {level} the skill and its new level, and {power} the forsaken power's name.
 
 | When | Seen within | Lines |
 |---|---|---|
@@ -608,11 +608,11 @@ The Dvergr Vikings the Dvergr hire in the Mistlands (see [Dvergr Vikings](LOGIC.
 | You talk to them in a fight | 20 m, 3 s | "Not now - I'm earning my pay!"<br>"Later! Guard the Dvergr!"<br>"Busy! Talk after!" |
 | They go after an enemy - at most every 15 seconds, and never a player | 40 m, 8 s | "{enemy}! Protect the Dvergr!"<br>"{enemy} coming - to arms!"<br>"Eyes up - {enemy}!"<br>"{enemy} in the mist!"<br>"Guard the outpost - {enemy}!" |
 | Below 30% of their health in a fight, at most every 30 seconds | 40 m, 8 s | "Help me!"<br>"To me - I'm hurt!"<br>"Dvergr, help!"<br>"I need a hand here!" |
-| They reach a new level of a skill - as often as a living Viking does | 40 m, 5 s | "My {skill} gets better every day out here!"<br>"Level {level} in {skill}! The Dvergr should pay me more."<br>"Ha! All this guard duty is good for my {skill}."<br>"Even a Dvergr would nod at my {skill} now." |
+| They reach a new level of a skill - as often as a PC Viking does | 40 m, 5 s | "My {skill} gets better every day out here!"<br>"Level {level} in {skill}! The Dvergr should pay me more."<br>"Ha! All this guard duty is good for my {skill}."<br>"Even a Dvergr would nod at my {skill} now." |
 | They use a forsaken power | 40 m, 6 s | "{power}, guard us!"<br>"By {power}! For the Dvergr!"<br>"{power}, lend us your strength!"<br>"Feel {power}'s blessing, friends!" |
-| You share your forsaken power with them - as with the living Vikings, {player} being traveler while they don't know you | 20 m, 6 s | "{power}'s gift! The Dvergr thank you too, {player}."<br>"I feel {power}'s power, {player}! Worth more than my wages."<br>"Thank you, {player}. With {power}'s blessing, nothing gets past me."<br>"{power}! Now that's a bonus the Dvergr never paid, {player}." |
+| You share your forsaken power with them - as with the PC Vikings, {player} being traveler while they don't know you | 20 m, 6 s | "{power}'s gift! The Dvergr thank you too, {player}."<br>"I feel {power}'s power, {player}! Worth more than my wages."<br>"Thank you, {player}. With {power}'s blessing, nothing gets past me."<br>"{power}! Now that's a bonus the Dvergr never paid, {player}." |
 
-They pass on your news the way the living Vikings do, in place of their greeting or what they'd say when you talk to them, with these lines - and with the living Vikings' lines above for discovering the Mistlands, killing the Queen, and dying to her, a seeker, a tick or a gjall.
+They pass on your news the way the PC Vikings do, in place of their greeting or what they'd say when you talk to them, with these lines - and with the PC Vikings' lines above for discovering the Mistlands, killing the Queen, and dying to her, a seeker, a tick or a gjall.
 
 | News | Lines |
 |---|---|

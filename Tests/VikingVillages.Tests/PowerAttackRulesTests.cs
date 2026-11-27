@@ -1,7 +1,7 @@
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests the rules for a living viking's power attacks - what each weapon's is good for, when it's a smart move and
+	/// Tests the rules for a PC viking's power attacks - what each weapon's is good for, when it's a smart move and
 	/// how long the viking waits before its next
 	/// </summary>
 	public class PowerAttackRulesTests

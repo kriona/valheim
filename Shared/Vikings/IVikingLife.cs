@@ -1,7 +1,7 @@
 namespace Kriona.Vikings
 {
 	/// <summary>
-	/// A living viking's life in its village, which Viking Villages gives every living viking (see VillageLife there) -
+	/// A PC viking's life in its village, which Viking Villages gives every PC viking (see VillageLife there) -
 	/// what the shared VikingCore asks of it, so it can run in Zombie Apocalypse too, where vikings have none
 	/// </summary>
 	internal interface IVikingLife

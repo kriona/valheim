@@ -33,7 +33,7 @@ namespace VikingVillages
 		private static readonly int BedsKey = "kriona.VikingVillages.villageBeds".GetStableHashCode();
 
 		/// <summary>
-		/// On a bed, the living viking that sleeps in it, and on a living viking, the bed it sleeps in - a bed is the
+		/// On a bed, the PC viking that sleeps in it, and on a PC viking, the bed it sleeps in - a bed is the
 		/// viking's while both note each other and the viking still belongs to the bed's village
 		/// </summary>
 		public static readonly KeyValuePair<int, int> VikingKey = ZDO.GetHashZDOID("kriona.VikingVillages.bedViking");
@@ -142,7 +142,7 @@ namespace VikingVillages
 		/// one at a time
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns, with everything across it loaded</param>
-		/// <param name="vikings">Its living vikings' ZDOs, added to</param>
+		/// <param name="vikings">Its PC vikings' ZDOs, added to</param>
 		public static void Update(Village village, List<ZDO> vikings)
 		{
 			List<NotedBed> noted = Read(village.Zdo);
@@ -343,7 +343,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the living viking a bed is held by - one that notes the bed as its own, as the bed notes it, and still
+		/// Finds the PC viking a bed is held by - one that notes the bed as its own, as the bed notes it, and still
 		/// belongs to a village - as this client knows of it
 		/// </summary>
 		/// <param name="bed">The bed's ZDO</param>
@@ -375,7 +375,7 @@ namespace VikingVillages
 		/// its home first, then the nearest, so the village's beds show whose they are before anyone sleeps in them
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns, with everything across it loaded</param>
-		/// <param name="vikings">Its living vikings' ZDOs</param>
+		/// <param name="vikings">Its PC vikings' ZDOs</param>
 		public static void AssignBeds(Village village, List<ZDO> vikings)
 		{
 			List<ZNetView> free = null;
@@ -412,7 +412,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Describes a living viking's bed for its debug hover text - the bed it calls its own, if any, and the village's
+		/// Describes a PC viking's bed for its debug hover text - the bed it calls its own, if any, and the village's
 		/// beds it could sleep in, counted by why it can't have them
 		/// </summary>
 		/// <param name="viking">The viking's ZDO</param>
@@ -462,7 +462,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a living viking has a bed of its own in its village - one that notes it back, that no player
+		/// Checks whether a PC viking has a bed of its own in its village - one that notes it back, that no player
 		/// has claimed
 		/// </summary>
 		/// <param name="viking">The viking's ZDO</param>
@@ -507,7 +507,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Notes a bed as a living viking's own, and the viking as the bed's
+		/// Notes a bed as a PC viking's own, and the viking as the bed's
 		/// </summary>
 		/// <param name="viking">The viking's ZDO, owned by this client</param>
 		/// <param name="bed">The bed</param>
@@ -573,7 +573,7 @@ namespace VikingVillages
 		/// village's houses when it's in none of them, and notes what held it up when it can't come yet
 		/// </summary>
 		/// <param name="village">The village</param>
-		/// <param name="vikings">Its living vikings' ZDOs, added to</param>
+		/// <param name="vikings">Its PC vikings' ZDOs, added to</param>
 		/// <param name="noted">The beds noted in the village, added to</param>
 		private static void Invite(Village village, List<ZDO> vikings, List<NotedBed> noted)
 		{

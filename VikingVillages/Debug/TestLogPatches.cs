@@ -3,7 +3,7 @@ using HarmonyLib;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Notes the hits living vikings take for the test log, so a viking's death line lists its last ones (see TestLog)
+	/// Notes the hits PC vikings take for the test log, so a viking's death line lists its last ones (see TestLog)
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.ApplyDamage))]
 	public static class TestLogHitPatch
@@ -34,7 +34,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Writes the deaths of living vikings, and of the creatures in and around villages, to the test log
+	/// Writes the deaths of PC vikings, and of the creatures in and around villages, to the test log
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.OnDeath))]
 	public static class TestLogDeathPatch

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace VikingVillages
 {
 	/// <summary>
-	/// The news living vikings pass on to players - what each player did or what happened to them, from killing a boss
+	/// The news PC vikings pass on to players - what each player did or what happened to them, from killing a boss
 	/// to dying - and the firsts each character has had in the world, so a first is only news once
 	/// </summary>
 	/// <remarks>

@@ -7,7 +7,7 @@ namespace VikingVillages
 	/// <summary>
 	/// A dvergr viking's life with the dvergr - greeting a player arriving and answering one who talks to it in words of
 	/// its own (see DvergrSpeech), passing on their news, calling out the enemies it goes after and shouting for help
-	/// when it's badly hurt, and using the forsaken powers it knows in a fight and when it's hurt, the way a living
+	/// when it's badly hurt, and using the forsaken powers it knows in a fight and when it's hurt, the way a PC
 	/// viking does - on its owner
 	/// </summary>
 	internal class DvergrLife : MonoBehaviour, Interactable

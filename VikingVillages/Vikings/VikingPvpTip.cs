@@ -1,7 +1,7 @@
 namespace VikingVillages
 {
 	/// <summary>
-	/// Hugin's tips about living vikings - the first time the player's hit on one does nothing because their PvP is off,
+	/// Hugin's tips about PC vikings - the first time the player's hit on one does nothing because their PvP is off,
 	/// the first time the console's kill commands leave them standing because they aren't angry, and the first time the
 	/// player starts a village of their own
 	/// </summary>
@@ -14,8 +14,8 @@ namespace VikingVillages
 		/// <summary>
 		/// The tips' names among the game's tutorials, which the player's profile remembers them by
 		/// </summary>
-		private const string Name = "kriona_VikingVillages_livingVikingPvp";
-		private const string KillName = "kriona_VikingVillages_livingVikingKill";
+		private const string Name = "kriona_VikingVillages_pcVikingPvp";
+		private const string KillName = "kriona_VikingVillages_pcVikingKill";
 		private const string FoundingName = "kriona_VikingVillages_villageFounded";
 
 		/// <summary>

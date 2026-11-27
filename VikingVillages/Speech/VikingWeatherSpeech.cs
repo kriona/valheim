@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// What living vikings say about the weather - the talks they have with each other about it, what they say to a
+	/// What PC vikings say about the weather - the talks they have with each other about it, what they say to a
 	/// player they know about it, and what they mutter when it gets to them
 	/// </summary>
 	/// <remarks>

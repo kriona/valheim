@@ -113,4 +113,4 @@ For a verdict of not a bug, send no go-ahead and set its Status to `not a bug`, 
 
 ### Report
 
-For each issue, a line or two: the verdict, what was changed or why it's fine, the suggested fix for one that needs logging or isn't a bug, and the commit's hash and message - or, for changes left in the tree, the files and a suggested message, noting fixes that share a file. Then the other bugs found along the way and what became of them, what was added to the known patterns, and anything left undone. Living vikings are "they" in the report
+For each issue, a line or two: the verdict, what was changed or why it's fine, the suggested fix for one that needs logging or isn't a bug, and the commit's hash and message - or, for changes left in the tree, the files and a suggested message, noting fixes that share a file. Then the other bugs found along the way and what became of them, what was added to the known patterns, and anything left undone. Vikings are "they" in the report

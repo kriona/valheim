@@ -5,12 +5,12 @@ using UnityEngine.AI;
 namespace VikingVillages
 {
 	/// <summary>
-	/// The ground that burns whoever stands on it, which living vikings keep off - the Ashlands' lava, and the boiling
+	/// The ground that burns whoever stands on it, which PC vikings keep off - the Ashlands' lava, and the boiling
 	/// sea around the Ashlands
 	/// </summary>
 	/// <remarks>
 	/// The lava's and the sea's ground is built into navmesh areas of their own, costing what the ground and the water
-	/// cost every other creature, so their paths are the game's. A living viking's AI leaves both areas out (see
+	/// cost every other creature, so their paths are the game's. A PC viking's AI leaves both areas out (see
 	/// NavmeshRoofs.StartAvoiding), so its paths go around them and the spots it picks are never on them, and a move
 	/// that would take it from safe ground onto them stops short (see VikingDangerStepPatch). Only the terrain is
 	/// dangerous, as in Character.UpdateLava - a building piece or a rock standing in the lava or the sea is safe to

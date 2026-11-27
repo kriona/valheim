@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Picks each village's night watch - one of its living vikings each night for every VikingsPerWatch of them, or
+	/// Picks each village's night watch - one of its PC vikings each night for every VikingsPerWatch of them, or
 	/// part of that, the strongest first and at random among equals (see TakeStrongest), who patrol with a torch out
 	/// instead of sleeping, and wake the others when an enemy comes near
 	/// </summary>
@@ -63,7 +63,7 @@ namespace VikingVillages
 		/// <param name="viking">The dying creature</param>
 		public static void OnVikingDeath(Character viking)
 		{
-			if (viking == null || ZRoutedRpc.instance == null || viking.m_nview == null || !viking.m_nview.IsValid() || !viking.m_nview.IsOwner() || !VikingCore.IsLivingViking(viking))
+			if (viking == null || ZRoutedRpc.instance == null || viking.m_nview == null || !viking.m_nview.IsValid() || !viking.m_nview.IsOwner() || !VikingCore.IsPCViking(viking))
 			{
 				return;
 			}

@@ -3,12 +3,12 @@ using Kriona.Vikings;
 namespace ZombieApocalypse
 {
 	/// <summary>
-	/// A zombie viking's body, which works like a monster's apart from what it shares with a living viking
+	/// A zombie viking's body, which works like a monster's apart from what it shares with a PC viking
 	/// </summary>
 	internal class ZombieVikingBody : VikingBody
 	{
 		/// <summary>
-		/// Gets the zombie's name as the local player sees it - ZombieName and the name of the living or dvergr viking it
+		/// Gets the zombie's name as the local player sees it - ZombieName and the name of the PC or dvergr viking it
 		/// rose from to a player that viking knew, and plain Zombie Viking to anyone else, without Viking Villages' "(?)"
 		/// for a viking that doesn't know them yet, since a zombie never gets to know anyone (see VikingName)
 		/// </summary>

@@ -3,7 +3,7 @@ using UnityEngine;
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests how a living viking's step off a ledge is turned aside and what a step lands on
+	/// Tests how a PC viking's step off a ledge is turned aside and what a step lands on
 	/// </summary>
 	public class LedgesTests
 	{

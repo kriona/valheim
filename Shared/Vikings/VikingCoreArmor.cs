@@ -36,28 +36,28 @@ namespace Kriona.Vikings
 		private bool MeleeScaled(bool ranged)
 		{
 			bool hasData = (GetData() != null);
-			return(GetsMeleeScale(hasData, hasData && data.Tombstone, IsLivingOrDvergr(humanoid), ranged));
+			return(GetsMeleeScale(hasData, hasData && data.Tombstone, IsPCOrDvergr(humanoid), ranged));
 		}
 
 		/// <summary>
 		/// Checks whether a viking's hit with a weapon is scaled by its biome's MeleeScale - only a zombie viking of the
-		/// world's hand to hand, so it hits about as hard as its biome's creatures. A living or dvergr viking hits like a
+		/// world's hand to hand, so it hits about as hard as its biome's creatures. A PC or dvergr viking hits like a
 		/// player of its skill, a tombstone viking like the player it rose from, a shot isn't scaled, and a viking with
 		/// no data yet has no biome to scale by
 		/// </summary>
 		/// <param name="hasData">Whether the viking has its data yet</param>
 		/// <param name="tombstone">Whether it's a tombstone viking</param>
-		/// <param name="livingOrDvergr">Whether it's a living or dvergr viking</param>
+		/// <param name="pcOrDvergr">Whether it's a PC or dvergr viking</param>
 		/// <param name="ranged">Whether the weapon shoots</param>
 		/// <returns>True when it's scaled</returns>
-		internal static bool GetsMeleeScale(bool hasData, bool tombstone, bool livingOrDvergr, bool ranged)
+		internal static bool GetsMeleeScale(bool hasData, bool tombstone, bool pcOrDvergr, bool ranged)
 		{
-			return(hasData && !tombstone && !livingOrDvergr && !ranged);
+			return(hasData && !tombstone && !pcOrDvergr && !ranged);
 		}
 
 		/// <summary>
 		/// Adds up the armor of the pieces the viking wears, with what its effects add, the way a player's adds up - all
-		/// of it for a living or dvergr viking, and the config's ZombieArmorEffectiveness percent of it for a zombie
+		/// of it for a PC or dvergr viking, and the config's ZombieArmorEffectiveness percent of it for a zombie
 		/// viking
 		/// </summary>
 		/// <returns>Its armor</returns>
@@ -69,7 +69,7 @@ namespace Kriona.Vikings
 				armor += piece.GetArmor();
 			}
 			humanoid.GetSEMan().ApplyArmorMods(ref armor);
-			float effectiveness = (IsLivingOrDvergr(humanoid) ? 100f : VikingSettings.Get(VikingSettings.ZombieArmorEffectiveness, 100));
+			float effectiveness = (IsPCOrDvergr(humanoid) ? 100f : VikingSettings.Get(VikingSettings.ZombieArmorEffectiveness, 100));
 			return(armor * effectiveness / 100f);
 		}
 

@@ -6,7 +6,7 @@ namespace VikingVillages
 	/// <summary>
 	/// Who gave the local player a forsaken power, so its message names them - the game shows every player a power
 	/// reaches its own start message, which for Eikthyr's says "You activate the power of Eikthyr" even when another
-	/// player used it. Whoever uses a power - a player (see VikingSharedPowerPatch) or a living or dvergr viking (see
+	/// player used it. Whoever uses a power - a player (see VikingSharedPowerPatch) or a PC or dvergr viking (see
 	/// VikingPowers.Use) - announces it to every client before the power goes out, and a power reaching the local
 	/// player from someone else shows who activated it in place of its own message (see PowerGiverMessagePatch)
 	/// </summary>
@@ -128,7 +128,7 @@ namespace VikingVillages
 			{
 				return(player.GetPlayerName());
 			}
-			if (character is LivingVikingBody viking)
+			if (character is PCVikingBody viking)
 			{
 				string name = (viking.Stranger() ? "" : viking.ShownName());
 				return((name.Length > 0) ? name : "A Viking");

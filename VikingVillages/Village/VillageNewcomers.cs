@@ -4,7 +4,7 @@ using Kriona.Vikings;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Notes when a living viking joins a village, and the talks the village's vikings have about it for a game day
+	/// Notes when a PC viking joins a village, and the talks the village's vikings have about it for a game day
 	/// after - welcoming it, or talking about it with each other, and about the village its group came from when it came
 	/// from one a player disbanded
 	/// </summary>
@@ -17,7 +17,7 @@ namespace VikingVillages
 	internal static class VillageNewcomers
 	{
 		/// <summary>
-		/// On a living viking, when it joined its village, in ZNet time ticks, and the name of the village its group came
+		/// On a PC viking, when it joined its village, in ZNet time ticks, and the name of the village its group came
 		/// from, or ""
 		/// </summary>
 		public static readonly int JoinedAtKey = "kriona.VikingVillages.vikingJoinedAt".GetStableHashCode();

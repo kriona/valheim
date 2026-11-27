@@ -67,7 +67,7 @@ namespace VikingVillages
 					}
 					continue;
 				}
-				if (!other.IsPlayer() && !VikingCore.IsLivingViking(other))
+				if (!other.IsPlayer() && !VikingCore.IsPCViking(other))
 				{
 					continue;
 				}

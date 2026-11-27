@@ -504,9 +504,9 @@ namespace VikingVillages
 		/// <returns>Its room</returns>
 		private static CarrySpace SpaceOf(Humanoid humanoid, ItemDrop.ItemData tool, int questBiome)
 		{
-			LivingVikingBody body = humanoid.GetComponent<LivingVikingBody>();
+			PCVikingBody body = humanoid.GetComponent<PCVikingBody>();
 			Inventory inventory = humanoid.GetInventory();
-			float limit = ((body != null) ? body.GetMaxCarryWeight() : LivingVikingBody.MaxCarryWeight) + VikingUpgrades.QuestCarryBonus(humanoid, questBiome);
+			float limit = ((body != null) ? body.GetMaxCarryWeight() : PCVikingBody.MaxCarryWeight) + VikingUpgrades.QuestCarryBonus(humanoid, questBiome);
 			float weight = inventory.GetTotalWeight() + SupplyWeight + ((tool != null) ? tool.m_shared.m_weight : 0f);
 			int slots = inventory.m_width * inventory.m_height - inventory.m_inventory.Count - SupplySlots - ((tool != null) ? 1 : 0);
 			return(new CarrySpace { WeightRoom = Mathf.Max(0f, limit - weight), FreeSlots = Mathf.Max(0, slots) });
@@ -761,7 +761,7 @@ namespace VikingVillages
 			float seconds = Mathf.Max(0f, (record.Due - record.SetOutAt) / (float)NetTime.Ticks(1f));
 			List<ItemDrop.ItemData> potions = carried.FindAll((ItemDrop.ItemData item) => IsPotion(item));
 			int gearBiome = ((core != null) ? core.BiomeIndex() : 0);
-			LivingVikingBody body = humanoid as LivingVikingBody;
+			PCVikingBody body = humanoid as PCVikingBody;
 			float floor = ((body != null) ? body.Food.Floor() : VikingFood.HealthFloor(gearBiome));
 			List<QuestFood> foods = FoodsOf(carried, (ItemDrop.ItemData item) => item.m_stack);
 			QuestSim.Rank(foods, QuestLoot.Fights(record.Kind), floor);

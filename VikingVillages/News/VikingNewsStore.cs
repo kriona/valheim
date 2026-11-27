@@ -6,7 +6,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Keeps the world's news (see VikingNews) on the server and a copy on every client, and has a living viking tell a
+	/// Keeps the world's news (see VikingNews) on the server and a copy on every client, and has a PC viking tell a
 	/// player the latest news about them as it greets them or they talk to it - when there's some since it last talked
 	/// to them, at TellChance, and only while more vikings are still to tell it
 	/// </summary>
@@ -151,7 +151,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Has a living or dvergr viking tell a player the latest news about them, in its kind's words, on the viking's
+		/// Has a PC or dvergr viking tell a player the latest news about them, in its kind's words, on the viking's
 		/// owner - only news from after it last talked to them, which the caller notes once it has said its piece either
 		/// way (see VikingIdentity.Answered)
 		/// </summary>

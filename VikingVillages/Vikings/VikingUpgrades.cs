@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// What a living viking can start with beyond its gear, more often the harder its biome - a strength belt
+	/// What a PC viking can start with beyond its gear, more often the harder its biome - a strength belt
 	/// (Megingjord), and the wider and deeper pockets Haldor sells, each a row more in its inventory, the way they are
 	/// for a player - which its village buys from Haldor for a viking without them (see VillageQuests.PurchaseChoice)
 	/// </summary>
@@ -28,7 +28,7 @@ namespace VikingVillages
 		public const int DeeperRows = PlainRows + 2;
 
 		/// <summary>
-		/// The chance that a living viking starts with a strength belt, wider pockets and deeper pockets, by its biome's
+		/// The chance that a PC viking starts with a strength belt, wider pockets and deeper pockets, by its biome's
 		/// index (see VikingGear.Biomes) - from the Meadows to the Deep North
 		/// </summary>
 		internal static readonly float[] BeltChances = { 0f, 0.2f, 0.4f, 0.6f, 0.8f, 1f, 1f, 1f };
@@ -47,25 +47,25 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a living viking of a biome starts with a strength belt, by BeltChances
+		/// Checks whether a PC viking of a biome starts with a strength belt, by BeltChances
 		/// </summary>
 		/// <param name="index">The index of its biome</param>
 		/// <param name="roll">A random number from 0 to 1</param>
 		/// <returns>True for a belt</returns>
-		internal static bool LivingBelt(int index, float roll)
+		internal static bool PCBelt(int index, float roll)
 		{
 			return(roll < ChanceOf(BeltChances, index));
 		}
 
 		/// <summary>
-		/// Works out how many rows a living viking of a biome starts with - deeper pockets by DeeperPocketsChances, and
+		/// Works out how many rows a PC viking of a biome starts with - deeper pockets by DeeperPocketsChances, and
 		/// otherwise wider pockets by WiderPocketsChances. Both come from the one roll, and deeper pockets are never likelier
 		/// than wider ones, so each table's chance holds on its own while deeper pockets only come with wider ones
 		/// </summary>
 		/// <param name="index">The index of its biome</param>
 		/// <param name="roll">A random number from 0 to 1</param>
 		/// <returns>Its rows</returns>
-		internal static int LivingRows(int index, float roll)
+		internal static int PCRows(int index, float roll)
 		{
 			if (roll < ChanceOf(DeeperPocketsChances, index))
 			{

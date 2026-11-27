@@ -9,7 +9,7 @@ namespace Kriona.Vikings
 	internal partial class VikingCore
 	{
 		/// <summary>
-		/// Checks whether a living viking leaves its gear as it is, while a player has its inventory open (see
+		/// Checks whether a PC viking leaves its gear as it is, while a player has its inventory open (see
 		/// VikingInventory)
 		/// </summary>
 		/// <returns>True while it does</returns>
@@ -80,7 +80,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Has a living viking sheath its weapon and shield on its back while there's no danger, and draw them again as
+		/// Has a PC viking sheath its weapon and shield on its back while there's no danger, and draw them again as
 		/// soon as there is - a torch or a hammer it holds stays in its hands
 		/// </summary>
 		/// <remarks>
@@ -92,7 +92,7 @@ namespace Kriona.Vikings
 		/// put on</param>
 		public void UpdateSheath(bool force = false)
 		{
-			if (ai == null || !IsLivingViking(humanoid) || GetData() == null || humanoid.IsDead() || (GearHeld() && !force))
+			if (ai == null || !IsPCViking(humanoid) || GetData() == null || humanoid.IsDead() || (GearHeld() && !force))
 			{
 				return;
 			}
@@ -138,7 +138,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Finds the best shield a living viking has of its own - not one it carries for a chest - that isn't broken
+		/// Finds the best shield a PC viking has of its own - not one it carries for a chest - that isn't broken
 		/// </summary>
 		/// <returns>The shield, or null when it has none</returns>
 		private ItemDrop.ItemData BestShield()
@@ -159,10 +159,10 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Has a living viking take up gear it picked up when it's better than its own - armor for a slot it has nothing
+		/// Has a PC viking take up gear it picked up when it's better than its own - armor for a slot it has nothing
 		/// in or more armor than what it wears there, a shield that blocks better, a utility item like a strength belt
 		/// for an empty utility slot, or a weapon that deals more damage, counting its ammo, than its best of the same
-		/// kind - melee, or a bow or crossbow - since every living viking carries one of each and picks between them as
+		/// kind - melee, or a bow or crossbow - since every PC viking carries one of each and picks between them as
 		/// it fights (see ChooseWeapon). A dverger circlet, when it has none, it keeps for when it wants light
 		/// </summary>
 		/// <remarks>
@@ -227,7 +227,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Has a living viking put on a piece of gear a player picked for it, whether or not it's better than its own -
+		/// Has a PC viking put on a piece of gear a player picked for it, whether or not it's better than its own -
 		/// armor or a utility item where it goes, ammo as what it shoots, and a shield or weapon in its hands the way a
 		/// player wields one (see Draw), even while it leaves its gear as it is. Left to itself, it later switches to
 		/// anything better it has (see VillageLife.UpdatePutOn)
@@ -236,7 +236,7 @@ namespace Kriona.Vikings
 		/// <returns>False when it isn't something the viking can put on</returns>
 		public bool Wear(ItemDrop.ItemData item)
 		{
-			if (item == null || !IsLivingViking(humanoid) || GetData() == null || !humanoid.GetInventory().ContainsItem(item) || VikingItems.IsProp(item))
+			if (item == null || !IsPCViking(humanoid) || GetData() == null || !humanoid.GetInventory().ContainsItem(item) || VikingItems.IsProp(item))
 			{
 				return(false);
 			}
@@ -344,7 +344,7 @@ namespace Kriona.Vikings
 		/// <returns>True when it would</returns>
 		public bool WouldTakeUp(ItemDrop.ItemData item)
 		{
-			if (item == null || !IsLivingViking(humanoid) || GetData() == null || humanoid.IsDead())
+			if (item == null || !IsPCViking(humanoid) || GetData() == null || humanoid.IsDead())
 			{
 				return(false);
 			}
@@ -500,7 +500,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Wields the viking's weapon when its AI picks one, unless it's a living viking with its weapon sheathed and no
+		/// Wields the viking's weapon when its AI picks one, unless it's a PC viking with its weapon sheathed and no
 		/// danger near
 		/// </summary>
 		public void PickWeapon()

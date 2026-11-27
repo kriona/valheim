@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Silver against the dead, with Zombie Apocalypse - the silver-lined weapons and silver arrows a living or dvergr
+	/// Silver against the dead, with Zombie Apocalypse - the silver-lined weapons and silver arrows a PC or dvergr
 	/// viking starts with, and which silver arrows hurt the undead more than its own
 	/// </summary>
 	/// <remarks>

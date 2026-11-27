@@ -6,7 +6,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Has a living viking call out to the local player when it sees them on fire, poisoned, freezing, badly hurt,
+	/// Has a PC viking call out to the local player when it sees them on fire, poisoned, freezing, badly hurt,
 	/// covered in tar, smoked, overloaded, back from the dead or without clothes (see VikingClothesSpeech), and
 	/// encourages them when it sees them with a training weapon in hand (see VikingTrainingSpeech) - only the first
 	/// viking near them, once each time it happens, so the whole village doesn't
@@ -182,7 +182,7 @@ namespace VikingVillages
 		private static float nextCheck;
 
 		/// <summary>
-		/// Has the nearest living viking that sees the local player call out the most pressing thing about them it
+		/// Has the nearest PC viking that sees the local player call out the most pressing thing about them it
 		/// hasn't called out yet - one at a time - call it from the plugin's Update
 		/// </summary>
 		public static void Update()
@@ -282,7 +282,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the nearest living viking that would call out to a player - alive, not their enemy, awake and not in a
+		/// Finds the nearest PC viking that would call out to a player - alive, not their enemy, awake and not in a
 		/// fight, within SeeRange and with them in sight
 		/// </summary>
 		/// <param name="player">The player</param>
@@ -294,7 +294,7 @@ namespace VikingVillages
 			bool night = EnvMan.IsNight();
 			foreach (Character character in Character.GetAllCharacters())
 			{
-				if (!VikingCore.IsLivingViking(character) || character.IsDead() || BaseAI.IsEnemy(character, player))
+				if (!VikingCore.IsPCViking(character) || character.IsDead() || BaseAI.IsEnemy(character, player))
 				{
 					continue;
 				}

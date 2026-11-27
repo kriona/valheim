@@ -11,7 +11,7 @@ namespace VikingVillages
 	internal partial class VillageLife
 	{
 		/// <summary>
-		/// Has a player talk to the viking, or with the alternate key down name it, when it's a living viking that isn't
+		/// Has a player talk to the viking, or with the alternate key down name it, when it's a PC viking that isn't
 		/// their enemy - its owner answers
 		/// </summary>
 		/// <param name="user">Who's talking to it</param>
@@ -144,13 +144,13 @@ namespace VikingVillages
 		private const float GearCheckInterval = 2f;
 
 		/// <summary>
-		/// Puts a piece of gear on as its change in the body's queue is done (see LivingVikingBody.UpdateGearChanges), the
+		/// Puts a piece of gear on as its change in the body's queue is done (see PCVikingBody.UpdateGearChanges), the
 		/// way the viking takes up gear it found (see VikingCore.TakeUpGear), or takes it off - from its back too, when
 		/// it's sheathed there
 		/// </summary>
 		/// <param name="change">The change</param>
 		/// <param name="item">The piece it's for - its item, or the one in the other hand</param>
-		private void ChangeGear(LivingVikingBody.GearChange change, ItemDrop.ItemData item)
+		private void ChangeGear(PCVikingBody.GearChange change, ItemDrop.ItemData item)
 		{
 			if (change.PutOn)
 			{
@@ -287,7 +287,7 @@ namespace VikingVillages
 		/// <param name="author">Who named it</param>
 		private void RPC_Name(long sender, string name, string author)
 		{
-			if (!nview.IsOwner() || !VikingCore.IsLivingViking(humanoid))
+			if (!nview.IsOwner() || !VikingCore.IsPCViking(humanoid))
 			{
 				return;
 			}
@@ -323,13 +323,13 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a player can talk to the viking - it's a living viking, alive, and not their enemy
+		/// Checks whether a player can talk to the viking - it's a PC viking, alive, and not their enemy
 		/// </summary>
 		/// <param name="player">The player, or null</param>
 		/// <returns>True when they can</returns>
 		public bool CanTalkTo(Player player)
 		{
-			return(player != null && humanoid != null && !humanoid.IsDead() && nview != null && nview.IsValid() && VikingCore.IsLivingViking(humanoid) && !BaseAI.IsEnemy(humanoid, player));
+			return(player != null && humanoid != null && !humanoid.IsDead() && nview != null && nview.IsValid() && VikingCore.IsPCViking(humanoid) && !BaseAI.IsEnemy(humanoid, player));
 		}
 
 		/// <summary>

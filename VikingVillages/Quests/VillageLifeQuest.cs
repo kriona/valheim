@@ -17,7 +17,7 @@ namespace VikingVillages
 		private const string CarryQuest = "quest";
 
 		/// <summary>
-		/// On a living viking, that it carries loot home from a quest, which it puts away before anything else, even at
+		/// On a PC viking, that it carries loot home from a quest, which it puts away before anything else, even at
 		/// night
 		/// </summary>
 		public static readonly int QuestLootKey = "kriona.VikingVillages.vikingQuestLoot".GetStableHashCode();

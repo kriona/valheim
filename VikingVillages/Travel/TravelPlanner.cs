@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Plans every long trip living vikings make - where they go and the road there - for a viking with no village, the
+	/// Plans every long trip PC vikings make - where they go and the road there - for a viking with no village, the
 	/// vikings of a disbanded village and a village's quests alike, on the server, and the calls each client makes to it
 	/// </summary>
 	/// <remarks>
@@ -277,7 +277,7 @@ namespace VikingVillages
 			bool cart = (zdo != null && RoadCarts.Has(zdo));
 			party.Add(((core != null) ? core.BiomeIndex() : 0), Unteleportable(viking.GetInventory()) || (cart && RoadCarts.CarriesUnteleportable(viking)), first);
 			party.Cart |= cart;
-			LivingVikingBody body = viking as LivingVikingBody;
+			PCVikingBody body = viking as PCVikingBody;
 			float food = ((body != null && body.Food != null) ? body.Food.FoodStamina() : 0f);
 			party.AddSwimmer(BoatRules.SwimMeters(food, viking.GetSkillFactor(Skills.SkillType.Swim), Game.m_moveStaminaRate, viking.m_swimSpeed), first);
 		}

@@ -4,12 +4,12 @@ using VikingVillages;
 namespace Kriona.Vikings
 {
 	/// <summary>
-	/// What Viking Villages adds to each world once its living viking's prefab is in - the dvergr viking's prefab
+	/// What Viking Villages adds to each world once its PC viking's prefab is in - the dvergr viking's prefab
 	/// </summary>
 	internal static partial class VikingPrefabPatch
 	{
 		/// <summary>
-		/// Adds the dvergr viking's prefab once the living viking's is in
+		/// Adds the dvergr viking's prefab once the PC viking's is in
 		/// </summary>
 		/// <param name="scene">The world's ZNetScene</param>
 		static partial void AfterRegister(ZNetScene scene)
@@ -19,7 +19,7 @@ namespace Kriona.Vikings
 	}
 
 	/// <summary>
-	/// What Viking Villages adds that's held back in a world whose server doesn't have it, besides its living viking
+	/// What Viking Villages adds that's held back in a world whose server doesn't have it, besides its PC viking
 	/// </summary>
 	internal static partial class CommandGuard
 	{

@@ -4,7 +4,7 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// What dvergr vikings say about the news - a line of their own for each kind of event, all under DvergrPrefix,
-	/// but for the Mistlands' news, whose lines they share with the living vikings (see SharedWithDvergr)
+	/// but for the Mistlands' news, whose lines they share with the PC vikings (see SharedWithDvergr)
 	/// </summary>
 	internal static partial class VikingNewsLines
 	{
@@ -14,7 +14,7 @@ namespace VikingVillages
 		public const string DvergrPrefix = "dvergr/";
 
 		/// <summary>
-		/// The pools of the living vikings' lines the dvergr vikings say too - those about the Mistlands, where they live:
+		/// The pools of the PC vikings' lines the dvergr vikings say too - those about the Mistlands, where they live:
 		/// finding it, the Queen, and dying to its creatures but the dvergr's own
 		/// </summary>
 		internal static readonly HashSet<string> SharedWithDvergr = new HashSet<string>
@@ -58,7 +58,7 @@ namespace VikingVillages
 		};
 
 		/// <summary>
-		/// Gets the pool of lines a dvergr viking says about an event - the living vikings' for the Mistlands' news (see
+		/// Gets the pool of lines a dvergr viking says about an event - the PC vikings' for the Mistlands' news (see
 		/// SharedWithDvergr), and its own for the kind of event otherwise - a trader by who they are, since Haldor and
 		/// Hildir are dvergr themselves, and a death by what killed the player
 		/// </summary>

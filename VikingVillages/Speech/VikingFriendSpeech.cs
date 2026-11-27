@@ -3,7 +3,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// What living and dvergr vikings say to a player they know about how they're doing, and to an old friend about how
+	/// What PC and dvergr vikings say to a player they know about how they're doing, and to an old friend about how
 	/// long they go back (see VikingIdentity.OldFriends)
 	/// </summary>
 	internal static class VikingFriendSpeech

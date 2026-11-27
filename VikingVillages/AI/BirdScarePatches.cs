@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Has birds count living and dvergr vikings as danger, as they do players
+	/// Has birds count PC and dvergr vikings as danger, as they do players
 	/// </summary>
 	[HarmonyPatch(typeof(RandomFlyingBird), nameof(RandomFlyingBird.DangerNearby))]
 	public static class BirdScarePatch

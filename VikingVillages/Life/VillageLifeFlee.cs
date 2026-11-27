@@ -303,7 +303,7 @@ namespace VikingVillages
 					continue;
 				}
 				float distance = Vector3.Distance(character.transform.position, transform.position);
-				if (VikingCore.IsLivingViking(character) && distance <= AllyRange)
+				if (VikingCore.IsPCViking(character) && distance <= AllyRange)
 				{
 					allies++;
 					float share = character.GetHealthPercentage();
@@ -424,7 +424,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets the share of a living viking's health below which it's badly hurt, as it last weighed up its fight - or
+		/// Gets the share of a PC viking's health below which it's badly hurt, as it last weighed up its fight - or
 		/// BadlyHurtShare for one whose life doesn't run here
 		/// </summary>
 		/// <param name="fellow">The viking</param>
@@ -504,7 +504,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the nearest other living viking of the viking's village that's loaded
+		/// Finds the nearest other PC viking of the viking's village that's loaded
 		/// </summary>
 		/// <param name="distance">How far it is, in meters</param>
 		/// <returns>The viking, or null when there's none</returns>

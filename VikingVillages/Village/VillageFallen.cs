@@ -11,7 +11,7 @@ namespace VikingVillages
 	/// </summary>
 	/// <remarks>
 	/// A named viking's death is reported to every client, and the one that owns its village's generator notes it in the
-	/// generator's ZDO, so it carries over reloads and owner changes. A living viking's corpse notes its village and its
+	/// generator's ZDO, so it carries over reloads and owner changes. A PC viking's corpse notes its village and its
 	/// name as its owner makes it
 	/// </remarks>
 	internal static class VillageFallen
@@ -23,7 +23,7 @@ namespace VikingVillages
 		private static readonly int FallenKey = "kriona.VikingVillages.villageFallen".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking's corpse, where the farm of the village it belonged to stands
+		/// On a PC viking's corpse, where the farm of the village it belonged to stands
 		/// </summary>
 		private static readonly int CorpseFarmKey = "kriona.VikingVillages.fallenFarm".GetStableHashCode();
 
@@ -81,13 +81,13 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Tells every client a named living viking died, as it dies on its owner, so its village's generator notes its
+		/// Tells every client a named PC viking died, as it dies on its owner, so its village's generator notes its
 		/// name
 		/// </summary>
 		/// <param name="viking">The dying creature</param>
 		public static void OnVikingDeath(Character viking)
 		{
-			if (viking == null || ZRoutedRpc.instance == null || !VikingCore.IsLivingViking(viking) || viking.m_nview == null || !viking.m_nview.IsValid() || !viking.m_nview.IsOwner())
+			if (viking == null || ZRoutedRpc.instance == null || !VikingCore.IsPCViking(viking) || viking.m_nview == null || !viking.m_nview.IsValid() || !viking.m_nview.IsOwner())
 			{
 				return;
 			}
@@ -135,7 +135,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Lists the names of a village's dead it still remembers, filtered for their authors' words, leaving out any a
-		/// living viking of the village has taken since
+		/// PC viking of the village has taken since
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <returns>The names, the latest to die last</returns>
@@ -183,10 +183,10 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Picks out the names of a village's dead worth talking about - each name once, leaving out empty names and any
-		/// a living viking of the village has, ignoring case throughout
+		/// a PC viking of the village has, ignoring case throughout
 		/// </summary>
 		/// <param name="fallenNames">The names of the dead, as they're shown, the earliest to die first</param>
-		/// <param name="livingNames">The names of the village's living vikings</param>
+		/// <param name="livingNames">The names of the village's PC vikings</param>
 		/// <returns>The names, in the order they came, each spelled as it first came</returns>
 		internal static List<string> FilterNames(List<string> fallenNames, List<string> livingNames)
 		{
@@ -252,13 +252,13 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Marks a living viking's corpse with its village and its name, as its owner makes it
+		/// Marks a PC viking's corpse with its village and its name, as its owner makes it
 		/// </summary>
 		/// <param name="viking">The viking that died</param>
 		/// <param name="corpse">Its corpse, just made by this client</param>
 		public static void MarkCorpse(Character viking, Ragdoll corpse)
 		{
-			if (viking == null || corpse == null || !VikingCore.IsLivingViking(viking) || corpse.m_nview == null || !corpse.m_nview.IsValid() || !corpse.m_nview.IsOwner())
+			if (viking == null || corpse == null || !VikingCore.IsPCViking(viking) || corpse.m_nview == null || !corpse.m_nview.IsValid() || !corpse.m_nview.IsOwner())
 			{
 				return;
 			}
@@ -272,7 +272,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a corpse is a living viking's of a village
+		/// Checks whether a corpse is a PC viking's of a village
 		/// </summary>
 		/// <param name="corpse">The corpse's ZDO</param>
 		/// <param name="village">The village</param>

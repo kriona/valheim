@@ -3,7 +3,7 @@ using Kriona.Vikings;
 namespace VikingVillages
 {
 	/// <summary>
-	/// A kind of creature living vikings hunt - its prefab, the biome it's the prey of, whether only an archer goes
+	/// A kind of creature PC vikings hunt - its prefab, the biome it's the prey of, whether only an archer goes
 	/// after it, and whether it's dangerous
 	/// </summary>
 	internal struct PreyKind
@@ -47,7 +47,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// The prey living vikings hunt in each biome, and which of it a viking takes on - prey of its own biome and the
+	/// The prey PC vikings hunt in each biome, and which of it a viking takes on - prey of its own biome and the
 	/// biomes before it, by the biome its gear comes from (see VikingCore.BiomeIndex), so a Black Forest viking hunts
 	/// greylings but not the Swamp's leeches and draugr
 	/// </summary>

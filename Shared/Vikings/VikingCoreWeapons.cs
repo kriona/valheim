@@ -9,7 +9,7 @@ namespace Kriona.Vikings
 	internal partial class VikingCore
 	{
 		/// <summary>
-		/// Checks whether a living viking is an archer, from its ZDO - one marked to get a bow, or one whose gear holds a
+		/// Checks whether a PC viking is an archer, from its ZDO - one marked to get a bow, or one whose gear holds a
 		/// bow of its own
 		/// </summary>
 		/// <param name="zdo">The viking's ZDO</param>
@@ -76,7 +76,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// How close an enemy comes before a living viking with a bow draws its melee weapon instead, and how far off it
+		/// How close an enemy comes before a PC viking with a bow draws its melee weapon instead, and how far off it
 		/// gets before the viking goes back to picking by the fight, in meters - apart, so it doesn't switch back and forth
 		/// </summary>
 		private const float MeleeDrawRange = 3f;
@@ -90,7 +90,7 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Picks the weapon the viking should wield. A zombie viking wields the one the player was wielding while it
-		/// still works, or else the one that deals the most damage. A living viking with both a melee weapon and a bow
+		/// still works, or else the one that deals the most damage. A PC viking with both a melee weapon and a bow
 		/// or crossbow with ammo picks between them for the fight in front of it (see ChooseForFight), and the bow or
 		/// crossbow while it aims at a bird or at prey from afar (see VillageLife.AimingBow). Against a deathsquito diving
 		/// at it, it picks a one-handed weapon to go beside its shield, or a two-handed one (see DiveWeapon)
@@ -98,7 +98,7 @@ namespace Kriona.Vikings
 		/// <returns>The weapon, or null for fists</returns>
 		private ItemDrop.ItemData ChooseWeapon()
 		{
-			if (!IsLivingViking(humanoid))
+			if (!IsPCViking(humanoid))
 			{
 				if (data.WeaponSlot.x >= 0)
 				{
@@ -138,7 +138,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Picks between a living viking's melee weapon and its bow for the fight in front of it - the bow against a
+		/// Picks between a PC viking's melee weapon and its bow for the fight in front of it - the bow against a
 		/// root, its melee weapon with its enemy up close (see CloseQuarters), the bow against an enemy it can't reach
 		/// or get to through the crowd around it, or one it's keeping away from (see VillageLife.WantsBow), and the bow
 		/// while it's below HurtRangedShare of its health, even one that hurts less - and otherwise the one that hurts
@@ -175,7 +175,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// The share of its health a living viking has to be below to shoot its enemy rather than fight it hand to hand
+		/// The share of its health a PC viking has to be below to shoot its enemy rather than fight it hand to hand
 		/// </summary>
 		private const float HurtRangedShare = 0.5f;
 
@@ -404,7 +404,7 @@ namespace Kriona.Vikings
 		/// <summary>
 		/// Checks whether the viking can fight with an item - a weapon of its own, not loot it carries or a tool it holds
 		/// for show, other than a torch that isn't broken, has ammo when it takes ammo, doesn't need eitr, which the viking has none of, and
-		/// deals damage to more than tamed creatures. A living viking keeps a pickaxe for mining and never fights with one
+		/// deals damage to more than tamed creatures. A PC viking keeps a pickaxe for mining and never fights with one
 		/// </summary>
 		/// <param name="item">The item</param>
 		/// <returns>True when it can</returns>
@@ -441,7 +441,7 @@ namespace Kriona.Vikings
 			{
 				return(false);
 			}
-			if (IsPickaxe(item) && IsLivingViking(humanoid))
+			if (IsPickaxe(item) && IsPCViking(humanoid))
 			{
 				return(false);
 			}
@@ -495,13 +495,13 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether the viking can shoot - a living viking with a bow or crossbow it has ammo for, which it picks
+		/// Checks whether the viking can shoot - a PC viking with a bow or crossbow it has ammo for, which it picks
 		/// up as the fight calls for it, or a zombie viking that fights with one as a rule
 		/// </summary>
 		/// <returns>True when it can</returns>
 		public bool IsArcher()
 		{
-			return(IsLivingViking(humanoid) ? (BestRanged() != null) : IsRanged(MainWeapon()));
+			return(IsPCViking(humanoid) ? (BestRanged() != null) : IsRanged(MainWeapon()));
 		}
 
 		/// <summary>
@@ -652,7 +652,7 @@ namespace Kriona.Vikings
 		/// <summary>
 		/// Gives the weapon in the viking's hands an AI that knows its reach for the length of its AI's update - a ranged
 		/// weapon an archer's range and pace, and a melee weapon, fists included, the reach of its swing (see MeleeReach),
-		/// so a knife strikes from up close and a polearm from farther off, and for a living viking, a player's pace, with
+		/// so a knife strikes from up close and a polearm from farther off, and for a PC viking, a player's pace, with
 		/// no wait between swings
 		/// </summary>
 		/// <remarks>
@@ -685,9 +685,9 @@ namespace Kriona.Vikings
 			if (melee)
 			{
 				shared.m_aiAttackRange = MeleeReach(attack);
-				// A living viking swings as fast as a player does - again as soon as its last swing ends, which carries
+				// A PC viking swings as fast as a player does - again as soon as its last swing ends, which carries
 				// on the weapon's combo - rather than waiting out the AI's interval between attacks
-				if (IsLivingViking(humanoid))
+				if (IsPCViking(humanoid))
 				{
 					shared.m_aiAttackInterval = 0f;
 				}

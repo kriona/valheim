@@ -4,7 +4,7 @@ using HarmonyLib;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Notes while a console command runs, so a living viking it spawns out in the wild starts out lost (see
+	/// Notes while a console command runs, so a PC viking it spawns out in the wild starts out lost (see
 	/// VillageTravel.NoteSpawned) - the game's spawn command, and any other mod's that spawns through a console command
 	/// </summary>
 	[HarmonyPatch(typeof(Terminal.ConsoleCommand), nameof(Terminal.ConsoleCommand.RunAction))]

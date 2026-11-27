@@ -10,7 +10,7 @@ namespace Kriona.Vikings
 	{
 		/// <summary>
 		/// Describes the viking's state and AI for the hover text in debug mode - what kind it is, its health, who runs
-		/// it, what it's after and holding, and for a living viking its village life
+		/// it, what it's after and holding, and for a PC viking its village life
 		/// </summary>
 		/// <remarks>
 		/// Most of it is only known on the client that owns the viking, which runs its AI and life, so another client
@@ -98,7 +98,7 @@ namespace Kriona.Vikings
 		private string OwnSummary(string owner)
 		{
 			System.Text.StringBuilder text = new System.Text.StringBuilder();
-			string kind = (IsLivingViking(humanoid) ? "Viking" : (IsDvergrViking(humanoid) ? "Dvergr viking" : ((GetData() != null && data.Tombstone) ? "Tombstone zombie viking" : "Zombie viking")));
+			string kind = (IsPCViking(humanoid) ? "Viking" : (IsDvergrViking(humanoid) ? "Dvergr viking" : ((GetData() != null && data.Tombstone) ? "Tombstone zombie viking" : "Zombie viking")));
 			text.Append(kind + ", " + Mathf.CeilToInt(humanoid.GetHealth()) + "/" + Mathf.CeilToInt(humanoid.GetMaxHealth()) + " health\n");
 			text.Append("Owner: " + owner + "\n");
 			AddDebugLines(text);
@@ -120,7 +120,7 @@ namespace Kriona.Vikings
 				{
 					flags.Add("asleep");
 				}
-				if (IsLivingViking(humanoid))
+				if (IsPCViking(humanoid))
 				{
 					flags.Add((InDanger() ? "in danger" : "calm") + ", " + (sheathed ? "sheathed" : "drawn"));
 				}

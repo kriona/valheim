@@ -14,14 +14,14 @@ namespace VikingVillages
 	internal static class RoadCarts
 	{
 		/// <summary>
-		/// On a living viking, the cart it takes along on the road, and while it's off the road, what that cart holds, as
+		/// On a PC viking, the cart it takes along on the road, and while it's off the road, what that cart holds, as
 		/// the game's container writes it - empty while it has no cart kept
 		/// </summary>
 		public static readonly KeyValuePair<int, int> CartKey = ZDO.GetHashZDOID("kriona.VikingVillages.vikingRoadCart");
 		public static readonly int LoadKey = "kriona.VikingVillages.vikingRoadCartLoad".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, whether it has a cart kept while it's off the road, which may hold nothing
+		/// On a PC viking, whether it has a cart kept while it's off the road, which may hold nothing
 		/// </summary>
 		public static readonly int KeptKey = "kriona.VikingVillages.vikingRoadCartKept".GetStableHashCode();
 

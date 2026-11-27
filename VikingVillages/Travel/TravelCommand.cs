@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// The kri_vv_travel console command, for testing the vikings' travels - sending the living viking the player looks
+	/// The kri_vv_travel console command, for testing the vikings' travels - sending the PC viking the player looks
 	/// at, or a number of the vikings of the village they're in, to a village by name or one picked at random, in the
 	/// world or straight off it
 	/// </summary>
@@ -66,7 +66,7 @@ namespace VikingVillages
 			List<Humanoid> vikings = Pick(player, village, count);
 			if (vikings.Count == 0)
 			{
-				args.Context.AddString("Look at a living viking, or stand in a village with living vikings this client runs");
+				args.Context.AddString("Look at a PC viking, or stand in a village with PC vikings this client runs");
 				return;
 			}
 			TravelParty party = new TravelParty();
@@ -87,7 +87,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks the vikings to send - the living viking the player looks at, or else up to a number of the living vikings
+		/// Picks the vikings to send - the PC viking the player looks at, or else up to a number of the PC vikings
 		/// of the village they're in, nearest first, that this client runs and aren't on a quest
 		/// </summary>
 		/// <param name="player">The player</param>
@@ -123,13 +123,13 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a viking can be sent - a living viking this client runs, alive and not out on a quest
+		/// Checks whether a viking can be sent - a PC viking this client runs, alive and not out on a quest
 		/// </summary>
 		/// <param name="viking">The viking, or null</param>
 		/// <returns>True when it can</returns>
 		private static bool Sendable(Humanoid viking)
 		{
-			if (viking == null || viking.IsDead() || !VikingCore.IsLivingViking(viking) || viking.m_nview == null || !viking.m_nview.IsValid() || !viking.m_nview.IsOwner())
+			if (viking == null || viking.IsDead() || !VikingCore.IsPCViking(viking) || viking.m_nview == null || !viking.m_nview.IsValid() || !viking.m_nview.IsOwner())
 			{
 				return(false);
 			}

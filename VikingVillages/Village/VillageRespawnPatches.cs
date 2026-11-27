@@ -38,7 +38,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Listens for living vikings' deaths reported to the owners of their villages' generators, in each world
+	/// Listens for PC vikings' deaths reported to the owners of their villages' generators, in each world
 	/// </summary>
 	[HarmonyPatch(typeof(ZNetScene), nameof(ZNetScene.Awake))]
 	public static class VillageDeathRpcPatch
@@ -53,7 +53,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Reports a living viking's death as it dies on its owner, so its village can bring it back and remember its name,
+	/// Reports a PC viking's death as it dies on its owner, so its village can bring it back and remember its name,
 	/// and so a viking who sees one keeping watch die can take its place
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.OnDeath))]

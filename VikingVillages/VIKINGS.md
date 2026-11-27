@@ -2,14 +2,14 @@
 
 There are three kinds of Viking across Viking Villages and Zombie Apocalypse. This compares them - each mod's README has the full details.
 
-| | Living | Dvergr | Zombie |
+| | PC | Dvergr | Zombie |
 | --- | --- | --- | --- |
 | Mod | Viking Villages | Viking Villages | Zombie Apocalypse |
-| Where they're found | The Meadows' farms, in villages of their own, and on the road between villages | The Dvergr's outposts in the Mistlands, and half of the Dvergr's patrols | Spawned in the world - by day in the Dark Meadows, Ruin Black Forest, Swamp and Ashlands, at night everywhere - in abandoned houses, from draugr body piles and in raids. Also risen from your body, and from dead living and Dvergr Vikings |
+| Where they're found | The Meadows' farms, in villages of their own, and on the road between villages | The Dvergr's outposts in the Mistlands, and half of the Dvergr's patrols | Spawned in the world - by day in the Dark Meadows, Ruin Black Forest, Swamp and Ashlands, at night everywhere - in abandoned houses, from draugr body piles and in raids. Also risen from your body, and from dead PC and Dvergr Vikings |
 | Console command | `spawn Viking` | | `spawn ZombieViking` |
 | Biome of their gear and stats | Their village's | The Mistlands | Where they spawn |
 | Can be starred | No | Yes - one star, as often as the game stars the Mistlands' creatures | Yes - up to 1 by day and 2 at night, each star upgrading their gear a level |
-| Named | Yes | Yes | Only a risen living or Dvergr Viking, who keeps their name, and a tombstone zombie, who has yours |
+| Named | Yes | Yes | Only a risen PC or Dvergr Viking, who keeps their name, and a tombstone zombie, who has yours |
 | Shows as "Viking (?)" until they know you | Yes | Yes | No - a risen Viking shows their name to the players they knew, like Zombie Ragnar, and is plain Zombie Viking to anyone else |
 | Can be renamed (Shift + E) | Yes | No | No |
 | Can be talked to (E) | Yes | Yes | No |

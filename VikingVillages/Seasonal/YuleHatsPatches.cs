@@ -3,7 +3,7 @@ using HarmonyLib;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Shows a living or dvergr viking's helmet as a Yule hat while the hats show (see YuleHats) - the game compares the
+	/// Shows a PC or dvergr viking's helmet as a Yule hat while the hats show (see YuleHats) - the game compares the
 	/// helmet it's given with the one it shows each time it updates the equipment, so the hats come and go as soon as
 	/// they're turned on or off
 	/// </summary>

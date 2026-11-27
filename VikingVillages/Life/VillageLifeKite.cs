@@ -54,7 +54,7 @@ namespace VikingVillages
 			int at = 0;
 			foreach (Character other in near)
 			{
-				if (other != humanoid && !other.IsDead() && VikingCore.IsLivingViking(other) && Utils.DistanceXZ(other.transform.position, enemy.transform.position) <= reach)
+				if (other != humanoid && !other.IsDead() && VikingCore.IsPCViking(other) && Utils.DistanceXZ(other.transform.position, enemy.transform.position) <= reach)
 				{
 					at++;
 				}
@@ -359,7 +359,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Joins a fight the viking sees one of its fellows in - while it has no enemy of its own, isn't in bed, resting
-		/// or badly hurt - every JoinCheckInterval seconds: the nearest enemy within DefendRange of it that a living viking
+		/// or badly hurt - every JoinCheckInterval seconds: the nearest enemy within DefendRange of it that a PC viking
 		/// within JoinRange it can see is fighting, the way it comes to a call for help (see OnDistress). Through a raid
 		/// it's ready for, it's the nearest enemy any of its village's vikings is fighting where its fight reaches it (see
 		/// Hears), seen or not. A fellow's prey isn't its enemy, so it leaves a hunt to the hunter
@@ -394,7 +394,7 @@ namespace VikingVillages
 			float nearest = float.MaxValue;
 			foreach (Character other in near)
 			{
-				if (other == humanoid || other.IsDead() || !VikingCore.IsLivingViking(other) || !other.m_nview.IsOwner())
+				if (other == humanoid || other.IsDead() || !VikingCore.IsPCViking(other) || !other.m_nview.IsOwner())
 				{
 					continue;
 				}
@@ -445,7 +445,7 @@ namespace VikingVillages
 			}
 			List<Character> near = new List<Character>();
 			Character.GetCharactersInRange(monster.transform.position, ShooterRange, near);
-			return(near.Exists((Character other) => other != humanoid && !other.IsDead() && VikingCore.IsLivingViking(other) && HasBow(other)));
+			return(near.Exists((Character other) => other != humanoid && !other.IsDead() && VikingCore.IsPCViking(other) && HasBow(other)));
 		}
 
 		/// <summary>

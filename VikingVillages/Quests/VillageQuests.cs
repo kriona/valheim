@@ -28,7 +28,7 @@ namespace VikingVillages
 		public static readonly int LastQuestKey = "kriona.VikingVillages.villageLastQuest".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, the quest it set out on, that it was taken out of the world for it - so one that comes
+		/// On a PC viking, the quest it set out on, that it was taken out of the world for it - so one that comes
 		/// back knows it's back - and the village it set out from and the house there it calls home, which it's
 		/// brought back to
 		/// </summary>
@@ -38,7 +38,7 @@ namespace VikingVillages
 		public static readonly int QuestHomeKey = "kriona.VikingVillages.vikingQuestHome".GetStableHashCode();
 
 		/// <summary>
-		/// On a living viking, how its quest goes for it (see QuestOutcome), noted as it leaves and played out as it comes
+		/// On a PC viking, how its quest goes for it (see QuestOutcome), noted as it leaves and played out as it comes
 		/// back; then how its last quest went, to talk about, and when it came back from it, in ZNet time ticks
 		/// </summary>
 		public static readonly int QuestOutcomeKey = "kriona.VikingVillages.vikingQuestOutcome".GetStableHashCode();
@@ -1003,7 +1003,7 @@ namespace VikingVillages
 		/// crew all died is lost with them
 		/// </summary>
 		/// <param name="village">The village, whose generator this client owns</param>
-		/// <param name="vikings">Its living vikings' ZDOs, added to</param>
+		/// <param name="vikings">Its PC vikings' ZDOs, added to</param>
 		/// <param name="entry">The quest's vikings coming home, those brought in on board taken out of it</param>
 		/// <param name="living">The snapshots of those of them still living</param>
 		/// <returns>True when they sail home, and false when they come home the usual way</returns>
@@ -1115,7 +1115,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the living vikings of a quest coming home by their GUIDs
+		/// Finds the PC vikings of a quest coming home by their GUIDs
 		/// </summary>
 		/// <param name="living">Their snapshots</param>
 		/// <returns>Each snapshot, by the viking's GUID</returns>
@@ -1238,7 +1238,7 @@ namespace VikingVillages
 		/// bring in others in their place
 		/// </summary>
 		/// <param name="village">The village</param>
-		/// <param name="vikings">Its living vikings' ZDOs</param>
+		/// <param name="vikings">Its PC vikings' ZDOs</param>
 		/// <returns>How many are away</returns>
 		public static int AwayCount(Village village, List<ZDO> vikings)
 		{

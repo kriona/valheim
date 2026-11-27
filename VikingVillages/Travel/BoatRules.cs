@@ -176,7 +176,7 @@ namespace VikingVillages
 		internal const float SwimMargin = 0.75f;
 
 		/// <summary>
-		/// Works out how far a viking in the water can still swim on the stamina it has left (see LivingVikingBody.OnSwimming)
+		/// Works out how far a viking in the water can still swim on the stamina it has left (see PCVikingBody.OnSwimming)
 		/// </summary>
 		/// <param name="stamina">The stamina it has left</param>
 		/// <param name="skillFactor">Its Swim skill, from 0 to 1</param>

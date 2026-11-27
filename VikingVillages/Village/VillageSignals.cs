@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// What the living vikings of a village tell each other across clients - that a viking or player is being attacked
+	/// What the PC vikings of a village tell each other across clients - that a viking or player is being attacked
 	/// or a badly hurt viking is shouting for help, that the night watch has raised the alarm, and the effects of what
 	/// they do, which every client shows
 	/// </summary>
@@ -111,7 +111,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Calls for help when a player or living viking is hurt by a zombie or monster, on the client that owns the
+		/// Calls for help when a player or PC viking is hurt by a zombie or monster, on the client that owns the
 		/// victim
 		/// </summary>
 		/// <param name="victim">Who was hurt</param>
@@ -122,7 +122,7 @@ namespace VikingVillages
 			{
 				return;
 			}
-			if (!CallsForHelp(victim.IsPlayer(), VikingCore.IsLivingViking(victim), attacker.IsPlayer(), attacker.IsTamed(), VikingCore.IsLivingViking(attacker), attacker.GetFaction()))
+			if (!CallsForHelp(victim.IsPlayer(), VikingCore.IsPCViking(victim), attacker.IsPlayer(), attacker.IsTamed(), VikingCore.IsPCViking(attacker), attacker.GetFaction()))
 			{
 				return;
 			}
@@ -134,7 +134,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Calls the living vikings to help when a zombie or monster hits a building piece in a village - its own, or one
+		/// Calls the PC vikings to help when a zombie or monster hits a building piece in a village - its own, or one
 		/// a player built there - from where the piece stands, on the client that owns the piece, once every
 		/// PieceDistressInterval seconds for each monster
 		/// </summary>
@@ -147,7 +147,7 @@ namespace VikingVillages
 				return;
 			}
 			// The same monsters a viking hurt by them calls for help against
-			if (!CallsForHelp(false, true, attacker.IsPlayer(), attacker.IsTamed(), VikingCore.IsLivingViking(attacker), attacker.GetFaction()))
+			if (!CallsForHelp(false, true, attacker.IsPlayer(), attacker.IsTamed(), VikingCore.IsPCViking(attacker), attacker.GetFaction()))
 			{
 				return;
 			}
@@ -169,14 +169,14 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether someone hurt calls for help - a player or living viking hurt by a zombie or monster, rather than
-		/// by a player, a tamed creature, a living viking, a dverger or something a player summoned
+		/// Checks whether someone hurt calls for help - a player or PC viking hurt by a zombie or monster, rather than
+		/// by a player, a tamed creature, a PC viking, a dverger or something a player summoned
 		/// </summary>
 		/// <param name="victimPlayer">Whether who was hurt is a player</param>
-		/// <param name="victimViking">Whether who was hurt is a living viking</param>
+		/// <param name="victimViking">Whether who was hurt is a PC viking</param>
 		/// <param name="attackerPlayer">Whether who hurt them is a player</param>
 		/// <param name="attackerTamed">Whether who hurt them is tamed</param>
-		/// <param name="attackerViking">Whether who hurt them is a living viking</param>
+		/// <param name="attackerViking">Whether who hurt them is a PC viking</param>
 		/// <param name="attackerFaction">The faction of who hurt them</param>
 		/// <returns>True when they call</returns>
 		internal static bool CallsForHelp(bool victimPlayer, bool victimViking, bool attackerPlayer, bool attackerTamed, bool attackerViking, Character.Faction attackerFaction)
@@ -326,7 +326,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Hands a call for help to the living vikings this client owns near where it came from
+		/// Hands a call for help to the PC vikings this client owns near where it came from
 		/// </summary>
 		/// <param name="sender">The client that sent it</param>
 		/// <param name="where">Where the victim was</param>
@@ -347,7 +347,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Wakes the living vikings this client owns in the village whose watch raised the alarm
+		/// Wakes the PC vikings this client owns in the village whose watch raised the alarm
 		/// </summary>
 		/// <param name="sender">The client that sent it</param>
 		/// <param name="farm">The village's farm</param>

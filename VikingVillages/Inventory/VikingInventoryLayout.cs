@@ -611,9 +611,9 @@ namespace VikingVillages
 			{
 				vikingArmor.text = Mathf.CeilToInt(viking.GetBodyArmor()).ToString();
 			}
-			if (vikingWeight != null && viking is LivingVikingBody living)
+			if (vikingWeight != null && viking is PCVikingBody pc)
 			{
-				vikingWeight.text = living.WeightText();
+				vikingWeight.text = pc.WeightText();
 			}
 			ShowHealth(playerHealth, Player.m_localPlayer);
 			ShowHealth(vikingHealth, viking);

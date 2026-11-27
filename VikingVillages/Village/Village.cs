@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// A village of living vikings - an abandoned farm's farmhouses and the empty houses near it they've taken in, read
+	/// A village of PC vikings - an abandoned farm's farmhouses and the empty houses near it they've taken in, read
 	/// from the farm's generator's ZDO, which also holds what the village keeps track of - or a village a player started
 	/// at a bonfire of theirs, with the buildings its beds brought in, read from its anchor's ZDO the same way (see
 	/// VillageFounding)
@@ -19,7 +19,7 @@ namespace VikingVillages
 	internal class Village
 	{
 		/// <summary>
-		/// On a living viking, where its village's generator stands and the middle of the house it calls home
+		/// On a PC viking, where its village's generator stands and the middle of the house it calls home
 		/// </summary>
 		public static readonly int VillageKey = "kriona.VikingVillages.vikingVillage".GetStableHashCode();
 		public static readonly int HomeKey = "kriona.VikingVillages.vikingHome".GetStableHashCode();
@@ -114,7 +114,7 @@ namespace VikingVillages
 		private const float NearSpotHouseClearance = 0.5f;
 
 		/// <summary>
-		/// How far past a house's walls a living viking spawns or comes back at most, in meters
+		/// How far past a house's walls a PC viking spawns or comes back at most, in meters
 		/// </summary>
 		public const float SpawnReach = 6f;
 
@@ -311,7 +311,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the village a living viking belongs to, by what its ZDO notes
+		/// Finds the village a PC viking belongs to, by what its ZDO notes
 		/// </summary>
 		/// <param name="viking">The viking's ZDO</param>
 		/// <returns>The village, or null when the viking has none or it isn't loaded</returns>
@@ -336,7 +336,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Notes a living viking as belonging to a village, calling one of its houses home - one joining it is off the road
+		/// Notes a PC viking as belonging to a village, calling one of its houses home - one joining it is off the road
 		/// and no longer leaving the village it left, and is new to the village unless it's one of those the village
 		/// starts with, which all come at once as it's set up (see VillageNewcomers)
 		/// </summary>
@@ -1193,7 +1193,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Lists the loaded living vikings that belong to the village
+		/// Lists the loaded PC vikings that belong to the village
 		/// </summary>
 		/// <returns>The vikings, alive</returns>
 		public List<Character> Vikings()
@@ -1201,7 +1201,7 @@ namespace VikingVillages
 			List<Character> vikings = new List<Character>();
 			foreach (Character character in Character.GetAllCharacters())
 			{
-				if (character == null || character.IsDead() || !VikingCore.IsLivingViking(character))
+				if (character == null || character.IsDead() || !VikingCore.IsPCViking(character))
 				{
 					continue;
 				}
@@ -1285,7 +1285,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Finds a random spot on open ground beside one of the houses of the village's core, no more than SpawnReach past
-		/// its walls, for a living viking to come back at - outside its houses and pens, out of the water and where a
+		/// its walls, for a PC viking to come back at - outside its houses and pens, out of the water and where a
 		/// viking can walk to the rest of the village from
 		/// </summary>
 		/// <param name="spot">The spot</param>
@@ -1632,7 +1632,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether any enemy of the living vikings - a zombie or a monster - is within a distance of the village's
+		/// Checks whether any enemy of the PC vikings - a zombie or a monster - is within a distance of the village's
 		/// edge
 		/// </summary>
 		/// <param name="reach">How far past the edge to look, in meters</param>
@@ -1706,7 +1706,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a creature is hostile to a village - alive, and not a player, tamed, an animal, a living viking
+		/// Checks whether a creature is hostile to a village - alive, and not a player, tamed, an animal, a PC viking
 		/// or one of the dvergr
 		/// </summary>
 		/// <param name="character">The creature</param>

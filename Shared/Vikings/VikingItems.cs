@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Kriona.Vikings
 {
 	/// <summary>
-	/// The marks on items in a viking's inventory that aren't its own - what a living viking carries for its village and
+	/// The marks on items in a viking's inventory that aren't its own - what a PC viking carries for its village and
 	/// what it only holds for show - which a zombie viking risen from it still has
 	/// </summary>
 	/// <remarks>
@@ -14,7 +14,7 @@ namespace Kriona.Vikings
 	internal static class VikingItems
 	{
 		/// <summary>
-		/// Custom data on an item in a living viking's inventory that it carries rather than owns - wood for repairing,
+		/// Custom data on an item in a PC viking's inventory that it carries rather than owns - wood for repairing,
 		/// rebuilding and stacking the fire, loot it's taking to a chest, or what it crafts arrows from besides wood -
 		/// which it drops when it dies, holding what it carries it for
 		/// </summary>

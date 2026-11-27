@@ -13,7 +13,7 @@ namespace VikingVillages
 	/// </summary>
 	/// <remarks>
 	/// Each tile's roof colliders are built into a navmesh area of their own with a high cost. Roofs stay walkable, so a
-	/// creature still climbs one when that's the only way to its target - except a living viking out of a fight, whose
+	/// creature still climbs one when that's the only way to its target - except a PC viking out of a fight, whose
 	/// AI leaves the roof area out altogether (see StartAvoiding). Every agent but the fish walks any area, and
 	/// the fish's areas leave this one out, but a creature that can't walk has its sources built as not walkable, which
 	/// is left alone
@@ -75,7 +75,7 @@ namespace VikingVillages
 		private static bool fireCostSet;
 
 		/// <summary>
-		/// The agents a living viking walks as (see VikingCore.UpdatePathing), and their area masks while areas are
+		/// The agents a PC viking walks as (see VikingCore.UpdatePathing), and their area masks while areas are
 		/// left out of them, to put back after
 		/// </summary>
 		private static readonly Pathfinding.AgentType[] vikingAgents = new[] { Pathfinding.AgentType.Humanoid, Pathfinding.AgentType.HumanoidAvoidWater };
@@ -93,8 +93,8 @@ namespace VikingVillages
 		private static int groundMask;
 
 		/// <summary>
-		/// Leaves navmesh areas out of the paths, valid spots and path checks of every humanoid walking as a living
-		/// viking does until StopAvoiding - for a living viking's AI update, so it keeps off the lava and the boiling sea
+		/// Leaves navmesh areas out of the paths, valid spots and path checks of every humanoid walking as a PC
+		/// viking does until StopAvoiding - for a PC viking's AI update, so it keeps off the lava and the boiling sea
 		/// (see DangerousGround) and, while it's out of a fight, off roofs, rather than only preferring to
 		/// </summary>
 		/// <remarks>

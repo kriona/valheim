@@ -19,9 +19,9 @@ namespace VikingVillages.Tests
 		private static readonly ZDOID Bjorn = new ZDOID(5L, 2u);
 
 		/// <summary>
-		/// Checks that a player or living viking hurt by a monster calls for help
+		/// Checks that a player or PC viking hurt by a monster calls for help
 		/// </summary>
-		/// <param name="victimPlayer">Whether the victim is a player, or else a living viking</param>
+		/// <param name="victimPlayer">Whether the victim is a player, or else a PC viking</param>
 		[Theory]
 		[InlineData(true)]
 		[InlineData(false)]
@@ -32,10 +32,10 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that someone hurt by a player, a tamed creature, a living viking, a dverger or something a player
+		/// Checks that someone hurt by a player, a tamed creature, a PC viking, a dverger or something a player
 		/// summoned calls nobody
 		/// </summary>
-		/// <param name="attacker">Who hurt them - 0 for a player, 1 for a tamed creature, 2 for a living viking, 3 for a
+		/// <param name="attacker">Who hurt them - 0 for a player, 1 for a tamed creature, 2 for a PC viking, 3 for a
 		/// dverger, 4 for something a player summoned</param>
 		[Theory]
 		[InlineData(0)]
@@ -51,7 +51,7 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that something hurt that's neither a player nor a living viking calls nobody, even when a monster hurt
+		/// Checks that something hurt that's neither a player nor a PC viking calls nobody, even when a monster hurt
 		/// it
 		/// </summary>
 		[Fact]

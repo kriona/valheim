@@ -4,7 +4,7 @@ using HarmonyLib;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Shows whose a bed is when a living viking sleeps in it, whether it's sheltered enough to claim, and the key for
+	/// Shows whose a bed is when a PC viking sleeps in it, whether it's sheltered enough to claim, and the key for
 	/// unclaiming a player's own bed (see BedUnclaimPatch)
 	/// </summary>
 	[HarmonyPatch(typeof(Bed), nameof(Bed.GetHoverText))]

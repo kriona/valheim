@@ -5,7 +5,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Walks living vikings in and out of houses through their doors, opening a closed door in a viking's way and
+	/// Walks PC vikings in and out of houses through their doors, opening a closed door in a viking's way and
 	/// closing it behind them
 	/// </summary>
 	/// <remarks>

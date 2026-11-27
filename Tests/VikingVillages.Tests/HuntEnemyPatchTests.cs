@@ -6,7 +6,7 @@ namespace VikingVillages.Tests
 	public class HuntEnemyPatchTests
 	{
 		/// <summary>
-		/// Checks that a living viking takes livestock as an enemy only when it hunts it, whatever the game says
+		/// Checks that a PC viking takes livestock as an enemy only when it hunts it, whatever the game says
 		/// </summary>
 		/// <param name="hunts">Whether the viking hunts it</param>
 		/// <param name="enemies">Whether the game has them as enemies</param>
@@ -22,7 +22,7 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that livestock never takes a living viking as an enemy, even one hunting it
+		/// Checks that livestock never takes a PC viking as an enemy, even one hunting it
 		/// </summary>
 		/// <param name="firstHunts">Whether the livestock hunts the viking</param>
 		/// <param name="otherHunts">Whether the viking hunts the livestock</param>

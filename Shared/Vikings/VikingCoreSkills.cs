@@ -40,7 +40,7 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Gets the viking's own level in a skill, before what its effects add - a viking of the world's own level in it,
-		/// as rolled (see VikingGear.RollData) and raised as a living viking practices it (see RaiseSkill), or its one
+		/// as rolled (see VikingGear.RollData) and raised as a PC viking practices it (see RaiseSkill), or its one
 		/// level for every skill when it was rolled before each skill had its own, or the dead player's level for a
 		/// tombstone viking
 		/// </summary>
@@ -72,7 +72,7 @@ namespace Kriona.Vikings
 		public const float SkillFloor = 1f;
 
 		/// <summary>
-		/// Raises a living or dvergr viking's skill the way a player's rises, for the same things, like a hit with a
+		/// Raises a PC or dvergr viking's skill the way a player's rises, for the same things, like a hit with a
 		/// weapon or a block - by the skill's step, the world's skill gain rate, its status effects and being rested,
 		/// toward the next level the way a player's is, from its own level in everything - glowing around its head on
 		/// every client as it reaches a new level, the way a player does
@@ -85,7 +85,7 @@ namespace Kriona.Vikings
 		/// <param name="factor">How much the action raises it, as the game gives it</param>
 		public void RaiseSkill(Skills.SkillType skill, float factor)
 		{
-			if (skill == Skills.SkillType.None || !IsLivingOrDvergr(humanoid) || nview == null || !nview.IsValid() || !nview.IsOwner())
+			if (skill == Skills.SkillType.None || !IsPCOrDvergr(humanoid) || nview == null || !nview.IsValid() || !nview.IsOwner())
 			{
 				return;
 			}
@@ -121,7 +121,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Changes how much a skill rises by what only the viking's kind has, like a living viking being rested
+		/// Changes how much a skill rises by what only the viking's kind has, like a PC viking being rested
 		/// </summary>
 		/// <param name="skill">The skill</param>
 		/// <param name="multiplier">How much it rises, changed here</param>
@@ -146,7 +146,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Works out a living viking's level in a skill after a gain - rising by the share of what the next level takes
+		/// Works out a PC viking's level in a skill after a gain - rising by the share of what the next level takes
 		/// (see LevelRequirement) that the gain is, so a player's gain to a whole level takes the viking there too, up to
 		/// 100
 		/// </summary>

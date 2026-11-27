@@ -45,7 +45,7 @@ namespace VikingVillages
 		private float nextCartCheck;
 
 		/// <summary>
-		/// On a living viking, the village's cart it came home from a quest pulling, which it pulls into the village before
+		/// On a PC viking, the village's cart it came home from a quest pulling, which it pulls into the village before
 		/// anything else, even at night
 		/// </summary>
 		private static readonly KeyValuePair<int, int> QuestCartKey = ZDO.GetHashZDOID("kriona.VikingVillages.vikingQuestCart");

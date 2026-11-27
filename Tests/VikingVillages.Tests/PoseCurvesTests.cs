@@ -3,7 +3,7 @@ using UnityEngine;
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests how a living viking's stretch eases in and out, how its head nods, what a client does with its emotes,
+	/// Tests how a PC viking's stretch eases in and out, how its head nods, what a client does with its emotes,
 	/// and when it counts as standing
 	/// </summary>
 	public class PoseCurvesTests

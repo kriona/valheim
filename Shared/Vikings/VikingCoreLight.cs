@@ -8,7 +8,7 @@ namespace Kriona.Vikings
 	internal partial class VikingCore
 	{
 		/// <summary>
-		/// Has a living or dvergr viking pull out a torch when it's dark while it isn't fighting, or while it fights with
+		/// Has a PC or dvergr viking pull out a torch when it's dark while it isn't fighting, or while it fights with
 		/// a one-handed weapon and nothing in its other hand, and put it away otherwise - in its village from just before
 		/// sunset until dawn while it's away from the fire and not resting, and elsewhere at night - and always by day
 		/// </summary>
@@ -22,7 +22,7 @@ namespace Kriona.Vikings
 		/// </remarks>
 		public void UpdateTorch()
 		{
-			if (!IsLivingOrDvergr(humanoid) || ai == null || GearHeld())
+			if (!IsPCOrDvergr(humanoid) || ai == null || GearHeld())
 			{
 				return;
 			}
@@ -81,7 +81,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether an item is a dverger circlet, which a living viking wears for light in place of a torch
+		/// Checks whether an item is a dverger circlet, which a PC viking wears for light in place of a torch
 		/// </summary>
 		/// <param name="item">The item, or null</param>
 		/// <returns>True when it is</returns>
@@ -180,12 +180,12 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Has a living or dvergr viking wearing its dverger circlet put its helmet back on as soon as it's in danger,
+		/// Has a PC or dvergr viking wearing its dverger circlet put its helmet back on as soon as it's in danger,
 		/// rather than at its next UpdateTorch
 		/// </summary>
 		private void UpdateCircletDanger()
 		{
-			if (!IsCirclet(humanoid.m_helmetItem) || !IsLivingOrDvergr(humanoid) || ai == null || GearHeld() || !InDanger())
+			if (!IsCirclet(humanoid.m_helmetItem) || !IsPCOrDvergr(humanoid) || ai == null || GearHeld() || !InDanger())
 			{
 				return;
 			}
@@ -193,12 +193,12 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Burns down the torch a living or dvergr viking holds the way a player's does, since the game only wears down
+		/// Burns down the torch a PC or dvergr viking holds the way a player's does, since the game only wears down
 		/// a player's equipment - putting it away and dropping it from its inventory once it's burnt out
 		/// </summary>
 		private void BurnTorch()
 		{
-			if (!IsLivingOrDvergr(humanoid))
+			if (!IsPCOrDvergr(humanoid))
 			{
 				return;
 			}

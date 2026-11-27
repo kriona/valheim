@@ -133,7 +133,7 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that a name a living viking has taken since is left out, whatever its case, as are empty names
+		/// Checks that a name a PC viking has taken since is left out, whatever its case, as are empty names
 		/// </summary>
 		[Fact]
 		public void LeavesOutNamesOfTheLivingAndEmptyNames()

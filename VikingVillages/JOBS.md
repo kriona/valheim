@@ -1,12 +1,12 @@
 # Viking Villages - Jobs
 
-Everything a living Viking does in their village, with the numbers it goes by. [LOGIC.md](LOGIC.md) covers what their work adds up to and how they fight, get around and look after themselves, [QUESTS.md](QUESTS.md) what they do once they've left on a quest, and [DIALOG.md](DIALOG.md) what they say as they go about it.
+Everything a PC Viking does in their village, with the numbers it goes by. [LOGIC.md](LOGIC.md) covers what their work adds up to and how they fight, get around and look after themselves, [QUESTS.md](QUESTS.md) what they do once they've left on a quest, and [DIALOG.md](DIALOG.md) what they say as they go about it.
 
 Times of day are shares of the game's day, as the game counts it: 0.25 is dawn, about 6 in the morning, 0.5 noon and 0.75 nightfall, about 6 in the evening. Dusk is from 0.71, about 5 in the afternoon, until night. Seconds are real seconds - at the default day of 30 real minutes, each real minute is 48 game minutes.
 
 ## Every Job
 
-Everything a living Viking does, most important first. What's higher up stops what's lower down: the jobs marked Always drop whatever a Viking is doing, by day a Viking picks the first of the numbered jobs they can do, and with no work they roll between the ones at the bottom, by weight - see [How a Job Is Picked](#how-a-job-is-picked) for the whole order.
+Everything a PC Viking does, most important first. What's higher up stops what's lower down: the jobs marked Always drop whatever a Viking is doing, by day a Viking picks the first of the numbered jobs they can do, and with no work they roll between the ones at the bottom, by weight - see [How a Job Is Picked](#how-a-job-is-picked) for the whole order.
 
 | Job | When | What they do |
 | --- | --- | --- |
@@ -181,13 +181,13 @@ Home is the village's core, not its edge. A Viking away from it runs home:
 - Hunting, below half their health, or when an enemy that isn't their prey or a greyling goes for them
 - Fighting, checked twice a second, the first of these:
   - Badly hurt (see [Hanging Back](#hanging-back)) - and a hunter below half their health too
-  - A living Viking within 15 meters is badly hurt and away from home too - they run home with them
+  - A PC Viking within 15 meters is badly hurt and away from home too - they run home with them
   - 4 or more enemies within 15 meters
-  - No living Viking within 15 meters, and hurt in the last 5 seconds - unless they're hunting or it's a lone greyling
+  - No PC Viking within 15 meters, and hurt in the last 5 seconds - unless they're hunting or it's a lone greyling
 
 A lone greyling never sends them home: they fight it.
 
-They run without fighting to the village's rally point - 4 meters from the fire, or a house's doorstep when the fire is fenced in - shouting for help every 6 seconds while an enemy that fights back is within 15 meters. One who ran for being alone stops as soon as a living Viking is within 15 meters; the rest keep running until they're home. At home, with none of the village within 6 meters, they run on to the nearest, and then turn to fight. One who can't get home - stuck for 10 seconds - stands and fights.
+They run without fighting to the village's rally point - 4 meters from the fire, or a house's doorstep when the fire is fenced in - shouting for help every 6 seconds while an enemy that fights back is within 15 meters. One who ran for being alone stops as soon as a PC Viking is within 15 meters; the rest keep running until they're home. At home, with none of the village within 6 meters, they run on to the nearest, and then turn to fight. One who can't get home - stuck for 10 seconds - stands and fights.
 
 ### Fight
 
@@ -202,8 +202,8 @@ Archers go for enemy archers first, as though they were a fifth nearer.
 
 They come to help:
 
-- A player or living Viking hurt by a monster calls every Viking within 30 meters, who drops what they're doing and goes after the attacker - unless they're already fighting a nearer enemy. So does a monster hitting a building in a village
-- Once a second, a Viking with no enemy, awake and above three quarters of their health joins a living Viking they can see within 20 meters fighting an enemy within 30 meters of them
+- A player or PC Viking hurt by a monster calls every Viking within 30 meters, who drops what they're doing and goes after the attacker - unless they're already fighting a nearer enemy. So does a monster hitting a building in a village
+- Once a second, a Viking with no enemy, awake and above three quarters of their health joins a PC Viking they can see within 20 meters fighting an enemy within 30 meters of them
 
 They give up on an enemy more than 40 meters past the village's edge - 70 for one that hurt them, that they were called against or joined against in the last 15 seconds, and 80 for the prey they're hunting. One fighting hand to hand goes around or over a pen's fence between them and an enemy within 8 meters, for up to 10 seconds, jumping it after 3 seconds getting no nearer.
 

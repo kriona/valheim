@@ -4,11 +4,11 @@ namespace Kriona.Vikings
 {
 	/// <summary>
 	/// The settings the shared viking code reads, which each mod binds in its own config as it loads - Viking Villages
-	/// for its living vikings and Zombie Apocalypse for its zombie vikings, each with values of its own
+	/// for its PC vikings and Zombie Apocalypse for its zombie vikings, each with values of its own
 	/// </summary>
 	/// <remarks>
 	/// A setting the mod doesn't have is left null and read as its fallback (see Get) - the zombie settings in Viking
-	/// Villages, whose living vikings are always armed, fully repaired and never starred
+	/// Villages, whose PC vikings are always armed, fully repaired and never starred
 	/// </remarks>
 	internal static class VikingSettings
 	{

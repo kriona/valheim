@@ -566,7 +566,7 @@ namespace VikingVillages
 
 			/// <summary>
 			/// Closes in on the prey - hurrying while it's farther off than StalkRange, and from there stalking it, crouched
-			/// and quiet at a walk (see LivingVikingBody.SetStalking), toward a spot standOff from it. The spot is off the
+			/// and quiet at a walk (see PCVikingBody.SetStalking), toward a spot standOff from it. The spot is off the
 			/// prey's back when the viking can get there by swinging no more than StalkSwingMax around it from the way it's
 			/// coming, on ground it can walk to - and straight from the way it's coming otherwise, rather than circling all
 			/// the way around. Worked out again every StalkReplan seconds as the prey moves and turns

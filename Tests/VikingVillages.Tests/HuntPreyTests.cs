@@ -4,7 +4,7 @@ using Kriona.Vikings;
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests the prey living vikings hunt in each biome, and how far past its own biome a viking hunts
+	/// Tests the prey PC vikings hunt in each biome, and how far past its own biome a viking hunts
 	/// </summary>
 	public class HuntPreyTests
 	{

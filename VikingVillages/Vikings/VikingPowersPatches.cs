@@ -3,7 +3,7 @@ using HarmonyLib;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Has a living viking learn a forsaken power it's given - by a player near it using theirs, or another viking - on
+	/// Has a PC viking learn a forsaken power it's given - by a player near it using theirs, or another viking - on
 	/// the client that owns it, where every status effect added by name ends up
 	/// </summary>
 	[HarmonyPatch(typeof(SEMan), nameof(SEMan.Internal_AddStatusEffect))]
@@ -16,7 +16,7 @@ namespace VikingVillages
 		/// <param name="nameHash">The status effect's name hash</param>
 		private static void Postfix(SEMan __instance, int nameHash)
 		{
-			if (__instance.m_character is LivingVikingBody viking && viking.Powers != null)
+			if (__instance.m_character is PCVikingBody viking && viking.Powers != null)
 			{
 				viking.Powers.Received(nameHash);
 			}

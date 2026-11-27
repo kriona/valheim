@@ -8,7 +8,7 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Shares a player's forsaken power with the living vikings, dvergr vikings and dvergr near them, the way the game
+	/// Shares a player's forsaken power with the PC vikings, dvergr vikings and dvergr near them, the way the game
 	/// shares it with the players near them - every one that isn't hostile to the player gets the power's effect too -
 	/// and has one or two of the vikings awake thank the player for it
 	/// </summary>
@@ -36,7 +36,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gives the power's effect to the living vikings, dvergr vikings and dvergr within PowerReach that aren't angry
+		/// Gives the power's effect to the PC vikings, dvergr vikings and dvergr within PowerReach that aren't angry
 		/// at the player once it's used, on the client that owns each, and has one or two of the vikings thank the
 		/// player (see Thank)
 		/// </summary>
@@ -52,12 +52,12 @@ namespace VikingVillages
 			List<Character> given = new List<Character>();
 			foreach (Character character in Character.GetAllCharacters())
 			{
-				// The living and dvergr vikings are of the dvergr's faction, which is hostile to the player while it's angry
+				// The PC and dvergr vikings are of the dvergr's faction, which is hostile to the player while it's angry
 				bool dvergr = (character.GetFaction() == Character.Faction.Dverger && !character.IsTamed());
 				if (dvergr && !character.IsDead() && !BaseAI.IsEnemy(character, __instance) && Vector3.Distance(character.transform.position, __instance.transform.position) <= PowerReach)
 				{
 					character.GetSEMan().AddStatusEffect(effect, true, 0, 0f, -1);
-					if (VikingCore.IsLivingOrDvergr(character))
+					if (VikingCore.IsPCOrDvergr(character))
 					{
 						given.Add(character);
 					}
@@ -89,9 +89,9 @@ namespace VikingVillages
 				awake.RemoveAt(picked);
 			}
 			string power = Localization.instance.Localize(player.m_guardianSE.m_name);
-			List<Character> living = speakers.FindAll((Character viking) => !VikingCore.IsDvergrViking(viking));
+			List<Character> pcVikings = speakers.FindAll((Character viking) => !VikingCore.IsDvergrViking(viking));
 			List<Character> hired = speakers.FindAll((Character viking) => VikingCore.IsDvergrViking(viking));
-			SayThanks(living, VikingSpeech.PowerShared(power, Names(player, living)));
+			SayThanks(pcVikings, VikingSpeech.PowerShared(power, Names(player, pcVikings)));
 			SayThanks(hired, DvergrSpeech.PowerShared(power, Names(player, hired)));
 		}
 
@@ -121,11 +121,11 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Keeps a player with PvP off from hurting a living viking that isn't hostile to them - by a weapon, an arrow or an
+	/// Keeps a player with PvP off from hurting a PC viking that isn't hostile to them - by a weapon, an arrow or an
 	/// area attack - so it isn't angered by accident, the same as PvP keeps players from hurting each other
 	/// </summary>
 	/// <remarks>
-	/// The game lets a player with PvP off hit a creature that can be angered, like the dvergr and living vikings, so
+	/// The game lets a player with PvP off hit a creature that can be angered, like the dvergr and PC vikings, so
 	/// the hit is stopped here, where every hit lands. A viking that's already hostile can be fought back, and a hit
 	/// the game marks as ignoring PvP still lands
 	/// </remarks>
@@ -133,14 +133,14 @@ namespace VikingVillages
 	public static class VikingPvpPatch
 	{
 		/// <summary>
-		/// Skips a hit on a living viking from a player with PvP off, unless the viking is hostile
+		/// Skips a hit on a PC viking from a player with PvP off, unless the viking is hostile
 		/// </summary>
 		/// <param name="__instance">The creature hit</param>
 		/// <param name="hit">The hit</param>
 		/// <returns>False to skip the hit</returns>
 		private static bool Prefix(Character __instance, HitData hit)
 		{
-			if (hit == null || hit.m_ignorePVP || __instance == null || !VikingCore.IsLivingViking(__instance))
+			if (hit == null || hit.m_ignorePVP || __instance == null || !VikingCore.IsPCViking(__instance))
 			{
 				return(true);
 			}
@@ -160,7 +160,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Spares a living viking from the console's kill commands, and the debug mode's kill key (K) that runs them, unless
+	/// Spares a PC viking from the console's kill commands, and the debug mode's kill key (K) that runs them, unless
 	/// it's angry at players or the local player has PvP on, counting the vikings spared for VikingKillReportPatch
 	/// </summary>
 	/// <remarks>
@@ -171,7 +171,7 @@ namespace VikingVillages
 	public static class VikingKillAllPatch
 	{
 		/// <summary>
-		/// How many living vikings the command being run has spared
+		/// How many PC vikings the command being run has spared
 		/// </summary>
 		public static int Spared;
 
@@ -201,7 +201,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Turns the commands down for a living viking they spare (see Spares)
+		/// Turns the commands down for a PC viking they spare (see Spares)
 		/// </summary>
 		/// <param name="__0">The creature the commands would kill</param>
 		/// <param name="__result">Whether they kill it</param>
@@ -215,14 +215,14 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a kill command spares a creature - a living viking that isn't angry at players, while the local
+		/// Checks whether a kill command spares a creature - a PC viking that isn't angry at players, while the local
 		/// player's PvP is off
 		/// </summary>
 		/// <param name="character">The creature</param>
 		/// <returns>True when it spares it</returns>
 		public static bool Spares(Character character)
 		{
-			if (character == null || !VikingCore.IsLivingViking(character))
+			if (character == null || !VikingCore.IsPCViking(character))
 			{
 				return(false);
 			}
@@ -233,7 +233,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Spares a living viking from the deadly hit a kill command deals, for kill commands other mods put in place of the
+	/// Spares a PC viking from the deadly hit a kill command deals, for kill commands other mods put in place of the
 	/// game's that don't ask its check (see VikingKillAllPatch) - a hit from no one, of at least KillDamage, while a
 	/// command with "kill" in it runs (see VikingKillReportPatch)
 	/// </summary>
@@ -246,7 +246,7 @@ namespace VikingVillages
 		private const float KillDamage = 1E+9f;
 
 		/// <summary>
-		/// Skips the hit for a living viking the command spares
+		/// Skips the hit for a PC viking the command spares
 		/// </summary>
 		/// <param name="__instance">The creature hit</param>
 		/// <param name="hit">The hit</param>
@@ -263,7 +263,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Notes while a console command with "kill" in it runs, and tells the player how many living vikings it spared once
+	/// Notes while a console command with "kill" in it runs, and tells the player how many PC vikings it spared once
 	/// it has run, having Hugin explain why the first time (see VikingKillAllPatch)
 	/// </summary>
 	/// <remarks>
@@ -315,13 +315,13 @@ namespace VikingVillages
 			{
 				return;
 			}
-			player.Message(MessageHud.MessageType.TopLeft, "Spared " + spared + " living " + ((spared == 1) ? "Viking" : "Vikings"));
+			player.Message(MessageHud.MessageType.TopLeft, "Spared " + spared + " " + ((spared == 1) ? "Viking" : "Vikings"));
 			VikingPvpTip.ShowKill(player);
 		}
 	}
 
 	/// <summary>
-	/// Makes a living viking's jump as much stronger as a player's for its Jump skill (see VikingCore.JumpSkillBonus),
+	/// Makes a PC viking's jump as much stronger as a player's for its Jump skill (see VikingCore.JumpSkillBonus),
 	/// and raises the skill for each jump it makes, since the game only does both for a creature with skills of its own,
 	/// like a player
 	/// </summary>
@@ -345,7 +345,7 @@ namespace VikingVillages
 		private static void Prefix(Character __instance, out float[] __state)
 		{
 			__state = null;
-			if (__instance.IsPlayer() || !VikingCore.IsLivingViking(__instance) || !__instance.TryGetComponent(out VikingCore viking))
+			if (__instance.IsPlayer() || !VikingCore.IsPCViking(__instance) || !__instance.TryGetComponent(out VikingCore viking))
 			{
 				return;
 			}
@@ -381,7 +381,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Raises a living viking's Jump skill when its jump goes ahead (see VikingJumpSkillPatch)
+	/// Raises a PC viking's Jump skill when its jump goes ahead (see VikingJumpSkillPatch)
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.ForceJump))]
 	public static class VikingJumpedPatch
@@ -400,13 +400,13 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Bends a living viking's move around the creatures and players in its way, before its AI turns it to move
+	/// Bends a PC viking's move around the creatures and players in its way, before its AI turns it to move
 	/// </summary>
 	[HarmonyPatch(typeof(BaseAI), nameof(BaseAI.MoveTowards))]
 	public static class VikingSteerPatch
 	{
 		/// <summary>
-		/// Steers the move of a living viking with village life
+		/// Steers the move of a PC viking with village life
 		/// </summary>
 		/// <param name="__instance">The AI moving</param>
 		/// <param name="dir">The way it's moving, bent here</param>
@@ -420,7 +420,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Notes how long each living viking's swing takes to land after it starts, so a viking with a two-handed weapon
+	/// Notes how long each PC viking's swing takes to land after it starts, so a viking with a two-handed weapon
 	/// can time its swing at a diving deathsquito (see VikingCore.UpdateDiveDefense)
 	/// </summary>
 	[HarmonyPatch(typeof(Attack), nameof(Attack.OnAttackTrigger))]
@@ -432,7 +432,7 @@ namespace VikingVillages
 		/// <param name="__instance">The attack landing</param>
 		private static void Prefix(Attack __instance)
 		{
-			if (__instance.m_character is LivingVikingBody && __instance.m_attackType != Attack.AttackType.Projectile)
+			if (__instance.m_character is PCVikingBody && __instance.m_attackType != Attack.AttackType.Projectile)
 			{
 				VikingCore.NoteSwing(__instance.m_weapon, __instance.m_time);
 			}
@@ -440,7 +440,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Stops a living viking short of the lava and the boiling sea when a move would take it there from safe ground, and
+	/// Stops a PC viking short of the lava and the boiling sea when a move would take it there from safe ground, and
 	/// turns it aside from a ledge it would be hurt falling from, or stops it when every way off is one - a move the
 	/// navmesh doesn't steer, as when its AI moves it straight at something or away from a danger (see DangerousGround
 	/// and Ledges)
@@ -463,13 +463,13 @@ namespace VikingVillages
 		private static bool Prefix(BaseAI __instance, ref Vector3 dir)
 		{
 			Character character = __instance.m_character;
-			if (!VikingCore.IsLivingViking(character))
+			if (!VikingCore.IsPCViking(character))
 			{
 				return(true);
 			}
 			if (!DangerousGround.StepsIntoDanger(character, dir))
 			{
-				if (!(character is LivingVikingBody body) || Ledges.SafeWay(body, dir, out dir))
+				if (!(character is PCVikingBody body) || Ledges.SafeWay(body, dir, out dir))
 				{
 					return(true);
 				}
@@ -485,8 +485,8 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Hurts a living viking that falls, the way the game hurts a player as it touches the ground - which the game does
-	/// only for a player (see LivingVikingBody.Land)
+	/// Hurts a PC viking that falls, the way the game hurts a player as it touches the ground - which the game does
+	/// only for a player (see PCVikingBody.Land)
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.UpdateGroundContact))]
 	public static class VikingFallDamagePatch
@@ -498,7 +498,7 @@ namespace VikingVillages
 		/// <param name="__state">How far it fell, in meters, or 0</param>
 		private static void Prefix(Character __instance, out float __state)
 		{
-			__state = ((__instance is LivingVikingBody body) ? body.LandingHeight() : 0f);
+			__state = ((__instance is PCVikingBody body) ? body.LandingHeight() : 0f);
 		}
 
 		/// <summary>
@@ -508,7 +508,7 @@ namespace VikingVillages
 		/// <param name="__state">How far it fell, in meters, or 0</param>
 		private static void Postfix(Character __instance, float __state)
 		{
-			if (__state > 0f && __instance is LivingVikingBody body)
+			if (__state > 0f && __instance is PCVikingBody body)
 			{
 				body.Land(__state);
 			}
@@ -516,8 +516,8 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Keeps a living viking that's immune to frost immune whatever it wears or has on it (see
-	/// LivingVikingBody.FrostImmune) - the game lets armor or an effect that resists frost take the place of an immunity
+	/// Keeps a PC viking that's immune to frost immune whatever it wears or has on it (see
+	/// PCVikingBody.FrostImmune) - the game lets armor or an effect that resists frost take the place of an immunity
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.GetDamageModifiers))]
 	public static class VikingFrostImmunityPatch
@@ -529,7 +529,7 @@ namespace VikingVillages
 		/// <param name="__result">Its damage modifiers</param>
 		private static void Postfix(Character __instance, ref HitData.DamageModifiers __result)
 		{
-			if (__instance is LivingVikingBody body && body.FrostImmune())
+			if (__instance is PCVikingBody body && body.FrostImmune())
 			{
 				__result.m_frost = HitData.DamageModifier.Immune;
 			}
@@ -537,7 +537,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Keeps a living viking from taking a critical hit while staggered, the same as a player - the game doubles the
+	/// Keeps a PC viking from taking a critical hit while staggered, the same as a player - the game doubles the
 	/// damage to any staggered character but a player. A dvergr viking takes one like any other creature
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
@@ -563,7 +563,7 @@ namespace VikingVillages
 			}
 			if (found != 1)
 			{
-				Plugin.Log.LogWarning("Expected one Character.IsStaggering call in Character.RPC_Damage but found " + found + " - living vikings will take critical hits while staggered");
+				Plugin.Log.LogWarning("Expected one Character.IsStaggering call in Character.RPC_Damage but found " + found + " - PC vikings will take critical hits while staggered");
 				return(result);
 			}
 			foreach (CodeInstruction instruction in result)
@@ -578,19 +578,19 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a hit on a character is a critical hit for its staggering - never on a living viking, though
+		/// Checks whether a hit on a character is a critical hit for its staggering - never on a PC viking, though
 		/// on a dvergr viking as on any other creature
 		/// </summary>
 		/// <param name="character">The character hit</param>
-		/// <returns>True when it's staggering and isn't a living viking</returns>
+		/// <returns>True when it's staggering and isn't a PC viking</returns>
 		public static bool Crits(Character character)
 		{
-			return(character.IsStaggering() && (!(character is LivingVikingBody) || character is DvergrVikingBody));
+			return(character.IsStaggering() && (!(character is PCVikingBody) || character is DvergrVikingBody));
 		}
 	}
 
 	/// <summary>
-	/// Keeps a monster from getting its sneak attack bonus on a living or dvergr viking, the same as on a player - the
+	/// Keeps a monster from getting its sneak attack bonus on a PC or dvergr viking, the same as on a player - the
 	/// game multiplies a hit by the weapon's backstab bonus, often 4, on any creature with an AI that isn't alerted, and
 	/// a player has no AI
 	/// </summary>
@@ -602,13 +602,13 @@ namespace VikingVillages
 	public static class VikingBackstabPatch
 	{
 		/// <summary>
-		/// Takes the backstab bonus off a hit on a living or dvergr viking
+		/// Takes the backstab bonus off a hit on a PC or dvergr viking
 		/// </summary>
 		/// <param name="__instance">The creature hit</param>
 		/// <param name="hit">The hit</param>
 		private static void Prefix(Character __instance, HitData hit)
 		{
-			if (hit != null && VikingCore.IsLivingOrDvergr(__instance))
+			if (hit != null && VikingCore.IsPCOrDvergr(__instance))
 			{
 				hit.m_backstabBonus = 1f;
 			}
@@ -616,7 +616,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Has the damage a living or dvergr viking takes land as it does on a player, rather than scaled the way the
+	/// Has the damage a PC or dvergr viking takes land as it does on a player, rather than scaled the way the
 	/// game scales the damage a creature takes - by the players nearby, as their enemies' health grows with them, and
 	/// by the world's player damage setting
 	/// </summary>
@@ -659,7 +659,7 @@ namespace VikingVillages
 			}
 			if (difficultyCount != 1 || rateCount != 1)
 			{
-				Plugin.Log.LogWarning("Expected one Game.GetDifficultyDamageScaleEnemy call and one Game.m_playerDamageRate read in Character.ApplyDamage but found " + difficultyCount + " and " + rateCount + " - living vikings will take damage scaled like a creature's");
+				Plugin.Log.LogWarning("Expected one Game.GetDifficultyDamageScaleEnemy call and one Game.m_playerDamageRate read in Character.ApplyDamage but found " + difficultyCount + " and " + rateCount + " - PC vikings will take damage scaled like a creature's");
 				return(result);
 			}
 			result[rateAt].opcode = OpCodes.Ldarg_0;
@@ -672,7 +672,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets how the players near a creature scale the damage it takes - not at all for a living or dvergr viking
+		/// Gets how the players near a creature scale the damage it takes - not at all for a PC or dvergr viking
 		/// </summary>
 		/// <param name="game">The game</param>
 		/// <param name="position">Where the creature is</param>
@@ -680,35 +680,35 @@ namespace VikingVillages
 		/// <returns>The multiplier</returns>
 		public static float EnemyScale(Game game, Vector3 position, Character character)
 		{
-			return(VikingCore.IsLivingOrDvergr(character) ? 1f : game.GetDifficultyDamageScaleEnemy(position));
+			return(VikingCore.IsPCOrDvergr(character) ? 1f : game.GetDifficultyDamageScaleEnemy(position));
 		}
 
 		/// <summary>
-		/// Gets how the world's player damage setting scales the damage a creature takes - not at all for a living or
+		/// Gets how the world's player damage setting scales the damage a creature takes - not at all for a PC or
 		/// dvergr viking
 		/// </summary>
 		/// <param name="character">The creature hit</param>
 		/// <returns>The multiplier</returns>
 		public static float PlayerDamageRate(Character character)
 		{
-			return(VikingCore.IsLivingOrDvergr(character) ? 1f : Game.m_playerDamageRate);
+			return(VikingCore.IsPCOrDvergr(character) ? 1f : Game.m_playerDamageRate);
 		}
 	}
 
 	/// <summary>
-	/// Spreads the poison a living viking takes over as long as a player's, so it deals as much each second as it does
+	/// Spreads the poison a PC viking takes over as long as a player's, so it deals as much each second as it does
 	/// to a player - the game only gives a player the longer time (see SE_Poison.AddDamage)
 	/// </summary>
 	[HarmonyPatch(typeof(SE_Poison), nameof(SE_Poison.AddDamage))]
 	public static class VikingPoisonPatch
 	{
 		/// <summary>
-		/// Gives a living viking's poison effect, its own copy, the time a player's takes for each point of damage
+		/// Gives a PC viking's poison effect, its own copy, the time a player's takes for each point of damage
 		/// </summary>
 		/// <param name="__instance">The poison effect</param>
 		private static void Prefix(SE_Poison __instance)
 		{
-			if (__instance.m_character is LivingVikingBody)
+			if (__instance.m_character is PCVikingBody)
 			{
 				__instance.m_TTLPerDamage = __instance.m_TTLPerDamagePlayer;
 			}

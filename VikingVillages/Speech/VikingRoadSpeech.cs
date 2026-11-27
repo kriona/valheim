@@ -1,7 +1,7 @@
 namespace VikingVillages
 {
 	/// <summary>
-	/// What living vikings say away from any village - lost after being spawned out in the wild, on the road to a
+	/// What PC vikings say away from any village - lost after being spawned out in the wild, on the road to a
 	/// village, or wandering with none to go to - and as they leave a village a player disbanded (see VillageLifeTravel)
 	/// </summary>
 	/// <remarks>
