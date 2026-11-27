@@ -23,6 +23,7 @@ There are three kinds of Viking across Viking Villages and Zombie Apocalypse. Th
 | Armor protects them | Fully | Fully | Half as well |
 | Gear | Always armor and a weapon, fully repaired | The Mistlands' gear, fully repaired | 65% armor and 85% a weapon, worn to 50-95% |
 | How fast they swing | As fast as you, stringing combos | With a pause between swings | Every 2 seconds, as monsters do |
+| How hard their weapons hit | As hard as yours at their skill | As hard as yours at their skill | Melee weapons harder than yours, by their biome - up to 1.8 times in the Swamp - and bows as yours |
 | Light at night | A torch or Dverger circlet, and a wisp light in the Mistlands | A Dverger circlet and a wisp light | None |
 | Sees 10 meters in the Mistlands' mist | Yes | Yes | Yes |
 | Takes fall damage | Yes | No | No, like the game's creatures |

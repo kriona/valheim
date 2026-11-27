@@ -193,15 +193,15 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Measures how hard the viking hits a creature with a weapon - its damage, counting its ammo, through the
-		/// creature's resistances, scaled by the viking's skill with it the way a player's damage is, and a melee weapon
-		/// by its biome's MeleeScale (see DamageScale)
+		/// creature's resistances, scaled by the viking's skill with it the way a player's damage is, and a zombie
+		/// viking's melee weapon by its biome's MeleeScale (see DamageScale)
 		/// </summary>
 		/// <param name="weapon">The weapon</param>
 		/// <param name="resistances">The creature's resistances, or null for its damage as it is</param>
 		/// <returns>The damage</returns>
 		private float Hurt(ItemDrop.ItemData weapon, HitData.DamageModifiers? resistances)
 		{
-			float scale = ((!IsRanged(weapon) && GetData() != null && !data.Tombstone) ? VikingGear.Get(BiomeIndex()).MeleeScale : 1f);
+			float scale = (MeleeScaled(IsRanged(weapon)) ? VikingGear.Get(BiomeIndex()).MeleeScale : 1f);
 			return(SkillScaled(Damage(weapon, resistances) * scale, SkillLevel(weapon.m_shared.m_skillType)));
 		}
 

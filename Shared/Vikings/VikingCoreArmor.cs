@@ -10,7 +10,8 @@ namespace Kriona.Vikings
 	{
 		/// <summary>
 		/// Works out how much harder the viking hits than a player of its skill with what's in its hands - its fists by
-		/// its biome's punch, and a viking of the world's melee weapons by its biome's MeleeScale
+		/// its biome's punch, and a zombie viking of the world's melee weapons by its biome's MeleeScale (see
+		/// GetsMeleeScale)
 		/// </summary>
 		/// <returns>The multiplier for the hit's damage</returns>
 		public float DamageScale()
@@ -24,7 +25,34 @@ namespace Kriona.Vikings
 				return((baseDamage > 0f) ? gear.Unarmed / baseDamage : 1f);
 			}
 			bool ranged = (weapon.m_shared.m_attack != null && weapon.m_shared.m_attack.m_attackType == Attack.AttackType.Projectile);
-			return((GetData() != null && !data.Tombstone && !ranged) ? gear.MeleeScale : 1f);
+			return(MeleeScaled(ranged) ? gear.MeleeScale : 1f);
+		}
+
+		/// <summary>
+		/// Checks whether the viking's hit with a weapon is scaled by its biome's MeleeScale (see GetsMeleeScale)
+		/// </summary>
+		/// <param name="ranged">Whether the weapon shoots</param>
+		/// <returns>True when it is</returns>
+		private bool MeleeScaled(bool ranged)
+		{
+			bool hasData = (GetData() != null);
+			return(GetsMeleeScale(hasData, hasData && data.Tombstone, IsLivingOrDvergr(humanoid), ranged));
+		}
+
+		/// <summary>
+		/// Checks whether a viking's hit with a weapon is scaled by its biome's MeleeScale - only a zombie viking of the
+		/// world's hand to hand, so it hits about as hard as its biome's creatures. A living or dvergr viking hits like a
+		/// player of its skill, a tombstone viking like the player it rose from, a shot isn't scaled, and a viking with
+		/// no data yet has no biome to scale by
+		/// </summary>
+		/// <param name="hasData">Whether the viking has its data yet</param>
+		/// <param name="tombstone">Whether it's a tombstone viking</param>
+		/// <param name="livingOrDvergr">Whether it's a living or dvergr viking</param>
+		/// <param name="ranged">Whether the weapon shoots</param>
+		/// <returns>True when it's scaled</returns>
+		internal static bool GetsMeleeScale(bool hasData, bool tombstone, bool livingOrDvergr, bool ranged)
+		{
+			return(hasData && !tombstone && !livingOrDvergr && !ranged);
 		}
 
 		/// <summary>

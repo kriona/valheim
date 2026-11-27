@@ -220,13 +220,14 @@ namespace Kriona.Vikings.Tests
 
 		/// <summary>
 		/// Checks that a zombie viking of the Mountains at one star is tough enough for more vikings than a village of
-		/// 8 has - 600 health in half-strength Fenris armor against vikings in Fenris whose spears do 45 a swing
+		/// 8 has - 600 health in half-strength Fenris armor against vikings in Fenris whose best swing is a frost arrow's
+		/// 37, counted at the bow's pace, ahead of a Fang Spear's 26 against a zombie's pierce resistance
 		/// </summary>
 		[Fact]
 		public void StarredMountainZombieTakesMoreThanAVillage()
 		{
-			// 45 through 15.5 armor is 29.5 a swing, 20 swings, against 2.9 of its 91.5 through 31 armor
-			Assert.True(VikingCore.FightersNeeded(600f, 91.5f, 15.5f, 175f, 31f, 45f) > 8);
+			// 37 through 15.5 armor is 21.5 a swing, 28 swings, against 2.9 of its 91.5 through 31 armor
+			Assert.True(VikingCore.FightersNeeded(600f, 91.5f, 15.5f, 175f, 31f, 37f) > 8);
 		}
 
 		/// <summary>
@@ -276,6 +277,20 @@ namespace Kriona.Vikings.Tests
 			// 10 through 1000 armor is 0.025, counted as 1, so the viking takes 100 hits
 			Assert.False(VikingCore.Outlasts(1000f, 10f, 0f, 100f, 1000f, 10f));
 			Assert.True(VikingCore.Outlasts(1010f, 10f, 0f, 100f, 1000f, 10f));
+		}
+
+		/// <summary>
+		/// Checks that only a zombie viking of the world's hits hand to hand are scaled by its biome's MeleeScale - not a
+		/// living or dvergr viking's, a tombstone viking's, a shot, or a viking with no data yet
+		/// </summary>
+		[Fact]
+		public void ScalesOnlyAZombieVikingsMeleeHits()
+		{
+			Assert.True(VikingCore.GetsMeleeScale(true, false, false, false));
+			Assert.False(VikingCore.GetsMeleeScale(true, false, true, false));
+			Assert.False(VikingCore.GetsMeleeScale(true, true, false, false));
+			Assert.False(VikingCore.GetsMeleeScale(true, false, false, true));
+			Assert.False(VikingCore.GetsMeleeScale(false, false, false, false));
 		}
 
 		/// <summary>

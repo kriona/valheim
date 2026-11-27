@@ -23,7 +23,7 @@ What a living Viking of each biome starts with. Odds are rolled once, when they'
 ### Meadows Viking
 
 - Skills of 1-12, and at least 50 max health - 115 fully fed on the Meadows' best food
-- Melee hits 1.4 times as hard as yours, and fists that hit for 25
+- Melee hits as hard as yours, and fists that hit for 25
 - Knows Eikthyr's power
 - The village's archer carries a bow and a melee weapon, the rest one weapon of any kind
 - 50% a helmet, 50% a cape, 40% a shield
@@ -34,7 +34,7 @@ What a living Viking of each biome starts with. Odds are rolled once, when they'
 ### Black Forest Viking
 
 - Skills of 13-25, and at least 115 max health - 155 fully fed
-- Melee hits 1.7 times as hard as yours, and fists that hit for 45
+- Melee hits as hard as yours, and fists that hit for 45
 - Knows Eikthyr's and the Elder's powers
 - A third carry only a bow, a third only a melee weapon and a third both - the village's archer has only the bow half the time
 - 50% a helmet, 50% a cape, 40% a shield
@@ -45,7 +45,7 @@ What a living Viking of each biome starts with. Odds are rolled once, when they'
 ### Swamp Viking
 
 - Skills of 26-37, and at least 155 max health - 175 fully fed
-- Melee hits 1.8 times as hard as yours, and fists that hit for 75
+- Melee hits as hard as yours, and fists that hit for 75
 - Knows every power up to Bonemass's
 - A fifth carry only a bow, a fifth only a melee weapon and the rest both - the village's archer has only the bow a quarter of the time
 - 50% a helmet, 50% a cape, 40% a shield
@@ -56,7 +56,7 @@ What a living Viking of each biome starts with. Odds are rolled once, when they'
 ### Mountains Viking
 
 - Skills of 38-50, and at least 175 max health - 195 fully fed
-- Melee hits 1.75 times as hard as yours, and fists that hit for 95
+- Melee hits as hard as yours, and fists that hit for 95
 - Knows every power up to Moder's
 - Always both a melee weapon and a bow, always their set's helmet and a cape that resists frost, and 40% a shield
 - 50% a Dverger circlet in place of a torch
@@ -68,7 +68,7 @@ What a living Viking of each biome starts with. Odds are rolled once, when they'
 ### Plains Viking
 
 - Skills of 50-62, and at least 195 max health - 235 fully fed
-- Melee hits 1.25 times as hard as yours, and fists that hit for 110
+- Melee hits as hard as yours, and fists that hit for 110
 - Knows every power up to Yagluth's
 - Always both a melee weapon and a bow - the Mountains' Draugr Fang, since the Plains have none - always their set's helmet and a cape, and 40% a shield
 - 70% a Dverger circlet in place of a torch
@@ -151,9 +151,9 @@ A living Viking's max health is what their food gives them, the way yours is, bu
 
 ### Melee Damage
 
-Their melee weapons hit harder than yours in the easier biomes, so their weaker gear keeps up with the monsters there. Their bows and crossbows hit as yours do, and their bare fists hit for a set amount in place of yours.
+A living or Dvergr Viking's melee weapons hit as hard as yours do at their skill. With Zombie Apocalypse, a zombie Viking of the world's melee weapons hit harder than yours in the easier biomes, so its weaker gear keeps up with the monsters there - a zombie risen from a living Viking included, and a tombstone zombie, who fights as you did, not. Every Viking's bows and crossbows hit as yours do, and their bare fists hit for a set amount in place of yours.
 
-| Biome | Melee hits | Fists |
+| Biome | A zombie Viking's melee hits | Fists |
 | --- | --- | --- |
 | Meadows | 1.4 times | 25 |
 | Black Forest | 1.7 times | 45 |
