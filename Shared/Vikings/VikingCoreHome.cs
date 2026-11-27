@@ -113,7 +113,7 @@ namespace Kriona.Vikings
 		/// <summary>
 		/// Runs the viking home when it has gone too far from it - beyond its leash, or beyond GrudgeRange while it chases
 		/// an enemy that hurt it - ignoring everything but being hurt again from its leash until it's back, and puts it
-		/// there when it's stuck
+		/// there, standing still, when it's stuck
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <returns>True while it's running home, so the AI's own update is skipped</returns>
@@ -152,6 +152,8 @@ namespace Kriona.Vikings
 				ai.StopMoving();
 				Vector3 landing = home + Vector3.up * 0.5f;
 				humanoid.m_body.position = landing;
+				humanoid.m_body.linearVelocity = Vector3.zero;
+				humanoid.m_body.angularVelocity = Vector3.zero;
 				transform.position = landing;
 				// From where it lands, so the move home isn't taken for a fall
 				humanoid.m_maxAirAltitude = landing.y;
