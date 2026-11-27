@@ -456,11 +456,12 @@ namespace VikingVillages
 			}
 			foreach (Meal meal in meals)
 			{
-				ItemDrop.ItemData food = FoodOf(meal);
+				GameObject prefab = PrefabOf(meal);
+				ItemDrop.ItemData food = FoodOf(prefab);
 				float left = (float)(meal.Until - at) / System.TimeSpan.TicksPerSecond;
 				if (food != null && food.m_shared.m_foodBurnTime > 0f && left > 0f)
 				{
-					eating.Add(new QuestMeal { Item = food.m_dropPrefab.name, Health = food.m_shared.m_food, Regen = food.m_shared.m_foodRegen, Burn = BurnTime(food), Left = left });
+					eating.Add(new QuestMeal { Item = prefab.name, Health = food.m_shared.m_food, Regen = food.m_shared.m_foodRegen, Burn = BurnTime(food), Left = left });
 				}
 			}
 			return(eating);
@@ -643,13 +644,33 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Finds the prefab of the food a meal was of
+		/// </summary>
+		/// <param name="meal">The meal</param>
+		/// <returns>The food's prefab, or null when it can't be found</returns>
+		private static GameObject PrefabOf(Meal meal)
+		{
+			return(ObjectDB.instance.GetItemPrefab(meal.Prefab));
+		}
+
+		/// <summary>
 		/// Finds the food a meal was of
 		/// </summary>
 		/// <param name="meal">The meal</param>
 		/// <returns>The food's item data, or null when its prefab can't be found</returns>
 		private static ItemDrop.ItemData FoodOf(Meal meal)
 		{
-			GameObject prefab = ObjectDB.instance.GetItemPrefab(meal.Prefab);
+			return(FoodOf(PrefabOf(meal)));
+		}
+
+		/// <summary>
+		/// Gets the item data of a food's prefab - the prefab's own, whose m_dropPrefab the game leaves unset, so its
+		/// name comes from the prefab
+		/// </summary>
+		/// <param name="prefab">The food's prefab, or null</param>
+		/// <returns>The food's item data, or null when there's no prefab or it isn't an item</returns>
+		private static ItemDrop.ItemData FoodOf(GameObject prefab)
+		{
 			ItemDrop drop = ((prefab != null) ? prefab.GetComponent<ItemDrop>() : null);
 			return((drop != null) ? drop.m_itemData : null);
 		}
