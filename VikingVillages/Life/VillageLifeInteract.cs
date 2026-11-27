@@ -384,7 +384,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Picks what a viking at home says when a player it knows talks to it - now and then about the player wearing no
-		/// clothes (see VikingClothesSpeech), a quest of its village's (see QuestAnswer), its village going by its name (see VillageNamesakeSpeech), the village on the
+		/// clothes (see VikingClothesSpeech), the training weapon in their hand (see VikingTrainingSpeech), a quest of its
+		/// village's (see QuestAnswer), its village going by its name (see VillageNamesakeSpeech), the village on the
 		/// other side of its village's portal (see VillagePortalSpeech), being old friends or how the player is doing (see
 		/// VikingFriendSpeech), the one of Frozen's folk it's named after (see VikingFrozenSpeech), or a runestone of the
 		/// biome it stands in or of someone with its name (see VikingLoreSpeech)
@@ -397,7 +398,7 @@ namespace VikingVillages
 			bool friends = VikingIdentity.OldFriends(nview, player.GetPlayerID());
 			string own = VikingNames.Get(humanoid);
 			string villageName = VillageNames.Get(village);
-			return(VikingClothesSpeech.Chat(player) ?? QuestAnswer(player) ?? VillageNamesakeSpeech.Chat(own, villageName, name) ?? VillagePortalSpeech.Chat(village, name) ?? VikingFriendSpeech.Chat(friends, name) ?? VikingFrozenSpeech.Chat(name, own) ?? VikingLoreSpeech.Chat(transform.position, name, own) ?? VikingSpeech.Answer(player, IsNight(), villageName));
+			return(VikingClothesSpeech.Chat(player) ?? VikingTrainingSpeech.Chat(player) ?? QuestAnswer(player) ?? VillageNamesakeSpeech.Chat(own, villageName, name) ?? VillagePortalSpeech.Chat(village, name) ?? VikingFriendSpeech.Chat(friends, name) ?? VikingFrozenSpeech.Chat(name, own) ?? VikingLoreSpeech.Chat(transform.position, name, own) ?? VikingSpeech.Answer(player, IsNight(), villageName));
 		}
 
 		/// <summary>

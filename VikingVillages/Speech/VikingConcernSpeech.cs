@@ -7,8 +7,9 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// Has a living viking call out to the local player when it sees them on fire, poisoned, freezing, badly hurt,
-	/// covered in tar, smoked, overloaded, back from the dead or without clothes (see VikingClothesSpeech) - only the
-	/// first viking near them, once each time it happens, so the whole village doesn't
+	/// covered in tar, smoked, overloaded, back from the dead or without clothes (see VikingClothesSpeech), and
+	/// encourages them when it sees them with a training weapon in hand (see VikingTrainingSpeech) - only the first
+	/// viking near them, once each time it happens, so the whole village doesn't
 	/// </summary>
 	/// <remarks>
 	/// A player's status effects are only known on their own client, so it's their client that sees it and has the
@@ -19,8 +20,8 @@ namespace VikingVillages
 	{
 		/// <summary>
 		/// Something about a player a viking calls out - its name, for keeping track of it, how it's told, and what the
-		/// viking says, with the player's name or "traveler" - anywhere, and for some, only outside the Ashlands or only
-		/// in them
+		/// viking says, with {0} for the player's name or "traveler" - anywhere, and for some, only outside the Ashlands
+		/// or only in them - and for some, what fills in {1}, like the skill a training weapon trains
 		/// </summary>
 		internal class Concern
 		{
@@ -29,6 +30,7 @@ namespace VikingVillages
 			public string[] Lines;
 			public string[] ColdLines = new string[0];
 			public string[] HotLines = new string[0];
+			public Func<Player, string> Detail;
 
 			/// <summary>
 			/// Every line the viking might call out about it, wherever the player is
@@ -153,6 +155,13 @@ namespace VikingVillages
 				Lines = VikingClothesSpeech.CallLines,
 				ColdLines = VikingClothesSpeech.ColdCallLines,
 				HotLines = VikingClothesSpeech.HotCallLines
+			},
+			new Concern
+			{
+				Name = "training",
+				Has = VikingTrainingSpeech.Training,
+				Lines = VikingTrainingSpeech.CallLines,
+				Detail = VikingTrainingSpeech.SkillOf
 			}
 		};
 
@@ -214,22 +223,24 @@ namespace VikingVillages
 				nextAllowed[concern.Name] = Time.time + Cooldown;
 				string[] lines = Pool(concern.Lines, concern.ColdLines, concern.HotLines, InAshlands(player));
 				string line = lines[UnityEngine.Random.Range(0, lines.Length)];
-				VikingSpeech.Say(speaker, Said(line, player.GetPlayerName(), VikingSpeech.Knows(speaker, player.GetPlayerID())), VikingSpeech.QuickTime, VikingSpeech.TalkCull);
+				string detail = ((concern.Detail != null) ? concern.Detail(player) : "");
+				VikingSpeech.Say(speaker, Said(line, player.GetPlayerName(), VikingSpeech.Knows(speaker, player.GetPlayerID()), detail), VikingSpeech.QuickTime, VikingSpeech.TalkCull);
 				return;
 			}
 		}
 
 		/// <summary>
 		/// Fills in a concern's line with the player's name, or with what a viking calls a player it doesn't know (see
-		/// VikingSpeech.WithStranger)
+		/// VikingSpeech.WithStranger), and with its detail
 		/// </summary>
-		/// <param name="line">The line, with {0} where the player's name goes</param>
+		/// <param name="line">The line, with {0} where the player's name goes and {1} where the detail goes</param>
 		/// <param name="name">The player's name</param>
 		/// <param name="known">Whether the viking knows the player</param>
+		/// <param name="detail">What fills in {1}, like the skill a training weapon trains, or ""</param>
 		/// <returns>The line to say</returns>
-		internal static string Said(string line, string name, bool known)
+		internal static string Said(string line, string name, bool known, string detail)
 		{
-			return(string.Format((known ? line : VikingSpeech.WithStranger(line, 0)), name));
+			return(string.Format((known ? line : VikingSpeech.WithStranger(line, 0)), name, detail));
 		}
 
 		/// <summary>
