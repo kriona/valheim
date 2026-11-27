@@ -66,6 +66,14 @@ namespace VikingVillages
 		private const int FreeSides = 8;
 
 		/// <summary>
+		/// How near the village's open ground a viking held up there already stands for freeing it to drop its job
+		/// rather than move it, and how far from every other creature and player the spot a viking is freed onto there
+		/// keeps, in meters (see FreeIfTrapped)
+		/// </summary>
+		private const float FreeOpenNear = 3f;
+		private const float FreeRoom = 1f;
+
+		/// <summary>
 		/// Writes to the log when the viking has stood still for StuckLogTime at a job that shouldn't keep it still that
 		/// long - anything but resting, sitting, lying, in bed or sitting on something, or gathering at a fire, counting
 		/// only from when it last stopped doing those, so a night in bed isn't taken for being stuck the morning after -
@@ -99,8 +107,9 @@ namespace VikingVillages
 		/// anywhere - shut in beside its bed by the furniture, at the far side of a pen too big to tell from open ground,
 		/// or anywhere else it has no way out of - putting it at the nearest spot with a way to the village's open ground
 		/// (see FreeSpot), rather than leaving it there to go hungry. When the spot it stands on has a way there already,
-		/// what holds it is something the navmesh doesn't show, which the spots around it share, so it's put at the
-		/// open ground itself
+		/// what holds it is something the navmesh doesn't show, which the spots around it share, so it's put on the
+		/// open ground itself, at a spot no one else stands on (see OpenLanding) - or, standing within FreeOpenNear of it
+		/// already, where there's nowhere better to put it, it drops its job where it stands to pick another
 		/// </summary>
 		private void FreeIfTrapped()
 		{
@@ -118,8 +127,22 @@ namespace VikingVillages
 			bool wayOut = WayToOpenGround(from, open, out string own);
 			// What it was doing is written down before it's moved, which starts its path and its moves over
 			string report = ((TestLog.On || Player.m_debugMode) ? FreeReport(own) : null);
+			if (wayOut && Utils.DistanceXZ(from, open) <= FreeOpenNear)
+			{
+				string dropped = ((job != null) ? job.Describe() : "none");
+				Interrupt("going nowhere");
+				ai.StopMoving();
+				ResetStuck();
+				TestLog.Count("Troubles", "freed after walking without getting anywhere");
+				TestLog.Count("Freed, by where to", "nowhere, already on the open ground, dropping its job");
+				if (report != null)
+				{
+					Plugin.Log.LogInfo("Freed: " + TestLog.Label(humanoid) + " at " + from.ToString("F1") + " tried to walk for " + FreeAfter.ToString("F0") + "s without getting anywhere, moved by " + mover + ", at its job: " + dropped + ", but it's " + Utils.DistanceXZ(from, open).ToString("F1") + "m from the village's open ground at " + open.ToString("F1") + " already, so it drops its job where it stands\n" + report);
+				}
+				return;
+			}
 			Vector3 spot;
-			bool found = (wayOut ? NavmeshPoints.FindValidPoint(out spot, open, FreeStep, Pathfinding.AgentType.Humanoid) : FreeSpot(from, open, FreeReach, out spot));
+			bool found = (wayOut ? OpenLanding(open, humanoid, out spot) : FreeSpot(from, open, FreeReach, out spot));
 			if (!found)
 			{
 				return;
@@ -226,6 +249,50 @@ namespace VikingVillages
 				}
 			}
 			return(NavmeshPoints.FindValidPoint(out spot, open, FreeStep, Pathfinding.AgentType.Humanoid));
+		}
+
+		/// <summary>
+		/// Finds where a viking freed onto the village's open ground lands - the open ground itself or the nearest spot
+		/// around it, looking further out a FreeStep at a time up to FreeReach, that's on the navmesh, out of any pen, off
+		/// the roofs, clear of fires, with no other creature or player within FreeRoom of it and a whole path to the open
+		/// ground - so vikings freed one after another don't land on each other and shove one another about
+		/// </summary>
+		/// <param name="open">The spot on the village's open ground (see Village.RallyPoint)</param>
+		/// <param name="self">The viking being freed, which isn't in its own way</param>
+		/// <param name="spot">The spot found</param>
+		/// <returns>False when there's none</returns>
+		private static bool OpenLanding(Vector3 open, Character self, out Vector3 spot)
+		{
+			List<Character> near = new List<Character>();
+			for (float step = 0f; step <= FreeReach; step += FreeStep)
+			{
+				int sides = ((step > 0f) ? FreeSides : 1);
+				for (int i = 0; i < sides; i++)
+				{
+					Vector3 point = open + Quaternion.Euler(0f, i * 360f / FreeSides, 0f) * Vector3.forward * step;
+					if (!NavmeshPoints.FindValidPoint(out Vector3 valid, point, FreeStep, Pathfinding.AgentType.Humanoid))
+					{
+						continue;
+					}
+					if (Village.FencedIn(valid) || NavmeshRoofs.OnRoof(valid) || Village.NearFlames(valid))
+					{
+						continue;
+					}
+					near.Clear();
+					Character.GetCharactersInRange(valid, FreeRoom, near);
+					if (near.Exists((Character other) => other != self && !other.IsDead()))
+					{
+						continue;
+					}
+					if (Pathfinding.instance.HavePath(valid, open, Pathfinding.AgentType.Humanoid))
+					{
+						spot = valid;
+						return(true);
+					}
+				}
+			}
+			spot = open;
+			return(false);
 		}
 
 		/// <summary>
