@@ -33,6 +33,12 @@ namespace VikingVillages
 		private const float FireMatch = 1f;
 
 		/// <summary>
+		/// In a viking's values, the prefab it was - a PC or NPC viking - so it comes back as the same kind. It isn't a
+		/// value of the ZDO itself, so it's only written in the values and never set on the viking brought back
+		/// </summary>
+		internal static readonly int PrefabValueKey = "kriona.VikingVillages.snapshotPrefab".GetStableHashCode();
+
+		/// <summary>
 		/// The bonfire a village a player started is kept at
 		/// </summary>
 		private static readonly int BonfireHash = "bonfire".GetStableHashCode();
@@ -141,6 +147,50 @@ namespace VikingVillages
 		public static byte[] SnapshotOf(ZDO viking)
 		{
 			return(Snapshot(viking));
+		}
+
+		/// <summary>
+		/// Finds the prefab a viking kept as its values comes back as - an NPC viking when it was one, and otherwise a PC
+		/// viking
+		/// </summary>
+		/// <param name="snapshot">The values (see SnapshotOf)</param>
+		/// <returns>The prefab's hash</returns>
+		public static int PrefabOf(byte[] snapshot)
+		{
+			return(PrefabIn(Decode(snapshot)));
+		}
+
+		/// <summary>
+		/// Finds the prefab a viking's values come back as (see PrefabOf)
+		/// </summary>
+		/// <param name="values">The values, or null when they couldn't be read</param>
+		/// <returns>The prefab's hash - the NPC viking's when they say so, and otherwise the PC viking's</returns>
+		internal static int PrefabIn(VikingValues values)
+		{
+			if (values == null)
+			{
+				return(VikingCore.PCPrefabHash);
+			}
+			KeyValuePair<int, int> prefab = values.Ints.Find((KeyValuePair<int, int> entry) => entry.Key == PrefabValueKey);
+			return((prefab.Key == PrefabValueKey && prefab.Value == VikingCore.NPCPrefabHash) ? VikingCore.NPCPrefabHash : VikingCore.PCPrefabHash);
+		}
+
+		/// <summary>
+		/// Finds the prefab the next viking coming back to a village comes back as (see TakeReturning)
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>The prefab's hash, or 0 when none is coming back</returns>
+		public static int NextReturningPrefab(Village village)
+		{
+			foreach (byte[] snapshot in Read(village.Zdo, ReturningKey))
+			{
+				VikingValues values = Decode(snapshot);
+				if (values != null)
+				{
+					return(PrefabIn(values));
+				}
+			}
+			return(0);
 		}
 
 		/// <summary>
@@ -263,7 +313,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Writes every value in a viking's ZDO but the ones it's kept without (see Skipped), by type
+		/// Writes every value in a viking's ZDO but the ones it's kept without (see Skipped), by type, and the prefab it
+		/// is (see PrefabValueKey)
 		/// </summary>
 		/// <param name="viking">The viking's ZDO</param>
 		/// <returns>The values</returns>
@@ -275,6 +326,8 @@ namespace VikingVillages
 			values.Vec3s = ToList(vec3s);
 			values.Quats = ToList(quats);
 			values.Ints = ToList(ints);
+			values.Ints.RemoveAll((KeyValuePair<int, int> entry) => entry.Key == PrefabValueKey);
+			values.Ints.Add(new KeyValuePair<int, int>(PrefabValueKey, viking.GetPrefab()));
 			values.Longs = ToList(longs);
 			values.Strings = ToList(strings);
 			values.Bytes = ToList(bytes);
@@ -318,7 +371,10 @@ namespace VikingVillages
 			}
 			foreach (KeyValuePair<int, int> entry in values.Ints)
 			{
-				viking.Set(entry.Key, entry.Value);
+				if (entry.Key != PrefabValueKey)
+				{
+					viking.Set(entry.Key, entry.Value);
+				}
 			}
 			foreach (KeyValuePair<int, long> entry in values.Longs)
 			{
@@ -451,7 +507,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Lists the values a viking is kept without - that it's leaving or turned back and the bonfire it's kept at, its
-		/// village, home and bed, and where it patrolled - made the first time they're wanted
+		/// village, home and bed, whether it was one its village started with, and where it patrolled - made the first time
+		/// they're wanted
 		/// </summary>
 		/// <returns>Their hashes</returns>
 		private static HashSet<int> Skipped()
@@ -467,6 +524,7 @@ namespace VikingVillages
 				FireKey,
 				Village.VillageKey,
 				Village.HomeKey,
+				VillageRespawn.StarterKey,
 				VillageBeds.BedKey.Key,
 				VillageBeds.BedKey.Value,
 				VillageLife.ArrivingKey,

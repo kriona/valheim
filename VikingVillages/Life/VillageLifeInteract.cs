@@ -144,13 +144,13 @@ namespace VikingVillages
 		private const float GearCheckInterval = 2f;
 
 		/// <summary>
-		/// Puts a piece of gear on as its change in the body's queue is done (see PCVikingBody.UpdateGearChanges), the
+		/// Puts a piece of gear on as its change in the body's queue is done (see PlayerLikeVikingBody.UpdateGearChanges), the
 		/// way the viking takes up gear it found (see VikingCore.TakeUpGear), or takes it off - from its back too, when
 		/// it's sheathed there
 		/// </summary>
 		/// <param name="change">The change</param>
 		/// <param name="item">The piece it's for - its item, or the one in the other hand</param>
-		private void ChangeGear(PCVikingBody.GearChange change, ItemDrop.ItemData item)
+		private void ChangeGear(PlayerLikeVikingBody.GearChange change, ItemDrop.ItemData item)
 		{
 			if (change.PutOn)
 			{
@@ -287,7 +287,7 @@ namespace VikingVillages
 		/// <param name="author">Who named it</param>
 		private void RPC_Name(long sender, string name, string author)
 		{
-			if (!nview.IsOwner() || !VikingCore.IsPCViking(humanoid))
+			if (!nview.IsOwner() || !VikingCore.IsPlayerLikeViking(humanoid))
 			{
 				return;
 			}
@@ -323,13 +323,13 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a player can talk to the viking - it's a PC viking, alive, and not their enemy
+		/// Checks whether a player can talk to the viking - it's a PC or NPC viking, alive, and not their enemy
 		/// </summary>
 		/// <param name="player">The player, or null</param>
 		/// <returns>True when they can</returns>
 		public bool CanTalkTo(Player player)
 		{
-			return(player != null && humanoid != null && !humanoid.IsDead() && nview != null && nview.IsValid() && VikingCore.IsPCViking(humanoid) && !BaseAI.IsEnemy(humanoid, player));
+			return(player != null && humanoid != null && !humanoid.IsDead() && nview != null && nview.IsValid() && VikingCore.IsPlayerLikeViking(humanoid) && !BaseAI.IsEnemy(humanoid, player));
 		}
 
 		/// <summary>
@@ -341,6 +341,25 @@ namespace VikingVillages
 		/// <param name="sender">The client that sent it</param>
 		/// <param name="playerId">The player's ZDO</param>
 		private void RPC_Talk(long sender, ZDOID playerId)
+		{
+			// What it says is picked for it, so an NPC viking only says what NPC vikings say (see VikingSpeech.Says)
+			Character speaker = VikingSpeech.Speaker;
+			VikingSpeech.Speaker = humanoid;
+			try
+			{
+				AnswerTalk(playerId);
+			}
+			finally
+			{
+				VikingSpeech.Speaker = speaker;
+			}
+		}
+
+		/// <summary>
+		/// Answers a player talking to the viking (see RPC_Talk)
+		/// </summary>
+		/// <param name="playerId">The player's ZDO</param>
+		private void AnswerTalk(ZDOID playerId)
 		{
 			if (!nview.IsOwner() || Time.time < nextAnswer)
 			{

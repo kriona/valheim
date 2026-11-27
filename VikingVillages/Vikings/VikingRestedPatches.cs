@@ -10,7 +10,7 @@ namespace VikingVillages
 	/// </summary>
 	/// <remarks>
 	/// A creature heals in its AI's regeneration without reading its status effects, so the extra is added after the
-	/// game's own heal, in proportion to it (see PCVikingBody.AfterRegeneration)
+	/// game's own heal, in proportion to it (see PlayerLikeVikingBody.AfterRegeneration)
 	/// </remarks>
 	[HarmonyPatch(typeof(BaseAI), nameof(BaseAI.UpdateRegeneration))]
 	public static class VikingRegenPatch
@@ -22,7 +22,7 @@ namespace VikingVillages
 		/// <param name="__state">The creature's health, or -1 when it isn't a PC viking</param>
 		private static void Prefix(BaseAI __instance, out float __state)
 		{
-			__state = ((__instance.m_character is PCVikingBody viking && VikingCore.IsPCViking(viking)) ? viking.GetHealth() : -1f);
+			__state = ((__instance.m_character is PlayerLikeVikingBody viking && VikingCore.IsPlayerLikeViking(viking)) ? viking.GetHealth() : -1f);
 		}
 
 		/// <summary>
@@ -33,7 +33,7 @@ namespace VikingVillages
 		/// <param name="__state">The creature's health before, or -1 when it isn't a PC viking</param>
 		private static void Postfix(BaseAI __instance, float dt, float __state)
 		{
-			if (__state >= 0f && __instance.m_character is PCVikingBody viking)
+			if (__state >= 0f && __instance.m_character is PlayerLikeVikingBody viking)
 			{
 				viking.AfterRegeneration(dt, __state);
 			}

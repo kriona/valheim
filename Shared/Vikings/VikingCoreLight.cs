@@ -22,7 +22,7 @@ namespace Kriona.Vikings
 		/// </remarks>
 		public void UpdateTorch()
 		{
-			if (!IsPCOrDvergr(humanoid) || ai == null || GearHeld())
+			if (!IsLivingViking(humanoid) || ai == null || GearHeld())
 			{
 				return;
 			}
@@ -185,7 +185,7 @@ namespace Kriona.Vikings
 		/// </summary>
 		private void UpdateCircletDanger()
 		{
-			if (!IsCirclet(humanoid.m_helmetItem) || !IsPCOrDvergr(humanoid) || ai == null || GearHeld() || !InDanger())
+			if (!IsCirclet(humanoid.m_helmetItem) || !IsLivingViking(humanoid) || ai == null || GearHeld() || !InDanger())
 			{
 				return;
 			}
@@ -198,7 +198,7 @@ namespace Kriona.Vikings
 		/// </summary>
 		private void BurnTorch()
 		{
-			if (!IsPCOrDvergr(humanoid))
+			if (!IsLivingViking(humanoid))
 			{
 				return;
 			}

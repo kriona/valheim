@@ -98,7 +98,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Gives the PC viking its life in its village, or a dvergr viking its life with the dvergr
+		/// Gives the PC or NPC viking its life in its village, or a dvergr viking its life with the dvergr
 		/// </summary>
 		partial void AddParts()
 		{
@@ -114,14 +114,21 @@ namespace Kriona.Vikings
 		/// Rolls a new PC viking's look, health, skill, power and gear for its village's biome (see
 		/// VillageCooking.BiomeAt), wherever around the village it appears - or out in the wild with no village, the
 		/// biome where it stands worked out the same way - as a woman or a man to suit a name it was given before it was rolled (see VikingNames.PresetFirst), and names
-		/// it, with the looks its name comes with (see StyleAfterName) - or a dvergr viking's for the Mistlands (see
-		/// GenerateDvergr)
+		/// it, with the looks its name comes with (see StyleAfterName) - or an NPC viking's (see GenerateNPC), or a dvergr
+		/// viking's for the Mistlands (see GenerateDvergr)
 		/// </summary>
 		private partial void Generate()
 		{
 			if (IsDvergrViking(humanoid))
 			{
 				GenerateDvergr();
+				return;
+			}
+			// A PC or NPC viking just rolled up shares out its village's trinkets once it has loaded (see ShareTrinkets)
+			justRolled = true;
+			if (IsNPCViking(humanoid))
+			{
+				GenerateNPC();
 				return;
 			}
 			int index = VillageCooking.BiomeAt(VillageFarm());
@@ -210,15 +217,15 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Raises the PC viking's skills faster while it's rested, the way a player's do
+		/// Raises the PC or NPC viking's skills faster while it's rested, the way a player's do
 		/// </summary>
 		/// <param name="skill">The skill</param>
 		/// <param name="multiplier">How much it rises, changed here</param>
 		partial void ModifySkillGain(Skills.SkillType skill, ref float multiplier)
 		{
-			if (humanoid is PCVikingBody pc)
+			if (humanoid is PlayerLikeVikingBody body)
 			{
-				pc.Rest.ModifyRaiseSkill(skill, ref multiplier);
+				body.Rest.ModifyRaiseSkill(skill, ref multiplier);
 			}
 		}
 
@@ -235,15 +242,15 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Sets the PC viking's max health from its biome and what it has eaten (see VikingFood.MaxHealth) - a
+		/// Sets the PC or NPC viking's max health from its biome and what it has eaten (see VikingFood.MaxHealth) - a
 		/// dvergr viking's is its biome's and its stars', the same as a zombie viking of the world's
 		/// </summary>
 		/// <param name="health">Its max health, set here</param>
 		partial void PCMaxHealth(ref float health)
 		{
-			if (humanoid is PCVikingBody pc && IsPCViking(humanoid))
+			if (humanoid is PlayerLikeVikingBody body && IsPlayerLikeViking(humanoid))
 			{
-				health = pc.Food.MaxHealth();
+				health = body.Food.MaxHealth();
 			}
 		}
 

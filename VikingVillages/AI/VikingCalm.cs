@@ -59,7 +59,7 @@ namespace VikingVillages
 			}
 			ZNetView view = ai.m_nview;
 			Character character = ai.m_character;
-			if (view == null || !view.IsValid() || !view.IsOwner() || character == null || !VikingCore.IsPCViking(character))
+			if (view == null || !view.IsValid() || !view.IsOwner() || character == null || !VikingCore.IsPlayerLikeViking(character))
 			{
 				return;
 			}
@@ -85,7 +85,7 @@ namespace VikingVillages
 			}
 			next.Time = Time.time + CheckInterval;
 			Character character = ai.m_character;
-			if (character == null || character.IsDead() || !VikingCore.IsPCViking(character))
+			if (character == null || character.IsDead() || !VikingCore.IsPlayerLikeViking(character))
 			{
 				return;
 			}

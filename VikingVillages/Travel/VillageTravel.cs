@@ -138,13 +138,19 @@ namespace VikingVillages
 		private const float HoldTime = 30f;
 
 		/// <summary>
+		/// The prefabs of the vikings that take the road, looked for in turn
+		/// </summary>
+		private static readonly string[] SweptPrefabs = { VikingCore.PCPrefabName, VikingCore.NPCPrefabName };
+
+		/// <summary>
 		/// On the server, the record and the groups on the road, the look for vikings out of reach going on - how far it
-		/// has got and what it has found - when it next looks, and since when each viking on the road has been out of
-		/// every player's reach, in Time.time seconds
+		/// has got, which of SweptPrefabs it's looking for and what it has found - when it next looks, and since when each
+		/// viking on the road has been out of every player's reach, in Time.time seconds
 		/// </summary>
 		private static ZDO record;
 		private static List<TravelEntry> queue = new List<TravelEntry>();
 		private static int sweepIndex = -1;
+		private static int sweepPrefab;
 		private static readonly List<ZDO> sweepFound = new List<ZDO>();
 		private static float nextSweep;
 		private static readonly Dictionary<ZDOID, float> outSince = new Dictionary<ZDOID, float>();
@@ -610,8 +616,9 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Looks through the world for PC vikings a few batches of sectors at a time, and once it has looked through
-		/// all of them, takes the groups out of every player's reach off the road and hands over the groups that are due
+		/// Looks through the world for PC vikings a few batches of sectors at a time, then for NPC vikings the same way,
+		/// and once it has looked through all of them, takes the groups out of every player's reach off the road and hands
+		/// over the groups that are due
 		/// </summary>
 		private static void UpdateSweep()
 		{
@@ -622,12 +629,20 @@ namespace VikingVillages
 					return;
 				}
 				sweepIndex = 0;
+				sweepPrefab = 0;
 				sweepFound.Clear();
 			}
 			for (int i = 0; i < SweepCalls; i++)
 			{
-				if (ZDOMan.instance.GetAllZDOsWithPrefabIterative(VikingCore.PCPrefabName, sweepFound, ref sweepIndex))
+				if (ZDOMan.instance.GetAllZDOsWithPrefabIterative(SweptPrefabs[sweepPrefab], sweepFound, ref sweepIndex))
 				{
+					// Each prefab's ZDOs are looked through in turn, the next starting from the first sector again
+					if (sweepPrefab < SweptPrefabs.Length - 1)
+					{
+						sweepPrefab++;
+						sweepIndex = 0;
+						return;
+					}
 					sweepIndex = -1;
 					nextSweep = Time.time + SweepInterval;
 					List<ZDO> travelling = sweepFound.FindAll(OnRoad);
@@ -862,7 +877,9 @@ namespace VikingVillages
 				{
 					spot.y = ZoneSystem.instance.GetGroundHeight(spot);
 				}
-				GameObject instance = Object.Instantiate(prefab, spot, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
+				// Each comes out the kind of viking it went in as
+				GameObject own = ZNetScene.instance.GetPrefab(VillageDeparted.PrefabOf(snapshot));
+				GameObject instance = Object.Instantiate(own ?? prefab, spot, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
 				ZDO zdo = instance.GetComponent<ZNetView>().GetZDO();
 				VillageDeparted.ApplySnapshot(snapshot, zdo);
 				SetOut(zdo, answer, group, party);

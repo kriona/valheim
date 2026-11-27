@@ -43,7 +43,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The viking whose rest this is
 		/// </summary>
-		private readonly PCVikingBody viking;
+		private readonly PlayerLikeVikingBody viking;
 
 		/// <summary>
 		/// Since when the viking has rested on this client without a break and when it was last seen resting, in
@@ -56,7 +56,7 @@ namespace VikingVillages
 		/// Starts a PC viking's rest
 		/// </summary>
 		/// <param name="viking">The viking</param>
-		public VikingRested(PCVikingBody viking)
+		public VikingRested(PlayerLikeVikingBody viking)
 		{
 			this.viking = viking;
 		}

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 namespace VikingVillages.Tests
 {
 	/// <summary>
-	/// Tests when a PC viking's gear changes start and are done, how much its rest changes what the game heals it
+	/// Tests when a living viking's gear changes start and are done, how much its rest changes what the game heals it
 	/// by, how much a fall hurts it, how its weight shows and whose name makes it immune to frost
 	/// </summary>
-	public class PCVikingBodyRulesTests
+	public class VikingBodyRulesTests
 	{
 		/// <summary>
 		/// Queues a change that puts on a piece a player didn't pick, which the viking didn't find
@@ -16,9 +16,9 @@ namespace VikingVillages.Tests
 		/// <param name="type">The piece's item type</param>
 		/// <param name="duration">The piece's equip time, in seconds</param>
 		/// <returns>The change the piece is part of</returns>
-		private static PCVikingBody.GearChange PutOn(List<PCVikingBody.GearChange> changes, float now, ItemDrop.ItemData.ItemType type, float duration)
+		private static PlayerLikeVikingBody.GearChange PutOn(List<PlayerLikeVikingBody.GearChange> changes, float now, ItemDrop.ItemData.ItemType type, float duration)
 		{
-			return(PCVikingBodyRules.QueueChange(changes, now, type, duration, true, false, false));
+			return(VikingBodyRules.QueueChange(changes, now, type, duration, true, false, false));
 		}
 
 		/// <summary>
@@ -37,7 +37,7 @@ namespace VikingVillages.Tests
 		[InlineData(null, false)]
 		public void ElsaIsFrostImmune(string name, bool expected)
 		{
-			Assert.Equal(expected, PCVikingBodyRules.FrostImmune(name));
+			Assert.Equal(expected, VikingBodyRules.FrostImmune(name));
 			Assert.Equal(expected, VikingNames.IsElsa(name));
 		}
 
@@ -65,8 +65,8 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void StartsNowWithNothingQueued()
 		{
-			List<PCVikingBody.GearChange> changes = new List<PCVikingBody.GearChange>();
-			PCVikingBody.GearChange change = PutOn(changes, 10f, ItemDrop.ItemData.ItemType.Helmet, 1.5f);
+			List<PlayerLikeVikingBody.GearChange> changes = new List<PlayerLikeVikingBody.GearChange>();
+			PlayerLikeVikingBody.GearChange change = PutOn(changes, 10f, ItemDrop.ItemData.ItemType.Helmet, 1.5f);
 			Assert.Single(changes);
 			Assert.Same(changes[0], change);
 			Assert.False(change.Paired);
@@ -81,9 +81,9 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void StartsWhenTheLastChangeIsDone()
 		{
-			List<PCVikingBody.GearChange> changes = new List<PCVikingBody.GearChange>();
+			List<PlayerLikeVikingBody.GearChange> changes = new List<PlayerLikeVikingBody.GearChange>();
 			PutOn(changes, 10f, ItemDrop.ItemData.ItemType.Helmet, 2f);
-			PCVikingBody.GearChange second = PutOn(changes, 10.5f, ItemDrop.ItemData.ItemType.Chest, 3f);
+			PlayerLikeVikingBody.GearChange second = PutOn(changes, 10.5f, ItemDrop.ItemData.ItemType.Chest, 3f);
 			Assert.Equal(2, changes.Count);
 			Assert.Equal(12f, second.Start, 3);
 			Assert.Equal(15f, second.DoneAt, 3);
@@ -96,9 +96,9 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void JoinsAShieldToTheWeaponBeforeIt()
 		{
-			List<PCVikingBody.GearChange> changes = new List<PCVikingBody.GearChange>();
-			PCVikingBody.GearChange weapon = PutOn(changes, 5f, ItemDrop.ItemData.ItemType.OneHandedWeapon, 1f);
-			PCVikingBody.GearChange shield = PutOn(changes, 5.2f, ItemDrop.ItemData.ItemType.Shield, 2.5f);
+			List<PlayerLikeVikingBody.GearChange> changes = new List<PlayerLikeVikingBody.GearChange>();
+			PlayerLikeVikingBody.GearChange weapon = PutOn(changes, 5f, ItemDrop.ItemData.ItemType.OneHandedWeapon, 1f);
+			PlayerLikeVikingBody.GearChange shield = PutOn(changes, 5.2f, ItemDrop.ItemData.ItemType.Shield, 2.5f);
 			Assert.Single(changes);
 			Assert.Same(weapon, shield);
 			Assert.True(weapon.Paired);
@@ -112,8 +112,8 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void KeepsTheSlowerTimeWhenTheFasterJoins()
 		{
-			List<PCVikingBody.GearChange> changes = new List<PCVikingBody.GearChange>();
-			PCVikingBody.GearChange shield = PutOn(changes, 5f, ItemDrop.ItemData.ItemType.Shield, 2.5f);
+			List<PlayerLikeVikingBody.GearChange> changes = new List<PlayerLikeVikingBody.GearChange>();
+			PlayerLikeVikingBody.GearChange shield = PutOn(changes, 5f, ItemDrop.ItemData.ItemType.Shield, 2.5f);
 			PutOn(changes, 5f, ItemDrop.ItemData.ItemType.OneHandedWeapon, 1f);
 			Assert.Single(changes);
 			Assert.Equal(7.5f, shield.DoneAt, 3);
@@ -125,10 +125,10 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void QueuesAThirdHandPieceSeparately()
 		{
-			List<PCVikingBody.GearChange> changes = new List<PCVikingBody.GearChange>();
+			List<PlayerLikeVikingBody.GearChange> changes = new List<PlayerLikeVikingBody.GearChange>();
 			PutOn(changes, 0f, ItemDrop.ItemData.ItemType.OneHandedWeapon, 1f);
 			PutOn(changes, 0f, ItemDrop.ItemData.ItemType.Shield, 2f);
-			PCVikingBody.GearChange third = PutOn(changes, 0f, ItemDrop.ItemData.ItemType.OneHandedWeapon, 1f);
+			PlayerLikeVikingBody.GearChange third = PutOn(changes, 0f, ItemDrop.ItemData.ItemType.OneHandedWeapon, 1f);
 			Assert.Equal(2, changes.Count);
 			Assert.False(third.Paired);
 			Assert.Equal(2f, third.Start, 3);
@@ -148,9 +148,9 @@ namespace VikingVillages.Tests
 		[InlineData(true, false, true)]
 		public void QueuesDifferentChangesSeparately(bool putOn, bool chosen, bool found)
 		{
-			List<PCVikingBody.GearChange> changes = new List<PCVikingBody.GearChange>();
+			List<PlayerLikeVikingBody.GearChange> changes = new List<PlayerLikeVikingBody.GearChange>();
 			PutOn(changes, 0f, ItemDrop.ItemData.ItemType.OneHandedWeapon, 1f);
-			PCVikingBody.GearChange shield = PCVikingBodyRules.QueueChange(changes, 0f, ItemDrop.ItemData.ItemType.Shield, 2f, putOn, chosen, found);
+			PlayerLikeVikingBody.GearChange shield = VikingBodyRules.QueueChange(changes, 0f, ItemDrop.ItemData.ItemType.Shield, 2f, putOn, chosen, found);
 			Assert.Equal(2, changes.Count);
 			Assert.False(changes[0].Paired);
 			Assert.Equal(1f, shield.Start, 3);
@@ -169,11 +169,11 @@ namespace VikingVillages.Tests
 		[InlineData(ItemDrop.ItemData.ItemType.Helmet, ItemDrop.ItemData.ItemType.Shield)]
 		public void QueuesOtherPiecesSeparately(ItemDrop.ItemData.ItemType first, ItemDrop.ItemData.ItemType second)
 		{
-			List<PCVikingBody.GearChange> changes = new List<PCVikingBody.GearChange>();
+			List<PlayerLikeVikingBody.GearChange> changes = new List<PlayerLikeVikingBody.GearChange>();
 			PutOn(changes, 0f, first, 1f);
 			PutOn(changes, 0f, second, 1f);
 			Assert.Equal(2, changes.Count);
-			Assert.False(PCVikingBodyRules.HandPair(first, second));
+			Assert.False(VikingBodyRules.HandPair(first, second));
 		}
 
 		/// <summary>
@@ -182,8 +182,8 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void PairsAWeaponAndShieldEitherWay()
 		{
-			Assert.True(PCVikingBodyRules.HandPair(ItemDrop.ItemData.ItemType.OneHandedWeapon, ItemDrop.ItemData.ItemType.Shield));
-			Assert.True(PCVikingBodyRules.HandPair(ItemDrop.ItemData.ItemType.Shield, ItemDrop.ItemData.ItemType.OneHandedWeapon));
+			Assert.True(VikingBodyRules.HandPair(ItemDrop.ItemData.ItemType.OneHandedWeapon, ItemDrop.ItemData.ItemType.Shield));
+			Assert.True(VikingBodyRules.HandPair(ItemDrop.ItemData.ItemType.Shield, ItemDrop.ItemData.ItemType.OneHandedWeapon));
 		}
 
 		/// <summary>
@@ -192,10 +192,10 @@ namespace VikingVillages.Tests
 		[Fact]
 		public void CountsANegativeEquipTimeAsNone()
 		{
-			List<PCVikingBody.GearChange> changes = new List<PCVikingBody.GearChange>();
-			PCVikingBody.GearChange helmet = PutOn(changes, 10f, ItemDrop.ItemData.ItemType.Helmet, -1f);
+			List<PlayerLikeVikingBody.GearChange> changes = new List<PlayerLikeVikingBody.GearChange>();
+			PlayerLikeVikingBody.GearChange helmet = PutOn(changes, 10f, ItemDrop.ItemData.ItemType.Helmet, -1f);
 			Assert.Equal(10f, helmet.DoneAt, 3);
-			PCVikingBody.GearChange weapon = PutOn(changes, 10f, ItemDrop.ItemData.ItemType.OneHandedWeapon, 1f);
+			PlayerLikeVikingBody.GearChange weapon = PutOn(changes, 10f, ItemDrop.ItemData.ItemType.OneHandedWeapon, 1f);
 			PutOn(changes, 10f, ItemDrop.ItemData.ItemType.Shield, -3f);
 			Assert.Equal(10f, weapon.Start, 3);
 			Assert.Equal(11f, weapon.DoneAt, 3);
@@ -218,7 +218,7 @@ namespace VikingVillages.Tests
 		[InlineData(-4f, 0.5f, 0f)]
 		public void ChangesHealingByRest(float healed, float multiplier, float expected)
 		{
-			Assert.Equal(expected, PCVikingBodyRules.RegenDelta(healed, multiplier), 3);
+			Assert.Equal(expected, VikingBodyRules.RegenDelta(healed, multiplier), 3);
 		}
 
 		/// <summary>
@@ -236,7 +236,7 @@ namespace VikingVillages.Tests
 		[InlineData(301, false, "301/300")]
 		public void ShowsWeight(int weight, bool flash, string expected)
 		{
-			Assert.Equal(expected, PCVikingBodyRules.FormatWeight(weight, 300, flash));
+			Assert.Equal(expected, VikingBodyRules.FormatWeight(weight, 300, flash));
 		}
 
 		/// <summary>
@@ -255,7 +255,7 @@ namespace VikingVillages.Tests
 		[InlineData(50f, 100f)]
 		public void HurtsByFallHeight(float height, float expected)
 		{
-			Assert.Equal(expected, PCVikingBodyRules.FallDamage(height), 3);
+			Assert.Equal(expected, VikingBodyRules.FallDamage(height), 3);
 		}
 	}
 }

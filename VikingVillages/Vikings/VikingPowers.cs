@@ -131,7 +131,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The viking whose powers these are, and its looks, gear and skills
 		/// </summary>
-		private readonly PCVikingBody viking;
+		private readonly LivingVikingBody viking;
 		private VikingCore core;
 
 		/// <summary>
@@ -145,7 +145,7 @@ namespace VikingVillages
 		/// Starts a PC viking's powers
 		/// </summary>
 		/// <param name="viking">The viking</param>
-		public VikingPowers(PCVikingBody viking)
+		public VikingPowers(LivingVikingBody viking)
 		{
 			this.viking = viking;
 		}
@@ -217,14 +217,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets the powers the viking knows - those it knows from the start (see BiomeMask), and any it has learned
+		/// Gets the powers the viking knows - those it knows from the start (see BiomeMask), and any it has learned. An
+		/// NPC viking knows none, though it gains by a power another uses beside it
 		/// </summary>
 		/// <returns>The powers, one bit for each in the order of Names</returns>
 		public int Known()
 		{
 			ZDO zdo = Zdo();
 			VikingCore own = Core();
-			if (zdo == null || own == null || own.GetData() == null)
+			if (zdo == null || own == null || own.GetData() == null || VikingCore.IsNPCViking(viking))
 			{
 				return(0);
 			}
@@ -248,7 +249,7 @@ namespace VikingVillages
 		/// <returns>The powers, one bit for each, or none for a character that isn't a PC viking</returns>
 		public static int KnownBy(Character other)
 		{
-			return((other is PCVikingBody body && body.Powers != null) ? body.Powers.Known() : 0);
+			return((other is LivingVikingBody body && body.Powers != null) ? body.Powers.Known() : 0);
 		}
 
 		/// <summary>
@@ -266,7 +267,7 @@ namespace VikingVillages
 			}
 			int bit = 1 << power;
 			int learned = zdo.GetInt(LearnedKey);
-			if ((learned & bit) == 0 && (Known() & bit) == 0)
+			if ((learned & bit) == 0 && (Known() & bit) == 0 && !VikingCore.IsNPCViking(viking))
 			{
 				zdo.Set(LearnedKey, learned | bit);
 				TestLog.Count("Powers", "learned");
@@ -495,7 +496,7 @@ namespace VikingVillages
 			long now = NetTime.Now();
 			foreach (Character other in Character.GetAllCharacters())
 			{
-				if (other == viking || !(other is PCVikingBody) || other.IsDead() || other.m_nview == null || !other.m_nview.IsValid())
+				if (other == viking || !(other is LivingVikingBody) || other.IsDead() || other.m_nview == null || !other.m_nview.IsValid())
 				{
 					continue;
 				}
@@ -518,7 +519,7 @@ namespace VikingVillages
 			int count = 0;
 			foreach (Character other in Character.GetAllCharacters())
 			{
-				if (other != viking && other is PCVikingBody && !other.IsDead() && Vector3.Distance(other.transform.position, viking.transform.position) <= Reach && !Under(other, power))
+				if (other != viking && other is LivingVikingBody && !other.IsDead() && Vector3.Distance(other.transform.position, viking.transform.position) <= Reach && !Under(other, power))
 				{
 					count++;
 				}
@@ -861,7 +862,8 @@ namespace VikingVillages
 			float bestDistance = float.MaxValue;
 			foreach (Character other in vikings)
 			{
-				if (other == viking || VikingSpeech.Asleep(other) || !village.Contains(other.transform.position) || Taught(other, vikings))
+				// An NPC viking never learns a power, so there's no teaching it one
+				if (other == viking || VikingCore.IsNPCViking(other) || VikingSpeech.Asleep(other) || !village.Contains(other.transform.position) || Taught(other, vikings))
 				{
 					continue;
 				}

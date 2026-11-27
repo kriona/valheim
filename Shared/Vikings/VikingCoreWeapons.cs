@@ -296,7 +296,7 @@ namespace Kriona.Vikings
 			ItemDrop.ItemData melee = BestWeapon(true, resistances);
 			ItemDrop.ItemData ranged = BestRanged(resistances);
 			HitData.DamageTypes fists = new HitData.DamageTypes();
-			fists.m_blunt = ((GetData() != null) ? VikingGear.Get(BiomeIndex()).Unarmed : 0f);
+			fists.m_blunt = Punch();
 			float unarmed = SkillScaled(CombatDamage(Resisted(fists, resistances)), SkillLevel(Skills.SkillType.Unarmed));
 			float? meleeDamage = ((melee != null) ? Hurt(melee, resistances) : (float?)null);
 			float? rangedDamage = ((ranged != null) ? Hurt(ranged, resistances) : (float?)null);
@@ -404,13 +404,24 @@ namespace Kriona.Vikings
 		/// <summary>
 		/// Checks whether the viking can fight with an item - a weapon of its own, not loot it carries or a tool it holds
 		/// for show, other than a torch that isn't broken, has ammo when it takes ammo, doesn't need eitr, which the viking has none of, and
-		/// deals damage to more than tamed creatures. A PC viking keeps a pickaxe for mining and never fights with one
+		/// deals damage to more than tamed creatures. A PC viking keeps a pickaxe for mining and never fights with one,
+		/// and an NPC viking only ever fights with a knife, or its fists (see IsKnife)
 		/// </summary>
 		/// <param name="item">The item</param>
 		/// <returns>True when it can</returns>
 		private bool CanUse(ItemDrop.ItemData item)
 		{
 			return(CanUse(item, true));
+		}
+
+		/// <summary>
+		/// Checks whether an item is a knife - a weapon of the Knives skill, the only kind an NPC viking takes up
+		/// </summary>
+		/// <param name="item">The item, or null</param>
+		/// <returns>True when it is</returns>
+		public static bool IsKnife(ItemDrop.ItemData item)
+		{
+			return(item != null && item.IsWeapon() && item.m_shared.m_skillType == Skills.SkillType.Knives);
 		}
 
 		/// <summary>
@@ -431,7 +442,7 @@ namespace Kriona.Vikings
 		/// <returns>True when it can</returns>
 		private bool CanUse(ItemDrop.ItemData item, bool needAmmo)
 		{
-			if (!item.IsWeapon() || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch || VikingItems.IsCarried(item) || VikingItems.IsProp(item))
+			if (!item.IsWeapon() || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch || VikingItems.IsCarried(item) || VikingItems.IsProp(item) || (IsNPCViking(humanoid) && !IsKnife(item)))
 			{
 				return(false);
 			}
@@ -685,9 +696,9 @@ namespace Kriona.Vikings
 			if (melee)
 			{
 				shared.m_aiAttackRange = MeleeReach(attack);
-				// A PC viking swings as fast as a player does - again as soon as its last swing ends, which carries
-				// on the weapon's combo - rather than waiting out the AI's interval between attacks
-				if (IsPCViking(humanoid))
+				// A PC or NPC viking swings as fast as a player does - again as soon as its last swing ends, which
+				// carries on the weapon's combo - rather than waiting out the AI's interval between attacks
+				if (IsPlayerLikeViking(humanoid))
 				{
 					shared.m_aiAttackInterval = 0f;
 				}

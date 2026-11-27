@@ -77,7 +77,7 @@ namespace VikingVillages
 			if (vikingRow != null && viking != null)
 			{
 				shown.Clear();
-				if (viking is PCVikingBody pc)
+				if (viking is PlayerLikeVikingBody pc)
 				{
 					Add(VikingRested.RestingEffect(), pc.Rest.RestingLeft());
 					Add(VikingRested.RestedEffect(), pc.Rest.RestedLeft());

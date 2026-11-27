@@ -109,7 +109,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks what a viking says to a player it knows who talks to it with a training weapon in hand, now and then
+		/// Picks what a viking says to a player it knows who talks to it with a training weapon in hand, now and then -
+		/// leaving out what only PC vikings say for an NPC viking (see VikingSpeech.Says)
 		/// </summary>
 		/// <param name="player">The player</param>
 		/// <returns>The line, or null when it says something else</returns>
@@ -119,7 +120,12 @@ namespace VikingVillages
 			{
 				return(null);
 			}
-			return(string.Format(ChatLines[Random.Range(0, ChatLines.Length)], player.GetPlayerName(), SkillOf(player)));
+			string[] lines = System.Array.FindAll(ChatLines, (string line) => VikingSpeech.Says(line));
+			if (lines.Length == 0)
+			{
+				return(null);
+			}
+			return(string.Format(lines[Random.Range(0, lines.Length)], player.GetPlayerName(), SkillOf(player)));
 		}
 
 		/// <summary>

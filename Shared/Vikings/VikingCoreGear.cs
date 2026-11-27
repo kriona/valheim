@@ -80,8 +80,8 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Has a PC viking sheath its weapon and shield on its back while there's no danger, and draw them again as
-		/// soon as there is - a torch or a hammer it holds stays in its hands
+		/// Has a PC or NPC viking sheath its weapon and shield on its back while there's no danger, and draw them again
+		/// as soon as there is - a torch or a hammer it holds stays in its hands
 		/// </summary>
 		/// <remarks>
 		/// The weapon and shield shown on its back are the ones it would draw, noted as the hands' hidden items the way
@@ -92,7 +92,7 @@ namespace Kriona.Vikings
 		/// put on</param>
 		public void UpdateSheath(bool force = false)
 		{
-			if (ai == null || !IsPCViking(humanoid) || GetData() == null || humanoid.IsDead() || (GearHeld() && !force))
+			if (ai == null || !IsPlayerLikeViking(humanoid) || GetData() == null || humanoid.IsDead() || (GearHeld() && !force))
 			{
 				return;
 			}
@@ -227,22 +227,33 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Has a PC viking put on a piece of gear a player picked for it, whether or not it's better than its own -
-		/// armor or a utility item where it goes, ammo as what it shoots, and a shield or weapon in its hands the way a
-		/// player wields one (see Draw), even while it leaves its gear as it is. Left to itself, it later switches to
-		/// anything better it has (see VillageLife.UpdatePutOn)
+		/// Has a PC or NPC viking put on a piece of gear a player picked for it, whether or not it's better than its own
+		/// - armor or a utility item where it goes, ammo as what it shoots, and a shield or weapon in its hands the way a
+		/// player wields one (see Draw), even while it leaves its gear as it is. An NPC viking only takes up a knife of
+		/// these, never another weapon, a shield or ammo. Left to itself, it later switches to anything better it has
+		/// (see VillageLife.UpdatePutOn)
 		/// </summary>
 		/// <param name="item">The piece, in its inventory</param>
 		/// <returns>False when it isn't something the viking can put on</returns>
 		public bool Wear(ItemDrop.ItemData item)
 		{
-			if (item == null || !IsPCViking(humanoid) || GetData() == null || !humanoid.GetInventory().ContainsItem(item) || VikingItems.IsProp(item))
+			if (item == null || !IsPlayerLikeViking(humanoid) || GetData() == null || !humanoid.GetInventory().ContainsItem(item) || VikingItems.IsProp(item))
 			{
 				return(false);
 			}
 			ItemDrop.ItemData.ItemType type = item.m_shared.m_itemType;
 			WornIn(type, out bool armor);
-			if (armor || type == ItemDrop.ItemData.ItemType.Utility || type == ItemDrop.ItemData.ItemType.Ammo)
+			if (armor || type == ItemDrop.ItemData.ItemType.Utility)
+			{
+				humanoid.EquipItem(item, true);
+				SaveInventory();
+				return(true);
+			}
+			if (IsNPCViking(humanoid) && !IsKnife(item))
+			{
+				return(false);
+			}
+			if (type == ItemDrop.ItemData.ItemType.Ammo)
 			{
 				humanoid.EquipItem(item, true);
 				SaveInventory();
@@ -338,13 +349,15 @@ namespace Kriona.Vikings
 		/// armor for a slot it has nothing in or more armor than what it wears there, a shield that blocks better, a
 		/// utility item for an empty utility slot, or a weapon better than its best of the same kind. In a biome whose
 		/// weather freezes, armor that resists frost comes first while nothing else it wears does, whatever its armor. A
-		/// dverger circlet it would take up only when it has none, for its light
+		/// dverger circlet it would take up only when it has none, for its light. An NPC viking keeps to the clothes it
+		/// was rolled with (see Viking Villages' NPCVikings.Outfit), taking up only a circlet, a utility item like a
+		/// strength belt, or a better knife than its own
 		/// </summary>
 		/// <param name="item">The item, in its inventory or not</param>
 		/// <returns>True when it would</returns>
 		public bool WouldTakeUp(ItemDrop.ItemData item)
 		{
-			if (item == null || !IsPCViking(humanoid) || GetData() == null || humanoid.IsDead())
+			if (item == null || !IsPlayerLikeViking(humanoid) || GetData() == null || humanoid.IsDead())
 			{
 				return(false);
 			}
@@ -358,6 +371,10 @@ namespace Kriona.Vikings
 				return(FindCirclet(item) == null);
 			}
 			ItemDrop.ItemData.ItemType type = item.m_shared.m_itemType;
+			if (IsNPCViking(humanoid) && type != ItemDrop.ItemData.ItemType.Utility && !IsKnife(item))
+			{
+				return(false);
+			}
 			ItemDrop.ItemData worn = WornIn(type, out bool armor, item);
 			if (armor)
 			{

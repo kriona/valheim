@@ -740,7 +740,7 @@ namespace VikingVillages
 			foreach (ZDO zdo in zdos)
 			{
 				Vector3 village = zdo.GetVec3(Village.VillageKey, Vector3.zero);
-				if (zdo.GetPrefab() != VikingCore.PCPrefabHash || village == Vector3.zero || Utils.DistanceXZ(village, farm) > GeneratorReach)
+				if (!VikingCore.IsPlayerLikePrefab(zdo.GetPrefab()) || village == Vector3.zero || Utils.DistanceXZ(village, farm) > GeneratorReach)
 				{
 					continue;
 				}
@@ -757,7 +757,7 @@ namespace VikingVillages
 				}
 				removed++;
 			}
-			Plugin.Log.LogWarning("Found no open ground for a bonfire near " + farm.ToString("F0") + ", so the farm stays abandoned - took away its " + removed + " PC vikings");
+			Plugin.Log.LogWarning("Found no open ground for a bonfire near " + farm.ToString("F0") + ", so the farm stays abandoned - took away its " + removed + " vikings");
 		}
 
 		/// <summary>

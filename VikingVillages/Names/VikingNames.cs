@@ -402,7 +402,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// The names whose vikings take after Frozen's sisters - an Elsa immune to frost (see PCVikingBody.FrostImmune)
+		/// The names whose vikings take after Frozen's sisters - an Elsa immune to frost (see LivingVikingBody.FrostImmune)
 		/// and rolled with a long blond braid, an Anna rolled with red twin braids (see VikingCore.StyleAfterName)
 		/// </summary>
 		internal const string ElsaName = "Elsa";
@@ -582,7 +582,7 @@ namespace VikingVillages
 			}
 			foreach (ZDO other in zdos)
 			{
-				if (other == viking || other.GetPrefab() != VikingCore.PCPrefabHash || Utils.DistanceXZ(other.GetVec3(Village.VillageKey, UnityEngine.Vector3.zero), farm) > FarmMatch)
+				if (other == viking || !VikingCore.IsPlayerLikePrefab(other.GetPrefab()) || Utils.DistanceXZ(other.GetVec3(Village.VillageKey, UnityEngine.Vector3.zero), farm) > FarmMatch)
 				{
 					continue;
 				}

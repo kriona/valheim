@@ -16,7 +16,7 @@ namespace VikingVillages
 		/// <param name="nameHash">The status effect's name hash</param>
 		private static void Postfix(SEMan __instance, int nameHash)
 		{
-			if (__instance.m_character is PCVikingBody viking && viking.Powers != null)
+			if (__instance.m_character is LivingVikingBody viking && viking.Powers != null)
 			{
 				viking.Powers.Received(nameHash);
 			}

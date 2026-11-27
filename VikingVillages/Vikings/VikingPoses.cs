@@ -661,7 +661,7 @@ namespace VikingVillages
 		/// <returns>Its poses, or null</returns>
 		private static VikingPoses Owned(Character viking)
 		{
-			if (viking == null || !VikingCore.IsPCOrDvergr(viking) || !viking.m_nview.IsOwner() || viking.IsDead())
+			if (viking == null || !VikingCore.IsLivingViking(viking) || !viking.m_nview.IsOwner() || viking.IsDead())
 			{
 				return(null);
 			}

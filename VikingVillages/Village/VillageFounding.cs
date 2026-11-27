@@ -397,8 +397,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a ZDO is a PC viking of a village that isn't already leaving one, to send away as the village
-		/// is disbanded
+		/// Checks whether a ZDO is a PC or NPC viking of a village that isn't already leaving one, to send away as the
+		/// village is disbanded
 		/// </summary>
 		/// <param name="prefab">The ZDO's prefab's hash</param>
 		/// <param name="farm">The village it notes, or zero for none</param>
@@ -407,7 +407,7 @@ namespace VikingVillages
 		/// <returns>True when it is - noting a village within FarmMatch of the village's across the ground</returns>
 		internal static bool BelongsTo(int prefab, Vector3 farm, Vector3 villageFarm, bool leaving)
 		{
-			return(prefab == VikingCore.PCPrefabHash && farm != Vector3.zero && Utils.DistanceXZ(farm, villageFarm) <= FarmMatch && !leaving);
+			return(VikingCore.IsPlayerLikePrefab(prefab) && farm != Vector3.zero && Utils.DistanceXZ(farm, villageFarm) <= FarmMatch && !leaving);
 		}
 
 		/// <summary>
@@ -477,7 +477,7 @@ namespace VikingVillages
 			int turned = 0;
 			foreach (ZDO zdo in zdos)
 			{
-				if (zdo.GetPrefab() != VikingCore.PCPrefabHash || !zdo.GetBool(LeavingKey) || VillageDeparted.LeftFire(zdo) != fire)
+				if (!VikingCore.IsPlayerLikePrefab(zdo.GetPrefab()) || !zdo.GetBool(LeavingKey) || VillageDeparted.LeftFire(zdo) != fire)
 				{
 					continue;
 				}

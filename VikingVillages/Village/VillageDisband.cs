@@ -280,7 +280,7 @@ namespace VikingVillages
 			List<ZDO> zdos = new List<ZDO>();
 			VillageRespawn.ZdosNear(fire.GetPosition(), GroupReach, zdos);
 			Vector3 position = fire.GetPosition();
-			return(zdos.FindAll((ZDO zdo) => zdo.GetPrefab() == VikingCore.PCPrefabHash && zdo.GetBool(VillageFounding.LeavingKey) && !VillageTravel.OnRoad(zdo) && Utils.DistanceXZ(VillageDeparted.FirePosition(zdo), position) <= 1f));
+			return(zdos.FindAll((ZDO zdo) => VikingCore.IsPlayerLikePrefab(zdo.GetPrefab()) && zdo.GetBool(VillageFounding.LeavingKey) && !VillageTravel.OnRoad(zdo) && Utils.DistanceXZ(VillageDeparted.FirePosition(zdo), position) <= 1f));
 		}
 
 		/// <summary>

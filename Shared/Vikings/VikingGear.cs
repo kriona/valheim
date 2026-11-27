@@ -421,6 +421,16 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
+		/// Gives a viking a new piece of gear, fully repaired, marked as worn so it's put on as the viking loads
+		/// </summary>
+		/// <param name="inventory">Its inventory</param>
+		/// <param name="name">The piece's prefab name - nothing is given when the game has no such item</param>
+		public static void AddWorn(Inventory inventory, string name)
+		{
+			Wear(inventory, MakeItem(name, 1, 1), false);
+		}
+
+		/// <summary>
 		/// Rolls a viking of the world's armor, weapon, ammo and shield from its biome and the one before, by the chances
 		/// in the config, upgraded once for each of its stars when ZombieStarsUpgradeGear is on, with each piece marked as
 		/// worn. From the Mountains on it always wears a cape - its set's, or its biome's when its set has none or it

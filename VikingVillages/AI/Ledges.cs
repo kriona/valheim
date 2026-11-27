@@ -88,7 +88,7 @@ namespace VikingVillages
 		/// <param name="dir">The way it's moving</param>
 		/// <param name="way">The way it moves, or dir when it can't move safely</param>
 		/// <returns>False when every way would step off a ledge, so it stops</returns>
-		public static bool SafeWay(PCVikingBody viking, Vector3 dir, out Vector3 way)
+		public static bool SafeWay(LivingVikingBody viking, Vector3 dir, out Vector3 way)
 		{
 			way = dir;
 			Vector3 heading = new Vector3(dir.x, 0f, dir.z);
@@ -150,7 +150,7 @@ namespace VikingVillages
 		/// <param name="viking">The viking</param>
 		/// <param name="heading">The way it steps, flat on the ground and of length 1</param>
 		/// <returns>True when it would</returns>
-		private static bool StepsOff(PCVikingBody viking, Vector3 heading)
+		private static bool StepsOff(LivingVikingBody viking, Vector3 heading)
 		{
 			if (groundMask == 0)
 			{
@@ -184,7 +184,7 @@ namespace VikingVillages
 		/// <param name="viking">The viking</param>
 		/// <param name="landing">Where it would land, on the water's surface</param>
 		/// <returns>True when it's safe</returns>
-		private static bool SafeWater(PCVikingBody viking, Vector3 landing)
+		private static bool SafeWater(LivingVikingBody viking, Vector3 landing)
 		{
 			if (WorldGenerator.GetAshlandsOceanGradient(landing) >= 0f || VikingWeather.FreezingFor(viking))
 			{

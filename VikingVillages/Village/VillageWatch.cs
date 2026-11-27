@@ -421,10 +421,13 @@ namespace VikingVillages
 			}
 			bool changed = !tonight;
 			List<Character> vikings = village.Vikings();
+			// The watch is counted by every viking of the village, but only its PC vikings keep it - an NPC viking never
+			// takes up a weapon to stand guard
+			List<Character> guards = vikings.FindAll((Character viking) => !VikingCore.IsNPCViking(viking));
 			// At midnight each viking keeping watch is given one who hasn't kept it tonight to wake and hand it over to
 			if (tonight && zdo.GetInt(WatchShiftKey) != shift)
 			{
-				List<Character> fresh = vikings.FindAll((Character viking) => !watchers.Contains(viking.GetZDOID()) && !watched.Contains(viking.GetZDOID()));
+				List<Character> fresh = guards.FindAll((Character viking) => !watchers.Contains(viking.GetZDOID()) && !watched.Contains(viking.GetZDOID()));
 				reliefs.Clear();
 				foreach (ZDOID _ in watchers)
 				{
@@ -476,7 +479,7 @@ namespace VikingVillages
 				}
 			}
 			int wanted = (EnvMan.IsNight() ? 0 : WatchCount(vikings.Count));
-			List<Character> free = vikings.FindAll((Character viking) => !watchers.Contains(viking.GetZDOID()) && !watched.Contains(viking.GetZDOID()));
+			List<Character> free = guards.FindAll((Character viking) => !watchers.Contains(viking.GetZDOID()) && !watched.Contains(viking.GetZDOID()));
 			while (watchers.Count < wanted && free.Count > 0)
 			{
 				ZDOID added = TakeStrongest(free);

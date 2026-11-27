@@ -37,6 +37,11 @@ namespace VikingVillages
 			{
 				return(RaidJob());
 			}
+			// An NPC viking woken by danger stays up inside until it has passed, rather than going back to bed
+			if (Peaceful() && StaysUp())
+			{
+				return(StayUpJob());
+			}
 			// What an enemy it killed dropped, or the gear of one of its village it has just mourned, is picked up before
 			// it takes up anything else
 			if (PicksUpKillLoot())
@@ -96,13 +101,23 @@ namespace VikingVillages
 			Character boar = ((raining || OtherDoing(PettingKey)) ? null : FindBoar());
 			Container store = ((Time.time >= noWoodUntil && !OtherDoing(StockingKey)) ? FindStockChest() : null);
 			bool forage = (!OtherDoing(ForagingKey) && (FindHive() != null || FindForage() != null));
+			// A PC viking leaves stocking the chests with wood and foraging to an NPC viking with nothing better to do
+			if (store != null && LeavesToNPC("Stock"))
+			{
+				store = null;
+			}
+			if (forage && LeavesToNPC("Forage"))
+			{
+				forage = false;
+			}
 			// Any rain, the Swamp's drizzle too, keeps it from getting rested out by the fire, where it would only get wet
 			bool refresh = (!VikingWeather.RainsOn(transform.position) && !body.Rest.IsRested() && EnvMan.instance.GetDayFraction() < RefreshDayEnd && Time.time >= restAgainAt && village.GatherFires().Count > 0);
 			bool archer = false;
 			bool mayHunt = (!Wounded() && !OtherDoing(HuntingKey));
-			bool solo = (mayHunt && MayHunt(out archer) && (FindPrey(archer, null, false) != null || (archer && FindBird(null) != null)));
+			// An NPC viking never hunts wild prey, though it slaughters livestock with its knife
+			bool solo = (mayHunt && !Peaceful() && MayHunt(out archer) && (FindPrey(archer, null, false) != null || (archer && FindBird(null) != null)));
 			// From the Plains on, wild prey that isn't only for archers is hunted by a party (see HuntParty)
-			bool party = (mayHunt && CanLeadParty(null));
+			bool party = (mayHunt && !Peaceful() && CanLeadParty(null));
 			bool hunt = (solo || party);
 			float talk = ((partner != null) ? TalkWeight : 0f);
 			float pet = ((boar != null) ? PetWeight : 0f);
@@ -116,7 +131,7 @@ namespace VikingVillages
 			float hunting = (hunt ? HuntWeight * need * strong : 0f);
 			// Short of food with no wild prey about that drops any for the village's hunters, it slaughters one of the
 			// village's livestock, which its pen brings back
-			bool slaughter = (foodLow && mayHunt && !WildFoodNear() && FindPrey(HasBow(humanoid), null, true, false, true) != null);
+			bool slaughter = (foodLow && mayHunt && !WildFoodNear() && FindPrey(HasBow(humanoid), null, true, false, true) != null && !LeavesToNPC("Slaughter"));
 			float butcher = (slaughter ? HuntWeight * need : 0f);
 			float stroll = (raining ? 0f : StrollWeight);
 			float roll = Random.value * (talk + pet + stock + gather + rest + hunting + butcher + stroll + IdleWeight);
@@ -220,7 +235,8 @@ namespace VikingVillages
 			bool foodLow = FoodLow(village);
 			bool mayHunt = (foodLow && !Wounded() && !OtherDoing(HuntingKey));
 			bool archer = false;
-			bool preyNear = (mayHunt && MayHunt(out archer) && FindPrey(archer, null, false, false, true) != null);
+			// An NPC viking never hunts wild prey, so it only ever slaughters livestock for food
+			bool preyNear = (mayHunt && !Peaceful() && MayHunt(out archer) && FindPrey(archer, null, false, false, true) != null);
 			bool wildFood = (mayHunt && !preyNear && WildFoodNear());
 			bool livestock = (mayHunt && !preyNear && !wildFood && FindPrey(HasBow(humanoid), null, true, false, true) != null);
 			FoodWork work = PickFoodWork(foodLow, mayHunt, preyNear, wildFood, livestock);
@@ -228,7 +244,7 @@ namespace VikingVillages
 			{
 				return(new HuntJob(this, archer, null, false, null, true));
 			}
-			if (work == FoodWork.Slaughter)
+			if (work == FoodWork.Slaughter && !LeavesToNPC("Slaughter"))
 			{
 				return(new HuntJob(this, HasBow(humanoid), null, true));
 			}
@@ -307,29 +323,36 @@ namespace VikingVillages
 			// Loot comes ahead of cooking, so it doesn't lie about while the cooks are busy - done food on a station is
 			// still taken off before it burns, by a viking at loot work too (see Idle), and raw meat picked up as loot goes
 			// straight to a cooking station
+			// The village's chores are left to an NPC viking with nothing better to do (see NPCFirst) - but loot a PC
+			// viking already carries it puts away itself
+			bool carrying = (CarriedLoot() != null);
 			Job lootWork = FindLootWork(false);
+			if (!carrying)
+			{
+				lootWork = NPCFirst(lootWork, "Loot");
+			}
 			if (lootWork != null)
 			{
 				return(lootWork);
 			}
-			Job cook = FindCookWork();
+			Job cook = NPCFirst(FindCookWork(), "Cook");
 			if (cook != null)
 			{
 				return(cook);
 			}
 			// Then a meal at the cauldron, from what the chests hold
-			Job meal = FindMealWork();
+			Job meal = NPCFirst(FindMealWork(), "Meal");
 			if (meal != null)
 			{
 				return(meal);
 			}
-			bool carrying = (CarriedLoot() != null);
 			Container armory = (carrying ? null : FindUpgradeChest());
 			if (armory != null)
 			{
 				return(new UpgradeJob(this, armory));
 			}
-			Container quiver = (carrying ? null : FindArrowChest());
+			// An NPC viking has no bow to fill a quiver for
+			Container quiver = ((carrying || Peaceful()) ? null : FindArrowChest());
 			if (quiver != null)
 			{
 				return(new AmmoJob(this, quiver));
@@ -345,13 +368,17 @@ namespace VikingVillages
 			// the upkeep - and waits out a thunderstorm, while light rain doesn't put it off
 			if (!VikingWeather.Storming())
 			{
-				Job paths = FindPathWork();
+				Job paths = NPCFirst(FindPathWork(), "Paths");
 				if (paths != null)
 				{
 					return(paths);
 				}
 			}
 			List<WearNTear> damaged = VillageRecords.Damaged(village);
+			if (damaged.Count > 0 && LeavesToNPC("Repair"))
+			{
+				damaged.Clear();
+			}
 			damaged.Sort((WearNTear a, WearNTear b) => Vector3.Distance(a.transform.position, transform.position).CompareTo(Vector3.Distance(b.transform.position, transform.position)));
 			foreach (WearNTear piece in damaged)
 			{
@@ -362,8 +389,14 @@ namespace VikingVillages
 				}
 			}
 			// In the Deep North, heavy snow on a piece wears it down, so it's cleared off once it builds up
+			bool snowLeft = false;
 			foreach (WearNTear piece in VillageSnow.Snowy(village, transform.position))
 			{
+				if (!snowLeft && LeavesToNPC("Snow"))
+				{
+					break;
+				}
+				snowLeft = true;
 				ZNetView view = piece.m_nview;
 				if (!Warded(piece.transform.position) && !HammerAvoided(view.GetZDO().m_uid) && ClaimWork(view.GetZDO().m_uid))
 				{
@@ -373,12 +406,14 @@ namespace VikingVillages
 			// Then the deep snow on the village's ground, which slows whoever walks through it
 			if (VillageSnow.ClaimDeepSpot(village, transform.position, out Vector3 deep))
 			{
-				if (!Warded(deep))
+				if (!Warded(deep) && !LeavesToNPC("Snow"))
 				{
 					return(new SnowGroundJob(this, deep));
 				}
 				VillageSnow.ReleaseDeepSpot(village, deep, false);
 			}
+			// An NPC viking leaves every job that arms the village to the PC vikings
+			bool peaceful = Peaceful();
 			Job gear = FindGearWork();
 			if (gear != null)
 			{
@@ -386,7 +421,7 @@ namespace VikingVillages
 			}
 			// The village's fire is built back with nothing, so it doesn't wait on wood. A ward keeps the vikings from
 			// building in it, the same as it keeps out players it doesn't permit
-			if (village.FireMissing(out PieceRecord fireRecord) && !Warded(fireRecord.Position) && ClaimWork(RecordKey(fireRecord)))
+			if (village.FireMissing(out PieceRecord fireRecord) && !Warded(fireRecord.Position) && !LeavesToNPC("Fire") && ClaimWork(RecordKey(fireRecord)))
 			{
 				return(new RebuildJob(this, fireRecord, true));
 			}
@@ -394,35 +429,35 @@ namespace VikingVillages
 			foreach (Vector3 spot in VillageSeats.TakeDowns(village))
 			{
 				ZNetView log = (Warded(spot) ? null : VillageSeats.StandingLog(spot));
-				if (log != null && ClaimWork(log.GetZDO().m_uid))
+				if (log != null && !LeavesToNPC("Logs") && ClaimWork(log.GetZDO().m_uid))
 				{
 					return(new TakeDownJob(this, log));
 				}
 			}
-			Job cart = FindCartWork();
+			Job cart = NPCFirst(FindCartWork(), "Cart");
 			if (cart != null)
 			{
 				return(cart);
 			}
-			Job chest = FindChestWork();
+			Job chest = NPCFirst(FindChestWork(), "Chests");
 			if (chest != null)
 			{
 				return(chest);
 			}
-			Job lumber = FindLumberWork();
+			Job lumber = (peaceful ? null : FindLumberWork());
 			if (lumber != null)
 			{
 				return(lumber);
 			}
 			if (Time.time >= noWoodUntil || CarriedWood() > 0 || FindWoodChest() != null)
 			{
-				Job wooden = FindWoodWork();
+				Job wooden = NPCFirst(FindWoodWork(), "Wood");
 				if (wooden != null)
 				{
 					return(wooden);
 				}
 			}
-			Job arrows = FindArrowWork();
+			Job arrows = (peaceful ? null : FindArrowWork());
 			if (arrows != null)
 			{
 				return(arrows);
@@ -432,40 +467,40 @@ namespace VikingVillages
 			{
 				return(torch);
 			}
-			Job sidearm = FindSidearmWork();
+			Job sidearm = (peaceful ? null : FindSidearmWork());
 			if (sidearm != null)
 			{
 				return(sidearm);
 			}
 			// Better gear is crafted before what it would replace is upgraded
-			Job better = FindGearCraftWork();
+			Job better = (peaceful ? null : FindGearCraftWork());
 			if (better != null)
 			{
 				return(better);
 			}
-			Job upgrade = FindUpgradeWork();
+			Job upgrade = (peaceful ? null : FindUpgradeWork());
 			if (upgrade != null)
 			{
 				return(upgrade);
 			}
 			// Then the next step toward the village's goal, and only after that the tools for its chests, so they never
 			// take what the goal's gear needs
-			Job goal = FindGoalWork();
+			Job goal = NPCFirst(FindGoalWork(), "Goal");
 			if (goal != null)
 			{
 				return(goal);
 			}
-			Job tools = FindToolStockWork();
+			Job tools = NPCFirst(FindToolStockWork(), "Tools");
 			if (tools != null)
 			{
 				return(tools);
 			}
-			Job lining = FindLiningWork();
+			Job lining = (peaceful ? null : FindLiningWork());
 			if (lining != null)
 			{
 				return(lining);
 			}
-			Job silverArrows = FindSilverArrowWork();
+			Job silverArrows = (peaceful ? null : FindSilverArrowWork());
 			if (silverArrows != null)
 			{
 				return(silverArrows);
@@ -475,7 +510,7 @@ namespace VikingVillages
 			{
 				return(null);
 			}
-			Job hive = FindHiveWork();
+			Job hive = NPCFirst(FindHiveWork(), "Hive");
 			if (hive != null)
 			{
 				return(hive);

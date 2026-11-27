@@ -198,6 +198,7 @@ namespace VikingVillages
 			{ "Serpent", "serpent" },
 			{ "BonemawSerpent", "bonemaw" },
 			{ VikingCore.PCPrefabName, "viking" },
+			{ VikingCore.NPCPrefabName, "viking" },
 			{ VikingCore.DvergrPrefabName, "dvergr" },
 			{ VikingCore.ZombiePrefabName, "zombieviking" }
 		};

@@ -375,7 +375,8 @@ namespace VikingVillages
 				return;
 			}
 			nextJoinCheck = Time.time + JoinCheckInterval;
-			if (inBed || (job != null && job.Resting()) || Wounded())
+			// An NPC viking never joins a fight
+			if (inBed || (job != null && job.Resting()) || Wounded() || Peaceful())
 			{
 				return;
 			}

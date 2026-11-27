@@ -134,10 +134,20 @@ namespace VikingVillages
 					LinkedBiome = VillagePortalSpeech.BiomeName(biome);
 					linkedTalks = VillagePortalSpeech.Talks(biome);
 				}
-				string[] newcomerTalk = NewcomerTalk(leader, partner, VillageName.Length > 0, out NewcomerName, out NewcomerFrom);
-				string[] questTalk = ((newcomerTalk == null) ? QuestTalk(leader, partner) : null);
-				string[] namesakeTalk = ((newcomerTalk == null && questTalk == null) ? VillageNamesakeSpeech.Talk(VikingNames.Get(leader.humanoid), VikingNames.Get(partner.humanoid), VillageName) : null);
-				Lines = (newcomerTalk ?? questTalk ?? namesakeTalk ?? VikingSpeech.Talk(IsNight() || IsDusk(), EnvMan.IsWet(), Time.time - leader.lastFightAt < FightTalkTime, leader.Wounded(), OtherName.Length > 0, ItemName.Length > 0, FallenName.Length > 0, leader.body.HasBeard(), VillageName.Length > 0, linkedTalks));
+				// The talk is picked for both of them, so one with an NPC viking leaves out what only PC vikings talk about
+				Character listener = VikingSpeech.Listener;
+				VikingSpeech.Listener = partner.humanoid;
+				try
+				{
+					string[] newcomerTalk = NewcomerTalk(leader, partner, VillageName.Length > 0, out NewcomerName, out NewcomerFrom);
+					string[] questTalk = ((newcomerTalk == null) ? QuestTalk(leader, partner) : null);
+					string[] namesakeTalk = ((newcomerTalk == null && questTalk == null) ? VillageNamesakeSpeech.Talk(VikingNames.Get(leader.humanoid), VikingNames.Get(partner.humanoid), VillageName) : null);
+					Lines = (newcomerTalk ?? questTalk ?? namesakeTalk ?? VikingSpeech.Talk(IsNight() || IsDusk(), EnvMan.IsWet(), Time.time - leader.lastFightAt < FightTalkTime, leader.Wounded(), OtherName.Length > 0, ItemName.Length > 0, FallenName.Length > 0, leader.body.HasBeard(), VillageName.Length > 0, linkedTalks));
+				}
+				finally
+				{
+					VikingSpeech.Listener = listener;
+				}
 			}
 
 			/// <summary>

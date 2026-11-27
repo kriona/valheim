@@ -129,7 +129,7 @@ namespace VikingVillages
 		/// <returns>True when it can</returns>
 		private static bool Sendable(Humanoid viking)
 		{
-			if (viking == null || viking.IsDead() || !VikingCore.IsPCViking(viking) || viking.m_nview == null || !viking.m_nview.IsValid() || !viking.m_nview.IsOwner())
+			if (viking == null || viking.IsDead() || !VikingCore.IsPlayerLikeViking(viking) || viking.m_nview == null || !viking.m_nview.IsValid() || !viking.m_nview.IsOwner())
 			{
 				return(false);
 			}

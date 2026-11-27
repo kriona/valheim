@@ -9,9 +9,9 @@ namespace Kriona.Vikings
 	internal partial class VikingCore
 	{
 		/// <summary>
-		/// Works out how much harder the viking hits than a player of its skill with what's in its hands - its fists by
-		/// its biome's punch, and a zombie viking of the world's melee weapons by its biome's MeleeScale (see
-		/// GetsMeleeScale)
+		/// Works out how much harder the viking hits than a player of its skill with what's in its hands - a PC or NPC
+		/// viking's fists as a player's do, any other viking's by its biome's punch, and a zombie viking of the world's
+		/// melee weapons by its biome's MeleeScale (see GetsMeleeScale)
 		/// </summary>
 		/// <returns>The multiplier for the hit's damage</returns>
 		public float DamageScale()
@@ -20,12 +20,40 @@ namespace Kriona.Vikings
 			BiomeGear gear = VikingGear.Get(BiomeIndex());
 			if (weapon == null)
 			{
-				ItemDrop unarmed = humanoid.m_unarmedWeapon;
-				float baseDamage = ((unarmed != null) ? unarmed.m_itemData.m_shared.m_damages.GetTotalPhysicalDamage() : 0f);
+				if (IsPlayerLikeViking(humanoid))
+				{
+					return(1f);
+				}
+				float baseDamage = PlayerPunch();
 				return((baseDamage > 0f) ? gear.Unarmed / baseDamage : 1f);
 			}
 			bool ranged = (weapon.m_shared.m_attack != null && weapon.m_shared.m_attack.m_attackType == Attack.AttackType.Projectile);
 			return(MeleeScaled(ranged) ? gear.MeleeScale : 1f);
+		}
+
+		/// <summary>
+		/// Gets how hard a player's bare fists hit before their skill, from the unarmed weapon the viking's prefab took
+		/// from the player's
+		/// </summary>
+		/// <returns>The punch's physical damage, or 0 with no unarmed weapon</returns>
+		private float PlayerPunch()
+		{
+			ItemDrop unarmed = humanoid.m_unarmedWeapon;
+			return((unarmed != null) ? unarmed.m_itemData.m_shared.m_damages.GetTotalPhysicalDamage() : 0f);
+		}
+
+		/// <summary>
+		/// Gets how hard the viking's bare fists hit before its skill - a PC or NPC viking's as a player's do, and any
+		/// other viking's by its biome's punch
+		/// </summary>
+		/// <returns>The punch's blunt damage</returns>
+		private float Punch()
+		{
+			if (IsPlayerLikeViking(humanoid))
+			{
+				return(PlayerPunch());
+			}
+			return((GetData() != null) ? VikingGear.Get(BiomeIndex()).Unarmed : 0f);
 		}
 
 		/// <summary>
@@ -36,29 +64,28 @@ namespace Kriona.Vikings
 		private bool MeleeScaled(bool ranged)
 		{
 			bool hasData = (GetData() != null);
-			return(GetsMeleeScale(hasData, hasData && data.Tombstone, IsPCOrDvergr(humanoid), ranged));
+			return(GetsMeleeScale(hasData, hasData && data.Tombstone, IsLivingViking(humanoid), ranged));
 		}
 
 		/// <summary>
 		/// Checks whether a viking's hit with a weapon is scaled by its biome's MeleeScale - only a zombie viking of the
-		/// world's hand to hand, so it hits about as hard as its biome's creatures. A PC or dvergr viking hits like a
-		/// player of its skill, a tombstone viking like the player it rose from, a shot isn't scaled, and a viking with
-		/// no data yet has no biome to scale by
+		/// world's hand to hand, so it hits about as hard as its biome's creatures. A living viking - PC, NPC or dvergr -
+		/// hits like a player of its skill, a tombstone viking like the player it rose from, a shot isn't scaled, and a
+		/// viking with no data yet has no biome to scale by
 		/// </summary>
 		/// <param name="hasData">Whether the viking has its data yet</param>
 		/// <param name="tombstone">Whether it's a tombstone viking</param>
-		/// <param name="pcOrDvergr">Whether it's a PC or dvergr viking</param>
+		/// <param name="living">Whether it's a living viking</param>
 		/// <param name="ranged">Whether the weapon shoots</param>
 		/// <returns>True when it's scaled</returns>
-		internal static bool GetsMeleeScale(bool hasData, bool tombstone, bool pcOrDvergr, bool ranged)
+		internal static bool GetsMeleeScale(bool hasData, bool tombstone, bool living, bool ranged)
 		{
-			return(hasData && !tombstone && !pcOrDvergr && !ranged);
+			return(hasData && !tombstone && !living && !ranged);
 		}
 
 		/// <summary>
 		/// Adds up the armor of the pieces the viking wears, with what its effects add, the way a player's adds up - all
-		/// of it for a PC or dvergr viking, and the config's ZombieArmorEffectiveness percent of it for a zombie
-		/// viking
+		/// of it for a living viking, and the config's ZombieArmorEffectiveness percent of it for a zombie viking
 		/// </summary>
 		/// <returns>Its armor</returns>
 		public float BodyArmor()
@@ -69,7 +96,7 @@ namespace Kriona.Vikings
 				armor += piece.GetArmor();
 			}
 			humanoid.GetSEMan().ApplyArmorMods(ref armor);
-			float effectiveness = (IsPCOrDvergr(humanoid) ? 100f : VikingSettings.Get(VikingSettings.ZombieArmorEffectiveness, 100));
+			float effectiveness = (IsLivingViking(humanoid) ? 100f : VikingSettings.Get(VikingSettings.ZombieArmorEffectiveness, 100));
 			return(armor * effectiveness / 100f);
 		}
 

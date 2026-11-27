@@ -91,7 +91,8 @@ namespace VikingVillages
 			List<VillageLife> free = new List<VillageLife>();
 			foreach (VillageLife other in All)
 			{
-				if (other == this || !other.active || other.village != village || other.ai == null || other.ai.m_targetCreature != null || other.inBed || other.Wounded())
+				// An NPC viking never hunts, so it's never one of a hunting party
+				if (other == this || other.Peaceful() || !other.active || other.village != village || other.ai == null || other.ai.m_targetCreature != null || other.inBed || other.Wounded())
 				{
 					continue;
 				}

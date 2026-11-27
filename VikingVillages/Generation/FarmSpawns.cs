@@ -370,7 +370,7 @@ namespace VikingVillages
 		{
 			List<Character> nearby = new List<Character>();
 			Character.GetCharactersInRange(point, FarmKeeperRange, nearby);
-			return(nearby.Any((Character character) => !character.IsDead() && VikingCore.IsPCViking(character)));
+			return(nearby.Any((Character character) => !character.IsDead() && VikingCore.IsPlayerLikeViking(character)));
 		}
 
 		/// <summary>

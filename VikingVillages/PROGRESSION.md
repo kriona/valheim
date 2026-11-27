@@ -18,45 +18,48 @@ Everything that changes with a Viking's or a village's biome, in one place - fir
 
 ## Vikings by Biome
 
-What a PC Viking of each biome starts with. Odds are rolled once, when they're rolled up, and a Viking who comes back after dying is rolled again. Dvergr Vikings are always of the Mistlands (see [Dvergr Vikings](#dvergr-vikings)).
+What a PC Viking of each biome starts with, and what an NPC Viking of the biome wears in place of a PC Viking's gear. Odds are rolled once, when they're rolled up, and a Viking who comes back after dying is rolled again. NPC Vikings are rolled like PC Vikings but for their skills, gear and powers (see [NPC Vikings](#npc-vikings)). Dvergr Vikings are always of the Mistlands (see [Dvergr Vikings](#dvergr-vikings)).
 
 ### Meadows Viking
 
 - Skills of 1-12, and at least 50 max health - 115 fully fed on the Meadows' best food
-- Melee hits as hard as yours, and fists that hit for 25
+- Melee weapons and fists hit as hard as yours
 - Knows Eikthyr's power
 - The village's archer carries a bow and a melee weapon, the rest one weapon of any kind
 - 50% a helmet, 50% a cape, 40% a shield
 - A torch - never a Dverger circlet
 - No strength belt, wider pockets or deeper pockets
 - Hunts boar, necks and deer (archers only), only on Meadows ground
+- NPC Vikings wear the simple undyed dress or tunic, 50% with the simple red or purple cap or the headband, and no cape, carrying a flint knife
 
 ### Black Forest Viking
 
 - Skills of 13-25, and at least 115 max health - 155 fully fed
-- Melee hits as hard as yours, and fists that hit for 45
+- Melee weapons and fists hit as hard as yours
 - Knows Eikthyr's and the Elder's powers
 - A third carry only a bow, a third only a melee weapon and a third both - the village's archer has only the bow half the time
 - 50% a helmet, 50% a cape, 40% a shield
 - 10% a Dverger circlet in place of a torch
 - 20% a strength belt
 - Adds greylings to the Meadows' prey, on ground no harder than the Black Forest
+- NPC Vikings wear a plain brown, blue or yellow dress or a plain blue, red or yellow tunic, or a harvest tunic or dress with the straw hat, 50% with the blue tied headscarf or brown fur cap otherwise, and no cape, carrying a copper knife
 
 ### Swamp Viking
 
 - Skills of 26-37, and at least 155 max health - 175 fully fed
-- Melee hits as hard as yours, and fists that hit for 75
+- Melee weapons and fists hit as hard as yours
 - Knows every power up to Bonemass's
 - A fifth carry only a bow, a fifth only a melee weapon and the rest both - the village's archer has only the bow a quarter of the time
 - 50% a helmet, 50% a cape, 40% a shield
 - 30% a Dverger circlet in place of a torch
 - 40% a strength belt
 - Adds draugr and leeches (archers only) to their prey
+- NPC Vikings wear the Black Forest's clothes and carry its copper knife, since the Swamp has none of its own
 
 ### Mountains Viking
 
 - Skills of 38-50, and at least 175 max health - 195 fully fed
-- Melee hits as hard as yours, and fists that hit for 95
+- Melee weapons and fists hit as hard as yours
 - Knows every power up to Moder's
 - Always both a melee weapon and a bow, always their set's helmet and a cape that resists frost, and 40% a shield
 - 50% a Dverger circlet in place of a torch
@@ -64,11 +67,12 @@ What a PC Viking of each biome starts with. Odds are rolled once, when they're r
 - 20% wider pockets
 - With Zombie Apocalypse, 25% silver-lined weapons
 - Adds wolves and drakes (archers only) to their prey
+- NPC Vikings wear a brown, blue or yellow dress with a shawl or a blue, red or yellow tunic with a cape, or a harvest tunic or dress with the straw hat, 50% with the green twisted headscarf, yellow tied headscarf or extravagant green cap otherwise, and always a wolf fur cape against the frost, carrying a silver knife
 
 ### Plains Viking
 
 - Skills of 50-62, and at least 195 max health - 235 fully fed
-- Melee hits as hard as yours, and fists that hit for 110
+- Melee weapons and fists hit as hard as yours
 - Knows every power up to Yagluth's
 - Always both a melee weapon and a bow - the Mountains' Draugr Fang, since the Plains have none - always their set's helmet and a cape, and 40% a shield
 - 70% a Dverger circlet in place of a torch
@@ -76,11 +80,12 @@ What a PC Viking of each biome starts with. Odds are rolled once, when they're r
 - 40% wider pockets
 - With Zombie Apocalypse, 50% silver-lined weapons
 - Adds lox and deathsquitos (archers only) to their prey, and hunts as a party of 3-4 for anything an archer doesn't hunt alone
+- NPC Vikings wear a brown, blue or yellow dress or a blue, red or yellow tunic with beads, or a harvest tunic or dress with the straw hat, 50% with the red twisted headscarf, gray fur cap or extravagant orange cap otherwise, and always a linen cape of any color, carrying a black metal knife
 
 ### Mistlands Viking
 
 - Skills of 63-75, and at least 235 max health - 270 fully fed
-- Melee hits as hard as yours, and fists that hit for 125
+- Melee weapons and fists hit as hard as yours
 - Knows every power up to the Queen's
 - Always both a melee weapon and a bow or crossbow, always their set's helmet and a cape, and 40% a shield
 - Always a Dverger circlet, and a wisp light worn on their belt against the mist
@@ -88,11 +93,12 @@ What a PC Viking of each biome starts with. Odds are rolled once, when they're r
 - 60% wider pockets, and 20% deeper pockets as well
 - With Zombie Apocalypse, 75% silver-lined weapons
 - Adds hares to their prey, hunting as a party
+- NPC Vikings wear the Plains' clothes, since the Mistlands have none of their own, with a feather cape in place of the linen one, and a wisp light like every Viking of the Mistlands, carrying the Plains' black metal knife
 
 ### Ashlands Viking
 
 - Skills of 76-87, and at least 270 max health - 325 fully fed
-- Melee hits as hard as yours, and fists that hit for 145
+- Melee weapons and fists hit as hard as yours
 - Knows every power, up to Fader's
 - Always both a melee weapon and a bow or crossbow, always their set's helmet and a cape, and 40% a shield
 - Always a Dverger circlet
@@ -100,11 +106,12 @@ What a PC Viking of each biome starts with. Odds are rolled once, when they're r
 - 80% wider pockets, and 40% deeper pockets as well
 - With Zombie Apocalypse, always silver-lined weapons
 - Adds Asksvin and voltures (archers only) to their prey, hunting as a party
+- NPC Vikings wear the Plains' clothes and linen cape and carry its black metal knife, since the Ashlands have none of their own
 
 ### Deep North Viking
 
 - Skills of 88-100, and at least 325 max health - 350 fully fed
-- Melee hits as hard as yours, and fists that hit for 165
+- Melee weapons and fists hit as hard as yours
 - Knows every power, as in the Ashlands - the Deep North has no boss
 - Always both a melee weapon and a bow or crossbow - never Dyrnwyn - always their set's helmet and a cape that resists frost, and 40% a shield
 - Always a Dverger circlet
@@ -112,6 +119,16 @@ What a PC Viking of each biome starts with. Odds are rolled once, when they're r
 - Always wider pockets, and 60% deeper pockets as well
 - With Zombie Apocalypse, always silver-lined weapons
 - Adds moose and seals to their prey, hunting as a party
+- NPC Vikings wear the Plains' clothes, since the Deep North has none of its own, with a moose hide cape against the frost in place of the linen one, carrying a Nord dagger
+
+### NPC Vikings
+
+One in every five of a village's Vikings is an NPC Viking - a peaceful villager, rolled like a PC Viking of the village's biome but:
+
+- With none of the skills they'd fight with - every weapon's but the knife's, Blocking, both magics and Dodge - 1-5 in Unarmed and Knives, and 20 more in Farming, Cooking, Crafting and Fishing than their biome's range, up to 100. Every other skill is their biome's
+- Wearing their biome's clothes, or the nearest biome's below it with some (see [Gear](#gear)), with their biome's knife and never another weapon or a shield
+- Knowing no forsaken power, and never learning one
+- With a torch or Dverger circlet, a wisp light in the Mistlands, a strength belt and pockets by their biome's odds, the same as a PC Viking - but a village's PC Vikings have the circlets, belts and pockets first (see [Light](#light))
 
 ### Dvergr Vikings
 
@@ -121,22 +138,22 @@ Always rolled as Mistlands Vikings - the Mistlands' skills and gear, both weapon
 
 ### Skills
 
-Each skill is rolled on its own within the range, and rises with use from there (see [Skills](LOGIC.md#skills)).
+Each skill is rolled on its own within the range, and rises with use from there (see [Skills](LOGIC.md#skills)). An NPC Viking has none of the skills they'd fight with - every weapon's but the knife's, Blocking, both magics and Dodge - and 1-5 in Unarmed and Knives whatever their biome, with their Farming, Cooking, Crafting and Fishing 20 higher than the range, up to 100.
 
-| Biome | Skills |
-| --- | --- |
-| Meadows | 1-12 |
-| Black Forest | 13-25 |
-| Swamp | 26-37 |
-| Mountains | 38-50 |
-| Plains | 50-62 |
-| Mistlands | 63-75 |
-| Ashlands | 76-87 |
-| Deep North | 88-100 |
+| Biome | Skills | An NPC Viking's Farming, Cooking, Crafting and Fishing |
+| --- | --- | --- |
+| Meadows | 1-12 | 21-32 |
+| Black Forest | 13-25 | 33-45 |
+| Swamp | 26-37 | 46-57 |
+| Mountains | 38-50 | 58-70 |
+| Plains | 50-62 | 70-82 |
+| Mistlands | 63-75 | 83-95 |
+| Ashlands | 76-87 | 96-100 |
+| Deep North | 88-100 | 100 |
 
 ### Health
 
-A PC Viking's max health is what their food gives them, the way yours is, but never below their biome's least (see [Eating](LOGIC.md#eating)).
+A PC or NPC Viking's max health is what their food gives them, the way yours is, but never below their biome's least (see [Eating](LOGIC.md#eating)).
 
 | Biome | Least max health | Fully fed on their own biome's best 3 foods |
 | --- | --- | --- |
@@ -151,9 +168,9 @@ A PC Viking's max health is what their food gives them, the way yours is, but ne
 
 ### Melee Damage
 
-A PC or Dvergr Viking's melee weapons hit as hard as yours do at their skill. With Zombie Apocalypse, a zombie Viking of the world's melee weapons hit harder than yours in the easier biomes, so its weaker gear keeps up with the monsters there - a zombie risen from a PC Viking included, and a tombstone zombie, who fights as you did, not. Every Viking's bows and crossbows hit as yours do, and their bare fists hit for a set amount in place of yours.
+A PC or Dvergr Viking's melee weapons hit as hard as yours do at their skill. With Zombie Apocalypse, a zombie Viking of the world's melee weapons hit harder than yours in the easier biomes, so its weaker gear keeps up with the monsters there - a zombie risen from a PC Viking included, and a tombstone zombie, who fights as you did, not. Every Viking's bows and crossbows hit as yours do. A PC or NPC Viking's bare fists hit as yours do at their Unarmed skill, whatever their biome, while a Dvergr or zombie Viking's fists hit for a set amount by their biome in place of yours.
 
-| Biome | A zombie Viking's melee hits | Fists |
+| Biome | A zombie Viking's melee hits | A Dvergr or zombie Viking's fists |
 | --- | --- | --- |
 | Meadows | 1.4 times | 25 |
 | Black Forest | 1.7 times | 45 |
@@ -166,7 +183,7 @@ A PC or Dvergr Viking's melee weapons hit as hard as yours do at their skill. Wi
 
 ### Forsaken Powers
 
-A PC Viking knows the power of their own biome's boss and every biome's before it, and learns any other they're given (see [Forsaken Powers](LOGIC.md#forsaken-powers)). With Zombie Apocalypse, a zombie Viking of the world has a chance of using their biome's boss's power - the last one in the list - the first time they spot an enemy.
+A PC Viking knows the power of their own biome's boss and every biome's before it, and learns any other they're given (see [Forsaken Powers](LOGIC.md#forsaken-powers)). An NPC Viking of any biome knows none and never learns one, though a power used beside them gives them its effect. With Zombie Apocalypse, a zombie Viking of the world has a chance of using their biome's boss's power - the last one in the list - the first time they spot an enemy.
 
 | Biome | A PC Viking knows | A zombie Viking uses |
 | --- | --- | --- |
@@ -194,6 +211,19 @@ Every piece comes from the Viking's own biome, or the nearest biome below with o
 | Ashlands | `AxeBerzerkr`, `MaceEldner`, `SwordDyrnwyn`, `SpearSplitner`, `CrossbowRipper` | `ArrowCharred`, `BoltBlackmetal`, `BoltCarapace`, `BoltCharred` | `ShieldFlametal` | Ashlands medium (Asksvin cloak), flametal (ash cape) |
 | Deep North | `AxeGold`, `BattleaxeGold`, `MaceGold`, `SledgeGold`, `AtgeirGold`, `SpearGold`, `SwordGold`, `THSwordGold`, `KnifeGold`, `FistGold`, `BowGold`, `CrossbowGold` - and never Dyrnwyn | `ArrowBloodGold`, `BoltBloodGold` | `ShieldGold`, `ShieldGoldBuckler` | Deep North medium, Deep North heavy (moose hide cape) |
 
+An NPC Viking carries their biome's knife, or the nearest biome's below it with one, for slaughtering livestock and fighting back when they're caught, and never another weapon or a shield. They wear a dress, a tunic or a harvest outfit of their biome's clothes, or the nearest biome's below it with some - so the Swamp's wear the Black Forest's, and every biome's from the Mistlands on the Plains' - picked at random, with rag or leather trousers under a tunic, the harvest tunic included. A harvest outfit always comes with the straw hat, and otherwise they wear one of the biome's hats half the time. Where the weather freezes, and from the Plains on, they wear a cape too. Their clothes and knife start fully repaired, and they keep to the clothes, never taking up armor - but take up a better knife they're given or find.
+
+| Biome | Chest | Hats | Cape | Knife |
+| --- | --- | --- | --- | --- |
+| Meadows | `ArmorDress10`, `ArmorTunic10` | `HelmetHat5`, `HelmetHat10`, `HelmetSweatBand` | None | `KnifeFlint` |
+| Black Forest | `ArmorDress1`, `ArmorDress4`, `ArmorDress7`, `ArmorTunic1`, `ArmorTunic4`, `ArmorTunic7`, `ArmorHarvester1`, `ArmorHarvester2` | `HelmetHat1`, `HelmetHat3` | None | `KnifeCopper` |
+| Swamp | The Black Forest's | The Black Forest's | None | `KnifeCopper` |
+| Mountains | `ArmorDress2`, `ArmorDress5`, `ArmorDress8`, `ArmorTunic2`, `ArmorTunic5`, `ArmorTunic8`, `ArmorHarvester1`, `ArmorHarvester2` | `HelmetHat2`, `HelmetHat4`, `HelmetHat6` | `CapeWolf` | `KnifeSilver` |
+| Plains | `ArmorDress3`, `ArmorDress6`, `ArmorDress9`, `ArmorTunic3`, `ArmorTunic6`, `ArmorTunic9`, `ArmorHarvester1`, `ArmorHarvester2` | `HelmetHat7`, `HelmetHat8`, `HelmetHat9` | `CapeLinen`, of any color | `KnifeBlackMetal` |
+| Mistlands | The Plains' | The Plains' | `CapeFeather` | `KnifeBlackMetal` |
+| Ashlands | The Plains' | The Plains' | `CapeLinen`, of any color | `KnifeBlackMetal` |
+| Deep North | The Plains' | The Plains' | `CapeDeepNorth` | `KnifeGold` |
+
 ### Weapons Carried
 
 Every village starts with a Viking who carries a bow, and when none of its Vikings can shoot, the next to come back brings one (see [Gear](LOGIC.md#gear)).
@@ -212,9 +242,11 @@ Every village starts with a Viking who carries a bow, and when none of its Vikin
 | Meadows to the Swamp | 50% | 50% | 40% |
 | Mountains on | Always their set's | Always - their set's, or the biome's own: a wolf fur cape in the Mountains, a lox cape in the Plains, a feather cape in the Mistlands, an Asksvin cloak in the Ashlands and a moose hide cape in the Deep North | 40% |
 
-A shield is only rolled with a one-handed weapon. Every cape of the Mountains and the Deep North resists frost.
+A shield is only rolled with a one-handed weapon. Every cape of the Mountains and the Deep North resists frost. An NPC Viking wears no helmet or shield, only their biome's hats and capes (see [Gear](#gear)).
 
 ### Light
+
+A PC or NPC Viking of each biome starts with a Dverger circlet by these odds. A village's PC Vikings have the circlets first: a PC Viking rolled up without one takes an NPC Viking's, handing over their torch for it, and an NPC Viking rolled up with one gives it to a PC Viking without one - the same for a strength belt. Pockets, which are sewn in, only change hands this way between the Vikings a village starts with, rolled up together.
 
 | Biome | Dverger circlet, in place of a torch | Wisp light |
 | --- | --- | --- |
@@ -227,7 +259,7 @@ A shield is only rolled with a one-handed weapon. Every cape of the Mountains an
 | Ashlands | Always | No |
 | Deep North | Always | No |
 
-From the Black Forest on, a village buys a circlet from Haldor for a Viking still using torches (see [Quests by Biome](#quests-by-biome)).
+From the Black Forest on, a village buys a circlet from Haldor for a Viking still using torches, a PC Viking before an NPC Viking (see [Quests by Biome](#quests-by-biome)), and a spare circlet or strength belt in its chests goes to a PC Viking without one before any NPC Viking.
 
 ### Strength Belt
 
@@ -461,7 +493,7 @@ The village's boat by the water is the best boat of its biome - a drakkar wherev
 
 ## Quests by Biome
 
-A village goes on a quest only from the quest's biome on, by the village's biome (see [QUESTS.md](QUESTS.md)). From the Plains on, more Vikings go on some quests.
+A village goes on a quest only from the quest's biome on, by the village's biome (see [QUESTS.md](QUESTS.md)). From the Plains on, more Vikings go on some quests. NPC Vikings only go foraging, finding bees, selling treasure and buying from Haldor, whatever the village's biome.
 
 | Biome from | Quests |
 | --- | --- |
@@ -474,7 +506,7 @@ A village goes on a quest only from the quest's biome on, by the village's biome
 
 ### Buying From Haldor
 
-Each at most once every 7 game days, when the village's coins and treasure will pay for it - Haldor's own price, read from his list. The Viking who lacks it goes, and comes home wearing it or with the pockets sewn in. Unlike you, they don't need to have beaten Moder for wider pockets or the Queen for deeper ones.
+Each at most once every 7 game days, when the village's coins and treasure will pay for it - Haldor's own price, read from his list. The Viking who lacks it goes, a PC Viking before an NPC Viking, so an NPC Viking only has it bought for them once every PC Viking has it, and comes home wearing it or with the pockets sewn in. Unlike you, they don't need to have beaten Moder for wider pockets or the Queen for deeper ones.
 
 | Purchase | Biome from | Price | For a Viking with |
 | --- | --- | --- | --- |

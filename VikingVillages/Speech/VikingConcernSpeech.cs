@@ -221,7 +221,11 @@ namespace VikingVillages
 				}
 				calledOut.Add(concern.Name);
 				nextAllowed[concern.Name] = Time.time + Cooldown;
-				string[] lines = Pool(concern.Lines, concern.ColdLines, concern.HotLines, InAshlands(player));
+				string[] lines = Spoken(speaker, Pool(concern.Lines, concern.ColdLines, concern.HotLines, InAshlands(player)));
+				if (lines.Length == 0)
+				{
+					continue;
+				}
 				string line = lines[UnityEngine.Random.Range(0, lines.Length)];
 				string detail = ((concern.Detail != null) ? concern.Detail(player) : "");
 				VikingSpeech.Say(speaker, Said(line, player.GetPlayerName(), VikingSpeech.Knows(speaker, player.GetPlayerID()), detail), VikingSpeech.QuickTime, VikingSpeech.TalkCull);
@@ -260,6 +264,27 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Leaves out the lines a viking doesn't say, checked with it as the one speaking - what only PC vikings say, for
+		/// an NPC viking (see VikingSpeech.Says)
+		/// </summary>
+		/// <param name="speaker">The viking</param>
+		/// <param name="lines">The lines</param>
+		/// <returns>The lines it says</returns>
+		private static string[] Spoken(Character speaker, string[] lines)
+		{
+			Character before = VikingSpeech.Speaker;
+			VikingSpeech.Speaker = speaker;
+			try
+			{
+				return(Array.FindAll(lines, (string line) => VikingSpeech.Says(line)));
+			}
+			finally
+			{
+				VikingSpeech.Speaker = before;
+			}
+		}
+
+		/// <summary>
 		/// Checks whether a player is in the Ashlands
 		/// </summary>
 		/// <param name="player">The player</param>
@@ -294,7 +319,7 @@ namespace VikingVillages
 			bool night = EnvMan.IsNight();
 			foreach (Character character in Character.GetAllCharacters())
 			{
-				if (!VikingCore.IsPCViking(character) || character.IsDead() || BaseAI.IsEnemy(character, player))
+				if (!VikingCore.IsPlayerLikeViking(character) || character.IsDead() || BaseAI.IsEnemy(character, player))
 				{
 					continue;
 				}

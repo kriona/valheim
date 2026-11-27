@@ -270,7 +270,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Picks a line about a runestone of a biome, filling in the player's name - leaving out the lines that name the
-		/// viking saying it, which it would say as someone with its name (see Namesake)
+		/// viking saying it, which it would say as someone with its name (see Namesake), and what only PC vikings say for
+		/// an NPC viking (see VikingSpeech.Says)
 		/// </summary>
 		/// <param name="biome">The biome</param>
 		/// <param name="player">The player's name</param>
@@ -287,7 +288,7 @@ namespace VikingVillages
 			List<string> fitting = new List<string>();
 			foreach (string line in lines)
 			{
-				if (first.Length == 0 || !Names(line, first))
+				if ((first.Length == 0 || !Names(line, first)) && VikingSpeech.Says(line))
 				{
 					fitting.Add(line);
 				}
@@ -296,19 +297,25 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Picks a line about the runestones of someone with a viking's name, filling in the player's name
+		/// Picks a line about the runestones of someone with a viking's name, filling in the player's name - leaving out
+		/// what only PC vikings say for an NPC viking (see VikingSpeech.Says)
 		/// </summary>
 		/// <param name="viking">The viking's name, with any byname after it, like "Ulf the Red"</param>
 		/// <param name="player">The player's name</param>
 		/// <param name="pick">Picks an index below the count it's given</param>
-		/// <returns>The line, or null when no one on the runestones has its name</returns>
+		/// <returns>The line, or null when no one on the runestones has its name or it says none of their lines</returns>
 		internal static string Namesake(string viking, string player, System.Func<int, int> pick)
 		{
 			if (!NamesakeLines.TryGetValue(FirstName(viking), out string[] lines))
 			{
 				return(null);
 			}
-			return(string.Format(lines[pick(lines.Length)], player));
+			string[] spoken = System.Array.FindAll(lines, (string line) => VikingSpeech.Says(line));
+			if (spoken.Length == 0)
+			{
+				return(null);
+			}
+			return(string.Format(spoken[pick(spoken.Length)], player));
 		}
 
 		/// <summary>

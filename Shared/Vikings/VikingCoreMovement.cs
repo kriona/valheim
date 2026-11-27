@@ -8,7 +8,7 @@ namespace Kriona.Vikings
 	internal partial class VikingCore
 	{
 		/// <summary>
-		/// Has a PC or dvergr viking walk while there's no danger and it's at home, and move at its full pace once
+		/// Has a living viking walk while there's no danger and it's at home, and move at its full pace once
 		/// there's danger - when it's alerted, has a target, or was hurt in the last few seconds - or it's away from its
 		/// village's core or on the road to a village, or it's climbing a slope or taking a run-up to a fence, so it
 		/// makes it over
@@ -19,7 +19,7 @@ namespace Kriona.Vikings
 		/// </remarks>
 		private void UpdateWalk()
 		{
-			if (ai == null || !IsPCOrDvergr(humanoid))
+			if (ai == null || !IsLivingViking(humanoid))
 			{
 				return;
 			}
@@ -29,12 +29,12 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Raises a PC or dvergr viking's Run and Swim skills for every RunSkillInterval seconds it spends running or
+		/// Raises a living viking's Run and Swim skills for every RunSkillInterval seconds it spends running or
 		/// swimming, the way a player's rise, and speeds its swimming by its Swim skill (see SwimSkillBonus)
 		/// </summary>
 		private void UpdateRunSkill()
 		{
-			if (!IsPCOrDvergr(humanoid))
+			if (!IsLivingViking(humanoid))
 			{
 				return;
 			}

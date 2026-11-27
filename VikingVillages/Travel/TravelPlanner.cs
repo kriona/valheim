@@ -277,7 +277,7 @@ namespace VikingVillages
 			bool cart = (zdo != null && RoadCarts.Has(zdo));
 			party.Add(((core != null) ? core.BiomeIndex() : 0), Unteleportable(viking.GetInventory()) || (cart && RoadCarts.CarriesUnteleportable(viking)), first);
 			party.Cart |= cart;
-			PCVikingBody body = viking as PCVikingBody;
+			PlayerLikeVikingBody body = viking as PlayerLikeVikingBody;
 			float food = ((body != null && body.Food != null) ? body.Food.FoodStamina() : 0f);
 			party.AddSwimmer(BoatRules.SwimMeters(food, viking.GetSkillFactor(Skills.SkillType.Swim), Game.m_moveStaminaRate, viking.m_swimSpeed), first);
 		}

@@ -53,7 +53,7 @@ namespace VikingVillages
 			Character.GetCharactersInRange(monster.transform.position, ai.m_wakeupRange, near);
 			foreach (Character other in near)
 			{
-				if (other != monster && !other.IsDead() && VikingCore.IsPCViking(other) && BaseAI.IsEnemy(monster, other))
+				if (other != monster && !other.IsDead() && VikingCore.IsPlayerLikeViking(other) && BaseAI.IsEnemy(monster, other))
 				{
 					ai.Wakeup();
 					nextCheck.Remove(ai);

@@ -1193,7 +1193,7 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Lists the loaded PC vikings that belong to the village
+		/// Lists the loaded PC and NPC vikings that belong to the village
 		/// </summary>
 		/// <returns>The vikings, alive</returns>
 		public List<Character> Vikings()
@@ -1201,7 +1201,7 @@ namespace VikingVillages
 			List<Character> vikings = new List<Character>();
 			foreach (Character character in Character.GetAllCharacters())
 			{
-				if (character == null || character.IsDead() || !VikingCore.IsPCViking(character))
+				if (character == null || character.IsDead() || !VikingCore.IsPlayerLikeViking(character))
 				{
 					continue;
 				}

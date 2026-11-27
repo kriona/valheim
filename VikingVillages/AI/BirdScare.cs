@@ -37,7 +37,7 @@ namespace VikingVillages
 				spots.Clear();
 				foreach (Character character in Character.GetAllCharacters())
 				{
-					if (character != null && !character.IsDead() && VikingCore.IsPCOrDvergr(character))
+					if (character != null && !character.IsDead() && VikingCore.IsLivingViking(character))
 					{
 						spots.Add(character.transform.position);
 					}

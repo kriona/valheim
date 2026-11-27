@@ -34,7 +34,7 @@ namespace VikingVillages
 			}
 			bool victimSide = (__instance.GetFaction() == Character.Faction.Dverger && !__instance.IsTamed());
 			bool attackerSide = (attacker.GetFaction() == Character.Faction.Dverger && !attacker.IsTamed());
-			bool viking = (VikingCore.IsPCOrDvergr(__instance) || VikingCore.IsPCOrDvergr(attacker));
+			bool viking = (VikingCore.IsLivingViking(__instance) || VikingCore.IsLivingViking(attacker));
 			return(!DvergrFriendlyFireRules.Spared(victimSide, attackerSide, viking, BaseAI.IsEnemy(attacker, __instance)));
 		}
 	}

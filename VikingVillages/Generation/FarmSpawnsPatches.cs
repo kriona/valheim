@@ -6,8 +6,9 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Tames the animals an abandoned farm's pens spawn, as the PC vikings' livestock, while a PC viking is
-	/// still there to keep them - one near the pen, or any in the village the pen stands in
+	/// Tames the animals an abandoned farm's pens spawn, as the vikings' livestock, while a viking is still there to
+	/// keep them - one near the pen, or any in the village the pen stands in - or the village is still waiting for the
+	/// vikings it starts with, so a new village's livestock is never wild
 	/// </summary>
 	/// <remarks>
 	/// A tamed animal and a PC viking leave each other alone unless the viking has been provoked, and a tamed
@@ -24,7 +25,7 @@ namespace VikingVillages
 		private static void Postfix(CreatureSpawner __instance, ZNetView __result)
 		{
 			Vector3 position = __instance.transform.position;
-			if (__result == null || !FarmSpawns.InFarm(position) || (!FarmSpawns.PCVikingNear(position) && !VillageLivestock.InKeptVillage(position)))
+			if (__result == null || !FarmSpawns.InFarm(position) || (!FarmSpawns.PCVikingNear(position) && !VillageLivestock.InKeptVillage(position) && !VillageLivestock.AwaitsVikings(position)))
 			{
 				return;
 			}

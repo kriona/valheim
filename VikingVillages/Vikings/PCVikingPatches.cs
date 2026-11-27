@@ -57,7 +57,7 @@ namespace VikingVillages
 				if (dvergr && !character.IsDead() && !BaseAI.IsEnemy(character, __instance) && Vector3.Distance(character.transform.position, __instance.transform.position) <= PowerReach)
 				{
 					character.GetSEMan().AddStatusEffect(effect, true, 0, 0f, -1);
-					if (VikingCore.IsPCOrDvergr(character))
+					if (VikingCore.IsLivingViking(character))
 					{
 						given.Add(character);
 					}
@@ -140,7 +140,7 @@ namespace VikingVillages
 		/// <returns>False to skip the hit</returns>
 		private static bool Prefix(Character __instance, HitData hit)
 		{
-			if (hit == null || hit.m_ignorePVP || __instance == null || !VikingCore.IsPCViking(__instance))
+			if (hit == null || hit.m_ignorePVP || __instance == null || !VikingCore.IsPlayerLikeViking(__instance))
 			{
 				return(true);
 			}
@@ -222,7 +222,7 @@ namespace VikingVillages
 		/// <returns>True when it spares it</returns>
 		public static bool Spares(Character character)
 		{
-			if (character == null || !VikingCore.IsPCViking(character))
+			if (character == null || !VikingCore.IsPlayerLikeViking(character))
 			{
 				return(false);
 			}
@@ -345,7 +345,7 @@ namespace VikingVillages
 		private static void Prefix(Character __instance, out float[] __state)
 		{
 			__state = null;
-			if (__instance.IsPlayer() || !VikingCore.IsPCViking(__instance) || !__instance.TryGetComponent(out VikingCore viking))
+			if (__instance.IsPlayer() || !VikingCore.IsPlayerLikeViking(__instance) || !__instance.TryGetComponent(out VikingCore viking))
 			{
 				return;
 			}
@@ -432,7 +432,7 @@ namespace VikingVillages
 		/// <param name="__instance">The attack landing</param>
 		private static void Prefix(Attack __instance)
 		{
-			if (__instance.m_character is PCVikingBody && __instance.m_attackType != Attack.AttackType.Projectile)
+			if (__instance.m_character is LivingVikingBody && __instance.m_attackType != Attack.AttackType.Projectile)
 			{
 				VikingCore.NoteSwing(__instance.m_weapon, __instance.m_time);
 			}
@@ -463,13 +463,13 @@ namespace VikingVillages
 		private static bool Prefix(BaseAI __instance, ref Vector3 dir)
 		{
 			Character character = __instance.m_character;
-			if (!VikingCore.IsPCViking(character))
+			if (!VikingCore.IsPlayerLikeViking(character))
 			{
 				return(true);
 			}
 			if (!DangerousGround.StepsIntoDanger(character, dir))
 			{
-				if (!(character is PCVikingBody body) || Ledges.SafeWay(body, dir, out dir))
+				if (!(character is LivingVikingBody body) || Ledges.SafeWay(body, dir, out dir))
 				{
 					return(true);
 				}
@@ -485,8 +485,8 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Hurts a PC viking that falls, the way the game hurts a player as it touches the ground - which the game does
-	/// only for a player (see PCVikingBody.Land)
+	/// Hurts a living viking that falls, the way the game hurts a player as it touches the ground - which the game
+	/// does only for a player (see LivingVikingBody.Land)
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.UpdateGroundContact))]
 	public static class VikingFallDamagePatch
@@ -498,7 +498,7 @@ namespace VikingVillages
 		/// <param name="__state">How far it fell, in meters, or 0</param>
 		private static void Prefix(Character __instance, out float __state)
 		{
-			__state = ((__instance is PCVikingBody body) ? body.LandingHeight() : 0f);
+			__state = ((__instance is LivingVikingBody body) ? body.LandingHeight() : 0f);
 		}
 
 		/// <summary>
@@ -508,7 +508,7 @@ namespace VikingVillages
 		/// <param name="__state">How far it fell, in meters, or 0</param>
 		private static void Postfix(Character __instance, float __state)
 		{
-			if (__state > 0f && __instance is PCVikingBody body)
+			if (__state > 0f && __instance is LivingVikingBody body)
 			{
 				body.Land(__state);
 			}
@@ -516,8 +516,8 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Keeps a PC viking that's immune to frost immune whatever it wears or has on it (see
-	/// PCVikingBody.FrostImmune) - the game lets armor or an effect that resists frost take the place of an immunity
+	/// Keeps a living viking that's immune to frost immune whatever it wears or has on it (see
+	/// LivingVikingBody.FrostImmune) - the game lets armor or an effect that resists frost take the place of an immunity
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.GetDamageModifiers))]
 	public static class VikingFrostImmunityPatch
@@ -529,7 +529,7 @@ namespace VikingVillages
 		/// <param name="__result">Its damage modifiers</param>
 		private static void Postfix(Character __instance, ref HitData.DamageModifiers __result)
 		{
-			if (__instance is PCVikingBody body && body.FrostImmune())
+			if (__instance is LivingVikingBody body && body.FrostImmune())
 			{
 				__result.m_frost = HitData.DamageModifier.Immune;
 			}
@@ -537,7 +537,7 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Keeps a PC viking from taking a critical hit while staggered, the same as a player - the game doubles the
+	/// Keeps a PC or NPC viking from taking a critical hit while staggered, the same as a player - the game doubles the
 	/// damage to any staggered character but a player. A dvergr viking takes one like any other creature
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.RPC_Damage))]
@@ -578,14 +578,14 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether a hit on a character is a critical hit for its staggering - never on a PC viking, though
-		/// on a dvergr viking as on any other creature
+		/// Checks whether a hit on a character is a critical hit for its staggering - never on a PC or NPC viking,
+		/// though on a dvergr viking as on any other creature
 		/// </summary>
 		/// <param name="character">The character hit</param>
-		/// <returns>True when it's staggering and isn't a PC viking</returns>
+		/// <returns>True when it's staggering and isn't a PC or NPC viking</returns>
 		public static bool Crits(Character character)
 		{
-			return(character.IsStaggering() && (!(character is PCVikingBody) || character is DvergrVikingBody));
+			return(character.IsStaggering() && !(character is PlayerLikeVikingBody));
 		}
 	}
 
@@ -608,7 +608,7 @@ namespace VikingVillages
 		/// <param name="hit">The hit</param>
 		private static void Prefix(Character __instance, HitData hit)
 		{
-			if (hit != null && VikingCore.IsPCOrDvergr(__instance))
+			if (hit != null && VikingCore.IsLivingViking(__instance))
 			{
 				hit.m_backstabBonus = 1f;
 			}
@@ -680,7 +680,7 @@ namespace VikingVillages
 		/// <returns>The multiplier</returns>
 		public static float EnemyScale(Game game, Vector3 position, Character character)
 		{
-			return(VikingCore.IsPCOrDvergr(character) ? 1f : game.GetDifficultyDamageScaleEnemy(position));
+			return(VikingCore.IsLivingViking(character) ? 1f : game.GetDifficultyDamageScaleEnemy(position));
 		}
 
 		/// <summary>
@@ -691,7 +691,7 @@ namespace VikingVillages
 		/// <returns>The multiplier</returns>
 		public static float PlayerDamageRate(Character character)
 		{
-			return(VikingCore.IsPCOrDvergr(character) ? 1f : Game.m_playerDamageRate);
+			return(VikingCore.IsLivingViking(character) ? 1f : Game.m_playerDamageRate);
 		}
 	}
 
@@ -708,7 +708,7 @@ namespace VikingVillages
 		/// <param name="__instance">The poison effect</param>
 		private static void Prefix(SE_Poison __instance)
 		{
-			if (__instance.m_character is PCVikingBody)
+			if (__instance.m_character is LivingVikingBody)
 			{
 				__instance.m_TTLPerDamage = __instance.m_TTLPerDamagePlayer;
 			}

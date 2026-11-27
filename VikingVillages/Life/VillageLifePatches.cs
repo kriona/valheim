@@ -191,7 +191,7 @@ namespace VikingVillages
 		/// <param name="__instance">The game's inventory window</param>
 		private static void Postfix(InventoryGui __instance)
 		{
-			if (VikingInventory.Showing(__instance) && VikingInventory.OpenViking() is PCVikingBody viking)
+			if (VikingInventory.Showing(__instance) && VikingInventory.OpenViking() is PlayerLikeVikingBody viking)
 			{
 				__instance.m_containerWeight.text = viking.WeightText();
 			}
@@ -276,7 +276,7 @@ namespace VikingVillages
 		/// <param name="__result">Whether a takes b as an enemy</param>
 		private static void Postfix(Character a, Character b, ref bool __result)
 		{
-			if (__result && MonsterThreat.IsRoot(b) && VikingCore.IsPCViking(a) && !VillageLife.HasBow(a))
+			if (__result && MonsterThreat.IsRoot(b) && VikingCore.IsPlayerLikeViking(a) && !VillageLife.HasBow(a))
 			{
 				__result = false;
 			}
@@ -309,8 +309,8 @@ namespace VikingVillages
 			{
 				return;
 			}
-			bool vikingAndLivestock = (VikingCore.IsPCViking(a) && FarmSpawns.IsLivestock(b));
-			bool livestockAndViking = (!vikingAndLivestock && VikingCore.IsPCViking(b) && FarmSpawns.IsLivestock(a));
+			bool vikingAndLivestock = (VikingCore.IsPlayerLikeViking(a) && FarmSpawns.IsLivestock(b));
+			bool livestockAndViking = (!vikingAndLivestock && VikingCore.IsPlayerLikeViking(b) && FarmSpawns.IsLivestock(a));
 			__result = Enemies(vikingAndLivestock, livestockAndViking, VillageLife.Hunts(a, b), VillageLife.Hunts(b, a), __result);
 		}
 
@@ -357,7 +357,7 @@ namespace VikingVillages
 		/// <returns>False for livestock hurt by a PC viking, to skip its reaction</returns>
 		private static bool Prefix(MonsterAI __instance, Character attacker)
 		{
-			return(attacker == null || !VikingCore.IsPCViking(attacker) || !FarmSpawns.IsLivestock(__instance));
+			return(attacker == null || !VikingCore.IsPlayerLikeViking(attacker) || !FarmSpawns.IsLivestock(__instance));
 		}
 	}
 

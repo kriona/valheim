@@ -196,7 +196,7 @@ namespace VikingVillages
 				{
 					players.Add(feller);
 				}
-				if (!creature.IsTamed() && !VikingCore.IsPCViking(creature))
+				if (!creature.IsTamed() && !VikingCore.IsPlayerLikeViking(creature))
 				{
 					VikingNewsStore.Report(VikingNews.Tree, prefab, creature.m_name, new List<long> { feller }, false);
 				}

@@ -1391,7 +1391,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The viking's body, the same component as humanoid, for what it eats, its rest, its load and its gear changes
 		/// </summary>
-		private PCVikingBody body;
+		private PlayerLikeVikingBody body;
 
 		private Village village;
 		private float nextVillageCheck;
@@ -1830,7 +1830,7 @@ namespace VikingVillages
 			nview = GetComponent<ZNetView>();
 			ai = GetComponent<MonsterAI>();
 			viking = GetComponent<VikingCore>();
-			body = GetComponent<PCVikingBody>();
+			body = GetComponent<PlayerLikeVikingBody>();
 			if (ai != null)
 			{
 				// A PC viking keeps a sharp lookout, so it spots monsters before they're on it
@@ -1882,7 +1882,7 @@ namespace VikingVillages
 			{
 				HoldAttached();
 			}
-			if (owner && body != null && VikingCore.IsPCViking(body))
+			if (owner && body != null && VikingCore.IsPlayerLikeViking(body))
 			{
 				body.UpdateGearChanges(ChangeGear);
 				UpdatePutOn();
@@ -2116,6 +2116,20 @@ namespace VikingVillages
 			if (body.IsEncumbered() && (target != null || fleeing))
 			{
 				ShedForFight();
+			}
+			// An NPC viking runs inside from a fight, only fighting back with its knife when it's caught
+			if (Peaceful())
+			{
+				ShelterMove shelter = UpdateShelter(dt, target);
+				if (shelter == ShelterMove.Handled)
+				{
+					return(true);
+				}
+				if (shelter == ShelterMove.Fight)
+				{
+					lastFightAt = Time.time;
+					return(false);
+				}
 			}
 			if (UpdateFlee(dt, target))
 			{
@@ -2525,6 +2539,7 @@ namespace VikingVillages
 				job = ChooseJob();
 				job.Begin();
 			}
+			UpdateFree();
 			LogJobTick();
 			UpdateJobPower();
 			bool firstTick = (job != tickedJob);

@@ -32,6 +32,12 @@ namespace VikingVillages
 		public static readonly int PopulatedKey = "kriona.VikingVillages.villagePopulated".GetStableHashCode();
 
 		/// <summary>
+		/// On a viking, that it's one of those its village started with, rolled up together as the village was first
+		/// populated - so they share the village's pockets out between them (see VikingCore.ShareTrinkets)
+		/// </summary>
+		public static readonly int StarterKey = "kriona.VikingVillages.vikingStarter".GetStableHashCode();
+
+		/// <summary>
 		/// On a farm's generator, the deaths waiting for a viking to come back in their place - when each happened and
 		/// whether a player killed it - and when the last viking came back, in ZNet time ticks
 		/// </summary>
@@ -173,7 +179,7 @@ namespace VikingVillages
 		private static float nextCheck;
 
 		/// <summary>
-		/// When each zone around a loaded village was found loaded, by Time.time
+		/// When each loaded zone was found loaded, by Time.time
 		/// </summary>
 		private static readonly Dictionary<Vector2s, float> zoneLoadedSince = new Dictionary<Vector2s, float>();
 
@@ -448,7 +454,7 @@ namespace VikingVillages
 		/// <param name="character">The dying creature</param>
 		public static void OnVikingDeath(Character character)
 		{
-			if (character == null || !VikingCore.IsPCViking(character) || !character.m_nview.IsOwner() || ZRoutedRpc.instance == null)
+			if (character == null || !VikingCore.IsPlayerLikeViking(character) || !character.m_nview.IsOwner() || ZRoutedRpc.instance == null)
 			{
 				return;
 			}
@@ -614,21 +620,16 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Notes when each zone across the loaded villages was found loaded, forgetting the zones that aren't
+		/// Notes when each loaded zone was found loaded, forgetting the zones that aren't - every one, not just those a
+		/// loaded village reaches across, so a village that comes to be in zones loaded a while ago, like one just
+		/// generated or spawned there, finds them settled already
 		/// </summary>
 		private static void TrackZones()
 		{
 			Dictionary<Vector2s, float> loaded = new Dictionary<Vector2s, float>();
-			foreach (Village village in new List<Village>(Village.Loaded()))
+			foreach (Vector2s zone in ZoneSystem.instance.m_zones.Keys)
 			{
-				foreach (Vector2s zone in Zones(village))
-				{
-					if (loaded.ContainsKey(zone) || !ZoneSystem.instance.IsZoneLoaded(zone))
-					{
-						continue;
-					}
-					loaded[zone] = (zoneLoadedSince.TryGetValue(zone, out float since) ? since : Time.time);
-				}
+				loaded[zone] = (zoneLoadedSince.TryGetValue(zone, out float since) ? since : Time.time);
 			}
 			zoneLoadedSince.Clear();
 			foreach (KeyValuePair<Vector2s, float> zone in loaded)
@@ -673,9 +674,6 @@ namespace VikingVillages
 		/// <summary>
 		/// Checks whether the zone a point is in has been loaded long enough for everything in it to have arrived
 		/// </summary>
-		/// <remarks>
-		/// Only the zones a loaded village reaches across are kept track of
-		/// </remarks>
 		/// <param name="point">The point</param>
 		/// <returns>True when it has</returns>
 		public static bool ZoneSettled(Vector3 point)
@@ -788,7 +786,7 @@ namespace VikingVillages
 			}
 			heads = Mathf.Max(1, heads);
 			zdo.Set(HeadCountKey, heads);
-			Plugin.Log.LogInfo("The village at " + village.Farm.ToString("F0") + " has " + heads + " PC vikings");
+			Plugin.Log.LogInfo("The village at " + village.Farm.ToString("F0") + " has " + heads + " vikings");
 			return(true);
 		}
 
@@ -832,8 +830,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Lists the PC vikings this client has that belong to a village - those that note it as their village, and
-		/// those inside it that note none, which are taken in when this client owns them
+		/// Lists the PC and NPC vikings this client has that belong to a village - those that note it as their village,
+		/// and those inside it that note none, which are taken in when this client owns them
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <returns>The vikings' ZDOs</returns>
@@ -845,7 +843,7 @@ namespace VikingVillages
 			List<ZDO> homeless = new List<ZDO>();
 			foreach (ZDO zdo in zdos)
 			{
-				if (zdo.GetPrefab() != VikingCore.PCPrefabHash || zdo.GetBool(VillageFounding.LeavingKey))
+				if (!VikingCore.IsPlayerLikePrefab(zdo.GetPrefab()) || zdo.GetBool(VillageFounding.LeavingKey))
 				{
 					continue;
 				}
@@ -956,7 +954,7 @@ namespace VikingVillages
 			Reconcile(deaths, gap, NetTime.Now());
 			if (gap > 0)
 			{
-				Plugin.Log.LogInfo("The village at " + village.Farm.ToString("F0") + " is missing " + gap + " PC vikings");
+				Plugin.Log.LogInfo("The village at " + village.Farm.ToString("F0") + " is missing " + gap + " vikings");
 			}
 			WriteDeaths(village.Zdo, deaths);
 		}
@@ -1363,20 +1361,27 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Spawns a PC viking of a village at a spot, never starred, calling a house of its core home - the one given,
-		/// or else the one the fewest vikings call home - as the next viking that left a village disbanded where it
-		/// stands when there's one coming back (see VillageDeparted), or else a new one, marked as an archer when the
-		/// village has none, and named for its place among the village's first vikings when it's one of those it starts
-		/// with (see VikingNames.FirstVikings)
+		/// Spawns a PC or NPC viking of a village at a spot, never starred, calling a house of its core home - the one
+		/// given, or else the one the fewest vikings call home - as the next viking that left a village disbanded where it
+		/// stands when there's one coming back (see VillageDeparted), the same kind it was, or else a new one, an NPC
+		/// viking when that keeps one in every NPCVikings.NPCEvery of the village's vikings one (see
+		/// NPCVikings.NextIsNPC), a PC viking marked as an archer when the village has none, and named for its place among
+		/// the village's first vikings when it's one of those it starts with (see VikingNames.FirstVikings)
 		/// </summary>
 		/// <param name="village">The village</param>
-		/// <param name="vikings">Its PC vikings' ZDOs</param>
+		/// <param name="vikings">Its PC and NPC vikings' ZDOs</param>
 		/// <param name="spot">Where it comes</param>
 		/// <param name="chosen">The house it calls home, or null to pick one</param>
 		/// <returns>Its ZDO, or null when it couldn't be spawned</returns>
 		private static ZDO SpawnVillager(Village village, List<ZDO> vikings, Vector3 spot, VillagePaths.House? chosen)
 		{
-			GameObject prefab = ZNetScene.instance.GetPrefab(VikingCore.PCPrefabHash);
+			int kind = VillageDeparted.NextReturningPrefab(village);
+			if (kind == 0)
+			{
+				int npcs = vikings.FindAll((ZDO other) => other.GetPrefab() == VikingCore.NPCPrefabHash).Count;
+				kind = (NPCVikings.NextIsNPC(vikings.Count, npcs) ? VikingCore.NPCPrefabHash : VikingCore.PCPrefabHash);
+			}
+			GameObject prefab = ZNetScene.instance.GetPrefab(kind);
 			if (prefab == null)
 			{
 				return(null);
@@ -1391,7 +1396,7 @@ namespace VikingVillages
 			// The archer mark only gives a viking a bow as its gear is first rolled, and one coming back already has its
 			// gear, so it's left to the next new viking when the village has no one with a bow
 			bool returned = VillageDeparted.TakeReturning(village, zdo);
-			if (!returned && !vikings.Exists((ZDO other) => VikingCore.IsArcher(other)))
+			if (!returned && kind == VikingCore.PCPrefabHash && !vikings.Exists((ZDO other) => VikingCore.IsArcher(other)))
 			{
 				zdo.Set(VikingCore.ArcherKey, true);
 			}
@@ -1399,6 +1404,7 @@ namespace VikingVillages
 			if (!returned && !village.Zdo.GetBool(PopulatedKey))
 			{
 				VikingNames.PresetFirst(zdo, VillageNames.Typed(village), vikings.Count);
+				zdo.Set(StarterKey, true);
 			}
 			VillagePaths.House home = (chosen.HasValue ? chosen.Value : FewestClaimed(village, vikings));
 			village.Adopt(zdo, home);
@@ -1470,7 +1476,7 @@ namespace VikingVillages
 		public static ZDO SpawnArrivalAt(Village village, List<ZDO> vikings, byte[] snapshot, Vector3 spot, bool outside)
 		{
 			bool questHome = VillageQuests.ComingHome(snapshot, village);
-			GameObject prefab = ZNetScene.instance.GetPrefab(VikingCore.PCPrefabHash);
+			GameObject prefab = ZNetScene.instance.GetPrefab(VillageDeparted.PrefabOf(snapshot));
 			if (prefab == null)
 			{
 				return(null);

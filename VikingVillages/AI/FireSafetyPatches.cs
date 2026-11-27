@@ -35,7 +35,7 @@ namespace VikingVillages
 		private static void Postfix(BaseAI __instance, bool __result)
 		{
 			// A path found earlier and handed back again was bent when it was found
-			if (!__result || __instance.m_lastFindPathTime != Time.time || __instance.m_character == null || !VikingCore.IsPCViking(__instance.m_character))
+			if (!__result || __instance.m_lastFindPathTime != Time.time || __instance.m_character == null || !VikingCore.IsPlayerLikeViking(__instance.m_character))
 			{
 				return;
 			}

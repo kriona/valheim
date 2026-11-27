@@ -104,7 +104,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The viking whose food this is
 		/// </summary>
-		private readonly PCVikingBody viking;
+		private readonly PlayerLikeVikingBody viking;
 
 		/// <summary>
 		/// How long since the viking was last healed by its food on this client, and since its max health last followed
@@ -124,7 +124,7 @@ namespace VikingVillages
 		/// Starts a PC viking's food
 		/// </summary>
 		/// <param name="viking">The viking</param>
-		public VikingFood(PCVikingBody viking)
+		public VikingFood(PlayerLikeVikingBody viking)
 		{
 			this.viking = viking;
 		}

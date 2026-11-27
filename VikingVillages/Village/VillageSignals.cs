@@ -122,7 +122,7 @@ namespace VikingVillages
 			{
 				return;
 			}
-			if (!CallsForHelp(victim.IsPlayer(), VikingCore.IsPCViking(victim), attacker.IsPlayer(), attacker.IsTamed(), VikingCore.IsPCViking(attacker), attacker.GetFaction()))
+			if (!CallsForHelp(victim.IsPlayer(), VikingCore.IsPlayerLikeViking(victim), attacker.IsPlayer(), attacker.IsTamed(), VikingCore.IsPlayerLikeViking(attacker), attacker.GetFaction()))
 			{
 				return;
 			}
@@ -147,7 +147,7 @@ namespace VikingVillages
 				return;
 			}
 			// The same monsters a viking hurt by them calls for help against
-			if (!CallsForHelp(false, true, attacker.IsPlayer(), attacker.IsTamed(), VikingCore.IsPCViking(attacker), attacker.GetFaction()))
+			if (!CallsForHelp(false, true, attacker.IsPlayer(), attacker.IsTamed(), VikingCore.IsPlayerLikeViking(attacker), attacker.GetFaction()))
 			{
 				return;
 			}

@@ -128,7 +128,7 @@ namespace VikingVillages
 			{
 				return(player.GetPlayerName());
 			}
-			if (character is PCVikingBody viking)
+			if (character is LivingVikingBody viking)
 			{
 				string name = (viking.Stranger() ? "" : viking.ShownName());
 				return((name.Length > 0) ? name : "A Viking");

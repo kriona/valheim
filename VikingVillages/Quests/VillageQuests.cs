@@ -706,6 +706,11 @@ namespace VikingVillages
 				{
 					continue;
 				}
+				// An NPC viking only goes on the quests that don't fight or take a weapon to the work (see NPCQuests.Allows)
+				if (VikingCore.IsNPCViking(humanoid) && !NPCQuests.Allows(kind))
+				{
+					continue;
+				}
 				// One whose gear is so far behind the quest that it would be expected to lose all its health stays home
 				VikingCore core = humanoid.GetComponent<VikingCore>();
 				if (QuestFightGame.ExpectedToDie(kind, humanoid, rule.VikingsFor(biome)) ?? QuestSim.ExpectedToDie(kind, questBiome - ((core != null) ? core.BiomeIndex() : biome)))
@@ -761,9 +766,15 @@ namespace VikingVillages
 			record.Kind = kind;
 			record.Item = (item ?? "");
 			record.Amount = amount;
-			for (int i = 0; i < size; i++)
+			// NPC vikings forage and find bees first, and a trip to a trader takes one PC viking with NPC vikings - waiting
+			// for a PC viking fit to go
+			List<Humanoid> going = NPCQuests.Pick(kind, fit, (Humanoid viking) => VikingCore.IsNPCViking(viking), (Humanoid viking) => Lacks(kind, viking), size);
+			if (going.Count == 0)
 			{
-				Humanoid member = fit[i];
+				return(null);
+			}
+			foreach (Humanoid member in going)
+			{
 				record.Members.Add(VikingIdentity.Get(member.m_nview.GetZDO()));
 				record.Names.Add(VikingNames.Get(member));
 				string tool = "";

@@ -600,7 +600,7 @@ namespace VikingVillages
 			{
 				return("player " + player.GetPlayerName());
 			}
-			if (VikingCore.IsPCViking(character))
+			if (VikingCore.IsPlayerLikeViking(character))
 			{
 				string name = VikingNames.Get(character);
 				return((name.Length > 0) ? name : "a nameless viking");
@@ -664,7 +664,7 @@ namespace VikingVillages
 				{
 					return("players");
 				}
-				if (VikingCore.IsPCViking(attacker))
+				if (VikingCore.IsPlayerLikeViking(attacker))
 				{
 					return("vikings");
 				}
@@ -685,7 +685,7 @@ namespace VikingVillages
 		/// <param name="before">Its health before the hit</param>
 		public static void OnHit(Character character, HitData hit, float before)
 		{
-			if (!On || !VikingCore.IsPCViking(character))
+			if (!On || !VikingCore.IsPlayerLikeViking(character))
 			{
 				return;
 			}
@@ -716,7 +716,7 @@ namespace VikingVillages
 			}
 			HitData hit = character.m_lastHit;
 			string cause = ((hit != null) ? "last hit by " + Source(hit) : "no hit noted");
-			if (VikingCore.IsPCViking(character))
+			if (VikingCore.IsPlayerLikeViking(character))
 			{
 				VillageLife life = character.GetComponent<VillageLife>();
 				// A viking thrown to its death is written as flung first, though its second isn't up
@@ -744,7 +744,7 @@ namespace VikingVillages
 			string where = (village.Contains(position) ? " in" : " near");
 			Plugin.Log.LogInfo("Kill: " + Name(character) + where + " the village at " + village.Farm.ToString("F0") + " - " + cause);
 			Character killer = hit?.GetAttacker();
-			bool byViking = (killer != null && VikingCore.IsPCViking(killer));
+			bool byViking = (killer != null && VikingCore.IsPlayerLikeViking(killer));
 			Count(byViking ? "Killed by vikings" : "Killed near villages by others", Utils.GetPrefabName(character.gameObject));
 			if (raids.TryGetValue(village.Farm, out RaidWatch watch))
 			{

@@ -400,13 +400,24 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds gear in a chest the viking would take up over its own
+		/// Finds gear in a chest the viking would take up over its own - for an NPC viking, only what none of the
+		/// village's PC vikings would take up, so a spare dverger circlet or strength belt goes to a PC viking first
 		/// </summary>
 		/// <param name="chest">The chest</param>
 		/// <returns>The gear, or null when there's none</returns>
 		private ItemDrop.ItemData UpgradeIn(Container chest)
 		{
-			return(chest.GetInventory().GetAllItems().Find((ItemDrop.ItemData item) => IsGear(item) && viking.WouldTakeUp(item)));
+			return(chest.GetInventory().GetAllItems().Find((ItemDrop.ItemData item) => IsGear(item) && viking.WouldTakeUp(item) && !(Peaceful() && PCWants(item))));
+		}
+
+		/// <summary>
+		/// Checks whether any of the village's PC vikings loaded here would take up a piece of gear
+		/// </summary>
+		/// <param name="item">The gear</param>
+		/// <returns>True when one would</returns>
+		private bool PCWants(ItemDrop.ItemData item)
+		{
+			return(village.Vikings().Exists((Character other) => VikingCore.IsPCViking(other) && other.TryGetComponent(out VikingCore core) && core.WouldTakeUp(item)));
 		}
 
 		/// <summary>

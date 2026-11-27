@@ -52,10 +52,13 @@ namespace Kriona.Vikings
 			{
 				return(-1f);
 			}
-			// Every viking is at least SkillFloor in every skill, a tombstone viking whose player never used one included
+			// Every viking is at least SkillFloor in every skill, a tombstone viking whose player never used one included -
+			// but an NPC viking, who was never taught to fight, has none at all in its combat skills (see
+			// Viking Villages' NPCVikings.Skill)
 			if (!data.Tombstone)
 			{
-				return(Mathf.Max(SkillFloor, data.Skills.TryGetValue((int)skill, out float own) ? own : data.Skill));
+				float floor = (IsNPCViking(humanoid) ? 0f : SkillFloor);
+				return(Mathf.Max(floor, data.Skills.TryGetValue((int)skill, out float own) ? own : data.Skill));
 			}
 			// A tombstone viking from before vikings had skills fights at its biome's middle skill
 			if (data.Skills.Count == 0)
@@ -72,7 +75,7 @@ namespace Kriona.Vikings
 		public const float SkillFloor = 1f;
 
 		/// <summary>
-		/// Raises a PC or dvergr viking's skill the way a player's rises, for the same things, like a hit with a
+		/// Raises a living viking's skill the way a player's rises, for the same things, like a hit with a
 		/// weapon or a block - by the skill's step, the world's skill gain rate, its status effects and being rested,
 		/// toward the next level the way a player's is, from its own level in everything - glowing around its head on
 		/// every client as it reaches a new level, the way a player does
@@ -85,7 +88,7 @@ namespace Kriona.Vikings
 		/// <param name="factor">How much the action raises it, as the game gives it</param>
 		public void RaiseSkill(Skills.SkillType skill, float factor)
 		{
-			if (skill == Skills.SkillType.None || !IsPCOrDvergr(humanoid) || nview == null || !nview.IsValid() || !nview.IsOwner())
+			if (skill == Skills.SkillType.None || !IsLivingViking(humanoid) || nview == null || !nview.IsValid() || !nview.IsOwner())
 			{
 				return;
 			}

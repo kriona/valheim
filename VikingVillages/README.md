@@ -6,11 +6,11 @@ The Meadows' abandoned farms aren't abandoned anymore. Vikings move in, keep the
 
 Viking Villages works on its own, and with [Zombie Apocalypse](https://thunderstore.io/c/valheim/p/Kriona/ZombieApocalypse/) the two know about each other - see With Zombie Apocalypse below.
 
-This page gives a short tour of each feature. Every detail of how it works is in [LOGIC.md](LOGIC.md), and every job the Vikings do, in the order they pick them, is in [JOBS.md](JOBS.md). How PC Vikings (Player Character), Dvergr Vikings and Zombie Apocalypse's zombie Vikings compare is in [VIKINGS.md](VIKINGS.md).
+This page gives a short tour of each feature. Every detail of how it works is in [LOGIC.md](LOGIC.md), and every job the Vikings do, in the order they pick them, is in [JOBS.md](JOBS.md). How PC Vikings (Player Character), NPC Vikings (Non-Player Character), Dvergr Vikings and Zombie Apocalypse's zombie Vikings compare is in [VIKINGS.md](VIKINGS.md).
 
 ## Villages
 
-- Every farm in the Meadows becomes a village, home to 2 PC Vikings for each farmhouse. Farms come in a range of sizes, bigger near harder biomes, and are built around their oaks rather than clearing them (see [Farms](LOGIC.md#farms))
+- Every farm in the Meadows becomes a village, home to 2 Vikings for each farmhouse - PC Vikings, and an NPC Viking in every five. Farms come in a range of sizes, bigger near harder biomes, and are built around their oaks rather than clearing them (see [Farms](LOGIC.md#farms))
 - Its houses are fixed up and furnished - beds, chests stocked with food and supplies, tables, and a workbench and forge upgraded for the village's biome - and the abandoned houses nearby are taken in, as homes or as outposts. Half the farmhouses can be built from your own PlanBuild blueprints (see [Houses, Core and Outposts](LOGIC.md#houses-core-and-outposts) and [Furnishing](LOGIC.md#furnishing))
 - The ground is flattened and dirt paths join the houses, crossing rivers on bridges, and run on to any village close by (see [Ground, Paths and Bridges](LOGIC.md#ground-paths-and-bridges))
 - A bonfire burns in the middle of the village, with cooking stations, a cauldron and sitting logs around it, pushing back the fog (see [The Fire](LOGIC.md#the-fire))
@@ -28,6 +28,13 @@ This page gives a short tour of each feature. Every detail of how it works is in
 - Open a Viking's inventory to hand them gear, take it back, and see their skills, health and status effects (see [Their Inventory](LOGIC.md#their-inventory))
 - A stray hit with PvP off doesn't turn the village on you, and a Viking you angered forgives you once they've slept on it (see [Hurting a Viking](LOGIC.md#hurting-a-viking))
 - A Viking who dies comes back in time, so a village wiped out fills up again (see [Coming Back and Joining](LOGIC.md#coming-back-and-joining))
+
+## NPC Vikings (Non-Player Character)
+
+- One in every five of a village's Vikings is a peaceful villager, dressed in their biome's tunics, dresses and hats rather than armor, who carries only a knife and is better at farming, cooking, crafting and fishing than the rest (see [NPC Vikings](LOGIC.md#npc-vikings) and [PROGRESSION.md](PROGRESSION.md#npc-vikings))
+- They see to the village's chores first - cooking, repairs, loot, paths, wood and the smelters - leaving the PC Vikings free to fight, keep watch and adventure (see [Leaving Chores to NPC Vikings](JOBS.md#leaving-chores-to-npc-vikings))
+- They run inside from danger, only fighting back with their knife when they're caught, and a raid or the night watch's alarm gets them up to shelter indoors until it has passed (see [Shelter](JOBS.md#shelter))
+- They go foraging, find bees and trade with the traders, and the PC Vikings get the village's circlets, strength belts and pockets first (see [QUESTS.md](QUESTS.md))
 
 ## Viking AI
 
@@ -60,9 +67,9 @@ This page gives a short tour of each feature. Every detail of how it works is in
 
 | Key | Look at | What it does |
 | --- | --- | --- |
-| E | A PC Viking | Talk to them |
-| Shift+E | A PC Viking | Rename them |
-| I | A PC Viking | Open their inventory |
+| E | A PC or NPC Viking | Talk to them |
+| Shift+E | A PC or NPC Viking | Rename them |
+| I | A PC or NPC Viking | Open their inventory |
 | I | A village's bonfire or campfire | Show the village's stock |
 | N | A village's bonfire or campfire | Rename the village |
 | V | A village's bonfire or campfire | Show or hide the village's rings |

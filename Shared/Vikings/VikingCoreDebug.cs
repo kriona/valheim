@@ -98,7 +98,7 @@ namespace Kriona.Vikings
 		private string OwnSummary(string owner)
 		{
 			System.Text.StringBuilder text = new System.Text.StringBuilder();
-			string kind = (IsPCViking(humanoid) ? "Viking" : (IsDvergrViking(humanoid) ? "Dvergr viking" : ((GetData() != null && data.Tombstone) ? "Tombstone zombie viking" : "Zombie viking")));
+			string kind = (IsPCViking(humanoid) ? "PC viking" : (IsNPCViking(humanoid) ? "NPC viking" : (IsDvergrViking(humanoid) ? "Dvergr viking" : ((GetData() != null && data.Tombstone) ? "Tombstone zombie viking" : "Zombie viking"))));
 			text.Append(kind + ", " + Mathf.CeilToInt(humanoid.GetHealth()) + "/" + Mathf.CeilToInt(humanoid.GetMaxHealth()) + " health\n");
 			text.Append("Owner: " + owner + "\n");
 			AddDebugLines(text);
@@ -120,7 +120,7 @@ namespace Kriona.Vikings
 				{
 					flags.Add("asleep");
 				}
-				if (IsPCViking(humanoid))
+				if (IsPlayerLikeViking(humanoid))
 				{
 					flags.Add((InDanger() ? "in danger" : "calm") + ", " + (sheathed ? "sheathed" : "drawn"));
 				}

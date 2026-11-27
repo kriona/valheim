@@ -211,7 +211,8 @@ namespace VikingVillages
 			{
 				return;
 			}
-			if (attacker == humanoid || !Hears(where) || !BaseAI.IsEnemy(humanoid, attacker))
+			// An NPC viking never comes to help in a fight
+			if (attacker == humanoid || Peaceful() || !Hears(where) || !BaseAI.IsEnemy(humanoid, attacker))
 			{
 				return;
 			}
@@ -250,6 +251,13 @@ namespace VikingVillages
 		{
 			if (!active || village == null || Utils.DistanceXZ(village.Farm, farm) > 1f || nview == null || !nview.IsOwner())
 			{
+				return;
+			}
+			// An NPC viking gets up and stays up inside until the danger has passed (see StaysUp), sheltering from what it's
+			// about (see UpdateShelter) rather than going after it
+			if (Peaceful())
+			{
+				WakeForDanger("an alarm");
 				return;
 			}
 			Interrupt("an alarm");
@@ -352,7 +360,8 @@ namespace VikingVillages
 			float nearestDistance = float.MaxValue;
 			foreach (VillageLife life in All)
 			{
-				if (!life.active || life.village != village || life.humanoid == null || life.humanoid.IsDead() || !life.nview.IsOwner())
+				// An NPC viking never keeps watch, so it never takes the place of one who fell
+				if (!life.active || life.Peaceful() || life.village != village || life.humanoid == null || life.humanoid.IsDead() || !life.nview.IsOwner())
 				{
 					continue;
 				}
@@ -388,12 +397,12 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether the viking only picks fights with monsters that are a threat - any PC viking
+		/// Checks whether the viking only picks fights with monsters that are a threat - any PC or NPC viking
 		/// </summary>
 		/// <returns>True when it does</returns>
 		public bool PicksFightsWithThreats()
 		{
-			return(humanoid != null && VikingCore.IsPCViking(humanoid));
+			return(humanoid != null && VikingCore.IsPlayerLikeViking(humanoid));
 		}
 
 		/// <summary>

@@ -190,7 +190,7 @@ namespace VikingVillages
 		/// <returns>The name</returns>
 		private static string SpeakerName(Character viking)
 		{
-			return((viking is PCVikingBody pc) ? pc.KnownName() : viking.GetHoverName());
+			return((viking is LivingVikingBody pc) ? pc.KnownName() : viking.GetHoverName());
 		}
 
 		/// <summary>

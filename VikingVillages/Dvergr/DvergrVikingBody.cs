@@ -1,11 +1,11 @@
 namespace VikingVillages
 {
 	/// <summary>
-	/// A dvergr viking's body - built on a PC viking's, with the forsaken powers it knows and uses and its name as the local
+	/// A dvergr viking's body - a living viking's, with the forsaken powers it knows and uses and its name as the local
 	/// player knows it, but no village life to feed or rest it, so its health is its biome's and its stars', and no
 	/// naming it or opening its inventory - only talking to it
 	/// </summary>
-	internal class DvergrVikingBody : PCVikingBody
+	internal class DvergrVikingBody : LivingVikingBody
 	{
 		/// <summary>
 		/// The viking's life with the dvergr, found the first time it's needed

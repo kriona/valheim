@@ -40,13 +40,23 @@ namespace VikingVillages
 				raidNoticed = false;
 				return;
 			}
+			// An NPC viking asleep or resting is woken by a raid, so it gets up and shelters inside (see StaysUp)
+			if (!raidNoticed && Peaceful() && (inBed || dulled))
+			{
+				WakeForDanger("a raid");
+			}
 			if (raidNoticed || inBed || dulled)
 			{
 				return;
 			}
 			raidNoticed = true;
 			string name = VillageNames.Get(village);
-			if (IsWatch() && (IsNight() || IsDusk()))
+			if (Peaceful())
+			{
+				// An NPC viking cries out that it's hiding rather than calling the village to arms
+				VikingSpeech.SayFirst(humanoid, NPCSpeech.Hide(name), VikingSpeech.CallTime, VikingSpeech.CallCull);
+			}
+			else if (IsWatch() && (IsNight() || IsDusk()))
 			{
 				lastAlarm = Time.time;
 				ai.StopMoving();
@@ -67,11 +77,16 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Picks what the viking does through a raid on its village - keeping watch at night when it's the watch, taking
-		/// done food off a cooking station, eating, or resting by the fire, while it's wounded, or else keeping guard
+		/// done food off a cooking station, eating, or resting by the fire, while it's wounded, or else keeping guard. An
+		/// NPC viking shelters instead (see ShelterRaidJob)
 		/// </summary>
 		/// <returns>The job</returns>
 		private Job RaidJob()
 		{
+			if (Peaceful())
+			{
+				return(ShelterRaidJob());
+			}
 			if (IsNight() && IsWatch())
 			{
 				return(new WatchJob(this));
@@ -116,8 +131,10 @@ namespace VikingVillages
 		/// <returns>True while it waits, so its job is put off</returns>
 		private bool UpdateWary(float dt)
 		{
-			if (job != null && job.Resting())
+			// An NPC viking leaves a corpse about to rise to those who fight
+			if ((job != null && job.Resting()) || Peaceful())
 			{
+				waitingFor = ZDOID.None;
 				return(false);
 			}
 			if (!VillageHazards.NearestRising(transform.position, WaryRange, out VillageHazards.Rising corpse) || village.DistanceOutside(corpse.Position) > LeashRange)

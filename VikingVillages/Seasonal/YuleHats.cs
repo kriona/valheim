@@ -94,7 +94,7 @@ namespace VikingVillages
 		public static int Swap(VisEquipment visual, int hash)
 		{
 			// The date is looked at first, so the rest of the year no character is looked up
-			if (hash == 0 || !Showing() || !VikingCore.IsPCOrDvergr(visual.GetComponent<Character>()))
+			if (hash == 0 || !Showing() || !VikingCore.IsLivingViking(visual.GetComponent<Character>()))
 			{
 				return(hash);
 			}

@@ -5,15 +5,15 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Tames the animals an abandoned farm's pens spawned that came out wild, while the farm's village has PC
-	/// vikings to keep them
+	/// Tames the animals an abandoned farm's pens spawned that came out wild, while the farm's village has vikings to
+	/// keep them or is still waiting for the ones it starts with
 	/// </summary>
 	/// <remarks>
-	/// A pen's animal is tamed as it spawns when its village has PC vikings (see VikingFarmAnimalsPatch), but the
-	/// pens spawn before a new village's first vikings come, and can spawn before the village's vikings have loaded. A
-	/// new village's pens are tamed right before its first vikings are spawned (see VillageRespawn.Populated), so they
-	/// never see the animals as wild ones to fight, and each farm's spawners are looked through every CheckInterval
-	/// seconds after that. The animal each one spawned is tamed by the client that owns it, so it's the vikings'
+	/// A pen's animal is tamed as it spawns when its village has vikings, or hasn't had its first vikings yet (see
+	/// VikingFarmAnimalsPatch), so a new village's livestock is never wild. The pens can spawn before the village's
+	/// vikings have loaded, or before its farm's generator is known, so each farm's spawners are looked through every
+	/// CheckInterval seconds as well, and a new village's pens again right before its first vikings are spawned (see
+	/// VillageRespawn.Populated), so they never see the animals as wild ones to fight. The animal each one spawned is tamed by the client that owns it, so it's the vikings'
 	/// livestock like the rest. Only what a farm's spawners spawned is tamed, not wild animals that wander in.
 	///
 	/// The livestock fights off the enemies that come near its pen, the way the vikings do (see Guard). A boar's own AI
@@ -50,12 +50,33 @@ namespace VikingVillages
 			List<Village> villages = new List<Village>();
 			foreach (Village village in Village.Loaded())
 			{
-				if (village.Vikings().Count > 0)
+				if (village.Vikings().Count > 0 || Awaiting(village.Zdo))
 				{
 					villages.Add(village);
 				}
 			}
 			TamePens(villages);
+		}
+
+		/// <summary>
+		/// Checks whether a farm's village is still waiting for the vikings it starts with, so the animals its pens
+		/// spawn are already its livestock
+		/// </summary>
+		/// <param name="generator">The farm's generator's ZDO, or null</param>
+		/// <returns>True when it is - a farm's village, not one a player started, that hasn't had its first vikings yet</returns>
+		private static bool Awaiting(ZDO generator)
+		{
+			return(generator != null && generator.GetPrefab() == VillagePaths.GeneratorHash && !generator.GetBool(VillageRespawn.PopulatedKey));
+		}
+
+		/// <summary>
+		/// Checks whether the farm at a point is a village still waiting for the vikings it starts with (see Awaiting)
+		/// </summary>
+		/// <param name="position">The point, like where a pen's spawner stands</param>
+		/// <returns>True when it is</returns>
+		public static bool AwaitsVikings(Vector3 position)
+		{
+			return(Awaiting(VillageRespawn.FindGenerator(position)));
 		}
 
 		/// <summary>

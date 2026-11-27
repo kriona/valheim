@@ -611,7 +611,7 @@ namespace VikingVillages
 			{
 				vikingArmor.text = Mathf.CeilToInt(viking.GetBodyArmor()).ToString();
 			}
-			if (vikingWeight != null && viking is PCVikingBody pc)
+			if (vikingWeight != null && viking is PlayerLikeVikingBody pc)
 			{
 				vikingWeight.text = pc.WeightText();
 			}

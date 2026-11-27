@@ -172,5 +172,22 @@ namespace VikingVillages.Tests
 			Assert.Equal(new List<KeyValuePair<int, long>> { new KeyValuePair<int, long>(5, 50L), new KeyValuePair<int, long>(7, 70L) }, list);
 			Assert.Empty(VillageDeparted.ToList(new FastIterableKeyValues<int, string>()));
 		}
+
+		/// <summary>
+		/// Checks that a viking kept as an NPC viking comes back as one, and any other, or values that can't be read, as a
+		/// PC viking
+		/// </summary>
+		[Fact]
+		public void ComesBackAsItsOwnKind()
+		{
+			VillageDeparted.VikingValues npc = EveryType();
+			npc.Ints.Add(new KeyValuePair<int, int>(VillageDeparted.PrefabValueKey, Kriona.Vikings.VikingCore.NPCPrefabHash));
+			Assert.Equal(Kriona.Vikings.VikingCore.NPCPrefabHash, VillageDeparted.PrefabIn(VillageDeparted.Decode(VillageDeparted.Encode(npc, new HashSet<int>()))));
+			VillageDeparted.VikingValues pc = EveryType();
+			pc.Ints.Add(new KeyValuePair<int, int>(VillageDeparted.PrefabValueKey, Kriona.Vikings.VikingCore.PCPrefabHash));
+			Assert.Equal(Kriona.Vikings.VikingCore.PCPrefabHash, VillageDeparted.PrefabIn(pc));
+			Assert.Equal(Kriona.Vikings.VikingCore.PCPrefabHash, VillageDeparted.PrefabIn(EveryType()));
+			Assert.Equal(Kriona.Vikings.VikingCore.PCPrefabHash, VillageDeparted.PrefabIn(null));
+		}
 	}
 }

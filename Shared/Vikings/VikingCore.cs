@@ -48,6 +48,13 @@ namespace Kriona.Vikings
 		public static readonly int DvergrPrefabHash = DvergrPrefabName.GetStableHashCode();
 
 		/// <summary>
+		/// The NPC viking's prefab - a peaceful villager Viking Villages adds beside its PC vikings, who lives in a village
+		/// the same way but keeps out of fights, and Zombie Apocalypse raises as a zombie viking
+		/// </summary>
+		public const string NPCPrefabName = "NPCViking";
+		public static readonly int NPCPrefabHash = NPCPrefabName.GetStableHashCode();
+
+		/// <summary>
 		/// Asks the viking's owner for its debug summary, from a client in debug mode hovering a viking it doesn't own
 		/// </summary>
 		private const string DebugAskRpc = "kriona.Vikings.VikingDebugAsk";
@@ -356,14 +363,45 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Checks whether a creature is a viking that's alive - a PC viking or a dvergr viking - which raises its
-		/// skills, keeps its gear repaired and rises as a zombie viking with its looks and gear
+		/// Checks whether a creature is an NPC viking
 		/// </summary>
 		/// <param name="character">The creature</param>
 		/// <returns>True when it is</returns>
-		public static bool IsPCOrDvergr(Character character)
+		public static bool IsNPCViking(Character character)
 		{
-			return(IsPCViking(character) || IsDvergrViking(character));
+			return(IsPrefab(character, NPCPrefabHash));
+		}
+
+		/// <summary>
+		/// Checks whether a creature is a viking that lives the way a player does - a PC viking or an NPC viking - with a
+		/// village life, food, rest and an inventory of its own
+		/// </summary>
+		/// <param name="character">The creature</param>
+		/// <returns>True when it is</returns>
+		public static bool IsPlayerLikeViking(Character character)
+		{
+			return(IsPCViking(character) || IsNPCViking(character));
+		}
+
+		/// <summary>
+		/// Checks whether a ZDO's prefab is a viking that lives the way a player does - a PC viking or an NPC viking
+		/// </summary>
+		/// <param name="hash">The ZDO's prefab hash</param>
+		/// <returns>True when it is</returns>
+		public static bool IsPlayerLikePrefab(int hash)
+		{
+			return(hash == PCPrefabHash || hash == NPCPrefabHash);
+		}
+
+		/// <summary>
+		/// Checks whether a creature is a viking that's alive - a PC, NPC or dvergr viking - which raises its skills,
+		/// keeps its gear repaired and rises as a zombie viking with its looks and gear
+		/// </summary>
+		/// <param name="character">The creature</param>
+		/// <returns>True when it is</returns>
+		public static bool IsLivingViking(Character character)
+		{
+			return(IsPlayerLikeViking(character) || IsDvergrViking(character));
 		}
 
 		/// <summary>
@@ -629,7 +667,13 @@ namespace Kriona.Vikings
 			humanoid.m_runSpeed = (night ? NightRunSpeed : RunSpeed);
 			humanoid.m_speed = baseSpeed * (night ? NightSpeedScale : 1f);
 			loaded = true;
+			AfterLoad();
 		}
+
+		/// <summary>
+		/// Does what only the viking's kind does once it has loaded, its gear on and its health set
+		/// </summary>
+		partial void AfterLoad();
 
 		/// <summary>
 		/// Gets the viking's health from its data - a viking of the world's is multiplied by its stars like any

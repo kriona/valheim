@@ -87,7 +87,7 @@ namespace VikingVillages
 		/// <param name="viking">The dying creature</param>
 		public static void OnVikingDeath(Character viking)
 		{
-			if (viking == null || ZRoutedRpc.instance == null || !VikingCore.IsPCViking(viking) || viking.m_nview == null || !viking.m_nview.IsValid() || !viking.m_nview.IsOwner())
+			if (viking == null || ZRoutedRpc.instance == null || !VikingCore.IsPlayerLikeViking(viking) || viking.m_nview == null || !viking.m_nview.IsValid() || !viking.m_nview.IsOwner())
 			{
 				return;
 			}
@@ -258,7 +258,7 @@ namespace VikingVillages
 		/// <param name="corpse">Its corpse, just made by this client</param>
 		public static void MarkCorpse(Character viking, Ragdoll corpse)
 		{
-			if (viking == null || corpse == null || !VikingCore.IsPCViking(viking) || corpse.m_nview == null || !corpse.m_nview.IsValid() || !corpse.m_nview.IsOwner())
+			if (viking == null || corpse == null || !VikingCore.IsPlayerLikeViking(viking) || corpse.m_nview == null || !corpse.m_nview.IsValid() || !corpse.m_nview.IsOwner())
 			{
 				return;
 			}

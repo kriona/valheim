@@ -6,7 +6,7 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// Keeps a PC viking's name over its health bar clear of the bar while it runs to more than one line, as it does
-	/// with its job under it in debug mode (see PCVikingBody.GetHoverName) - lifting the name so its last line sits
+	/// with its job under it in debug mode (see LivingVikingBody.GetHoverName) - lifting the name so its last line sits
 	/// where a name of one line would
 	/// </summary>
 	/// <remarks>
@@ -40,7 +40,7 @@ namespace VikingVillages
 			foreach (KeyValuePair<Character, EnemyHud.HudData> entry in hud.m_huds)
 			{
 				EnemyHud.HudData data = entry.Value;
-				if (!(entry.Key is PCVikingBody) || data.m_gui == null || !data.m_gui.activeSelf || data.m_name == null)
+				if (!(entry.Key is LivingVikingBody) || data.m_gui == null || !data.m_gui.activeSelf || data.m_name == null)
 				{
 					continue;
 				}

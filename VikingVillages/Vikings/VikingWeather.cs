@@ -25,7 +25,7 @@ namespace VikingVillages
 		/// <summary>
 		/// The viking the weather gets to
 		/// </summary>
-		private readonly PCVikingBody viking;
+		private readonly PlayerLikeVikingBody viking;
 
 		/// <summary>
 		/// When the viking's surroundings are next checked on this client, in Time.time seconds
@@ -44,7 +44,7 @@ namespace VikingVillages
 		/// Starts the weather getting to a PC viking
 		/// </summary>
 		/// <param name="viking">The viking</param>
-		public VikingWeather(PCVikingBody viking)
+		public VikingWeather(PlayerLikeVikingBody viking)
 		{
 			this.viking = viking;
 		}
@@ -259,7 +259,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Checks whether a viking's armor, or anything else on it, resists frost, which keeps the cold off it the way it
-		/// does a player - or it's immune to frost (see PCVikingBody.FrostImmune), which the game's check for a
+		/// does a player - or it's immune to frost (see LivingVikingBody.FrostImmune), which the game's check for a
 		/// player leaves out, since no player is
 		/// </summary>
 		/// <param name="viking">The viking</param>

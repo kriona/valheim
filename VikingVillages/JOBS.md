@@ -1,78 +1,78 @@
 # Viking Villages - Jobs
 
-Everything a PC Viking does in their village, with the numbers it goes by. [LOGIC.md](LOGIC.md) covers what their work adds up to and how they fight, get around and look after themselves, [QUESTS.md](QUESTS.md) what they do once they've left on a quest, and [DIALOG.md](DIALOG.md) what they say as they go about it.
+Everything a PC or NPC Viking does in their village, with the numbers it goes by - NPC Vikings, the village's peaceful villagers, do most of the same jobs, and the ones that differ are in [NPC Vikings](#npc-vikings). [LOGIC.md](LOGIC.md) covers what their work adds up to and how they fight, get around and look after themselves, [QUESTS.md](QUESTS.md) what they do once they've left on a quest, and [DIALOG.md](DIALOG.md) what they say as they go about it.
 
 Times of day are shares of the game's day, as the game counts it: 0.25 is dawn, about 6 in the morning, 0.5 noon and 0.75 nightfall, about 6 in the evening. Dusk is from 0.71, about 5 in the afternoon, until night. Seconds are real seconds - at the default day of 30 real minutes, each real minute is 48 game minutes.
 
 ## Every Job
 
-Everything a PC Viking does, most important first. What's higher up stops what's lower down: the jobs marked Always drop whatever a Viking is doing, by day a Viking picks the first of the numbered jobs they can do, and with no work they roll between the ones at the bottom, by weight - see [How a Job Is Picked](#how-a-job-is-picked) for the whole order.
+Everything a PC Viking does, most important first. What's higher up stops what's lower down: the jobs marked Always drop whatever a Viking is doing, by day a Viking picks the first of the numbered jobs they can do, and with no work they roll between the ones at the bottom, by weight - see [How a Job Is Picked](#how-a-job-is-picked) for the whole order. The NPC column says whether an NPC Viking does it too: Yes, No, or First for the village's chores, which a PC Viking leaves to an NPC Viking with nothing better to do (see [NPC Vikings](#npc-vikings)).
 
-| Job | When | What they do |
-| --- | --- | --- |
-| [Run out of flames](#run-out-of-flames) | Always | Run clear of a fire's flames |
-| [Step away from poison](#step-away-from-poison) | Always | With Zombie Apocalypse, keep 3 m from poison clouds and corpses that might leave one |
-| [Keep clear of roots](#keep-clear-of-roots) | Always | Back away from hostile roots, calling an archer to shoot them |
-| [Put themselves out](#put-themselves-out) | Always | Run into water when on fire |
-| [Drop what slows them](#drop-what-slows-them) | Always | Drop what they can't carry when they have to fight or run |
-| [Run home](#run-home) | Always | Run to the village's core when losing a fight or in danger outside |
-| [Fight](#fight) | Always | Go after threats and help fellows who are attacked |
-| [Wait for the dead](#wait-for-the-dead) | Always | Stand ready by a corpse about to rise |
-| [Get off a roof](#get-off-a-roof) | Always | Walk or climb down to the ground |
-| [Get out of a pen](#get-out-of-a-pen) | Always | Leave a pen they have no work in |
-| [Get out of the water](#get-out-of-the-water) | Always | Walk to dry ground |
-| [Walk back](#walk-back) | Always | Return when more than 75 m past the village's edge |
-| [Mourn the dead](#mourn-the-dead) | Day or night | Grieve by a fallen Viking of their village, then put away their gear |
-| [Keep guard](#keep-guard) | During a raid | Stand around the fire, facing out, with their weapon drawn |
-| [Lighten the load](#lighten-the-load) | Day or night, first | Put away or drop what they can't carry |
-| [Pick up kill loot](#pick-up-kill-loot) | Day or night, next | Pick up what an enemy they fought dropped |
-| [Put away what a quest brought home](#put-away-what-a-quest-brought-home) | Day or night, next | Store what a quest brought back |
-| [Keep watch](#keep-watch) | Night | Patrol the village with a torch and wake it to danger |
-| [Sleep](#sleep) | Night | Go to bed, a chair or their house's floor |
-| [Torches](#torches) | Dusk and night | Hold a torch, and craft one when short |
-| [Teach a forsaken power](#teach-a-forsaken-power) | Dusk | Use a power beside a Viking who doesn't know it |
-| [Gather at the fire](#gather-at-the-fire) | Dusk | Stand or sit in a ring around the fire |
-| [Leave on a quest](#leave-on-a-quest) | Day, first | Pack food, potions and a tool, then head out |
-| [Eat](#eat) | Day 1 | Eat from the chests when hurt |
-| [Rest by the fire](#rest-by-the-fire) | Day 2 | Sit by the fire when hurt until rested |
-| [Keep their foods up](#keep-their-foods-up) | Day 3 | Eat while there's food to spare |
-| [Keep warm](#keep-warm) | Day 4 | Sit by a fire or go inside in freezing weather |
-| [Put away loot](#put-away-loot) | Day 5 | Put what they carry in the chests |
-| [Pick up loot](#pick-up-loot) | Day 6 | Gather items lying around the village |
-| [Cook](#cook) | Day 7 | Cook raw meat at the cooking stations |
-| [Cook a meal](#cook-a-meal) | Day 8 | Make a meal at the cauldron |
-| [Take up better gear](#take-up-better-gear) | Day 9 | Put on better gear from the chests |
-| [Fill their quiver](#fill-their-quiver) | Day 10 | Take arrows from the chests |
-| [Get food](#get-food) | Day 11 | Short of food, hunt prey that drops it or slaughter livestock |
-| [Make paths](#make-paths) | Day 12 | Hoe paths to new buildings, bridging water |
-| [Repair the village](#repair-the-village) | Day 13 | Fix damaged pieces |
-| [Clear snow](#clear-snow) | Day 14 | In the Deep North, knock heavy snow off pieces and the ground |
-| [Repair their gear](#repair-their-gear) | Day 15 | Fix worn gear at the workbench or forge |
-| [Rebuild the fire](#rebuild-the-fire) | Day 16 | Build back the village's fire |
-| [Take down a sitting log](#take-down-a-sitting-log) | Day 17 | Take down the logs by an old fire for their wood |
-| [Look after the cart](#look-after-the-cart) | Day 18 | Unload, take down, fetch back or build the village's cart |
-| [Build more chests](#build-more-chests) | Day 19 | Build a chest when the chests run low on room |
-| [Cut trees](#cut-trees) | Day 20 | Fell brush trees when the village is out of wood |
-| [Rebuild the village](#rebuild-the-village) | Day 21 | Build back destroyed pieces |
-| [Stack the fire](#stack-the-fire) | Day 22 | Put wood on the fire |
-| [Craft arrows](#craft-arrows) | Day 23 | Make the best arrows the village can |
-| [Craft a torch](#craft-a-torch) | Day 24 | Make a torch when theirs is missing or worn |
-| [Craft a second weapon](#craft-a-second-weapon) | Day 25 | Make a crude bow, or an axe or club |
-| [Craft better gear](#craft-better-gear) | Day 26 | Make a weapon, shield or armor better than their own |
-| [Upgrade their gear](#upgrade-their-gear) | Day 27 | Raise a piece of their gear one quality |
-| [Work toward the goal](#work-toward-the-goal) | Day 28 | Fuel and fill smelters, and craft materials for the village's goal |
-| [Stock tools](#stock-tools) | Day 29 | Make axes and pickaxes for the chests |
-| [Line a weapon with silver](#line-a-weapon-with-silver) | Day 30 | With Zombie Apocalypse, line a weapon with silver |
-| [Silver arrows](#silver-arrows) | Day 31 | With Zombie Apocalypse, take or craft silver arrows |
-| [Build a beehive](#build-a-beehive) | Day 32 | Build a hive with a queen bee |
-| [Talk](#talk) | Day, weight 25 | Chat with another Viking |
-| [Pet a boar](#pet-a-boar) | Day, weight 10 | Pet one of the village's livestock |
-| [Stock the chests with wood](#stock-the-chests-with-wood) | Day, weight 15 | Gather wood from the ground into the chests |
-| [Forage](#forage) | Day, weight 15, or 60 short of food | Pick honey, berries, mushrooms and flint |
-| [Hunt](#hunt) | Day, weight 15, or 60 short of food | Hunt prey near the village, from the Plains on in parties |
-| [Get rested again](#get-rested-again) | Day, weight 15 | Sit by the fire until rested |
-| [Stroll](#stroll) | Day, weight 40 | Walk to an open spot in the village |
-| [Stand about](#stand-about) | Day, weight 25 | Stand and look around |
+| Job | When | What they do | NPC |
+| --- | --- | --- | --- |
+| [Run out of flames](#run-out-of-flames) | Always | Run clear of a fire's flames | Yes |
+| [Step away from poison](#step-away-from-poison) | Always | With Zombie Apocalypse, keep 3 m from poison clouds and corpses that might leave one | Yes |
+| [Keep clear of roots](#keep-clear-of-roots) | Always | Back away from hostile roots, calling an archer to shoot them | Yes |
+| [Put themselves out](#put-themselves-out) | Always | Run into water when on fire | Yes |
+| [Drop what slows them](#drop-what-slows-them) | Always | Drop what they can't carry when they have to fight or run | Yes |
+| [Run home](#run-home) | Always | Run to the village's core when losing a fight or in danger outside | No - they [shelter](#shelter) instead |
+| [Fight](#fight) | Always | Go after threats and help fellows who are attacked | No - they [shelter](#shelter), fighting back with their knife only when caught |
+| [Wait for the dead](#wait-for-the-dead) | Always | Stand ready by a corpse about to rise | No |
+| [Get off a roof](#get-off-a-roof) | Always | Walk or climb down to the ground | Yes |
+| [Get out of a pen](#get-out-of-a-pen) | Always | Leave a pen they have no work in | Yes |
+| [Get out of the water](#get-out-of-the-water) | Always | Walk to dry ground | Yes |
+| [Walk back](#walk-back) | Always | Return when more than 75 m past the village's edge | Yes |
+| [Mourn the dead](#mourn-the-dead) | Day or night | Grieve by a fallen Viking of their village, then put away their gear | Yes |
+| [Keep guard](#keep-guard) | During a raid | Stand around the fire, facing out, with their weapon drawn | No - they [shelter from the raid](#shelter-from-a-raid) |
+| [Lighten the load](#lighten-the-load) | Day or night, first | Put away or drop what they can't carry | Yes |
+| [Pick up kill loot](#pick-up-kill-loot) | Day or night, next | Pick up what an enemy they fought dropped | Yes |
+| [Put away what a quest brought home](#put-away-what-a-quest-brought-home) | Day or night, next | Store what a quest brought back | Yes |
+| [Keep watch](#keep-watch) | Night | Patrol the village with a torch and wake it to danger | No |
+| [Sleep](#sleep) | Night | Go to bed, a chair or their house's floor | Yes - but a raid or the night watch's alarm wakes them (see [Shelter](#shelter)) |
+| [Torches](#torches) | Dusk and night | Hold a torch, and craft one when short | Yes |
+| [Teach a forsaken power](#teach-a-forsaken-power) | Dusk | Use a power beside a Viking who doesn't know it | No - and they're never taught one |
+| [Gather at the fire](#gather-at-the-fire) | Dusk | Stand or sit in a ring around the fire | Yes |
+| [Leave on a quest](#leave-on-a-quest) | Day, first | Pack food, potions and a tool, then head out | Foraging, finding bees and trading only |
+| [Eat](#eat) | Day 1 | Eat from the chests when hurt | Yes |
+| [Rest by the fire](#rest-by-the-fire) | Day 2 | Sit by the fire when hurt until rested | Yes |
+| [Keep their foods up](#keep-their-foods-up) | Day 3 | Eat while there's food to spare | Yes |
+| [Keep warm](#keep-warm) | Day 4 | Sit by a fire or go inside in freezing weather | Yes |
+| [Put away loot](#put-away-loot) | Day 5 | Put what they carry in the chests | Yes |
+| [Pick up loot](#pick-up-loot) | Day 6 | Gather items lying around the village | First |
+| [Cook](#cook) | Day 7 | Cook raw meat at the cooking stations | First |
+| [Cook a meal](#cook-a-meal) | Day 8 | Make a meal at the cauldron | First |
+| [Take up better gear](#take-up-better-gear) | Day 9 | Put on better gear from the chests | Only a circlet or strength belt no PC Viking wants |
+| [Fill their quiver](#fill-their-quiver) | Day 10 | Take arrows from the chests | No |
+| [Get food](#get-food) | Day 11 | Short of food, hunt prey that drops it or slaughter livestock | First, slaughtering only, with their knife |
+| [Make paths](#make-paths) | Day 12 | Hoe paths to new buildings, bridging water | First |
+| [Repair the village](#repair-the-village) | Day 13 | Fix damaged pieces | First |
+| [Clear snow](#clear-snow) | Day 14 | In the Deep North, knock heavy snow off pieces and the ground | First |
+| [Repair their gear](#repair-their-gear) | Day 15 | Fix worn gear at the workbench or forge | Yes - their clothes and knife |
+| [Rebuild the fire](#rebuild-the-fire) | Day 16 | Build back the village's fire | First |
+| [Take down a sitting log](#take-down-a-sitting-log) | Day 17 | Take down the logs by an old fire for their wood | First |
+| [Look after the cart](#look-after-the-cart) | Day 18 | Unload, take down, fetch back or build the village's cart | First |
+| [Build more chests](#build-more-chests) | Day 19 | Build a chest when the chests run low on room | First |
+| [Cut trees](#cut-trees) | Day 20 | Fell brush trees when the village is out of wood | No |
+| [Rebuild the village](#rebuild-the-village) | Day 21 | Build back destroyed pieces | First |
+| [Stack the fire](#stack-the-fire) | Day 22 | Put wood on the fire | First |
+| [Craft arrows](#craft-arrows) | Day 23 | Make the best arrows the village can | No |
+| [Craft a torch](#craft-a-torch) | Day 24 | Make a torch when theirs is missing or worn | Yes |
+| [Craft a second weapon](#craft-a-second-weapon) | Day 25 | Make a crude bow, or an axe or club | No |
+| [Craft better gear](#craft-better-gear) | Day 26 | Make a weapon, shield or armor better than their own | No |
+| [Upgrade their gear](#upgrade-their-gear) | Day 27 | Raise a piece of their gear one quality | No |
+| [Work toward the goal](#work-toward-the-goal) | Day 28 | Fuel and fill smelters, and craft materials for the village's goal | First |
+| [Stock tools](#stock-tools) | Day 29 | Make axes and pickaxes for the chests | First |
+| [Line a weapon with silver](#line-a-weapon-with-silver) | Day 30 | With Zombie Apocalypse, line a weapon with silver | No |
+| [Silver arrows](#silver-arrows) | Day 31 | With Zombie Apocalypse, take or craft silver arrows | No |
+| [Build a beehive](#build-a-beehive) | Day 32 | Build a hive with a queen bee | First |
+| [Talk](#talk) | Day, weight 25 | Chat with another Viking | Yes |
+| [Pet a boar](#pet-a-boar) | Day, weight 10 | Pet one of the village's livestock | Yes |
+| [Stock the chests with wood](#stock-the-chests-with-wood) | Day, weight 15 | Gather wood from the ground into the chests | First |
+| [Forage](#forage) | Day, weight 15, or 60 short of food | Pick honey, berries, mushrooms and flint | First |
+| [Hunt](#hunt) | Day, weight 15, or 60 short of food | Hunt prey near the village, from the Plains on in parties | No |
+| [Get rested again](#get-rested-again) | Day, weight 15 | Sit by the fire until rested | Yes |
+| [Stroll](#stroll) | Day, weight 40 | Walk to an open spot in the village | Yes |
+| [Stand about](#stand-about) | Day, weight 25 | Stand and look around | Yes |
 
 ## How a Job Is Picked
 
@@ -107,7 +107,7 @@ Some jobs only a few Vikings of a village do at once, counted across every playe
 | --- | --- |
 | Stock the chests with wood | 1 for every 4 Vikings, or part of 4 |
 | Forage | 1 for every 4 Vikings, or part of 4 |
-| Hunt | 1 for every 5 Vikings, or part of 5 - a hunting party's members aside |
+| Hunt | 1 for every 5 Vikings, or part of 5 - a hunting party's members aside, who are never NPC Vikings |
 | Pet a boar | 1 for every 6 Vikings, or part of 6 |
 | Build a beehive, make paths, cut trees, smelt | 1 |
 | Craft a second weapon, craft better gear, craft for the goal, stock tools | 1 between them |
@@ -202,7 +202,7 @@ Archers go for enemy archers first, as though they were a fifth nearer.
 
 They come to help:
 
-- A player or PC Viking hurt by a monster calls every Viking within 30 meters, who drops what they're doing and goes after the attacker - unless they're already fighting a nearer enemy. So does a monster hitting a building in a village
+- A player, PC Viking or NPC Viking hurt by a monster calls every PC Viking within 30 meters, who drops what they're doing and goes after the attacker - unless they're already fighting a nearer enemy. So does a monster hitting a building in a village
 - Once a second, a Viking with no enemy, awake and above three quarters of their health joins a PC Viking they can see within 20 meters fighting an enemy within 30 meters of them
 
 They give up on an enemy more than 40 meters past the village's edge - 70 for one that hurt them, that they were called against or joined against in the last 15 seconds, and 80 for the prey they're hunting. One fighting hand to hand goes around or over a pen's fence between them and an enemy within 8 meters, for up to 10 seconds, jumping it after 3 seconds getting no nearer.
@@ -310,7 +310,7 @@ By day, a Viking with no torch, or only one worn down to half, crafts one - see 
 
 ### Keep Watch
 
-One Viking for every 10 in the village keeps watch each night - one for up to 10 Vikings, two for 11-20, and so on, counting only those loaded. The watch is picked as dusk comes, from those who haven't kept watch that night - the one of the hardest biome, by the gear they came with, at random among equals, so a Viking from a harder biome than the rest keeps watch first, and the one woken at midnight is the strongest of those left - and only before nightfall - a village that first loads after nightfall has no watch that night.
+One Viking for every 10 in the village keeps watch each night - one for up to 10 Vikings, two for 11-20, and so on, counting only those loaded. The watch is picked as dusk comes, from the PC Vikings who haven't kept watch that night - an NPC Viking never keeps it - the one of the hardest biome, by the gear they came with, at random among equals, so a Viking from a harder biome than the rest keeps watch first, and the one woken at midnight is the strongest of those left - and only before nightfall - a village that first loads after nightfall has no watch that night.
 
 The watch gathers at the fire like everyone else and starts their round as they'd go to bed, 0-60 seconds after nightfall. They walk from the doorstep of each house in the village's core - or 2 meters outside a house with no doors - to the outer edge of the village fire's ring and back around, starting at the nearest, stopping 3-6 seconds at each and looking around every 1.5-3 seconds.
 
@@ -658,3 +658,27 @@ They walk to an open spot in the village's core - outside its houses and pens, o
 ### Stand About
 
 For 4-12 seconds, looking a new way every 3-6 seconds. In the rain, inside their house, at least 2 meters from its doors.
+
+## NPC Vikings
+
+One in every five of a village's Vikings is an NPC Viking, a peaceful villager who goes about the same life as the PC Vikings - eating, sleeping, gathering at the fire, mourning and talking - but never fights, keeps watch or guard, hunts, cuts trees, uses a forsaken power or takes up a weapon other than their knife, or a shield, and leaves every job that arms the village to the PC Vikings. They have no need of an axe, since felling trees is left to the PC Vikings and stocking the chests with wood only takes what lies on the ground. The [jobs table](#every-job) says which they do.
+
+### Leaving Chores to NPC Vikings
+
+The village's chores - picking up loot, cooking and cauldron meals, making paths, repairing, clearing snow, rebuilding and stacking the fire and the village, taking down sitting logs, the cart, more chests, fueling and filling smelters and crafting for the village's goal, stocking tools, building beehives, stocking the chests with wood, foraging and slaughtering livestock - are done by NPC Vikings first. An NPC Viking is free for one by day while they're at home in the village and not wounded, standing about, strolling, petting a boar or talking, noted on them every 5 seconds, so it holds on any client. A PC Viking who finds a chore while one of the village's NPC Vikings is free leaves it - letting go of what they claimed - and does the next thing they would. Free NPC Vikings look for work every 5 seconds, so they take it on.
+
+A PC Viking leaves a chore for up to 15 seconds from when they first found it waiting, then takes it on themselves, so a chore no NPC Viking can get to still gets done. A chore that went unseen for 10 seconds starts its wait over. Loot a PC Viking already carries they put away themselves.
+
+An NPC Viking never hunts wild prey, but slaughters the village's livestock with their knife.
+
+### Shelter
+
+An NPC Viking with an enemy after them or near - one that's a threat the way it is for a PC Viking (see [Fight](#fight)) - or hurt a moment ago drops what they're doing, cries out and runs to a spot on the floor of their house, or the nearest standing house of their village - or with none standing, the village's rally point, where the others gather to fight - shouting for help every 6 seconds while an enemy that fights back is within 15 meters. Out of the village, they run home to it. They stay inside, facing the enemy, until 12 seconds after the danger has passed. The village's livestock, and an animal they're slaughtering, are no danger.
+
+They're caught when they've been hit while trying to get away for 3 seconds without getting 1 meter farther from the enemy, or when they can't get away with the enemy within 4 meters. Caught, they cry out and fight back with their knife - or their fists, without one - until 3 seconds after they were last hit, then run again.
+
+They never come to help in a fight, join one or stand ready by a corpse about to rise. The night watch's alarm gets them up from their bed or seat, and they stay up, standing inside their house clear of its doors, until 20 seconds after the raid is over and no enemy is within 10 meters of the village - then they go back to what they'd do, at night to bed.
+
+### Shelter From a Raid
+
+A raid wakes an NPC Viking asleep in bed or resting, the way the night watch's alarm does. Noticing it, by day or night, they cry out that they're going inside, once each, and until the raid is over they only take done food off a cooking station, eat while wounded, or stand inside their house, clear of its doors - and stay up inside for 20 seconds after it's over and no enemy is within 10 meters of the village.

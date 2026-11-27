@@ -1490,7 +1490,7 @@ namespace VikingVillages
 			}
 			if (linked != null)
 			{
-				talks.AddRange(linked);
+				talks.AddRange(Spoken(linked));
 			}
 			return(talks[Random.Range(0, talks.Count)]);
 		}
@@ -1515,13 +1515,26 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// The viking lines are being picked for right now, and the viking it's talking with, if any - set while a PC or
+		/// NPC viking's AI updates (see PlayerLikeVikingAI.UpdateAI), as a player talks to it and as it starts a talk, so
+		/// an NPC viking is never given a line only PC vikings say (see Says)
+		/// </summary>
+		internal static Character Speaker;
+		internal static Character Listener;
+
+		/// <summary>
 		/// Checks whether vikings say a line or start a talk - one about the dead walking only when that's true of the
-		/// world (see ZombieLines), and any other always
+		/// world (see ZombieLines), one only PC vikings say never when an NPC viking is the one picking it or the one it's
+		/// talking with (see NPCSpeech.PCOnly), and any other always
 		/// </summary>
 		/// <param name="line">The line, or the talk's first line</param>
 		/// <returns>True when they say it</returns>
 		internal static bool Says(string line)
 		{
+			if (NPCSpeech.PCOnly(line) && (VikingCore.IsNPCViking(Speaker) || VikingCore.IsNPCViking(Listener)))
+			{
+				return(false);
+			}
 			return(!ZombieLines.TryGetValue(line, out System.Func<bool> holds) || holds());
 		}
 
