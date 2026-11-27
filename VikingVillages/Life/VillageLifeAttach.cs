@@ -50,7 +50,19 @@ namespace VikingVillages
 			{
 				return;
 			}
-			Vector3 standing = ((attachPoint != null) ? attachPoint.position + Vector3.up * 0.5f : transform.position);
+			DetachTo((attachPoint != null) ? attachPoint.position + Vector3.up * 0.5f : transform.position);
+		}
+
+		/// <summary>
+		/// Gets the viking off the bed or chair it's on, standing at a spot
+		/// </summary>
+		/// <param name="standing">Where it stands</param>
+		private void DetachTo(Vector3 standing)
+		{
+			if (attachPoint == null && attachColliders == null)
+			{
+				return;
+			}
 			if (attachColliders != null)
 			{
 				foreach (Collider collider in attachColliders)

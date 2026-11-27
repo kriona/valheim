@@ -343,7 +343,8 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Gets off the bed, chair or floor
+			/// Gets off the bed, chair or floor - off a bed onto the floor spot it lay down from, while that's still beside
+			/// the bed (see BedLeaveReach)
 			/// </summary>
 			private void StandUp()
 			{
@@ -363,6 +364,13 @@ namespace VikingVillages
 				else
 				{
 					VikingPoses.SetSitting(life.humanoid, false);
+				}
+				// Standing up on top of the bed, where the game puts a player getting out of one, can leave a viking on a
+				// patch of navmesh on the bed with no way down to the floor
+				if (bed != null && life.attachPoint != null && Utils.DistanceXZ(settledAt, bed.m_spawnPoint.position) <= BedLeaveReach)
+				{
+					life.DetachTo(settledAt);
+					return;
 				}
 				life.Detach();
 			}

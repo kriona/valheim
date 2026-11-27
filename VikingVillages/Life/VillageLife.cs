@@ -348,6 +348,13 @@ namespace VikingVillages
 		private const float BedEdgeKnee = 0.3f;
 
 		/// <summary>
+		/// The farthest the spot a viking lay down in its bed from can be from where it lies, for it to get up onto
+		/// that spot again, in meters - the length of a bed and a stride past its foot, more than any spot it lies
+		/// down from, so a spot farther off means the bed was moved, like on a ship
+		/// </summary>
+		private const float BedLeaveReach = 3f;
+
+		/// <summary>
 		/// How many places in the ring a viking tries before heading for the fire itself, and how far from a place on the
 		/// navmesh the ring's point can be, in meters
 		/// </summary>
