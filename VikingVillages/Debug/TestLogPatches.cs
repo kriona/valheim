@@ -1,7 +1,183 @@
+using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
 using HarmonyLib;
 
 namespace VikingVillages
 {
+	/// <summary>
+	/// Times the game's AI updates for the test log - the whole list, and each AI in it (see TestLogSlow)
+	/// </summary>
+	/// <remarks>
+	/// Each AI is timed where the list calls it rather than by patching BaseAI.UpdateAI, which the AIs override, a
+	/// viking's through two classes, so a patch there would time only part of some updates. A list that throws isn't
+	/// timed, since its postfix doesn't run - MonoUpdaterAIClearPatch's finalizer logs the exception
+	/// </remarks>
+	[HarmonyPatch(typeof(MonoUpdatersExtra), nameof(MonoUpdatersExtra.UpdateAI))]
+	public static class TestLogAIListPatch
+	{
+		/// <summary>
+		/// Notes when the list starts
+		/// </summary>
+		/// <param name="__state">Set to the start, or 0 when no run is going</param>
+		private static void Prefix(out long __state)
+		{
+			__state = TestLogSlow.Start();
+		}
+
+		/// <summary>
+		/// Writes the list when it was slow
+		/// </summary>
+		/// <param name="source">The AIs updated</param>
+		/// <param name="profileScope">The list's name</param>
+		/// <param name="__state">When it started</param>
+		private static void Postfix(List<IUpdateAI> source, string profileScope, long __state)
+		{
+			if (__state != 0L)
+			{
+				TestLogSlow.EndList(profileScope, source.Count, __state);
+			}
+		}
+
+		/// <summary>
+		/// Swaps the call to each AI's update for TestLogSlow.UpdateAI, leaving the method as it is unless the call is
+		/// there once
+		/// </summary>
+		/// <param name="instructions">The method's instructions</param>
+		/// <returns>The instructions with the call swapped</returns>
+		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		{
+			return(SwapCall(instructions, AccessTools.Method(typeof(IUpdateAI), nameof(IUpdateAI.UpdateAI)), AccessTools.Method(typeof(TestLogSlow), nameof(TestLogSlow.UpdateAI)), "MonoUpdatersExtra.UpdateAI"));
+		}
+
+		/// <summary>
+		/// Swaps an interface call in a list's loop for a static method that takes the object and the call's arguments
+		/// and makes the call, when the call is there once
+		/// </summary>
+		/// <param name="instructions">The method's instructions</param>
+		/// <param name="call">The interface method called</param>
+		/// <param name="timed">The static method to call in its place</param>
+		/// <param name="method">The method's name, for the warning when the call isn't there once</param>
+		/// <returns>The instructions, with the call swapped or as they were</returns>
+		internal static List<CodeInstruction> SwapCall(IEnumerable<CodeInstruction> instructions, MethodInfo call, MethodInfo timed, string method)
+		{
+			List<CodeInstruction> result = new List<CodeInstruction>(instructions);
+			List<CodeInstruction> found = ((call != null) ? result.FindAll((CodeInstruction instruction) => instruction.Calls(call)) : new List<CodeInstruction>());
+			if (found.Count != 1 || timed == null)
+			{
+				Plugin.Log.LogWarning("Expected one " + ((call != null) ? call.Name : "update") + " call in " + method + " but found " + found.Count + " - the test log won't time single objects there");
+				return(result);
+			}
+			found[0].opcode = OpCodes.Call;
+			found[0].operand = timed;
+			return(result);
+		}
+	}
+
+	/// <summary>
+	/// Times the game's fixed updates for the test log - each list, and each object in one, like a creature's
+	/// Character.CustomFixedUpdate (see TestLogSlow)
+	/// </summary>
+	/// <remarks>
+	/// Each object is timed where the list calls it, as TestLogAIListPatch does for the AIs
+	/// </remarks>
+	[HarmonyPatch(typeof(MonoUpdatersExtra), nameof(MonoUpdatersExtra.CustomFixedUpdate))]
+	public static class TestLogFixedListPatch
+	{
+		/// <summary>
+		/// Notes when the list starts
+		/// </summary>
+		/// <param name="__state">Set to the start, or 0 when no run is going</param>
+		private static void Prefix(out long __state)
+		{
+			__state = TestLogSlow.Start();
+		}
+
+		/// <summary>
+		/// Writes the list when it was slow
+		/// </summary>
+		/// <param name="source">The objects updated</param>
+		/// <param name="profileScope">The list's name</param>
+		/// <param name="__state">When it started</param>
+		private static void Postfix(List<IMonoUpdater> source, string profileScope, long __state)
+		{
+			if (__state != 0L)
+			{
+				TestLogSlow.EndList(profileScope, source.Count, __state);
+			}
+		}
+
+		/// <summary>
+		/// Swaps the call to each object's fixed update for TestLogSlow.FixedUpdate
+		/// </summary>
+		/// <param name="instructions">The method's instructions</param>
+		/// <returns>The instructions with the call swapped</returns>
+		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		{
+			return(TestLogAIListPatch.SwapCall(instructions, AccessTools.Method(typeof(IMonoUpdater), nameof(IMonoUpdater.CustomFixedUpdate)), AccessTools.Method(typeof(TestLogSlow), nameof(TestLogSlow.FixedUpdate)), "MonoUpdatersExtra.CustomFixedUpdate"));
+		}
+	}
+
+	/// <summary>
+	/// Times each list of the game's updates for the test log (see TestLogSlow)
+	/// </summary>
+	[HarmonyPatch(typeof(MonoUpdatersExtra), nameof(MonoUpdatersExtra.CustomUpdate))]
+	public static class TestLogUpdateListPatch
+	{
+		/// <summary>
+		/// Notes when the list starts
+		/// </summary>
+		/// <param name="__state">Set to the start, or 0 when no run is going</param>
+		private static void Prefix(out long __state)
+		{
+			__state = TestLogSlow.Start();
+		}
+
+		/// <summary>
+		/// Writes the list when it was slow
+		/// </summary>
+		/// <param name="source">The objects updated</param>
+		/// <param name="profileScope">The list's name</param>
+		/// <param name="__state">When it started</param>
+		private static void Postfix(List<IMonoUpdater> source, string profileScope, long __state)
+		{
+			if (__state != 0L)
+			{
+				TestLogSlow.EndList(profileScope, source.Count, __state);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Times each list of the game's late updates for the test log (see TestLogSlow)
+	/// </summary>
+	[HarmonyPatch(typeof(MonoUpdatersExtra), nameof(MonoUpdatersExtra.CustomLateUpdate))]
+	public static class TestLogLateListPatch
+	{
+		/// <summary>
+		/// Notes when the list starts
+		/// </summary>
+		/// <param name="__state">Set to the start, or 0 when no run is going</param>
+		private static void Prefix(out long __state)
+		{
+			__state = TestLogSlow.Start();
+		}
+
+		/// <summary>
+		/// Writes the list when it was slow
+		/// </summary>
+		/// <param name="source">The objects updated</param>
+		/// <param name="profileScope">The list's name</param>
+		/// <param name="__state">When it started</param>
+		private static void Postfix(List<IMonoUpdater> source, string profileScope, long __state)
+		{
+			if (__state != 0L)
+			{
+				TestLogSlow.EndList(profileScope, source.Count, __state);
+			}
+		}
+	}
+
 	/// <summary>
 	/// Notes the hits PC vikings take for the test log, so a viking's death line lists its last ones (see TestLog)
 	/// </summary>

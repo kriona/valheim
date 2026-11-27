@@ -285,6 +285,15 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Describes the viking's job for the log, the way its debug hover text does
+		/// </summary>
+		/// <returns>The description, like "job: Stroll", or "job: none"</returns>
+		public string LogJob()
+		{
+			return("job: " + ((job != null) ? job.Describe() : "none"));
+		}
+
+		/// <summary>
 		/// Names the viking holding a bed, chair, fire or cooking station, for the village's summary - with what it's
 		/// doing when this client runs it
 		/// </summary>
