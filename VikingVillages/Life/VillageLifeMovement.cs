@@ -684,8 +684,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Notes whether the viking is getting anywhere on its way to a spot - nearer it, or at least moving, since the
 		/// way can lead away from the spot first, like around a house to its door - jumping whatever low thing is in its
-		/// way when it has stood still for HopAfter seconds and there's no way around, and giving up when it has for
-		/// StuckTime seconds
+		/// way when it has stood still for HopAfter seconds and there's no way around - writing to the log why it doesn't
+		/// jump, once a walk (see LogHopRefused) - and giving up when it has for StuckTime seconds
 		/// </summary>
 		/// <param name="target">Where it's walking</param>
 		/// <returns>True when it gave up</returns>
@@ -695,6 +695,7 @@ namespace VikingVillages
 			if (Vector3.Distance(target, stuckTarget) > 0.5f)
 			{
 				hops = 0;
+				hopRefusedLogged = false;
 			}
 			bool moved = (Utils.DistanceXZ(transform.position, stuckFrom) >= StuckMove);
 			if (Vector3.Distance(target, stuckTarget) > 0.5f || distance < stuckBest - 0.5f || moved)
@@ -714,11 +715,20 @@ namespace VikingVillages
 				stuckSince = Time.time;
 				return(false);
 			}
-			if (Time.time - stuckSince >= HopAfter && hops < HopsMax && TryHop(target, false))
+			if (Time.time - stuckSince >= HopAfter && hops < HopsMax)
 			{
-				hops++;
-				stuckSince = Time.time;
-				return(false);
+				if (TryHop(target, false))
+				{
+					hops++;
+					stuckSince = Time.time;
+					return(false);
+				}
+				// Why it doesn't jump is written once for each walk it's held up on
+				if (!hopRefusedLogged)
+				{
+					hopRefusedLogged = true;
+					LogHopRefused(target);
+				}
 			}
 			if (Time.time - stuckSince < StuckTime)
 			{
@@ -742,6 +752,7 @@ namespace VikingVillages
 			stuckSince = Time.time;
 			hops = 0;
 			doorTried = false;
+			hopRefusedLogged = false;
 		}
 	}
 }

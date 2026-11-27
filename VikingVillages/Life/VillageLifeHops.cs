@@ -440,8 +440,9 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Walks the viking to a spot outside a pen's fence it can jump in from (see PenWayIn), then jumps toward what
-		/// it's after in the pen from there - noting the spot as tried either way, so one it can't get to or jump from
-		/// is left for the next, until there's none left and it walks at what it's after as usual
+		/// it's after in the pen from there, writing to the log why when it doesn't (see LogHopRefused) - noting the spot
+		/// as tried either way, so one it can't get to or jump from is left for the next, until there's none left and it
+		/// walks at what it's after as usual
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <param name="target">What it's after, in the pen</param>
@@ -467,7 +468,10 @@ namespace VikingVillages
 			ResetStuck();
 			penWayTried.Add(wayIn);
 			penWayUntil = 0f;
-			TryHop(target, false);
+			if (!TryHop(target, false))
+			{
+				LogHopRefused(target);
+			}
 			return(false);
 		}
 
@@ -496,6 +500,62 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Why a try at a jump wasn't made (see TryHop), for the log and its count - there's a whole path where it's
+		/// going, it's there already, it's off the ground, there's nothing in front of its knees it jumps, what's in front
+		/// of it stands too high, or the jump would take it into a pen its job doesn't take it into
+		/// </summary>
+		private const string HopRefusedPath = "a whole path there";
+		private const string HopRefusedThere = "already where it's going";
+		private const string HopRefusedAir = "off the ground";
+		private const string HopRefusedKnees = "nothing it jumps at its knees";
+		private const string HopRefusedHigh = "the fence's top too far above its feet";
+		private const string HopRefusedPen = "a pen its job doesn't take it into";
+
+		/// <summary>
+		/// Writes to the log, in test or debug mode, why the viking's last try at a jump wasn't made (see TryHop) - with
+		/// what was in front of its knees, or how high the fence's top stood above its feet - counting each reason
+		/// </summary>
+		/// <param name="toward">Where it was going</param>
+		private void LogHopRefused(Vector3 toward)
+		{
+			if (hopRefused == null)
+			{
+				return;
+			}
+			TestLog.Count("Fence jumps refused", hopRefused);
+			if (!TestLog.On && !Player.m_debugMode)
+			{
+				return;
+			}
+			string detail = "";
+			if (hopRefused == HopRefusedKnees)
+			{
+				detail = ((hopRefusedThing != null) ? " - the " + ColliderName(hopRefusedThing) + " at " + hopRefusedPoint.ToString("F1") + " isn't one it jumps" : " - nothing within " + HopReach.ToString("F1") + "m");
+			}
+			else if (hopRefused == HopRefusedHigh && hopRefusedThing != null)
+			{
+				// The fence's top, found from well above just inside its face
+				EnsureHopMask();
+				Vector3 probe = hopRefusedPoint + hopRefusedDirection * 0.1f;
+				probe.y = hopRefusedFeet.y + HopHeight + 3f;
+				bool found = Physics.Raycast(probe, Vector3.down, out RaycastHit top, HopHeight + 4f, hopMask, QueryTriggerInteraction.Ignore);
+				detail = " - the " + ColliderName(hopRefusedThing) + " at " + hopRefusedPoint.ToString("F1") + (found ? ", its top " + (top.point.y - hopRefusedFeet.y).ToString("F2") + "m above its feet" : ", something more than " + HopHeight.ToString("F1") + "m above its feet in its way");
+			}
+			Plugin.Log.LogInfo("Hop: " + TestLog.Name(humanoid, "F1") + " at " + hopRefusedFeet.ToString("F1") + " (" + ((job != null) ? job.Describe() : "no job") + ") doesn't jump toward " + toward.ToString("F1") + ", held up for " + (Time.time - stuckSince).ToString("F0") + "s - " + hopRefused + detail);
+		}
+
+		/// <summary>
+		/// Names what a collider belongs to, for the log - its building piece's prefab, or its own
+		/// </summary>
+		/// <param name="collider">The collider</param>
+		/// <returns>The name</returns>
+		private static string ColliderName(Collider collider)
+		{
+			WearNTear piece = collider.GetComponentInParent<WearNTear>();
+			return(Utils.GetPrefabName((piece != null) ? piece.gameObject : collider.gameObject));
+		}
+
+		/// <summary>
 		/// Starts the viking's jump over something low right in front of it on its way to a spot, like a fence, when
 		/// there's no way around it - backing up and running at it, then jumping with its own jump (see UpdateHop) - or
 		/// climbs out of a pen it can't jump out of (see ClimbOutOfPen)
@@ -506,24 +566,44 @@ namespace VikingVillages
 		/// <returns>True when it started</returns>
 		private bool TryHop(Vector3 toward, bool fighting)
 		{
+			hopRefusedFeet = transform.position;
+			hopRefusedThing = null;
 			if (!fighting && Pathfinding.instance != null && Pathfinding.instance.HavePath(transform.position, toward, Pathfinding.AgentType.Humanoid))
 			{
+				hopRefused = HopRefusedPath;
 				return(false);
 			}
 			Vector3 direction = toward - transform.position;
 			direction.y = 0f;
-			if (direction.sqrMagnitude < 0.01f || !humanoid.IsOnGround())
+			if (direction.sqrMagnitude < 0.01f)
 			{
+				hopRefused = HopRefusedThere;
+				return(false);
+			}
+			if (!humanoid.IsOnGround())
+			{
+				hopRefused = HopRefusedAir;
 				return(false);
 			}
 			direction.Normalize();
+			hopRefusedDirection = direction;
 			EnsureHopMask();
 			Vector3 feet = transform.position;
 			// Only a building piece like a fence is jumped - a rock is walked around, never climbed onto
-			bool low = (Physics.Raycast(feet + Vector3.up * 0.4f, direction, out RaycastHit obstacle, HopReach, hopMask, QueryTriggerInteraction.Ignore) && Hoppable(obstacle.collider));
-			bool high = Physics.Raycast(feet + Vector3.up * HopHeight, direction, HopReach + 0.5f, hopMask, QueryTriggerInteraction.Ignore);
-			if (!low || high)
+			bool kneeHit = Physics.Raycast(feet + Vector3.up * 0.4f, direction, out RaycastHit obstacle, HopReach, hopMask, QueryTriggerInteraction.Ignore);
+			if (kneeHit)
 			{
+				hopRefusedThing = obstacle.collider;
+				hopRefusedPoint = obstacle.point;
+			}
+			if (!kneeHit || !Hoppable(obstacle.collider))
+			{
+				hopRefused = HopRefusedKnees;
+				return(false);
+			}
+			if (Physics.Raycast(feet + Vector3.up * HopHeight, direction, HopReach + 0.5f, hopMask, QueryTriggerInteraction.Ignore))
+			{
+				hopRefused = HopRefusedHigh;
 				return(false);
 			}
 			// It jumps out of a pen it's shut in, but only into one for an enemy or its job
@@ -531,8 +611,10 @@ namespace VikingVillages
 			landing.y = ZoneSystem.instance.GetSolidHeight(landing);
 			if (!fighting && !GoesIntoPens() && !Village.FencedIn(feet) && Village.FencedIn(landing))
 			{
+				hopRefused = HopRefusedPen;
 				return(false);
 			}
+			hopRefused = null;
 			if (ClimbOutOfPen(feet, landing, obstacle))
 			{
 				return(true);
@@ -634,7 +716,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Writes to the log, in test or debug mode, how the viking's jump over a fence ended - where it landed, whether
-		/// that's past the fence, on top of it or back where it jumped from (see HopResult), how high its feet got
+		/// that's past the fence, around it, on top of it or back where it jumped from (see HopResult), how high its feet got
 		/// against the fence's top and how far in front of the fence it left the ground - or that its run-up ran out
 		/// before it jumped, counting each outcome
 		/// </summary>
@@ -654,7 +736,7 @@ namespace VikingVillages
 			{
 				return;
 			}
-			HopOutcome outcome = HopResult(hopPoint, hopDirection, transform.position, hopFenceTop);
+			HopOutcome outcome = HopResult(hopPoint, hopDirection, transform.position, hopFenceTop, hopPeak);
 			string how = HopOutcomeName(outcome);
 			TestLog.Count("Fence jumps", how);
 			if (TestLog.On || Player.m_debugMode)
@@ -666,22 +748,24 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out where a jump over a fence left the viking - past the fence once it's at least HopOverPast beyond the
-		/// fence's face the way it jumped, on top of it short of that with its feet no more than HopOnTopDrop below the
-		/// fence's top, and otherwise back on the side it jumped from
+		/// fence's face the way it jumped with its feet having risen to no more than HopOnTopDrop below the fence's top,
+		/// or around it when they never got that high, on top of it short of the face's HopOverPast with its feet no
+		/// more than HopOnTopDrop below the top, and otherwise back on the side it jumped from
 		/// </summary>
 		/// <param name="face">Where it found the fence's face, before jumping</param>
 		/// <param name="direction">The way it jumped, level</param>
 		/// <param name="landed">Where its feet are once it's down</param>
 		/// <param name="top">How high the fence's top stands</param>
+		/// <param name="peak">The highest its feet got on the way</param>
 		/// <returns>Where it ended up</returns>
-		internal static HopOutcome HopResult(Vector3 face, Vector3 direction, Vector3 landed, float top)
+		internal static HopOutcome HopResult(Vector3 face, Vector3 direction, Vector3 landed, float top, float peak)
 		{
 			Vector3 offset = landed - face;
 			offset.y = 0f;
 			float past = Vector3.Dot(offset, direction);
 			if (past >= HopOverPast)
 			{
-				return(HopOutcome.Over);
+				return((peak >= top - HopOnTopDrop) ? HopOutcome.Over : HopOutcome.Around);
 			}
 			if (landed.y >= top - HopOnTopDrop)
 			{
@@ -704,6 +788,10 @@ namespace VikingVillages
 			else if (outcome == HopOutcome.OnTop)
 			{
 				return("ended up on top of it");
+			}
+			else if (outcome == HopOutcome.Around)
+			{
+				return("went around it");
 			}
 			return("fell back");
 		}

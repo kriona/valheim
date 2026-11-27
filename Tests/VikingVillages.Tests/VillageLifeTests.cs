@@ -417,15 +417,31 @@ namespace VikingVillages.Tests
 
 		/// <summary>
 		/// Checks that a jump east over a fence whose face is at x 10 and whose top is 1.3 meters up counts as over once
-		/// the viking is 0.4 meters past the face, whatever the ground's height there
+		/// the viking is 0.4 meters past the face, whatever the ground's height there, when its feet rose to within 0.3
+		/// meters of the top
 		/// </summary>
 		[Fact]
 		public void JumpsCountOverPastTheFence()
 		{
 			Vector3 face = new Vector3(10f, 0.4f, 5f);
-			Assert.Equal(VillageLife.HopOutcome.Over, VillageLife.HopResult(face, Vector3.right, new Vector3(11.5f, -0.1f, 5f), 1.3f));
-			Assert.Equal(VillageLife.HopOutcome.Over, VillageLife.HopResult(face, Vector3.right, new Vector3(10.45f, 0f, 5f), 1.3f));
-			Assert.Equal(VillageLife.HopOutcome.Over, VillageLife.HopResult(face, Vector3.right, new Vector3(10.6f, 1.3f, 5f), 1.3f));
+			Assert.Equal(VillageLife.HopOutcome.Over, VillageLife.HopResult(face, Vector3.right, new Vector3(11.5f, -0.1f, 5f), 1.3f, 1.6f));
+			Assert.Equal(VillageLife.HopOutcome.Over, VillageLife.HopResult(face, Vector3.right, new Vector3(10.45f, 0f, 5f), 1.3f, 1.3f));
+			Assert.Equal(VillageLife.HopOutcome.Over, VillageLife.HopResult(face, Vector3.right, new Vector3(10.6f, 1.3f, 5f), 1.3f, 1.4f));
+			Assert.Equal(VillageLife.HopOutcome.Over, VillageLife.HopResult(face, Vector3.right, new Vector3(11f, 0f, 5f), 1.3f, 1.05f));
+		}
+
+		/// <summary>
+		/// Checks that a viking past a fence's face whose feet never rose to within 0.3 meters of its top counts as having
+		/// gone around it - like the hillside pen's jumps that came down past the fence's end, 0.44 and 2.46 meters short
+		/// of its top
+		/// </summary>
+		[Fact]
+		public void JumpsCountAroundPastTheFenceWithoutClearingIt()
+		{
+			Vector3 face = new Vector3(10f, 0.4f, 5f);
+			Assert.Equal(VillageLife.HopOutcome.Around, VillageLife.HopResult(face, Vector3.right, new Vector3(11f, 0f, 5f), 1.3f, 0.86f));
+			Assert.Equal(VillageLife.HopOutcome.Around, VillageLife.HopResult(face, Vector3.right, new Vector3(11.2f, -1f, 6.5f), 1.3f, -1.16f));
+			Assert.Equal(VillageLife.HopOutcome.Around, VillageLife.HopResult(face, Vector3.right, new Vector3(10.5f, 0.9f, 5f), 1.3f, 0.95f));
 		}
 
 		/// <summary>
@@ -436,11 +452,11 @@ namespace VikingVillages.Tests
 		public void JumpsCountOnTopOrFallenBack()
 		{
 			Vector3 face = new Vector3(10f, 0.4f, 5f);
-			Assert.Equal(VillageLife.HopOutcome.OnTop, VillageLife.HopResult(face, Vector3.right, new Vector3(10.2f, 1.35f, 5f), 1.3f));
-			Assert.Equal(VillageLife.HopOutcome.OnTop, VillageLife.HopResult(face, Vector3.right, new Vector3(10.1f, 1.05f, 5f), 1.3f));
-			Assert.Equal(VillageLife.HopOutcome.FellBack, VillageLife.HopResult(face, Vector3.right, new Vector3(9f, 0f, 5f), 1.3f));
-			Assert.Equal(VillageLife.HopOutcome.FellBack, VillageLife.HopResult(face, Vector3.right, new Vector3(10.2f, 0.9f, 5f), 1.3f));
-			Assert.Equal(VillageLife.HopOutcome.FellBack, VillageLife.HopResult(face, Vector3.right, new Vector3(10f, 0f, 8f), 1.3f));
+			Assert.Equal(VillageLife.HopOutcome.OnTop, VillageLife.HopResult(face, Vector3.right, new Vector3(10.2f, 1.35f, 5f), 1.3f, 1.6f));
+			Assert.Equal(VillageLife.HopOutcome.OnTop, VillageLife.HopResult(face, Vector3.right, new Vector3(10.1f, 1.05f, 5f), 1.3f, 1.4f));
+			Assert.Equal(VillageLife.HopOutcome.FellBack, VillageLife.HopResult(face, Vector3.right, new Vector3(9f, 0f, 5f), 1.3f, 1.2f));
+			Assert.Equal(VillageLife.HopOutcome.FellBack, VillageLife.HopResult(face, Vector3.right, new Vector3(10.2f, 0.9f, 5f), 1.3f, 1.2f));
+			Assert.Equal(VillageLife.HopOutcome.FellBack, VillageLife.HopResult(face, Vector3.right, new Vector3(10f, 0f, 8f), 1.3f, 0.5f));
 		}
 
 		/// <summary>
@@ -452,6 +468,7 @@ namespace VikingVillages.Tests
 			Assert.Equal("got over", VillageLife.HopOutcomeName(VillageLife.HopOutcome.Over));
 			Assert.Equal("ended up on top of it", VillageLife.HopOutcomeName(VillageLife.HopOutcome.OnTop));
 			Assert.Equal("fell back", VillageLife.HopOutcomeName(VillageLife.HopOutcome.FellBack));
+			Assert.Equal("went around it", VillageLife.HopOutcomeName(VillageLife.HopOutcome.Around));
 		}
 
 		/// <summary>

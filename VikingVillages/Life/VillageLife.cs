@@ -1664,8 +1664,21 @@ namespace VikingVillages
 		private float hopPeak;
 
 		/// <summary>
+		/// For the log of why the viking's last try at a jump wasn't made (see LogHopRefused) - why, or null when it was
+		/// made, where it stood and the way it would have jumped, what was in front of its knees and where, and whether
+		/// it's been written for the time it's been stuck
+		/// </summary>
+		private string hopRefused;
+		private Vector3 hopRefusedFeet;
+		private Vector3 hopRefusedDirection;
+		private Collider hopRefusedThing;
+		private Vector3 hopRefusedPoint;
+		private bool hopRefusedLogged;
+
+		/// <summary>
 		/// How a jump over a fence ended, for the log (see HopResult) - with the viking past the fence's face by at least
-		/// HopOverPast, in meters, or with its feet within HopOnTopDrop of the fence's top short of that
+		/// HopOverPast, in meters, with its feet rising to within HopOnTopDrop of the fence's top on the way, or short of
+		/// the face with its feet within HopOnTopDrop of the top
 		/// </summary>
 		private const float HopOverPast = 0.4f;
 		private const float HopOnTopDrop = 0.3f;
@@ -1683,13 +1696,16 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Where a jump over a fence left the viking - past the fence, on top of it, or back on the side it jumped from
+		/// Where a jump over a fence left the viking - past the fence, on top of it, back on the side it jumped from, or
+		/// past the fence's face without its feet ever getting near its top, having gone around the fence's end or slid
+		/// past it
 		/// </summary>
 		internal enum HopOutcome
 		{
 			Over,
 			OnTop,
-			FellBack
+			FellBack,
+			Around
 		}
 
 		/// <summary>
