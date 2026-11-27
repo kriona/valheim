@@ -657,6 +657,28 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that what the test log says a viking does about a tough monster matches whether it keeps clear - it
+		/// charges or fights it anyway only when it doesn't
+		/// </summary>
+		/// <param name="needed">How many vikings it takes</param>
+		/// <param name="gathered">How many have gathered</param>
+		/// <param name="called">How many are within call</param>
+		/// <param name="shooters">Whether someone near can shoot it</param>
+		/// <param name="expected">What it's written as doing</param>
+		[Theory]
+		[InlineData(3, 3, 3, false, "charges it together")]
+		[InlineData(3, 5, 6, true, "charges it together")]
+		[InlineData(3, 1, 3, false, "keeps clear while the rest gather")]
+		[InlineData(4, 1, 2, true, "keeps clear while it's shot")]
+		[InlineData(4, 1, 2, false, "fights it anyway, with too few and no one to shoot it")]
+		public void WritesWhatItDoesAboutAToughMonster(int needed, int gathered, int called, bool shooters, string expected)
+		{
+			Assert.Equal(expected, VillageLife.ToughDecision(needed, gathered, called, shooters));
+			bool fights = (expected.StartsWith("charges") || expected.StartsWith("fights"));
+			Assert.Equal(!fights, VillageLife.KeepsClear(needed, gathered, called, shooters));
+		}
+
+		/// <summary>
 		/// Checks that a viking kites a poison blob only when it doesn't resist poison and someone can shoot the blob
 		/// </summary>
 		[Fact]

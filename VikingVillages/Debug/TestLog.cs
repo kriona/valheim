@@ -120,6 +120,11 @@ namespace VikingVillages
 		private static readonly Dictionary<Vector3, RaidWatch> raids = new Dictionary<Vector3, RaidWatch>();
 
 		/// <summary>
+		/// The zombie vikings already written as coming near a village this run (see CheckZombies)
+		/// </summary>
+		private static readonly HashSet<ZDOID> zombiesSeen = new HashSet<ZDOID>();
+
+		/// <summary>
 		/// What's kept of a raid on a village while it's on, for the line when it ends
 		/// </summary>
 		private class RaidWatch
@@ -200,6 +205,7 @@ namespace VikingVillages
 			hitchesUnlogged = 0;
 			exceptionRepeats.Clear();
 			raids.Clear();
+			zombiesSeen.Clear();
 			nextTick = 0f;
 			nextSnapshot = Time.time + SnapshotInterval;
 			foreach (VillageLife life in VillageLife.All)
@@ -449,8 +455,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Times the frame, ends the run as the world is left, and every TickInterval takes up a village for a run that
-		/// has none yet and checks on the raids and the vikings this client runs, and every SnapshotInterval writes a
-		/// snapshot
+		/// has none yet and checks on the raids, the zombie vikings coming near villages and the vikings this client
+		/// runs, and every SnapshotInterval writes a snapshot
 		/// </summary>
 		public static void Update()
 		{
@@ -474,6 +480,7 @@ namespace VikingVillages
 				Adopt();
 			}
 			CheckRaids();
+			CheckZombies();
 			foreach (VillageLife life in new List<VillageLife>(VillageLife.All))
 			{
 				if (life != null)
@@ -690,6 +697,10 @@ namespace VikingVillages
 			float after = Mathf.Max(0f, character.GetHealth());
 			Count("Damage taken by vikings", SourceKey(hit), before - after);
 			life.NoteHit(Source(hit) + " at " + character.transform.position.ToString("F1") + ", " + before.ToString("F0") + " -> " + after.ToString("F0") + "/" + character.GetMaxHealth().ToString("F0"));
+			if (hit.m_pushForce > 0f)
+			{
+				life.WatchFling(hit, Source(hit));
+			}
 		}
 
 		/// <summary>
@@ -708,6 +719,11 @@ namespace VikingVillages
 			if (VikingCore.IsLivingViking(character))
 			{
 				VillageLife life = character.GetComponent<VillageLife>();
+				// A viking thrown to its death is written as flung first, though its second isn't up
+				if (life != null)
+				{
+					life.LogFling();
+				}
 				string report = ((life != null) ? life.DeathReport() : "");
 				Plugin.Log.LogWarning("Death: " + Name(character) + " died - " + cause + report);
 				Count("Viking deaths by cause", (hit != null) ? SourceKey(hit) : "unknown");
@@ -773,6 +789,58 @@ namespace VikingVillages
 			Plugin.Log.LogWarning("Hitch: a frame took " + (frame * 1000f).ToString("F0") + "ms" + more + " - " + VillageLife.All.Count + " vikings and " + ((ZNetScene.instance != null) ? ZNetScene.instance.m_instances.Count : 0) + " objects loaded");
 			hitchLoggedAt = Time.unscaledTime;
 			hitchesUnlogged = 0;
+		}
+
+		/// <summary>
+		/// Writes each zombie viking the first time it comes within KillReach of a village this run - its stars, health,
+		/// weapon and armor, and whether it's a night spawn that leaves at dawn, which tells one of the world's night
+		/// zombies from a village's dead risen or one from an abandoned house or a body pile - counting each by which
+		/// </summary>
+		private static void CheckZombies()
+		{
+			foreach (Character character in Character.GetAllCharacters())
+			{
+				if (character == null || character.IsDead() || !VikingCore.IsZombieViking(character) || character.m_nview == null || !character.m_nview.IsValid())
+				{
+					continue;
+				}
+				ZDOID id = character.GetZDOID();
+				if (zombiesSeen.Contains(id))
+				{
+					continue;
+				}
+				Vector3 position = character.transform.position;
+				Village village = Village.Find(position);
+				if (village == null || village.DistanceOutside(position) > KillReach)
+				{
+					continue;
+				}
+				zombiesSeen.Add(id);
+				int stars = character.GetLevel() - 1;
+				string starred = ((stars > 0) ? stars + ((stars == 1) ? " star" : " stars") : "no stars");
+				MonsterAI ai = character.GetBaseAI() as MonsterAI;
+				bool night = (ai != null && ai.DespawnInDay());
+				string where = (village.Contains(position) ? " in" : " near");
+				Plugin.Log.LogInfo("Zombie: " + Name(character) + " came" + where + " the village at " + village.Farm.ToString("F0") + " - " + starred + ", health " + character.GetHealth().ToString("F0") + "/" + character.GetMaxHealth().ToString("F0") + ", wielding " + ZombieWeapon(character) + ", armor " + character.GetBodyArmor().ToString("F0") + ", " + (night ? "a night spawn that leaves at dawn" : "not a night spawn, so it stays past dawn"));
+				Count("Zombie vikings near villages", night ? "night spawns" : "not night spawns");
+			}
+		}
+
+		/// <summary>
+		/// Describes the weapon a zombie viking has in its hands, for the log
+		/// </summary>
+		/// <param name="character">The zombie viking</param>
+		/// <returns>The weapon's name and quality, or "its fists"</returns>
+		private static string ZombieWeapon(Character character)
+		{
+			Humanoid humanoid = character as Humanoid;
+			ItemDrop.ItemData weapon = ((humanoid != null) ? humanoid.GetCurrentWeapon() : null);
+			ItemDrop.ItemData fists = ((humanoid != null && humanoid.m_unarmedWeapon != null) ? humanoid.m_unarmedWeapon.m_itemData : null);
+			if (weapon == null || weapon == fists)
+			{
+				return("its fists");
+			}
+			return(ItemName(weapon) + " q" + weapon.m_quality);
 		}
 
 		/// <summary>

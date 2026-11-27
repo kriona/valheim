@@ -237,7 +237,76 @@ namespace VikingVillages
 			}
 			gathering = (gathered < needed && called >= needed);
 			bool shooters = (gathered < needed && !gathering && ShootersNear(monster));
+			if (TestLog.On || Player.m_debugMode)
+			{
+				LogTough(monster, needed, gathered, called, shooters);
+			}
 			return(KeepsClear(needed, gathered, called, shooters));
+		}
+
+		/// <summary>
+		/// The tough monster the viking last wrote what it does about, and what that was (see ToughDecision)
+		/// </summary>
+		private Character logToughMonster;
+		private string logToughDecision;
+
+		/// <summary>
+		/// Writes what the viking does about a tough monster when it changes - which monster, how tough it weighs it up
+		/// as and why (see VikingCore.FightersNeeded), who's with it, and whether it charges, keeps clear or fights it
+		/// anyway - counted by what it does
+		/// </summary>
+		/// <param name="monster">The tough monster</param>
+		/// <param name="needed">How many vikings it takes to fight the monster hand to hand together</param>
+		/// <param name="gathered">How many of them have gathered against it, the viking among them</param>
+		/// <param name="called">How many are gathered or within call, the viking among them</param>
+		/// <param name="shooters">Whether the viking or a fellow near the monster can shoot it, as KeepsClear weighs it</param>
+		private void LogTough(Character monster, int needed, int gathered, int called, bool shooters)
+		{
+			string decision = ToughDecision(needed, gathered, called, shooters);
+			if (monster == logToughMonster && decision == logToughDecision)
+			{
+				return;
+			}
+			logToughMonster = monster;
+			logToughDecision = decision;
+			int stars = monster.GetLevel() - 1;
+			string starred = ((stars > 0) ? ", " + stars + ((stars == 1) ? " star" : " stars") : "");
+			float hit = MonsterThreat.Hit(monster);
+			float monsterArmor = monster.GetBodyArmor();
+			float swing = viking.SwingDamage(monster.GetDamageModifiers());
+			float armor = viking.BodyArmor();
+			string theirs = "health " + monster.GetHealth().ToString("F0") + "/" + monster.GetMaxHealth().ToString("F0") + ", hitting for " + hit.ToString("F0") + " (" + HitData.DamageTypes.ApplyArmor(hit, armor).ToString("F0") + " through its armor of " + armor.ToString("F0") + "), armor " + monsterArmor.ToString("F0");
+			string own = "its swing of " + swing.ToString("F0") + " (" + HitData.DamageTypes.ApplyArmor(swing, monsterArmor).ToString("F0") + " through the armor), health " + humanoid.GetHealth().ToString("F0") + "/" + humanoid.GetMaxHealth().ToString("F0");
+			string with = "takes " + needed + ", " + gathered + " gathered, " + called + " within call, " + (shooters ? "someone to shoot it" : "no one counted on to shoot it");
+			Plugin.Log.LogInfo("Tough: " + LogName() + " weighs " + TestLog.Name(monster) + starred + " - " + theirs + " - against " + own + " - " + with + " - so it " + decision);
+			TestLog.Count("Tough monsters, by what the vikings did", decision);
+		}
+
+		/// <summary>
+		/// Says what a viking does about a tough monster, the way KeepsClear(int, int, int, bool) decides it - charges it
+		/// once enough have gathered, keeps clear while enough within call gather, or while it's shot, and otherwise
+		/// fights it anyway
+		/// </summary>
+		/// <param name="needed">How many vikings it takes to fight the monster hand to hand together</param>
+		/// <param name="gathered">How many of them have gathered against it, the viking among them</param>
+		/// <param name="called">How many are gathered or within call, the viking among them</param>
+		/// <param name="shooters">Whether the viking or a fellow near the monster can shoot it</param>
+		/// <returns>What it does, in a few words</returns>
+		internal static string ToughDecision(int needed, int gathered, int called, bool shooters)
+		{
+			if (gathered >= needed)
+			{
+				return("charges it together");
+			}
+			if (called >= needed)
+			{
+				return("keeps clear while the rest gather");
+			}
+			if (shooters)
+			{
+				return("keeps clear while it's shot");
+			}
+			return("fights it anyway, with too few and no one to shoot it");
 		}
 
 		/// <summary>

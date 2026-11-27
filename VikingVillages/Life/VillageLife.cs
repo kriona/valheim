@@ -1828,10 +1828,11 @@ namespace VikingVillages
 		/// <summary>
 		/// Keeps a viking lying in bed or sitting on a chair where it lies or sits, puts on and takes off its gear, and
 		/// closes the chest it opened once it's done with it, on its owner - and gives it an ID of its own the first
-		/// time (see VikingIdentity)
+		/// time (see VikingIdentity) - and follows it after a hit for the test log, for being flung (see CheckFling)
 		/// </summary>
 		private void FixedUpdate()
 		{
+			CheckFling();
 			bool owner = (nview != null && nview.IsValid() && nview.IsOwner());
 			if (owner && !hasId)
 			{

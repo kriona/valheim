@@ -51,6 +51,26 @@ namespace VikingVillages
 		private readonly List<KeyValuePair<float, string>> logHits = new List<KeyValuePair<float, string>>();
 
 		/// <summary>
+		/// How long after a hit that pushes it the viking is watched for being flung, in seconds, and how far across the
+		/// ground it has to end up from where it was hit to be written as flung, in meters - farther than it can run in
+		/// that time, about 9 meters at full Run skill, so it's thrown rather than running
+		/// </summary>
+		private const float LogFlingTime = 1f;
+		private const float LogFlingDistance = 10f;
+
+		/// <summary>
+		/// The hit the viking is watched after for being flung (see WatchFling) - what dealt it and how hard it pushed,
+		/// or null when it isn't watched, and the kind of creature that dealt it for the totals - with where it stood and
+		/// when, by Time.time, and the farthest it has ended up from there across the ground, and where that was
+		/// </summary>
+		private string logFlingHit;
+		private string logFlingBy;
+		private Vector3 logFlingFrom;
+		private float logFlingAt;
+		private float logFlingFarthest;
+		private Vector3 logFlingFarthestAt;
+
+		/// <summary>
 		/// What the viking was last written as - out of the village, under the ground, swimming, badly hurt, hungry with
 		/// no food - and since when, and the farthest it has been out of the village this time
 		/// </summary>
@@ -184,6 +204,7 @@ namespace VikingVillages
 		public void LogReset()
 		{
 			logHits.Clear();
+			logFlingHit = null;
 			logOutside = false;
 			logUnder = false;
 			logSwimming = false;
@@ -378,6 +399,73 @@ namespace VikingVillages
 			{
 				logHits.RemoveAt(0);
 			}
+		}
+
+		/// <summary>
+		/// Starts watching the viking for LogFlingTime after a hit that pushes it, to write it as flung when it ends up
+		/// LogFlingDistance or more from where it was hit (see CheckFling) - with the hit's push, the viking's body mass
+		/// and the speed the game pushes it at (see Character.ApplyPushback), which the hit has already set. A hit
+		/// while it's watched after another ends that watch first
+		/// </summary>
+		/// <param name="hit">The hit, after its modifiers</param>
+		/// <param name="source">What dealt it and how much (see TestLog.Source)</param>
+		public void WatchFling(HitData hit, string source)
+		{
+			LogFling();
+			float mass = ((humanoid.m_body != null) ? humanoid.m_body.mass : 0f);
+			logFlingHit = source + ", pushing with " + hit.m_pushForce.ToString("F1") + " against a body mass of " + mass.ToString("F1") + ", for a push of " + humanoid.m_pushForce.magnitude.ToString("F1") + " m/s";
+			Character attacker = hit.GetAttacker();
+			logFlingBy = ((attacker != null) ? Utils.GetPrefabName(attacker.gameObject) : hit.m_hitType.ToString());
+			logFlingFrom = transform.position;
+			logFlingAt = Time.time;
+			logFlingFarthest = 0f;
+			logFlingFarthestAt = logFlingFrom;
+		}
+
+		/// <summary>
+		/// Follows the viking after a hit it's watched after for being flung, noting the farthest it ends up from where it
+		/// was hit across the ground, and ends the watch LogFlingTime after the hit
+		/// </summary>
+		private void CheckFling()
+		{
+			if (logFlingHit == null)
+			{
+				return;
+			}
+			Vector3 position = transform.position;
+			float distance = Utils.DistanceXZ(position, logFlingFrom);
+			if (distance > logFlingFarthest)
+			{
+				logFlingFarthest = distance;
+				logFlingFarthestAt = position;
+			}
+			if (Time.time - logFlingAt >= LogFlingTime)
+			{
+				LogFling();
+			}
+		}
+
+		/// <summary>
+		/// Ends watching the viking after a hit for being flung, writing it as flung when it ended up LogFlingDistance or
+		/// more from where it was hit - how far, how fast, how far it dropped, and the hit that did it - counted by what
+		/// dealt the hit
+		/// </summary>
+		public void LogFling()
+		{
+			if (logFlingHit == null)
+			{
+				return;
+			}
+			string hit = logFlingHit;
+			logFlingHit = null;
+			if (logFlingFarthest < LogFlingDistance)
+			{
+				return;
+			}
+			float seconds = Time.time - logFlingAt;
+			float drop = logFlingFrom.y - logFlingFarthestAt.y;
+			Plugin.Log.LogWarning("Flung: " + LogName() + " was thrown " + logFlingFarthest.ToString("F1") + "m across the ground within " + seconds.ToString("F1") + "s of a hit at " + logFlingFrom.ToString("F1") + ", to " + logFlingFarthestAt.ToString("F1") + ", " + ((drop >= 0f) ? drop.ToString("F1") + "m lower" : (-drop).ToString("F1") + "m higher") + " - hit by " + hit + " - " + LogDoing());
+			TestLog.Count("Flung, by what hit it", logFlingBy);
 		}
 
 		/// <summary>
