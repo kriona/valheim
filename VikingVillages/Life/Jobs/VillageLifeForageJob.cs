@@ -169,10 +169,10 @@ namespace VikingVillages
 		/// </summary>
 		/// <remarks>
 		/// It picks as much as a player would - scaled by the world's resource rate, unless the pickable isn't scaled -
-		/// and gets the pickable's bonus the way a player does from the skill picking it raises, Farming when it raises
-		/// none: as often as the pickable's chance at full skill, scaled by how far up the skill the viking is. Every
-		/// client shows the bonus above the viking with the pickable's bonus sound, and the skill rises for each pick,
-		/// the same as a player's
+		/// and, following Pickable.Interact, gets the pickable's bonus from the skill picking it raises, as often as the
+		/// pickable's chance at full skill, scaled by how far up the skill the viking is (see ForageBonus). What raises
+		/// no skill, like flint and stone, gives no bonus and raises nothing. Every client shows the bonus above the
+		/// viking with the pickable's bonus sound, and the skill rises for each pick, the same as a player's
 		/// </remarks>
 		/// <param name="pickable">The pickable</param>
 		/// <returns>How many it picked</returns>
@@ -184,30 +184,49 @@ namespace VikingVillages
 			}
 			ItemDrop.ItemData food = ForageFood(pickable);
 			int amount = ForageAmount(pickable);
-			Skills.SkillType skill = ((pickable.m_pickRaiseSkill != Skills.SkillType.None) ? pickable.m_pickRaiseSkill : Skills.SkillType.Farming);
-			bool lucky = (Random.value < humanoid.GetSkillFactor(skill) * pickable.m_maxLevelBonusChance);
-			int bonus = (lucky ? Mathf.Max(0, pickable.m_bonusYieldAmount) : 0);
+			Skills.SkillType skill = pickable.m_pickRaiseSkill;
+			float skillFactor = ((skill != Skills.SkillType.None) ? humanoid.GetSkillFactor(skill) : 0f);
+			int bonus = ForageBonus(skill, skillFactor, pickable.m_maxLevelBonusChance, pickable.m_bonusYieldAmount, Random.value);
 			int room = CarryRoom(food, CarryLoot);
 			if (room < amount)
 			{
 				return(0);
 			}
 			bonus = Mathf.Min(bonus, room - amount);
-			// The bonus goes out before the pick, since picking something that doesn't grow back, like stone, destroys it
-			// and its ZDO at once on its owner
+			// The bonus goes out before the pick, since picking something that doesn't grow back destroys it and its ZDO
+			// at once on its owner
 			if (bonus > 0)
 			{
 				VillageSignals.SendForageBonus(pickable.m_nview.GetZDO().m_uid, nview.GetZDO().m_uid, bonus);
 			}
 			pickable.m_pickEffector.Create(pickable.transform.position, Quaternion.identity);
 			pickable.m_nview.InvokeRPC(ZNetView.Everybody, "RPC_SetPicked", true);
-			if (viking != null)
+			if (viking != null && skill != Skills.SkillType.None)
 			{
 				viking.RaiseSkill(skill, 1f);
 			}
 			int carried = Carry(food, amount + bonus, CarryLoot);
 			TestLog.Count("Gathered", TestLog.ItemName(food), carried);
 			return(carried);
+		}
+
+		/// <summary>
+		/// Works out the bonus a pick gives, following Pickable.Interact - only for a pickable whose picking raises a
+		/// skill, as often as its chance at full skill, scaled by how far up that skill the picker is
+		/// </summary>
+		/// <param name="skill">The skill picking it raises, or None</param>
+		/// <param name="skillFactor">How far up that skill the picker is, from 0 to 1</param>
+		/// <param name="maxLevelBonusChance">The pickable's chance of a bonus at full skill</param>
+		/// <param name="bonusYieldAmount">How much more a bonus gives</param>
+		/// <param name="roll">A random number from 0 to 1</param>
+		/// <returns>How much more it gives, or 0 for no bonus</returns>
+		internal static int ForageBonus(Skills.SkillType skill, float skillFactor, float maxLevelBonusChance, int bonusYieldAmount, float roll)
+		{
+			if (skill == Skills.SkillType.None || roll >= skillFactor * maxLevelBonusChance)
+			{
+				return(0);
+			}
+			return(Mathf.Max(0, bonusYieldAmount));
 		}
 
 		/// <summary>

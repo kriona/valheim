@@ -603,7 +603,7 @@ They pick, the nearest first, within 60 meters past the village's edge and with 
 - Flint
 - Stone, only when they're after it for a hoe or axe
 
-They only pick what they can carry and the chests have room for, jumping into pens for it, picking the way you do - a bonus by their skill, scaled by the world's resource rate, raising their farming skill. They stop after 10, honey included, or at dusk, and put it away. With Yagluth's power, they use it as they start.
+They only pick what they can carry and the chests have room for, jumping into pens for it, picking the way you do - a bonus by their skill, scaled by the world's resource rate, raising their farming skill, with no bonus or skill from flint and stone. They stop after 10, honey included, or at dusk, and put it away. With Yagluth's power, they use it as they start.
 
 They also forage, or hunt, for what crafting is short of - see [Craft Arrows](#craft-arrows), [Craft a Second Weapon](#craft-a-second-weapon) and [Make Paths](#make-paths).
 

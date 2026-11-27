@@ -1195,5 +1195,27 @@ namespace VikingVillages.Tests
 		{
 			Assert.Equal(expected, VillageLife.MissTrouble(offMesh, toOpen, outsideHouse, toSpot, oneRoom));
 		}
+
+		/// <summary>
+		/// Checks that a pick gives its bonus the way the game's does - only when picking it raises a skill, as often as
+		/// its chance at full skill scaled by the picker's skill, and never a negative one
+		/// </summary>
+		/// <param name="skill">The skill picking it raises</param>
+		/// <param name="skillFactor">How far up that skill the picker is</param>
+		/// <param name="roll">The random roll</param>
+		/// <param name="bonusYieldAmount">How much more a bonus gives</param>
+		/// <param name="expected">The bonus</param>
+		[Theory]
+		[InlineData(Skills.SkillType.Farming, 1f, 0.2f, 1, 1)]
+		[InlineData(Skills.SkillType.Farming, 1f, 0.25f, 1, 0)]
+		[InlineData(Skills.SkillType.Farming, 0.5f, 0.1f, 2, 2)]
+		[InlineData(Skills.SkillType.Farming, 0.5f, 0.15f, 1, 0)]
+		[InlineData(Skills.SkillType.Farming, 0f, 0f, 1, 0)]
+		[InlineData(Skills.SkillType.Farming, 1f, 0f, -1, 0)]
+		[InlineData(Skills.SkillType.None, 1f, 0f, 1, 0)]
+		public void GivesAPickBonusOnlyForASkillThatPickingRaises(Skills.SkillType skill, float skillFactor, float roll, int bonusYieldAmount, int expected)
+		{
+			Assert.Equal(expected, VillageLife.ForageBonus(skill, skillFactor, 0.25f, bonusYieldAmount, roll));
+		}
 	}
 }
