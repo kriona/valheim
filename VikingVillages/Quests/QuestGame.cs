@@ -341,7 +341,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Adds the rest of what the trees a quest cuts down drop besides its item - their resin, seeds, feathers and the
-		/// like, from the standing tree and every log it falls into (see TreeDrops) - rolling the whole tree's drops once
+		/// like, from the standing tree and every log it falls into (see TreePieces) - rolling the whole tree's drops once
 		/// for each tree it takes to cut that much of its item, and scaled by the world's resource rate. The item itself is
 		/// left to the cutting, and a rock adds nothing
 		/// </summary>
@@ -352,18 +352,18 @@ namespace VikingVillages
 		private static void AddTreeLoot(string target, QuestRecord record, int units, Dictionary<string, int> found)
 		{
 			GameObject prefab = ((target != null && ZNetScene.instance != null) ? ZNetScene.instance.GetPrefab(target) : null);
-			List<DropTable> tables = ((prefab != null) ? TreeDrops(prefab) : new List<DropTable>());
+			List<TreePiece> pieces = ((prefab != null) ? TreePieces(prefab) : new List<TreePiece>());
 			float perTree = 0f;
-			foreach (DropTable table in tables)
+			foreach (TreePiece piece in pieces)
 			{
-				perTree += AverageDrops(table, record.Item);
+				perTree += AverageDrops(piece.Drops, record.Item);
 			}
 			int trees = TreesFor(units, perTree);
 			if (trees <= 0)
 			{
 				return;
 			}
-			List<LootTable> loot = tables.ConvertAll((DropTable table) => FromDropTable(table));
+			List<LootTable> loot = pieces.ConvertAll((TreePiece piece) => FromDropTable(piece.Drops));
 			System.Random rng = new System.Random((record.Id + "/trees").GetHashCode());
 			Dictionary<string, int> rolled = new Dictionary<string, int>();
 			for (int i = 0; i < trees; i++)
@@ -396,23 +396,33 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Lists the drop tables of a whole tree as it's cut down to nothing, the way the game drops them - the standing
-		/// tree's as it falls (see TreeBase), its log's as that breaks, and each smaller log's that one splits into, in
-		/// turn (see TreeLog.Destroy)
+		/// One piece of a tree as it's cut down - the standing tree or one of its logs - with the health it takes to
+		/// break and what it drops when it does
+		/// </summary>
+		private class TreePiece
+		{
+			public float Health;
+			public DropTable Drops;
+		}
+
+		/// <summary>
+		/// Lists the pieces of a whole tree as it's cut down to nothing, the way the game breaks them - the standing tree,
+		/// which drops as it falls (see TreeBase), its log, and each smaller log that one splits into, in turn (see
+		/// TreeLog.Destroy)
 		/// </summary>
 		/// <param name="prefab">The standing tree's prefab</param>
-		/// <returns>The tables, one for each piece, none when it isn't a tree</returns>
-		private static List<DropTable> TreeDrops(GameObject prefab)
+		/// <returns>The pieces, none when it isn't a tree</returns>
+		private static List<TreePiece> TreePieces(GameObject prefab)
 		{
-			List<DropTable> tables = new List<DropTable>();
+			List<TreePiece> pieces = new List<TreePiece>();
 			TreeBase tree = prefab.GetComponent<TreeBase>();
 			if (tree == null)
 			{
-				return(tables);
+				return(pieces);
 			}
-			tables.Add(tree.m_dropWhenDestroyed);
-			AddLogDrops(tree.m_logPrefab, tables, 0);
-			return(tables);
+			pieces.Add(new TreePiece { Health = tree.m_health, Drops = tree.m_dropWhenDestroyed });
+			AddLogPieces(tree.m_logPrefab, pieces, 0);
+			return(pieces);
 		}
 
 		/// <summary>
@@ -422,26 +432,26 @@ namespace VikingVillages
 		private const int MaxLogSplits = 4;
 
 		/// <summary>
-		/// Adds a log's drop table, and those of the smaller logs it splits into, one for each spot one appears at
+		/// Adds a log as a piece, and the smaller logs it splits into, one for each spot one appears at
 		/// </summary>
 		/// <param name="logPrefab">The log's prefab, or null</param>
-		/// <param name="tables">The tables, added to</param>
+		/// <param name="pieces">The pieces, added to</param>
 		/// <param name="splits">How many times the logs above it have split</param>
-		private static void AddLogDrops(GameObject logPrefab, List<DropTable> tables, int splits)
+		private static void AddLogPieces(GameObject logPrefab, List<TreePiece> pieces, int splits)
 		{
 			TreeLog log = ((logPrefab != null) ? logPrefab.GetComponent<TreeLog>() : null);
 			if (log == null || splits > MaxLogSplits)
 			{
 				return;
 			}
-			tables.Add(log.m_dropWhenDestroyed);
+			pieces.Add(new TreePiece { Health = log.m_health, Drops = log.m_dropWhenDestroyed });
 			if (log.m_subLogPrefab == null || log.m_subLogPoints == null)
 			{
 				return;
 			}
 			foreach (Transform point in log.m_subLogPoints)
 			{
-				AddLogDrops(log.m_subLogPrefab, tables, splits + 1);
+				AddLogPieces(log.m_subLogPrefab, pieces, splits + 1);
 			}
 		}
 
@@ -567,7 +577,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Works out how much damage breaks off one of an item from a rock or tree, on average - its health over what it
-		/// drops of the item
+		/// drops of the item, for a tree the health of it and every log it falls into over what all of them drop (see
+		/// TreePieces), since most trees drop their wood only from their logs
 		/// </summary>
 		/// <param name="target">The rock's or tree's prefab name, or null</param>
 		/// <param name="item">The item's prefab name</param>
@@ -597,8 +608,11 @@ namespace VikingVillages
 			}
 			else if (tree != null)
 			{
-				health = tree.m_health;
-				drops = AverageDrops(tree.m_dropWhenDestroyed, item);
+				foreach (TreePiece piece in TreePieces(prefab))
+				{
+					health += piece.Health;
+					drops += AverageDrops(piece.Drops, item);
+				}
 			}
 			else if (destructible != null)
 			{

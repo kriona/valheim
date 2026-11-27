@@ -410,7 +410,7 @@ The Plains - 2 fulings, a fuling archer and a third of a berserker each. Fulings
 - A quest's road is planned ahead, as the village decides on it, and again once a game day, so portals built or broken since count. Its time is the road there, the work and the road back, give or take 2%. With no road found, it's 5 minutes each way
 - As the first of them leaves, the server plans the whole trip again - the road there, the work and the road back - and the village's guess as it sent them gives way to when they'll really be back. What the village says of when they're back follows it
 - The server follows them the whole way. A portal on their road that's broken or no longer joined to its other end has them find another way from wherever they've got to, and come back later for it
-- Mining and cutting trees take as long as their tools take to break off as much as they can all carry home without being slowed - each tool by its damage and their skill, more tools getting it done sooner - on top of the work time above, which is for finding the ore or trees. Each tool is worn by every hit, and comes back worn or broken
+- Mining and cutting trees take as long as their tools take to break off as much as they can all carry home without being slowed - each tool by its damage and their skill, against the health of the rock, or of the tree and every log it falls into, for what it drops, more tools getting it done sooner - on top of the work time above, which is for finding the ore or trees. Each tool is worn by every hit, and comes back worn or broken
 
 ## Sailing From the Village
 
