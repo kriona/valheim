@@ -1612,6 +1612,11 @@ namespace VikingVillages
 		private Collider[] attachColliders;
 
 		/// <summary>
+		/// Where the viking was last held on its bed or chair, to stand it on when the bed or chair is gone from under it
+		/// </summary>
+		private Vector3 heldAt;
+
+		/// <summary>
 		/// Whether the viking is lying in a bed, asleep
 		/// </summary>
 		private bool inBed;
@@ -1866,9 +1871,10 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Keeps a viking lying in bed or sitting on a chair where it lies or sits, puts on and takes off its gear, and
-		/// closes the chest it opened once it's done with it, on its owner - and gives it an ID of its own the first
-		/// time (see VikingIdentity) - and follows it after a hit for the test log, for being flung (see CheckFling)
+		/// Keeps a viking lying in bed or sitting on a chair where it lies or sits - standing it up where it was held at
+		/// once when the bed or chair is gone from under it - puts on and takes off its gear, and closes the chest it
+		/// opened once it's done with it, on its owner - and gives it an ID of its own the first time (see
+		/// VikingIdentity) - and follows it after a hit for the test log, for being flung (see CheckFling)
 		/// </summary>
 		private void FixedUpdate()
 		{
@@ -1878,9 +1884,17 @@ namespace VikingVillages
 			{
 				hasId = (VikingIdentity.Ensure(nview).Length > 0);
 			}
-			if (attachPoint != null && owner)
+			if (owner)
 			{
-				HoldAttached();
+				if (attachPoint != null)
+				{
+					HoldAttached();
+				}
+				else if (attachColliders != null)
+				{
+					// Its bed or chair was destroyed, taking the attach point with it
+					DetachTo(heldAt + Vector3.up * 0.5f);
+				}
 			}
 			if (owner && body != null && VikingCore.IsPlayerLikeViking(body))
 			{

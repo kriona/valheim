@@ -591,9 +591,9 @@ namespace VikingVillages
 					satAt = Time.time;
 				}
 				life.ai.StopMoving();
-				if (seatView != null && (seat == null || !seatView.IsValid()))
+				// Its seat was broken - a seat destroyed whole takes its view and attach point with it
+				if ((seated && life.attachPoint == null) || (seatView != null && (seat == null || !seatView.IsValid())))
 				{
-					// Its seat was broken
 					LeaveSeat();
 				}
 				if (seatView != null && Time.time >= nextRenew)

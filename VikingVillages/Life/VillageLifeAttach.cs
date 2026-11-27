@@ -54,7 +54,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Gets the viking off the bed or chair it's on, standing at a spot
+		/// Gets the viking off the bed or chair it's on, standing at a spot - moving on with what it sat on when that
+		/// moves, like a ship, and otherwise still - and puts its collider back where it meets the floor and the ground
 		/// </summary>
 		/// <param name="standing">Where it stands</param>
 		private void DetachTo(Vector3 standing)
@@ -63,6 +64,8 @@ namespace VikingVillages
 			{
 				return;
 			}
+			Rigidbody carrier = ((attachPoint != null) ? attachPoint.GetComponentInParent<Rigidbody>() : null);
+			Vector3 velocity = ((carrier != null) ? carrier.GetPointVelocity(standing) : Vector3.zero);
 			if (attachColliders != null)
 			{
 				foreach (Collider collider in attachColliders)
@@ -83,8 +86,18 @@ namespace VikingVillages
 			if (humanoid != null && humanoid.m_body != null)
 			{
 				humanoid.m_body.useGravity = true;
+				humanoid.m_body.linearVelocity = velocity;
+				humanoid.m_body.angularVelocity = Vector3.zero;
 				humanoid.m_body.position = standing;
 				transform.position = standing;
+				// The game keeps an attached character's collider on its character_net layer, which passes through
+				// pieces and the ground, until its next character update (see Character.UpdateLayer) - the viking is put
+				// back on the character layer at once, so it can't fall through the floor before that update runs
+				Collider collider = humanoid.m_collider;
+				if (collider != null && collider.gameObject.layer == Character.s_characterNetLayer && nview != null && nview.IsValid() && nview.IsOwner() && !humanoid.IsAttached())
+				{
+					collider.gameObject.layer = Character.s_characterLayer;
+				}
 			}
 		}
 
@@ -96,6 +109,7 @@ namespace VikingVillages
 		/// </summary>
 		private void HoldAttached()
 		{
+			heldAt = attachPoint.position;
 			transform.position = attachPoint.position;
 			transform.rotation = attachPoint.rotation;
 			humanoid.m_body.position = attachPoint.position;
