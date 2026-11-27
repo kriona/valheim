@@ -88,6 +88,32 @@ namespace Kriona.Vikings.Tests
 		}
 
 		/// <summary>
+		/// Checks that a zombie viking's punch hits for its biome's punch scaled by its Unarmed skill and the attack - a
+		/// Mountains zombie's 95 at skill 44 is about 63, and a Meadows zombie's 25 at full skill is 25
+		/// </summary>
+		[Fact]
+		public void PunchesForTheBiomesPunch()
+		{
+			Assert.Equal(95f * 0.664f, MonsterThreat.PunchHit(95f, 1f, 0.44f), 3);
+			Assert.Equal(25f, MonsterThreat.PunchHit(25f, 1f, 1f), 3);
+			Assert.Equal(50f * VikingCore.SkillDamageBase, MonsterThreat.PunchHit(25f, 2f, 0f), 3);
+		}
+
+		/// <summary>
+		/// Checks that a Mountains zombie viking fighting with its fists - 300 health, about 63 a punch, in half-strength
+		/// Fenris armor - is tough for a living viking in Fenris q1 with 175 health, whose best swing against it is a
+		/// frost arrow's 37 at the bow's pace, and takes 4 of them
+		/// </summary>
+		[Fact]
+		public void FindsAMountainFistZombieTough()
+		{
+			float punch = MonsterThreat.PunchHit(95f, 1f, 0.44f);
+			// 37 through 15.5 armor is 21.5, 14 swings, against 5.4 of its 63 through 31 armor
+			Assert.True(VikingCore.Outlasts(300f, punch, 15.5f, 175f, 31f, 37f));
+			Assert.Equal(4, VikingCore.FightersNeeded(300f, punch, 15.5f, 175f, 31f, 37f));
+		}
+
+		/// <summary>
 		/// Checks that a viking's shot is scaled by its skill but not by its MeleeScale, and that a skill out of range
 		/// counts as none or full
 		/// </summary>

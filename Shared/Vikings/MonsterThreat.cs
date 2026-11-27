@@ -62,7 +62,8 @@ namespace Kriona.Vikings
 		/// <summary>
 		/// Finds a monster's hardest hit - the most any of its attacks deals, the way the game scales it by the attack
 		/// and the monster's stars, with a bow's or crossbow's best ammo the monster carries, and a zombie viking's by
-		/// its skill and its biome's MeleeScale the way its hits are scaled as it deals them (see VikingHit)
+		/// its skill and its biome's MeleeScale the way its hits are scaled as it deals them (see VikingHit), or by its
+		/// biome's punch when it carries no weapon (see PunchHit)
 		/// </summary>
 		/// <param name="monster">The monster</param>
 		/// <returns>The damage, or 0 when it has no attacks the game says the damage of</returns>
@@ -154,14 +155,81 @@ namespace Kriona.Vikings
 		/// <returns>The multiplier</returns>
 		private static float ZombieMeleeScale(Character monster)
 		{
-			ZDO zdo = ((monster.m_nview != null && monster.m_nview.IsValid()) ? monster.m_nview.GetZDO() : null);
-			VikingData data = ((zdo != null) ? VikingData.FromBytes(zdo.GetByteArray(VikingCore.DataKey)) : null);
+			VikingData data = ZombieData(monster);
 			if (data == null || data.Tombstone)
 			{
 				return(1f);
 			}
-			int index = ((data.Biome >= 0) ? data.Biome : VikingGear.IndexOf(WorldGenerator.instance.GetBiome(monster.transform.position)));
-			return(VikingGear.Get(index).MeleeScale);
+			return(VikingGear.Get(ZombieBiome(monster, data)).MeleeScale);
+		}
+
+		/// <summary>
+		/// Reads a zombie viking's data from its ZDO, rather than from its VikingCore, which is Zombie Apocalypse's own
+		/// type, so it works with any version of it
+		/// </summary>
+		/// <param name="monster">The zombie viking</param>
+		/// <returns>Its data, or null when it has none yet</returns>
+		private static VikingData ZombieData(Character monster)
+		{
+			ZDO zdo = ((monster.m_nview != null && monster.m_nview.IsValid()) ? monster.m_nview.GetZDO() : null);
+			return((zdo != null) ? VikingData.FromBytes(zdo.GetByteArray(VikingCore.DataKey)) : null);
+		}
+
+		/// <summary>
+		/// Finds the biome a zombie viking's gear, fists and MeleeScale come from, the way VikingCore.BiomeIndex finds it
+		/// - from its data, or where it stands when its data doesn't say or it has none yet
+		/// </summary>
+		/// <param name="monster">The zombie viking</param>
+		/// <param name="data">Its data, or null</param>
+		/// <returns>The index into VikingGear's tables</returns>
+		private static int ZombieBiome(Character monster, VikingData data)
+		{
+			if (data != null && data.Biome >= 0)
+			{
+				return(data.Biome);
+			}
+			return((WorldGenerator.instance != null) ? VikingGear.IndexOf(WorldGenerator.instance.GetBiome(monster.transform.position)) : 0);
+		}
+
+		/// <summary>
+		/// Works out how hard a viking's punch hits as it deals it - its biome's punch in place of a player's fists (see
+		/// VikingCore.DamageScale), scaled by the attack and by its Unarmed skill, on average (see VikingHit)
+		/// </summary>
+		/// <param name="punch">Its biome's punch (see BiomeGear.Unarmed)</param>
+		/// <param name="multiplier">The punch's damage multiplier</param>
+		/// <param name="skill">Its Unarmed skill, from 0 to 1</param>
+		/// <returns>The damage</returns>
+		internal static float PunchHit(float punch, float multiplier, float skill)
+		{
+			return(VikingHit(punch * multiplier, false, 1f, skill));
+		}
+
+		/// <summary>
+		/// Weighs a zombie viking's punch, for one that carries no weapon - its body's fists, hitting for its biome's
+		/// punch the way VikingCore.DamageScale makes them at hit time, whatever kind of zombie viking it is (see
+		/// PunchHit), and reaching as far as a punch
+		/// </summary>
+		/// <param name="monster">The zombie viking</param>
+		/// <returns>The punch, or none when its body has no fists to punch with</returns>
+		private static List<Swing> ZombiePunch(Character monster)
+		{
+			List<Swing> swings = new List<Swing>();
+			Humanoid humanoid = monster as Humanoid;
+			ItemDrop unarmed = ((humanoid != null) ? humanoid.m_unarmedWeapon : null);
+			ItemDrop.ItemData fists = ((unarmed != null) ? unarmed.m_itemData : null);
+			Attack attack = ((fists != null && fists.m_shared != null) ? fists.m_shared.m_attack : null);
+			if (attack == null)
+			{
+				return(swings);
+			}
+			float punch = VikingGear.Get(ZombieBiome(monster, ZombieData(monster))).Unarmed;
+			swings.Add(new Swing
+			{
+				Hit = PunchHit(punch, attack.m_damageMultiplier, monster.GetSkillFactor(fists.m_shared.m_skillType)),
+				Range = Mathf.Max(fists.m_shared.m_aiAttackRange, attack.m_attackRange),
+				Projectile = false
+			});
+			return(swings);
 		}
 
 		/// <summary>
@@ -187,8 +255,8 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Reads a monster's attacks from the weapons it fights with - those it carries each time, with the ammo it
-		/// carries for them and a zombie viking's skill and MeleeScale, or those its prefab gives it, remembered for each
-		/// prefab
+		/// carries for them and a zombie viking's skill and MeleeScale, a zombie viking's punch when it carries none (see
+		/// ZombiePunch), or those its prefab gives it, remembered for each prefab
 		/// </summary>
 		/// <param name="monster">The monster</param>
 		/// <returns>Its hardest hit at one star, and its farthest reach hand to hand past its own size</returns>
@@ -198,6 +266,11 @@ namespace Kriona.Vikings
 			if (carried.Count > 0)
 			{
 				return(Weigh(Swings(carried, monster)));
+			}
+			// A zombie viking's punch goes by its own biome and skill, so it isn't remembered for its prefab
+			if (VikingCore.IsZombieViking(monster))
+			{
+				return(Weigh(ZombiePunch(monster)));
 			}
 			string name = Utils.GetPrefabName(monster.gameObject);
 			if (known.TryGetValue(name, out KeyValuePair<float, float> found))
