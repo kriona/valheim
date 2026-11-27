@@ -30,6 +30,31 @@ namespace VikingVillages
 			{
 				TestLog.OnHit(__instance, hit, __state);
 			}
+			if (hit.m_hitType == HitData.HitType.Burning && __instance.TryGetComponent(out VillageLife life))
+			{
+				life.LogBurn("a tick of its burning", hit.GetTotalDamage());
+			}
+		}
+	}
+
+	/// <summary>
+	/// Writes a fire's flames, or anything else dealing fire damage, setting a village viking burning (see
+	/// VillageLife.LogBurn)
+	/// </summary>
+	[HarmonyPatch(typeof(Character), nameof(Character.AddFireDamage))]
+	public static class TestLogFirePatch
+	{
+		/// <summary>
+		/// Writes the fire damage the creature takes, when it's a village viking
+		/// </summary>
+		/// <param name="__instance">The creature hit</param>
+		/// <param name="damage">The fire damage, after its resistances and armor</param>
+		private static void Prefix(Character __instance, float damage)
+		{
+			if (damage > 0f && __instance.TryGetComponent(out VillageLife life))
+			{
+				life.LogBurn("a fire hit", damage);
+			}
 		}
 	}
 

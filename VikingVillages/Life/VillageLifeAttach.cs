@@ -114,10 +114,11 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Holds the viking on the bed or chair it's on right after the game's motion update has moved it, so the physics
-		/// that follows has nothing to move
+		/// that follows has nothing to move, and notes when the motion update last ran, for the log
 		/// </summary>
 		public void AfterMotion()
 		{
+			motionAt = Time.time;
 			if (attachPoint != null && nview != null && nview.IsValid() && nview.IsOwner())
 			{
 				HoldAttached();

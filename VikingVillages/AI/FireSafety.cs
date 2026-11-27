@@ -169,6 +169,35 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Finds the fire loaded on this client whose middle is nearest a point, seen from above, lit or not
+		/// </summary>
+		/// <param name="point">The point</param>
+		/// <param name="fire">The fire, or null when there's none</param>
+		/// <param name="reach">How far its flames reach from its middle, in meters</param>
+		/// <returns>False when no fire is loaded</returns>
+		public static bool NearestFire(Vector3 point, out Fireplace fire, out float reach)
+		{
+			fire = null;
+			reach = 0f;
+			float best = float.MaxValue;
+			foreach (KeyValuePair<Fireplace, float> entry in fires)
+			{
+				if (entry.Key == null)
+				{
+					continue;
+				}
+				float distance = Utils.DistanceXZ(entry.Key.transform.position, point);
+				if (distance < best)
+				{
+					best = distance;
+					fire = entry.Key;
+					reach = entry.Value;
+				}
+			}
+			return(fire != null);
+		}
+
+		/// <summary>
 		/// Finds flames reaching within some distance of a point
 		/// </summary>
 		/// <param name="point">The point</param>

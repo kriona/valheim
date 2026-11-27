@@ -91,6 +91,19 @@ namespace VikingVillages
 		private float logEscapeAt;
 
 		/// <summary>
+		/// How many seconds the viking goes without fire hurting it before the next time it does is written as a new burn
+		/// (see LogBurn)
+		/// </summary>
+		private const float LogBurnGap = 10f;
+
+		/// <summary>
+		/// When fire last hurt the viking, and when the game's motion update last ran for it (see AfterMotion), by
+		/// Time.time
+		/// </summary>
+		private float logBurnAt = float.MinValue;
+		private float motionAt;
+
+		/// <summary>
 		/// Seconds between checks on whether the viking has got onto a roof, and how many seconds back a hit counts as
 		/// having hurt it just now, for the line about it (see LogOnRoof)
 		/// </summary>
@@ -435,6 +448,50 @@ namespace VikingVillages
 		{
 			WearNTear roof = NavmeshRoofs.RoofUnder(point);
 			return((roof != null) ? Utils.GetPrefabName(roof.gameObject) + " at " + roof.transform.position.ToString("F1") : "a roof");
+		}
+
+		/// <summary>
+		/// Writes fire hurting the viking - a fire's flames hitting it or its burning ticking - once for each burn, the
+		/// first time and again only after LogBurnGap seconds without, in test or debug mode. It says how far it stands
+		/// from the nearest fire's middle and how far that fire's flames reach, whether the look for flames that has it
+		/// run out of them (see UpdateFlames) finds them from where it stands, whether it's running out of them already,
+		/// what moved it last, what keeps that look from running (on a seat, jumping a fence, on a road), and how long ago
+		/// its AI and the game's motion update last ran for it, counted by whether the look found the flames
+		/// </summary>
+		/// <param name="what">What hurt it, like "a fire hit"</param>
+		/// <param name="damage">How much fire damage it was</param>
+		public void LogBurn(string what, float damage)
+		{
+			float since = Time.time - logBurnAt;
+			logBurnAt = Time.time;
+			if (since < LogBurnGap || !(TestLog.On || Player.m_debugMode) || humanoid == null)
+			{
+				return;
+			}
+			Vector3 center = humanoid.GetCenterPoint();
+			float radius = humanoid.GetRadius() + (escapingFlames ? FlameClear : FlameStep);
+			bool found = FireSafety.FlamesNear(center, radius, out Vector3 flamesAt, out float _);
+			TestLog.Count("Burns, by the look for flames", (found ? "found them" : "found none"));
+			string fire = "no fire loaded";
+			if (FireSafety.NearestFire(transform.position, out Fireplace nearest, out float reach))
+			{
+				fire = Utils.DistanceXZ(transform.position, nearest.transform.position).ToString("F1") + "m from the " + (nearest.IsBurning() ? "lit " : "unlit ") + Utils.GetPrefabName(nearest.gameObject) + " at " + nearest.transform.position.ToString("F1") + ", its flames reaching " + reach.ToString("F1") + "m";
+			}
+			string look = (found ? "finds flames whose middle is " + Utils.DistanceXZ(center, flamesAt).ToString("F1") + "m away" : "finds none");
+			List<string> skips = new List<string>();
+			if (attachPoint != null)
+			{
+				skips.Add("on a seat");
+			}
+			if (hopPhase != HopPhase.None)
+			{
+				skips.Add("jumping a fence");
+			}
+			if (road != Road.None)
+			{
+				skips.Add("on a road");
+			}
+			Plugin.Log.LogInfo("Burning: " + TestLog.Name(humanoid, "F1") + " (" + ((job != null) ? job.Describe() : "no job") + ") took " + damage.ToString("F1") + " fire damage from " + what + ", " + fire + " - the look for flames within " + radius.ToString("F2") + "m of its middle " + look + ", " + (escapingFlames ? "running out of them" : "not running out of them") + ", moved by " + mover + ((skips.Count > 0) ? ", " + string.Join(", ", skips) : "") + ", its AI last ran " + (Time.time - stillCheckedAt).ToString("F1") + "s ago and its motion " + (Time.time - motionAt).ToString("F1") + "s ago");
 		}
 
 		/// <summary>
