@@ -49,6 +49,57 @@ namespace Kriona.Vikings.Tests
 		}
 
 		/// <summary>
+		/// Checks that a shot hits with the weapon's damage and the ammo that adds the most to it, times the attack's
+		/// multiplier
+		/// </summary>
+		[Fact]
+		public void ShootsWithTheBestAmmo()
+		{
+			HitData.DamageTypes bow = new HitData.DamageTypes { m_pierce = 50f, m_poison = 10f };
+			List<HitData.DamageTypes> ammo = new List<HitData.DamageTypes>
+			{
+				new HitData.DamageTypes { m_pierce = 42f },
+				new HitData.DamageTypes { m_pierce = 52f }
+			};
+			Assert.Equal(112f, MonsterThreat.ShotHit(bow, ammo, 1f), 3);
+			Assert.Equal(224f, MonsterThreat.ShotHit(bow, ammo, 2f), 3);
+		}
+
+		/// <summary>
+		/// Checks that a weapon with no ammo for it hits with its own damage alone
+		/// </summary>
+		[Fact]
+		public void ShootsWithTheWeaponAloneWithNoAmmo()
+		{
+			HitData.DamageTypes spear = new HitData.DamageTypes { m_pierce = 75f };
+			Assert.Equal(75f, MonsterThreat.ShotHit(spear, new List<HitData.DamageTypes>(), 1f), 3);
+		}
+
+		/// <summary>
+		/// Checks that a viking's hit hand to hand is scaled by its MeleeScale and its skill, the way it deals it - a
+		/// Mountains zombie's Fang Spear at skill 44 hits about 15% harder than the spear alone
+		/// </summary>
+		[Fact]
+		public void ScalesAVikingsMeleeHitBySkillAndMeleeScale()
+		{
+			// 0.4 + 0.6 * 0.44 = 0.664 of the damage, times 1.75
+			Assert.Equal(75f * 0.664f * 1.75f, MonsterThreat.VikingHit(75f, false, 1.75f, 0.44f), 3);
+			Assert.Equal(75f * 1.75f, MonsterThreat.VikingHit(75f, false, 1.75f, 1f), 3);
+		}
+
+		/// <summary>
+		/// Checks that a viking's shot is scaled by its skill but not by its MeleeScale, and that a skill out of range
+		/// counts as none or full
+		/// </summary>
+		[Fact]
+		public void ScalesAVikingsShotBySkillAlone()
+		{
+			Assert.Equal(112f * 0.664f, MonsterThreat.VikingHit(112f, true, 1.75f, 0.44f), 3);
+			Assert.Equal(112f * VikingCore.SkillDamageBase, MonsterThreat.VikingHit(112f, true, 1.75f, -1f), 3);
+			Assert.Equal(112f, MonsterThreat.VikingHit(112f, true, 1.75f, 2f), 3);
+		}
+
+		/// <summary>
 		/// Checks that a monster with no attacks hits for nothing and reaches DefaultReach
 		/// </summary>
 		[Fact]

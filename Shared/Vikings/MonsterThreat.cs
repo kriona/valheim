@@ -61,7 +61,8 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Finds a monster's hardest hit - the most any of its attacks deals, the way the game scales it by the attack
-		/// and the monster's stars
+		/// and the monster's stars, with a bow's or crossbow's best ammo the monster carries, and a zombie viking's by
+		/// its skill and its biome's MeleeScale the way its hits are scaled as it deals them (see VikingHit)
 		/// </summary>
 		/// <param name="monster">The monster</param>
 		/// <returns>The damage, or 0 when it has no attacks the game says the damage of</returns>
@@ -105,6 +106,65 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
+		/// Works out how hard a shot hits - the weapon's damage with the ammo that adds the most to it, the way the game
+		/// adds the ammo's damage to the shot, scaled by the attack (see SwingHit)
+		/// </summary>
+		/// <param name="damage">The weapon's damage</param>
+		/// <param name="ammo">The damage of each kind of ammo the shooter carries for it, none for the weapon alone</param>
+		/// <param name="multiplier">The attack's damage multiplier</param>
+		/// <returns>The damage</returns>
+		internal static float ShotHit(HitData.DamageTypes damage, List<HitData.DamageTypes> ammo, float multiplier)
+		{
+			float best = SwingHit(damage, multiplier);
+			foreach (HitData.DamageTypes shot in ammo)
+			{
+				HitData.DamageTypes total = damage;
+				total.Add(shot);
+				best = Mathf.Max(best, SwingHit(total, multiplier));
+			}
+			return(best);
+		}
+
+		/// <summary>
+		/// Works out how hard a viking's attack hits as it deals it - scaled by its skill with the weapon, on average, the
+		/// way a player's is (see VikingCore.SkillScaled), and an attack hand to hand by its biome's MeleeScale (see
+		/// VikingCore.DamageScale)
+		/// </summary>
+		/// <param name="hit">The attack's hit (see SwingHit)</param>
+		/// <param name="projectile">Whether it shoots or throws</param>
+		/// <param name="meleeScale">How much harder the viking hits hand to hand than a player of its skill</param>
+		/// <param name="skill">Its skill with the weapon, from 0 to 1</param>
+		/// <returns>The damage</returns>
+		internal static float VikingHit(float hit, bool projectile, float meleeScale, float skill)
+		{
+			float scale = (projectile ? 1f : meleeScale);
+			return(hit * scale * Mathf.Lerp(VikingCore.SkillDamageBase, 1f, Mathf.Clamp01(skill)));
+		}
+
+		/// <summary>
+		/// Finds how much harder a zombie viking hits hand to hand than a player of its skill - its biome's MeleeScale,
+		/// read from the data on its ZDO the way VikingCore.DamageScale reads it, its biome where it stands when its data
+		/// doesn't say, and none for a tombstone viking or one with no data yet, the same as DamageScale
+		/// </summary>
+		/// <remarks>
+		/// The data is read from the ZDO rather than the zombie's VikingCore, which is Zombie Apocalypse's own type, so it
+		/// works with any version of it - its MeleeScale is this mod's copy of the table
+		/// </remarks>
+		/// <param name="monster">The zombie viking</param>
+		/// <returns>The multiplier</returns>
+		private static float ZombieMeleeScale(Character monster)
+		{
+			ZDO zdo = ((monster.m_nview != null && monster.m_nview.IsValid()) ? monster.m_nview.GetZDO() : null);
+			VikingData data = ((zdo != null) ? VikingData.FromBytes(zdo.GetByteArray(VikingCore.DataKey)) : null);
+			if (data == null || data.Tombstone)
+			{
+				return(1f);
+			}
+			int index = ((data.Biome >= 0) ? data.Biome : VikingGear.IndexOf(WorldGenerator.instance.GetBiome(monster.transform.position)));
+			return(VikingGear.Get(index).MeleeScale);
+		}
+
+		/// <summary>
 		/// Weighs up a monster's attacks - its hardest hit, and its farthest reach hand to hand, leaving out attacks that
 		/// shoot or throw, or DefaultReach when it has none that reach anywhere
 		/// </summary>
@@ -126,8 +186,9 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Reads a monster's attacks from the weapons it fights with - those it carries each time, or those its prefab
-		/// gives it, remembered for each prefab
+		/// Reads a monster's attacks from the weapons it fights with - those it carries each time, with the ammo it
+		/// carries for them and a zombie viking's skill and MeleeScale, or those its prefab gives it, remembered for each
+		/// prefab
 		/// </summary>
 		/// <param name="monster">The monster</param>
 		/// <returns>Its hardest hit at one star, and its farthest reach hand to hand past its own size</returns>
@@ -136,26 +197,31 @@ namespace Kriona.Vikings
 			List<ItemDrop.ItemData> carried = Carried(monster);
 			if (carried.Count > 0)
 			{
-				return(Weigh(Swings(carried)));
+				return(Weigh(Swings(carried, monster)));
 			}
 			string name = Utils.GetPrefabName(monster.gameObject);
 			if (known.TryGetValue(name, out KeyValuePair<float, float> found))
 			{
 				return(found);
 			}
-			KeyValuePair<float, float> read = Weigh(Swings(Given(monster)));
+			KeyValuePair<float, float> read = Weigh(Swings(Given(monster), null));
 			known[name] = read;
 			return(read);
 		}
 
 		/// <summary>
-		/// Lists what each of a monster's weapons does when it attacks with it
+		/// Lists what each of a monster's weapons does when it attacks with it - a bow or crossbow with the best ammo the
+		/// monster carries for it, and a zombie viking's attacks as it deals them (see VikingHit)
 		/// </summary>
 		/// <param name="weapons">The weapons</param>
+		/// <param name="carrier">The monster carrying them, or null for weapons its prefab gives it, which are weighed
+		/// alone</param>
 		/// <returns>Their attacks, leaving out weapons with no attack</returns>
-		private static List<Swing> Swings(List<ItemDrop.ItemData> weapons)
+		private static List<Swing> Swings(List<ItemDrop.ItemData> weapons, Character carrier)
 		{
 			List<Swing> swings = new List<Swing>();
+			bool viking = (carrier != null && VikingCore.IsZombieViking(carrier));
+			float meleeScale = (viking ? ZombieMeleeScale(carrier) : 1f);
 			foreach (ItemDrop.ItemData weapon in weapons)
 			{
 				Attack attack = weapon.m_shared.m_attack;
@@ -163,14 +229,47 @@ namespace Kriona.Vikings
 				{
 					continue;
 				}
+				bool projectile = (attack.m_attackType == Attack.AttackType.Projectile);
+				float hit = ShotHit(weapon.GetDamage(), AmmoFor(weapon, carrier), attack.m_damageMultiplier);
+				if (viking)
+				{
+					hit = VikingHit(hit, projectile, meleeScale, carrier.GetSkillFactor(weapon.m_shared.m_skillType));
+				}
 				swings.Add(new Swing
 				{
-					Hit = SwingHit(weapon.GetDamage(), attack.m_damageMultiplier),
+					Hit = hit,
 					Range = Mathf.Max(weapon.m_shared.m_aiAttackRange, attack.m_attackRange),
-					Projectile = (attack.m_attackType == Attack.AttackType.Projectile)
+					Projectile = projectile
 				});
 			}
 			return(swings);
+		}
+
+		/// <summary>
+		/// Lists the damage of each piece of ammo a monster carries that a weapon shoots
+		/// </summary>
+		/// <param name="weapon">The weapon</param>
+		/// <param name="carrier">The monster, or null</param>
+		/// <returns>The ammo's damage, none when the weapon takes no ammo or the monster carries none for it</returns>
+		private static List<HitData.DamageTypes> AmmoFor(ItemDrop.ItemData weapon, Character carrier)
+		{
+			List<HitData.DamageTypes> ammo = new List<HitData.DamageTypes>();
+			Humanoid humanoid = carrier as Humanoid;
+			Inventory inventory = ((humanoid != null) ? humanoid.GetInventory() : null);
+			string ammoType = weapon.m_shared.m_ammoType;
+			if (inventory == null || string.IsNullOrEmpty(ammoType))
+			{
+				return(ammo);
+			}
+			foreach (ItemDrop.ItemData item in inventory.GetAllItems())
+			{
+				ItemDrop.ItemData.ItemType type = item.m_shared.m_itemType;
+				if ((type == ItemDrop.ItemData.ItemType.Ammo || type == ItemDrop.ItemData.ItemType.AmmoNonEquipable) && item.m_shared.m_ammoType == ammoType)
+				{
+					ammo.Add(item.GetDamage());
+				}
+			}
+			return(ammo);
 		}
 
 		/// <summary>
