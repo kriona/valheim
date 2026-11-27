@@ -7,16 +7,16 @@ PC and NPC Vikings live in villages the way you live in the world. PC Vikings fi
 | | PC | NPC | Dvergr | Zombie |
 | --- | --- | --- | --- | --- |
 | Mod | Viking Villages | Viking Villages | Viking Villages | Zombie Apocalypse |
-| Where they're found | The Meadows' farms, in villages of their own, and on the road between villages | One in every five of a village's Vikings - its 5th, 10th and so on - and on the road between villages | The Dvergr's outposts in the Mistlands, and half of the Dvergr's patrols | Spawned in the world - by day in the Dark Meadows, Ruin Black Forest, Swamp and Ashlands, at night everywhere - in abandoned houses, from draugr body piles and in raids. Also risen from your body, and from dead PC, NPC and Dvergr Vikings |
+| Where they're found | The Meadows' farms, in villages of their own, on the road between villages, and now and then visiting a village for the night as a traveler from a harder biome (see [EVENTS.md](EVENTS.md#traveling-viking)) | One in every five of a village's Vikings - its 5th, 10th and so on - and on the road between villages | The Dvergr's outposts in the Mistlands, and half of the Dvergr's patrols | Spawned in the world - by day in the Dark Meadows, Ruin Black Forest, Swamp and Ashlands, at night everywhere - in abandoned houses, from draugr body piles and in raids. Also risen from your body, and from dead PC, NPC and Dvergr Vikings |
 | Console command | `spawn Viking` | `spawn NPCViking` | `spawn DvergrViking` | `spawn ZombieViking` |
 | Biome of their gear and stats | Their village's | Their village's | The Mistlands | Where they spawn |
 | Can be starred | No | No | Yes - one star, as often as the game stars the Mistlands' creatures | Yes - up to 1 by day and 2 at night, each star upgrading their gear a level |
 | Named | Yes | Yes | Yes | Only a risen PC, NPC or Dvergr Viking, who keeps their name, and a tombstone zombie, who has yours |
 | Shows as "Viking (?)" until they know you | Yes | Yes | Yes | No - a risen Viking shows their name to the players they knew, like Zombie Ragnar, and is plain Zombie Viking to anyone else |
-| Can be renamed (Shift + E) | Yes | Yes | No | No |
+| Can be renamed (Shift + E) | Yes, but not a traveler | Yes | No | No |
 | Can be talked to (E) | Yes | Yes | Yes | No |
 | Greets you and passes on your news | Yes | Yes | Yes | No |
-| Inventory can be opened (I) | Yes | Yes | No | No |
+| Inventory can be opened (I) | Yes, but not a traveler's | Yes | No | No |
 | Hostile to you | Only after you hurt one, until they've slept on it | Only after you hurt one, until they've slept on it | Only after you hurt one or a Dvergr, and they stay angry | Always |
 | Can be hurt with PvP off | No | No | Yes | Yes |
 | Killed by the console's kill commands | Only those angry at you, or all with PvP on | Only those angry at you, or all with PvP on | Yes | Yes |
@@ -33,7 +33,7 @@ PC and NPC Vikings live in villages the way you live in the world. PC Vikings fi
 | Sees 10 meters in the Mistlands' mist | Yes | Yes | Yes | Yes |
 | Takes fall damage | Yes | Yes | No | No, like the game's creatures |
 | Eats, rests and gets wet and cold | Yes | Yes | No | No |
-| Forsaken powers | Their biome's boss's and every earlier one's - Eikthyr's in the Meadows - learning and teaching others, used in fights and for work | None - they never learn, use or teach one, though one used beside them gives them its effect | Up to the Queen's, learning the ones they're given, used in fights and when badly hurt | 10% chance of their biome's boss's - Eikthyr's in the Meadows, Fader's in the Ashlands and the Deep North - the first time they spot an enemy - a tombstone zombie 50% of your last one - with a 30 second cooldown between zombies |
+| Forsaken powers | Their biome's boss's and every earlier one's - Eikthyr's in the Meadows - learning and teaching others, used in fights and for work. A traveler knows, learns, uses and teaches none | None - they never learn, use or teach one, though one used beside them gives them its effect | Up to the Queen's, learning the ones they're given, used in fights and when badly hurt | 10% chance of their biome's boss's - Eikthyr's in the Meadows, Fader's in the Ashlands and the Deep North - the first time they spot an enemy - a tombstone zombie 50% of your last one - with a 30 second cooldown between zombies |
 | Quests | Every quest | Foraging, finding bees, selling treasure and buying from Haldor | None | None |
 | Coins dropped on death | None | None | 100-140, multiplied by stars | By biome, multiplied by stars |
 | Gear dropped on death | Everything, where they fall | Everything, where they fall | Each piece 5%, at most 2 | Each piece 5%, at most 2 - a tombstone zombie drops everything |

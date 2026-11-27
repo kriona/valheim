@@ -54,7 +54,8 @@ namespace VikingVillages
 
 	/// <summary>
 	/// Reports a PC viking's death as it dies on its owner, so its village can bring it back and remember its name,
-	/// and so a viking who sees one keeping watch die can take its place
+	/// so a viking who sees one keeping watch die can take its place, and so the village a traveler visits stops
+	/// talking about it
 	/// </summary>
 	[HarmonyPatch(typeof(Character), nameof(Character.OnDeath))]
 	public static class VillageDeathPatch
@@ -68,6 +69,7 @@ namespace VikingVillages
 			VillageRespawn.OnVikingDeath(__instance);
 			VillageWatch.OnVikingDeath(__instance);
 			VillageFallen.OnVikingDeath(__instance);
+			Traveler.OnDeath(__instance);
 		}
 	}
 }

@@ -83,6 +83,10 @@ This page gives a short tour of each feature. Every detail of how it works is in
 
 A Viking with no village - one you spawn in the wild, or one leaving a village you disbanded - sets out for the village they can reach soonest, on foot, through portals and across the sea in boats they build, which you can ride along on (see [Vikings With No Village](LOGIC.md#vikings-with-no-village)).
 
+## Traveling Vikings
+
+Now and then a Viking from a far harder biome stops for the night at a village of the Meadows through the Plains. They gather at the fire, talk of their travels at sea and the villages they've been to, sit up by the fire all night and help defend the village, then trade some of their food for the village's and set off in the morning (see [EVENTS.md](EVENTS.md)).
+
 ## News
 
 Word of what you do gets around - the bosses you kill, your deaths, your firsts and achievements - and the Vikings of every village pass it on, while the villages hear about each other too (see [News](LOGIC.md#news) and [DIALOG.md](DIALOG.md)).

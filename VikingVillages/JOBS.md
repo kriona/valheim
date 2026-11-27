@@ -1,6 +1,6 @@
 # Viking Villages - Jobs
 
-Everything a PC or NPC Viking does in their village, with the numbers it goes by - NPC Vikings, the village's peaceful villagers, do most of the same jobs, and the ones that differ are in [NPC Vikings](#npc-vikings). [LOGIC.md](LOGIC.md) covers what their work adds up to and how they fight, get around and look after themselves, [QUESTS.md](QUESTS.md) what they do once they've left on a quest, and [DIALOG.md](DIALOG.md) what they say as they go about it.
+Everything a PC or NPC Viking does in their village, with the numbers it goes by - NPC Vikings, the village's peaceful villagers, do most of the same jobs, and the ones that differ are in [NPC Vikings](#npc-vikings), and what a traveling Viking visiting the village does is in [Travelers](#travelers). [LOGIC.md](LOGIC.md) covers what their work adds up to and how they fight, get around and look after themselves, [QUESTS.md](QUESTS.md) what they do once they've left on a quest, and [DIALOG.md](DIALOG.md) what they say as they go about it.
 
 Times of day are shares of the game's day, as the game counts it: 0.25 is dawn, about 6 in the morning, 0.5 noon and 0.75 nightfall, about 6 in the evening. Dusk is from 0.71, about 5 in the afternoon, until night. Seconds are real seconds - at the default day of 30 real minutes, each real minute is 48 game minutes.
 
@@ -684,3 +684,13 @@ They never come to help in a fight, join one or stand ready by a corpse about to
 ### Shelter From a Raid
 
 A raid wakes an NPC Viking asleep in bed or resting, the way the night watch's alarm does. Noticing it, by day or night, they cry out that they're going inside, once each, and until the raid is over they only take done food off a cooking station, eat while wounded, or stand inside their house, clear of its doors - and stay up inside for 20 seconds after it's over and no enemy is within 10 meters of the village.
+
+## Travelers
+
+A traveling Viking visiting the village (see [EVENTS.md](EVENTS.md#traveling-viking)) is a PC Viking who does none of its work - no chores, quests, watch, teaching, picking up loot or mourning. Whatever their job, they fight, run home and get out of trouble like any PC Viking (see [Whatever Their Job](#whatever-their-job)), and they eat from their own pack rather than the chests, checking every 10 seconds whether they're wounded or a food needs keeping up, the way a Viking on the road does. Otherwise they pick:
+
+1. **Keep guard**, through a raid (see [Keep Guard](#keep-guard))
+2. **Gather at the fire** from dusk, sitting the whole night - on a free seat when there's one, at once once night falls, and through any storm - until it's day (see [Gather at the Fire](#gather-at-the-fire))
+3. **Trade their food**, once it's 1-2 game hours after the village wakes on the morning after they came: they walk to the nearest village chest with food in it - or else one with room - open it, take 3-4 of the food it holds most of and leave 3-4 of their own, foods they didn't just take first. With no chest, or none reached within a game hour, they go without trading
+4. **Leave**, once they've traded: they say goodbye, walk to a spot 8-16 meters outside the farm's fence and then away from you, and are gone once no player is within 40 meters
+5. By day, otherwise, one of these at random, in the same proportions as the village's Vikings - **talking** with one of them, **petting** one of its livestock, **resting by the fire** until they're rested, **strolling** and **standing about**, all but standing about left out in the rain

@@ -360,8 +360,8 @@ namespace VikingVillages
 			float nearestDistance = float.MaxValue;
 			foreach (VillageLife life in All)
 			{
-				// An NPC viking never keeps watch, so it never takes the place of one who fell
-				if (!life.active || life.Peaceful() || life.village != village || life.humanoid == null || life.humanoid.IsDead() || !life.nview.IsOwner())
+				// An NPC viking or a traveler never keeps watch, so it never takes the place of one who fell
+				if (!life.active || life.Peaceful() || life.village != village || life.humanoid == null || life.humanoid.IsDead() || !life.nview.IsOwner() || life.IsTraveler())
 				{
 					continue;
 				}

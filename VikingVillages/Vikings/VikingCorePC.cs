@@ -112,7 +112,8 @@ namespace Kriona.Vikings
 
 		/// <summary>
 		/// Rolls a new PC viking's look, health, skill, power, gear and food (see VikingStartFood) for its village's biome (see
-		/// VillageCooking.BiomeAt), wherever around the village it appears - or out in the wild with no village, the
+		/// VillageCooking.BiomeAt), or a traveler's for the biome it comes from (see Traveler), with a name no viking of
+		/// the village it visits goes by, wherever around the village it appears - or out in the wild with no village, the
 		/// biome where it stands worked out the same way - as a woman or a man to suit a name it was given before it was rolled (see VikingNames.PresetFirst), and names
 		/// it, with the looks its name comes with (see StyleAfterName) - or an NPC viking's (see GenerateNPC), or a dvergr
 		/// viking's for the Mistlands (see GenerateDvergr)
@@ -131,7 +132,9 @@ namespace Kriona.Vikings
 				GenerateNPC();
 				return;
 			}
-			int index = VillageCooking.BiomeAt(VillageFarm());
+			// A traveler is of the biome it comes from rather than the village it visits
+			bool traveler = Traveler.Is(nview.GetZDO());
+			int index = (traveler ? Mathf.Clamp(nview.GetZDO().GetInt(Traveler.OriginKey, 0), 0, VikingGear.Biomes.Length - 1) : VillageCooking.BiomeAt(VillageFarm()));
 			VikingData rolled = VikingGear.RollData(index);
 			// One of its village's first vikings named before it's rolled is a woman or a man to suit the name
 			int model = VikingNames.PresetModel(nview.GetZDO());
@@ -143,7 +146,7 @@ namespace Kriona.Vikings
 			rolled.Height = VikingUpgrades.PCRows(index, Random.value);
 			// A PC viking has kept its armor and weapon in repair, all of it from its own biome, and its village's
 			// archer has a bow
-			Arms arms = VikingGear.PCArms(index, nview.GetZDO().GetBool(ArcherKey), Random.value);
+			Arms arms = VikingGear.PCArms(index, !traveler && nview.GetZDO().GetBool(ArcherKey), Random.value);
 			Inventory gear = VikingGear.RollLoadout(index, humanoid.GetLevel(), rolled, true, arms, true, true);
 			// With Zombie Apocalypse, from the Mountains on, its weapons may be silver-lined and its bow come with silver
 			// arrows
@@ -169,9 +172,17 @@ namespace Kriona.Vikings
 			// It's named for whether it's a woman or a man - model 1 is a woman's - before its looks are saved, since some
 			// names come with looks of their own
 			ZDO zdo = nview.GetZDO();
-			// It has eaten before it comes, and carries more for later
-			VikingStartFood.Give(zdo, gear, index);
-			VikingNames.GiveName(zdo, rolled, false);
+			// It has eaten before it comes, and carries more for later - a traveler enough for its long road
+			if (traveler)
+			{
+				VikingStartFood.Give(zdo, gear, index, Traveler.FoodMin, Traveler.FoodMax);
+				VikingNames.GiveTravelerName(zdo, rolled, Traveler.HostOf(zdo));
+			}
+			else
+			{
+				VikingStartFood.Give(zdo, gear, index, VikingStartFood.CarriedMin, VikingStartFood.CarriedMax);
+				VikingNames.GiveName(zdo, rolled, false);
+			}
 			StyleAfterName(zdo, rolled);
 			SaveGenerated(rolled, gear);
 			if (TestLog.On)

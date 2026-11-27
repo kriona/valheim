@@ -172,12 +172,19 @@ namespace VikingVillages
 		/// in freezing weather, a viking sits in a lit fire's warmth the same way to keep from freezing until the weather
 		/// clears, or stands inside its house when there's no fire burning. In the rain a wounded viking whose place by the
 		/// fire isn't under a roof sits on its house's floor instead, dry, until it's no longer badly hurt or the rain
-		/// stops, and in a thunderstorm the village gathers inside its houses
+		/// stops, and in a thunderstorm the village gathers inside its houses. A traveler always sits, on a seat when
+		/// there's one free, sitting down at once at night, and stays there the whole night, storm or not
 		/// </summary>
 		private class GatherJob : Job
 		{
 			private readonly bool healing;
 			private readonly bool warming;
+
+			/// <summary>
+			/// Whether the viking sits by the fire the whole night rather than going to bed - a traveler, which has no bed in
+			/// the village
+			/// </summary>
+			private readonly bool allNight;
 			private Fireplace fire;
 			private System.Random rolls;
 			private Vector3 spot;
@@ -223,6 +230,7 @@ namespace VikingVillages
 			{
 				healing = rest;
 				warming = warm;
+				allNight = (!rest && !warm && owner.IsTraveler());
 			}
 
 			/// <summary>
@@ -262,13 +270,14 @@ namespace VikingVillages
 					GoInside();
 					return;
 				}
-				if (!healing && !warming && VikingWeather.Storming() && VikingWeather.RainsOn(life.transform.position))
+				// A traveler has no house to go inside, so it sits out the storm by the fire
+				if (!healing && !warming && !allNight && VikingWeather.Storming() && VikingWeather.RainsOn(life.transform.position))
 				{
 					GoInside();
 					return;
 				}
 				bool wounded = (healing || warming || life.Wounded());
-				sits = (fire != null && (rolls.NextDouble() < GatherSitChance || wounded));
+				sits = (fire != null && (allNight || rolls.NextDouble() < GatherSitChance || wounded));
 				sitAt = (wounded ? 0f : Mathf.Lerp(GatherSitStart, GatherSitEnd, (float)rolls.NextDouble()));
 				if (fire != null)
 				{
@@ -506,7 +515,7 @@ namespace VikingVillages
 			/// when it's pushed off it
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
-			/// <returns>True once it's the viking's bedtime (see Bedtime) or day, or for a wounded viking by day, once it's
+			/// <returns>True once it's the viking's bedtime (see Bedtime) or day - for a traveler, only once it's day - or for a wounded viking by day, once it's
 			/// rested or it's dusk - or resting inside, once it's no longer badly hurt or the rain stops - and for a cold
 			/// one, once the weather clears, it's dusk or its fire goes out. Out in the rain where it would be better off
 			/// inside (see GoInside), it's done too, so it's picked again for inside</returns>
@@ -519,7 +528,7 @@ namespace VikingVillages
 						return(true);
 					}
 				}
-				else if (healing ? (IsNight() || IsDusk() || life.body.Rest.IsRested() || (indoors && (!life.Wounded() || !VikingWeather.RainsOn(life.transform.position)))) : (!IsDusk() && (!IsNight() || life.Bedtime())))
+				else if (healing ? (IsNight() || IsDusk() || life.body.Rest.IsRested() || (indoors && (!life.Wounded() || !VikingWeather.RainsOn(life.transform.position)))) : (!IsDusk() && (!IsNight() || (!allNight && life.Bedtime()))))
 				{
 					return(true);
 				}
@@ -621,7 +630,7 @@ namespace VikingVillages
 				{
 					return(false);
 				}
-				if (sits && !sitting && EnvMan.instance.GetDayFraction() >= sitAt)
+				if (sits && !sitting && (EnvMan.instance.GetDayFraction() >= sitAt || (allNight && IsNight())))
 				{
 					if (seat != null && PlayerOn(seat))
 					{

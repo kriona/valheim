@@ -528,7 +528,7 @@ The events a village can have by its biome (see [EVENTS.md](EVENTS.md)).
 
 | Biome | Events |
 | --- | --- |
-| Meadows to the Plains | Traveling Viking - 10% a day, then not again for 6 days |
+| Meadows to the Plains | Traveling Viking - 10% a day, then not again for 6 days, from a biome 3 or more harder than the village's |
 | Mistlands to the Deep North | None |
 
 ## Quests by Biome

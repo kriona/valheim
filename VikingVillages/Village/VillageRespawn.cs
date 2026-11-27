@@ -468,7 +468,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Finds where the farm of a PC viking's village stands - the village it notes, or else the one it's in. One
-		/// leaving a disbanded village or on the road to another belongs to none, even passing through one
+		/// leaving a disbanded village or on the road to another belongs to none, even passing through one, and a
+		/// traveler belongs to none, even the village it visits
 		/// </summary>
 		/// <param name="character">The viking</param>
 		/// <param name="farm">Where the farm stands</param>
@@ -476,7 +477,7 @@ namespace VikingVillages
 		public static bool FarmOf(Character character, out Vector3 farm)
 		{
 			ZDO zdo = character.m_nview.GetZDO();
-			if (zdo.GetBool(VillageFounding.LeavingKey) || VillageTravel.OnRoad(zdo))
+			if (zdo.GetBool(VillageFounding.LeavingKey) || VillageTravel.OnRoad(zdo) || Traveler.Is(zdo))
 			{
 				farm = Vector3.zero;
 				return(false);
@@ -831,7 +832,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Lists the PC and NPC vikings this client has that belong to a village - those that note it as their village,
-		/// and those inside it that note none, which are taken in when this client owns them
+		/// and those inside it that note none, which are taken in when this client owns them - never a traveler, which
+		/// only visits (see Traveler)
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <returns>The vikings' ZDOs</returns>
@@ -843,7 +845,7 @@ namespace VikingVillages
 			List<ZDO> homeless = new List<ZDO>();
 			foreach (ZDO zdo in zdos)
 			{
-				if (!VikingCore.IsPlayerLikePrefab(zdo.GetPrefab()) || zdo.GetBool(VillageFounding.LeavingKey))
+				if (!VikingCore.IsPlayerLikePrefab(zdo.GetPrefab()) || zdo.GetBool(VillageFounding.LeavingKey) || Traveler.Is(zdo))
 				{
 					continue;
 				}
@@ -1256,7 +1258,7 @@ namespace VikingVillages
 		/// <param name="outside">Whether that's outside the fence</param>
 		/// <param name="why">Set to why it can't, for the debug hover text, or "" when it can</param>
 		/// <returns>True when it can</returns>
-		private static bool ReadyToArrive(Village village, out Vector3 spot, out bool outside, out string why)
+		internal static bool ReadyToArrive(Village village, out Vector3 spot, out bool outside, out string why)
 		{
 			return(ReadyToArrive(village, Vector3.zero, out spot, out outside, out why));
 		}

@@ -424,7 +424,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Puts the viking's name and the keys to talk to it, name it and open its inventory ahead of the game's hover
-		/// text, when the local player isn't its enemy
+		/// text, when the local player isn't its enemy - only the key to talk to a traveler, which can't be named and
+		/// keeps its pack to itself
 		/// </summary>
 		/// <param name="text">The game's hover text</param>
 		/// <returns>The hover text</returns>
@@ -436,12 +437,15 @@ namespace VikingVillages
 				return(text);
 			}
 			string talk = GetHoverName() + "\n" + Localization.instance.Localize("[<color=yellow><b>$KEY_Use</b></color>] Talk");
-			if (VikingNames.CanName())
+			if (!own.IsTraveler())
 			{
-				string alt = ((ZInput.IsNonClassicFunctionality() && ZInput.IsGamepadActive()) ? "$KEY_AltKeys" : "$KEY_AltPlace");
-				talk += "\n" + Localization.instance.Localize("[<color=yellow><b>" + alt + " + $KEY_Use</b></color>] Name");
+				if (VikingNames.CanName())
+				{
+					string alt = ((ZInput.IsNonClassicFunctionality() && ZInput.IsGamepadActive()) ? "$KEY_AltKeys" : "$KEY_AltPlace");
+					talk += "\n" + Localization.instance.Localize("[<color=yellow><b>" + alt + " + $KEY_Use</b></color>] Name");
+				}
+				talk += "\n[<color=yellow><b>" + VikingInventory.InventoryKey + "</b></color>] Inventory";
 			}
-			talk += "\n[<color=yellow><b>" + VikingInventory.InventoryKey + "</b></color>] Inventory";
 			return(string.IsNullOrEmpty(text) ? talk : talk + "\n" + text);
 		}
 	}

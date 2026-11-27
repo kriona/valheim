@@ -12,7 +12,7 @@ namespace VikingVillages
 	{
 		/// <summary>
 		/// Has a player talk to the viking, or with the alternate key down name it, when it's a PC viking that isn't
-		/// their enemy - its owner answers
+		/// their enemy - its owner answers. A traveler can't be named
 		/// </summary>
 		/// <param name="user">Who's talking to it</param>
 		/// <param name="hold">Whether the key is held</param>
@@ -26,7 +26,7 @@ namespace VikingVillages
 			}
 			if (alt)
 			{
-				if (VikingNames.CanName() && TextInput.instance != null)
+				if (VikingNames.CanName() && TextInput.instance != null && !IsTraveler())
 				{
 					TextInput.instance.RequestText(this, "$hud_rename", VikingNames.MaxLength);
 					naming = this;
@@ -280,14 +280,14 @@ namespace VikingVillages
 		/// <summary>
 		/// Names the viking, on its owner, and has it answer to its new name - turning down "Viking" or nothing, which
 		/// would take its name away, and a creature's, a legend's, a player's or a fellow viking's name (see
-		/// VikingNames.Judge)
+		/// VikingNames.Judge). A traveler keeps its own name
 		/// </summary>
 		/// <param name="sender">The client that sent it</param>
 		/// <param name="name">The name</param>
 		/// <param name="author">Who named it</param>
 		private void RPC_Name(long sender, string name, string author)
 		{
-			if (!nview.IsOwner() || !VikingCore.IsPlayerLikeViking(humanoid))
+			if (!nview.IsOwner() || !VikingCore.IsPlayerLikeViking(humanoid) || IsTraveler())
 			{
 				return;
 			}
@@ -391,7 +391,7 @@ namespace VikingVillages
 			if (VikingSpeech.Knows(humanoid, player.GetPlayerID()))
 			{
 				string news = VikingNewsStore.Tell(humanoid, player, NewsBiome());
-				string answer = (news ?? (active ? VillageAnswer(player) : RoadAnswer(player)));
+				string answer = (news ?? (active ? (IsTraveler() ? TravelerAnswer(player) : VillageAnswer(player)) : RoadAnswer(player)));
 				VikingSpeech.Say(humanoid, answer, VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 				greeting = player;
 				greetUntil = Time.time + TalkFaceTime;
@@ -404,7 +404,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Picks what a viking at home says when a player it knows talks to it - now and then about the player wearing no
 		/// clothes (see VikingClothesSpeech), the training weapon in their hand (see VikingTrainingSpeech), a quest of its
-		/// village's (see QuestAnswer), its village going by its name (see VillageNamesakeSpeech), the village on the
+		/// village's (see QuestAnswer), a traveler visiting (see VisitAnswer), its village going by its name (see VillageNamesakeSpeech), the village on the
 		/// other side of its village's portal (see VillagePortalSpeech), being old friends or how the player is doing (see
 		/// VikingFriendSpeech), the one of Frozen's folk it's named after (see VikingFrozenSpeech), or a runestone of the
 		/// biome it stands in or of someone with its name (see VikingLoreSpeech)
@@ -417,7 +417,7 @@ namespace VikingVillages
 			bool friends = VikingIdentity.OldFriends(nview, player.GetPlayerID());
 			string own = VikingNames.Get(humanoid);
 			string villageName = VillageNames.Get(village);
-			return(VikingClothesSpeech.Chat(player) ?? VikingTrainingSpeech.Chat(player) ?? QuestAnswer(player) ?? VillageNamesakeSpeech.Chat(own, villageName, name) ?? VillagePortalSpeech.Chat(village, name) ?? VikingFriendSpeech.Chat(friends, name) ?? VikingFrozenSpeech.Chat(name, own) ?? VikingLoreSpeech.Chat(transform.position, name, own) ?? VikingSpeech.Answer(player, IsNight(), villageName));
+			return(VikingClothesSpeech.Chat(player) ?? VikingTrainingSpeech.Chat(player) ?? QuestAnswer(player) ?? VisitAnswer(player) ?? VillageNamesakeSpeech.Chat(own, villageName, name) ?? VillagePortalSpeech.Chat(village, name) ?? VikingFriendSpeech.Chat(friends, name) ?? VikingFrozenSpeech.Chat(name, own) ?? VikingLoreSpeech.Chat(transform.position, name, own) ?? VikingSpeech.Answer(player, IsNight(), villageName));
 		}
 
 		/// <summary>
@@ -455,7 +455,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Greets a player - turning to them with a wave and a word, by name for a player it knows, now and then as an old
-		/// friend at home (see VikingFriendSpeech), and as a stranger otherwise - and remembers them, noting the talk once
+		/// friend at home (see VikingFriendSpeech), and as a stranger otherwise, a traveler as one passing through (see
+		/// TravelerSpeech) - and remembers them, noting the talk once
 		/// it has said its piece (see VikingIdentity.Answered). A player it knows may hear its news of them in place of
 		/// the word (see VikingNewsStore)
 		/// </summary>
@@ -470,9 +471,12 @@ namespace VikingVillages
 			greetUntil = Time.time + faceTime;
 			VikingPoses.Wave(humanoid);
 			string news = (known ? VikingNewsStore.Tell(humanoid, player, NewsBiome()) : null);
-			string friend = ((known && active) ? VikingFriendSpeech.Greeting(VikingIdentity.OldFriends(nview, playerId), player.GetPlayerName()) : null);
-			// One away from any village greets them the way a traveler does, or a lost one asks where it is
-			string line = friend ?? (active ? VikingSpeech.Greeting(player, IsNight(), known, VikingNames.Get(humanoid), VillageNames.Get(village)) : VikingRoadSpeech.Greeting(player, IsNight(), known, VikingNames.Get(humanoid), road == Road.Confused));
+			bool traveler = IsTraveler();
+			string friend = ((known && active && !traveler) ? VikingFriendSpeech.Greeting(VikingIdentity.OldFriends(nview, playerId), player.GetPlayerName()) : null);
+			// One away from any village greets them the way a traveler does, or a lost one asks where it is, and a traveling
+			// viking greets them as one passing through
+			string passing = (traveler ? TravelerGreeting(player, known) : null);
+			string line = friend ?? passing ?? (active ? VikingSpeech.Greeting(player, IsNight(), known, VikingNames.Get(humanoid), VillageNames.Get(village)) : VikingRoadSpeech.Greeting(player, IsNight(), known, VikingNames.Get(humanoid), road == Road.Confused));
 			VikingSpeech.Say(humanoid, news ?? line, VikingSpeech.TalkTime, VikingSpeech.TalkCull);
 			VikingSpeech.Meet(humanoid, playerId);
 			VikingIdentity.Answered(nview, playerId, talked);

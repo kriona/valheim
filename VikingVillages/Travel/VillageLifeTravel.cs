@@ -363,8 +363,8 @@ namespace VikingVillages
 		private bool goodbyeStarted;
 
 		/// <summary>
-		/// Checks whether the viking's life away from any village runs - on its owner, while it belongs to no village, or
-		/// leaving a disbanded village once it's on the road - starting it when it hasn't yet
+		/// Checks whether the viking's life away from any village runs - on its owner, while it belongs to no village and
+		/// isn't a traveler, or leaving a disbanded village once it's on the road - starting it when it hasn't yet
 		/// </summary>
 		/// <returns>True when it runs</returns>
 		private bool RoadRuns()
@@ -374,6 +374,13 @@ namespace VikingVillages
 				return(false);
 			}
 			ZDO zdo = nview.GetZDO();
+			// A traveler only ever has the village it visits, so with that not loaded it stands about as the game's AI has
+			// it, rather than looking for another
+			if (Traveler.Is(zdo))
+			{
+				road = Road.None;
+				return(false);
+			}
 			// One that belongs to a village that isn't loaded, or that it's away from, goes on as it always has, and one
 			// leaving a disbanded village gathers with the rest until it's on the road (see UpdateLeaving)
 			bool departing = zdo.GetBool(VillageFounding.LeavingKey);
@@ -1407,8 +1414,9 @@ namespace VikingVillages
 		/// Eats the food the viking carries that it eats now, the way it eats from a chest at home (see FoodIn) - wounded,
 		/// the one that heals it fastest, and otherwise keeping its foods up on the weakest that does it good
 		/// </summary>
+		/// <param name="counted">What it's counted as in the test log's totals</param>
 		/// <returns>True when it ate</returns>
-		private bool EatCarried()
+		private bool EatCarried(string counted = "Eaten on the road")
 		{
 			if (body == null)
 			{
@@ -1432,7 +1440,7 @@ namespace VikingVillages
 			{
 				return(false);
 			}
-			TestLog.Count("Eaten on the road", TestLog.ItemName(best));
+			TestLog.Count(counted, TestLog.ItemName(best));
 			humanoid.GetInventory().RemoveItem(best, 1);
 			humanoid.m_consumeItemEffects.Create(transform.position, Quaternion.identity);
 			humanoid.m_zanim.SetTrigger("eat");

@@ -124,6 +124,35 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Lists the names settled for the world's farms
+		/// </summary>
+		/// <returns>The names, in the order of the farms</returns>
+		public static List<string> Names()
+		{
+			return(plan.ConvertAll((KeyValuePair<Vector3, string> entry) => entry.Value));
+		}
+
+		/// <summary>
+		/// Shuffles names by a seed, so they come out in the same order for the same seed
+		/// </summary>
+		/// <param name="names">The names</param>
+		/// <param name="seed">The seed - the world's, for the world's farms</param>
+		/// <returns>A shuffled copy of the names</returns>
+		internal static List<string> Shuffled(IList<string> names, int seed)
+		{
+			List<string> shuffled = new List<string>(names);
+			System.Random rolls = new System.Random(seed);
+			for (int i = shuffled.Count - 1; i > 0; i--)
+			{
+				int j = rolls.Next(i + 1);
+				string swap = shuffled[i];
+				shuffled[i] = shuffled[j];
+				shuffled[j] = swap;
+			}
+			return(shuffled);
+		}
+
+		/// <summary>
 		/// Checks whether a name is settled for a farm, so a village started by a player doesn't take it
 		/// </summary>
 		/// <param name="name">The name</param>
@@ -143,15 +172,7 @@ namespace VikingVillages
 		{
 			List<Vector3> farms = FarmSpawns.PlannedFarms();
 			farms.Sort((Vector3 a, Vector3 b) => ((a.x != b.x) ? a.x.CompareTo(b.x) : a.z.CompareTo(b.z)));
-			List<string> names = new List<string>(VillageNames.AutoNames);
-			System.Random rolls = new System.Random(WorldGenerator.instance.GetSeed());
-			for (int i = names.Count - 1; i > 0; i--)
-			{
-				int j = rolls.Next(i + 1);
-				string swap = names[i];
-				names[i] = names[j];
-				names[j] = swap;
-			}
+			List<string> names = Shuffled(VillageNames.AutoNames, WorldGenerator.instance.GetSeed());
 			HashSet<string> taken = new HashSet<string>();
 			foreach (VillageNameList.Entry entry in VillageNameList.Others(""))
 			{

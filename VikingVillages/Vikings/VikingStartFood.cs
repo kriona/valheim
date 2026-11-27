@@ -5,8 +5,8 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// The food a viking starts out with as it's rolled up - a PC or NPC viking having eaten EatenCount of its biome's
-	/// Foods and carrying CarriedMin-CarriedMax more of them, and a dvergr viking carrying DvergrMin-DvergrMax of the
-	/// Mistlands', which it never eats
+	/// Foods and carrying CarriedMin-CarriedMax more of them, or a traveler Traveler.FoodMin-FoodMax, and a dvergr
+	/// viking carrying DvergrMin-DvergrMax of the Mistlands', which it never eats
 	/// </summary>
 	internal static class VikingStartFood
 	{
@@ -126,12 +126,15 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Starts a PC or NPC viking being rolled up out fed - having eaten each of its biome's foods, each with
-		/// LeftMin-LeftMax of its burn time left (see VikingFood.StartFed), and carrying CarriedMin-CarriedMax more
+		/// LeftMin-LeftMax of its burn time left (see VikingFood.StartFed), and carrying more - CarriedMin-CarriedMax, or
+		/// for a traveler, Traveler.FoodMin-FoodMax
 		/// </summary>
 		/// <param name="zdo">The viking's ZDO, owned by this client</param>
 		/// <param name="gear">Its inventory, being rolled</param>
 		/// <param name="biome">The biome's index in VikingGear's tables</param>
-		internal static void Give(ZDO zdo, Inventory gear, int biome)
+		/// <param name="carriedMin">The fewest foods it carries</param>
+		/// <param name="carriedMax">The most foods it carries</param>
+		internal static void Give(ZDO zdo, Inventory gear, int biome, int carriedMin, int carriedMax)
 		{
 			string[] foods = FoodsFor(biome);
 			List<KeyValuePair<string, float>> eaten = new List<KeyValuePair<string, float>>();
@@ -140,7 +143,7 @@ namespace VikingVillages
 				eaten.Add(new KeyValuePair<string, float>(foods[i], Random.Range(LeftMin, LeftMax)));
 			}
 			VikingFood.StartFed(zdo, eaten);
-			Pack(gear, biome, CarriedMin, CarriedMax);
+			Pack(gear, biome, carriedMin, carriedMax);
 		}
 	}
 }

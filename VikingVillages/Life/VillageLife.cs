@@ -2207,7 +2207,8 @@ namespace VikingVillages
 					returning = true;
 				}
 			}
-			if (!returning && village.DistanceOutside(transform.position) > StrayRange)
+			// A traveler setting off is meant to be outside
+			if (!returning && !(job is LeaveJob) && village.DistanceOutside(transform.position) > StrayRange)
 			{
 				Interrupt("straying out of the village");
 				returning = true;
@@ -2465,7 +2466,8 @@ namespace VikingVillages
 		/// done food on a cooking station before it burns, dropping strolling, standing about or petting a boar for work
 		/// that needs doing, like loot to put away, after a fight dropping more for the loot it left (see
 		/// YieldsToLoot), and at dusk getting up from the gathering to teach a forsaken power (see FindTeachWork) - and
-		/// uses a forsaken power for its job or for being hurt (see UpdateJobPower)
+		/// uses a forsaken power for its job or for being hurt (see UpdateJobPower). A traveler leaves out all of that work,
+		/// picking its own jobs (see ChooseTravelerJob)
 		/// </summary>
 		/// <param name="dt">Seconds since the AI's last update</param>
 		/// <returns>True when its life handled it, so the wandering is skipped</returns>
@@ -2475,18 +2477,30 @@ namespace VikingVillages
 			{
 				return(RoadIdle(dt));
 			}
-			if (!questChecked)
+			// A traveler does none of the village's work, mourns none of its dead and goes on none of its quests
+			bool traveler = IsTraveler();
+			if (traveler && UpdateTraveler())
+			{
+				return(true);
+			}
+			if (!questChecked && !traveler)
 			{
 				questChecked = true;
 				ReturnFromQuest();
 			}
-			UpdateHomecoming();
+			if (!traveler)
+			{
+				UpdateHomecoming();
+			}
 			if (UpdateWary(dt))
 			{
 				return(true);
 			}
-			UpdateGrab();
-			if (Time.time >= nextMournCheck)
+			if (!traveler)
+			{
+				UpdateGrab();
+			}
+			if (!traveler && Time.time >= nextMournCheck)
 			{
 				nextMournCheck = Time.time + MournCheckInterval;
 				Job mourn = FindMourning();
@@ -2505,7 +2519,7 @@ namespace VikingVillages
 				job = new GatherJob(this, false, true);
 				job.Begin();
 			}
-			if (Time.time >= nextWorkCheck)
+			if (!traveler && Time.time >= nextWorkCheck)
 			{
 				Job work = null;
 				// Done food burns before long, so it's taken off ahead of loot, even partway through putting loot away - and
@@ -2551,7 +2565,7 @@ namespace VikingVillages
 			}
 			if (job == null)
 			{
-				job = ChooseJob();
+				job = (traveler ? ChooseTravelerJob() : ChooseJob());
 				job.Begin();
 			}
 			UpdateFree();
@@ -2751,7 +2765,8 @@ namespace VikingVillages
 		/// <summary>
 		/// Finds the village the viking belongs to, or the one it stands in when it hasn't noted one - one spawned or
 		/// brought in from outside any village - noting it as the village's, at home in the house nearest it. A viking
-		/// away from its own village for SwitchAwayTime joins the village it's in the same way
+		/// away from its own village for SwitchAwayTime joins the village it's in the same way. A traveler's is the
+		/// village it visits (see Traveler)
 		/// </summary>
 		/// <remarks>
 		/// It's away whenever it's farther than Village.FindReach outside its own village, or its village isn't loaded,
@@ -2761,6 +2776,11 @@ namespace VikingVillages
 		private Village FindVillage()
 		{
 			ZDO zdo = nview.GetZDO();
+			// A traveler lives in the village it visits without ever being noted as one of its own
+			if (Traveler.Is(zdo))
+			{
+				return(Village.ForFarm(Traveler.HostOf(zdo)));
+			}
 			Village here = Village.Find(transform.position);
 			if (zdo.GetVec3(Village.VillageKey, Vector3.zero) != Vector3.zero)
 			{
@@ -2806,9 +2826,14 @@ namespace VikingVillages
 		/// back there once it's rebuilt
 		/// </remarks>
 		/// <param name="house">The house</param>
-		/// <returns>False when its village has no house standing</returns>
+		/// <returns>False when its village has no house standing, or for a traveler, which has none</returns>
 		private bool Home(out VillagePaths.House house)
 		{
+			if (IsTraveler())
+			{
+				house = default(VillagePaths.House);
+				return(false);
+			}
 			Vector3 center = nview.GetZDO().GetVec3(Village.HomeKey, transform.position);
 			if (!village.NearestHouse(center, out house))
 			{

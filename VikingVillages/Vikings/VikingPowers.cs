@@ -218,14 +218,15 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Gets the powers the viking knows - those it knows from the start (see BiomeMask), and any it has learned. An
-		/// NPC viking knows none, though it gains by a power another uses beside it
+		/// NPC viking or a traveler knows none, so it never uses or teaches one, though it gains by a power another uses
+		/// beside it
 		/// </summary>
 		/// <returns>The powers, one bit for each in the order of Names</returns>
 		public int Known()
 		{
 			ZDO zdo = Zdo();
 			VikingCore own = Core();
-			if (zdo == null || own == null || own.GetData() == null || VikingCore.IsNPCViking(viking))
+			if (zdo == null || own == null || own.GetData() == null || VikingCore.IsNPCViking(viking) || Traveler.Is(zdo))
 			{
 				return(0);
 			}
@@ -253,8 +254,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Notes that the viking has been given a status effect - learning it, and noting it's under it, when it's a
-		/// forsaken power - on its owner
+		/// Notes that the viking has been given a status effect - learning it, unless it's an NPC viking or a traveler,
+		/// and noting it's under it, when it's a forsaken power - on its owner
 		/// </summary>
 		/// <param name="hash">The status effect's name hash</param>
 		public void Received(int hash)
@@ -267,7 +268,7 @@ namespace VikingVillages
 			}
 			int bit = 1 << power;
 			int learned = zdo.GetInt(LearnedKey);
-			if ((learned & bit) == 0 && (Known() & bit) == 0 && !VikingCore.IsNPCViking(viking))
+			if ((learned & bit) == 0 && (Known() & bit) == 0 && !VikingCore.IsNPCViking(viking) && !Traveler.Is(zdo))
 			{
 				zdo.Set(LearnedKey, learned | bit);
 				TestLog.Count("Powers", "learned");

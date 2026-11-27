@@ -356,6 +356,24 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Gives a traveler a name of its own - one picked at random for whether it's a man or a woman that no viking of
+		/// the village it visits goes by, with no byname, noted as given by no player
+		/// </summary>
+		/// <param name="viking">The traveler's ZDO, owned by this client</param>
+		/// <param name="data">Its looks, for whether it's a woman</param>
+		/// <param name="host">The farm of the village it visits</param>
+		public static void GiveTravelerName(ZDO viking, VikingData data, UnityEngine.Vector3 host)
+		{
+			string picked = PickFirstName(data, NamesAt(viking, host));
+			if (picked.Length == 0)
+			{
+				return;
+			}
+			viking.Set(NameKey, picked);
+			viking.Set(AuthorKey, "");
+		}
+
+		/// <summary>
 		/// Gets the name a village's viking is given for the order it comes in, when its village's first vikings have
 		/// names of their own (see FirstVikings)
 		/// </summary>
@@ -565,8 +583,19 @@ namespace VikingVillages
 		/// <returns>The names, or none when it belongs to no village</returns>
 		private static HashSet<string> NamesInVillage(ZDO viking)
 		{
+			return(NamesAt(viking, viking.GetVec3(Village.VillageKey, UnityEngine.Vector3.zero)));
+		}
+
+		/// <summary>
+		/// Lists the names the PC vikings of the village at a farm go by but for one viking, in lowercase, the same way as
+		/// NamesInVillage
+		/// </summary>
+		/// <param name="viking">The ZDO of the viking to leave out</param>
+		/// <param name="farm">The village's farm, or zero for none</param>
+		/// <returns>The names, or none for no village</returns>
+		private static HashSet<string> NamesAt(ZDO viking, UnityEngine.Vector3 farm)
+		{
 			HashSet<string> taken = new HashSet<string>();
-			UnityEngine.Vector3 farm = viking.GetVec3(Village.VillageKey, UnityEngine.Vector3.zero);
 			if (farm == UnityEngine.Vector3.zero)
 			{
 				return(taken);

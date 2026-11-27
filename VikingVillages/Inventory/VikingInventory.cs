@@ -70,7 +70,8 @@ namespace VikingVillages
 				return;
 			}
 			Character hovered = player.GetHoverCreature();
-			if (hovered != null && hovered is Humanoid humanoid && hovered.TryGetComponent(out VillageLife found) && found.CanTalkTo(player))
+			// A traveler's pack is its own
+			if (hovered != null && hovered is Humanoid humanoid && hovered.TryGetComponent(out VillageLife found) && found.CanTalkTo(player) && !found.IsTraveler())
 			{
 				RestoreLayout();
 				Open(humanoid, found);

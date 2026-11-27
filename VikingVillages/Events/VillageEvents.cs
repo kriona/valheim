@@ -51,6 +51,11 @@ namespace VikingVillages
 			public State State;
 			public bool Forced;
 			public string Rolled = "";
+
+			/// <summary>
+			/// What starts the event in place of its own start, as set from the console, or null
+			/// </summary>
+			public System.Func<Village, bool> Starter;
 		}
 
 		/// <summary>
@@ -187,7 +192,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Starts a village's event, noting the day on the village's generator for its cooldown
+		/// Starts a village's event, noting the day on the village's generator for its cooldown - or leaves it waiting
+		/// when it couldn't start yet, to try again at the next check
 		/// </summary>
 		/// <param name="village">The village, run by this client</param>
 		/// <param name="plan">Its plan for today</param>
@@ -195,11 +201,15 @@ namespace VikingVillages
 		/// <param name="now">The time of day, from 0 at midnight to 1</param>
 		private static void Begin(Village village, Plan plan, long today, float now)
 		{
+			bool started = ((plan.Starter != null) ? plan.Starter(village) : plan.Event.Start(village));
+			if (!started)
+			{
+				return;
+			}
 			plan.State = State.Started;
 			plan.At = now;
 			village.Zdo.Set(plan.Event.LastDayKey, today);
-			Plugin.Log.LogInfo("Event at " + VillageNames.Get(village) + ": " + plan.Event.Name + " starts at " + EventRules.Clock(now) + " on day " + today);
-			plan.Event.Start(village);
+			Plugin.Log.LogInfo("Event at " + VillageNames.Get(village) + ": " + plan.Event.Name + " started at " + EventRules.Clock(now) + " on day " + today);
 		}
 
 		/// <summary>
@@ -208,14 +218,15 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="village">The village, run by this client</param>
 		/// <param name="happening">The event, or null for none</param>
-		public static void Force(Village village, VillageEvent happening)
+		/// <param name="starter">What starts it in place of its own start, or null</param>
+		public static void Force(Village village, VillageEvent happening, System.Func<Village, bool> starter = null)
 		{
 			if (ZNet.instance == null || EnvMan.instance == null)
 			{
 				return;
 			}
 			ForgetOtherWorlds();
-			Plan plan = new Plan { Day = EnvMan.instance.GetDay(), Event = happening, At = EnvMan.instance.GetDayFraction(), State = ((happening != null) ? State.Waiting : State.None), Forced = (happening != null), Rolled = "set from the console" };
+			Plan plan = new Plan { Day = EnvMan.instance.GetDay(), Event = happening, At = EnvMan.instance.GetDayFraction(), State = ((happening != null) ? State.Waiting : State.None), Forced = (happening != null), Rolled = "set from the console", Starter = starter };
 			plans[village.Farm] = plan;
 			nextCheck = 0f;
 		}
@@ -231,7 +242,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Describes a village's event today and the events still on their cooldown, for the debug text of its fire
+		/// Describes a village's event today, the events still on their cooldown and the traveler visiting or that
+		/// visited lately, for the debug text of its fire
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <returns>The lines, ending in a line break</returns>
@@ -256,6 +268,11 @@ namespace VikingVillages
 			if (cooling.Count > 0)
 			{
 				text.Append("Event cooldowns: " + string.Join(", ", cooling) + " - today is day " + today + "\n");
+			}
+			Traveler.Visit visit = Traveler.VisitOf(village);
+			if (visit != null)
+			{
+				text.Append("Traveler: " + visit.Name + " of " + visit.Home + ", from " + visit.From + " to " + visit.To + (visit.Here ? ", visiting" : ", left - talked about for a while yet") + "\n");
 			}
 			return(text.ToString());
 		}

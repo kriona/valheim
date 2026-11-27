@@ -37,10 +37,10 @@ namespace VikingVillages
 		public readonly int LastDayKey;
 
 		/// <summary>
-		/// Checks whether it can start at a village now, and starts it
+		/// Checks whether it can start at a village now, and starts it, saying whether it did
 		/// </summary>
 		private readonly System.Func<Village, bool> canStart;
-		private readonly System.Action<Village> start;
+		private readonly System.Func<Village, bool> start;
 
 		/// <summary>
 		/// Describes an event
@@ -54,8 +54,8 @@ namespace VikingVillages
 		/// <param name="windowStart">The time of day its window opens</param>
 		/// <param name="windowEnd">The time of day its window closes</param>
 		/// <param name="canStart">Checks whether it can start at a village now, or null when it always can</param>
-		/// <param name="start">Starts it at a village</param>
-		public VillageEvent(string id, string name, float chance, int cooldownDays, int easiestBiome, int hardestBiome, float windowStart, float windowEnd, System.Func<Village, bool> canStart, System.Action<Village> start)
+		/// <param name="start">Starts it at a village, returning false when it couldn't yet</param>
+		public VillageEvent(string id, string name, float chance, int cooldownDays, int easiestBiome, int hardestBiome, float windowStart, float windowEnd, System.Func<Village, bool> canStart, System.Func<Village, bool> start)
 		{
 			Id = id;
 			Name = name;
@@ -84,9 +84,10 @@ namespace VikingVillages
 		/// Starts the event at a village
 		/// </summary>
 		/// <param name="village">The village, run by this client</param>
-		public void Start(Village village)
+		/// <returns>False when it couldn't start yet</returns>
+		public bool Start(Village village)
 		{
-			start?.Invoke(village);
+			return(start == null || start(village));
 		}
 
 		/// <summary>

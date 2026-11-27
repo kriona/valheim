@@ -83,7 +83,7 @@ namespace Kriona.Vikings
 				}
 			}
 			ZDO zdo = nview.GetZDO();
-			VikingStartFood.Give(zdo, gear, index);
+			VikingStartFood.Give(zdo, gear, index, VikingStartFood.CarriedMin, VikingStartFood.CarriedMax);
 			VikingNames.GiveName(zdo, rolled, false);
 			StyleAfterName(zdo, rolled);
 			SaveGenerated(rolled, gear);

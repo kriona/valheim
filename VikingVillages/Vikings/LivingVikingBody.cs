@@ -27,6 +27,12 @@ namespace VikingVillages
 		private const string NPCColor = "#33CCFF";
 
 		/// <summary>
+		/// What shows after a traveler's name in debug mode, and its color
+		/// </summary>
+		private const string TravelerMark = "(Traveler)";
+		private const string TravelerColor = "#FF66CC";
+
+		/// <summary>
 		/// The forsaken powers the viking knows and uses
 		/// </summary>
 		public VikingPowers Powers { get; private set; }
@@ -337,7 +343,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Gets the viking's name as the local player knows it - the name a player gave it once it knows them, or else
 		/// plain Viking with "(?)" after it while it doesn't, until it greets them or they talk to it - with, in debug
-		/// mode, "(NPC)" after an NPC viking's name in NPCColor and what it's doing on a line under it, wherever its name
+		/// mode, "(NPC)" after an NPC viking's name in NPCColor, "(Traveler)" after a traveler's in TravelerColor, and what it's doing on a line under it, wherever its name
 		/// shows: its hover text, the health bar over it (see VikingHudName), and other mods' markers that read its name
 		/// </summary>
 		/// <returns>Its name</returns>
@@ -351,6 +357,10 @@ namespace VikingVillages
 			if (VikingCore.IsNPCViking(this))
 			{
 				name += " <color=" + NPCColor + ">" + NPCMark + "</color>";
+			}
+			if (Traveler.Is(this))
+			{
+				name += " <color=" + TravelerColor + ">" + TravelerMark + "</color>";
 			}
 			string job = viking.DebugJob();
 			return(string.IsNullOrEmpty(job) ? name : name + "\n<color=" + JobColor + ">" + job + "</color>");
