@@ -231,5 +231,43 @@ namespace VikingVillages.Tests
 			HashSet<string> creatures = new HashSet<string> { "troll", "bear", "bjorn", "bjørn" };
 			Assert.Equal(expected, VikingNames.IsCreatureName(lower, creatures, " Zombie "));
 		}
+
+		/// <summary>
+		/// Checks that the names of a quest's other vikings are added in lowercase, without the viking being named's own
+		/// </summary>
+		[Fact]
+		public void QuestNamesLeaveOutTheVikingNamed()
+		{
+			HashSet<string> taken = new HashSet<string> { "grimolf the young" };
+			List<string> members = new List<string> { "a", "b", "c" };
+			List<string> names = new List<string> { "Hallveig the Wise", "Kolbrun", "Grimolf the Young" };
+			VikingNames.AddQuestNames(taken, members, names, "b");
+			Assert.Equal(new HashSet<string> { "hallveig the wise", "grimolf the young" }, taken);
+		}
+
+		/// <summary>
+		/// Checks that empty names are left out, names are kept as given without their "$" and spaces, and a list of
+		/// names shorter than the members is read as far as it goes
+		/// </summary>
+		[Fact]
+		public void QuestNamesSkipEmptyAndMissingNames()
+		{
+			HashSet<string> taken = new HashSet<string>();
+			List<string> members = new List<string> { "a", "b", "c" };
+			List<string> names = new List<string> { "", " $Rolf$ " };
+			VikingNames.AddQuestNames(taken, members, names, "z");
+			Assert.Equal(new HashSet<string> { "rolf" }, taken);
+		}
+
+		/// <summary>
+		/// Checks that a quest with no vikings adds nothing
+		/// </summary>
+		[Fact]
+		public void QuestNamesOfNoOne()
+		{
+			HashSet<string> taken = new HashSet<string> { "rolf" };
+			VikingNames.AddQuestNames(taken, new List<string>(), new List<string>(), "a");
+			Assert.Equal(new HashSet<string> { "rolf" }, taken);
+		}
 	}
 }

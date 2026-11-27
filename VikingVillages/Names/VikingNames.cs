@@ -558,7 +558,8 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Lists the names the other PC vikings of a viking's village go by, in lowercase - the vikings whose ZDOs
-		/// this client has around the village that note it as theirs
+		/// this client has around the village that note it as theirs, and those out on the village's quest, who are
+		/// still its vikings while they're out of the world (see AddQuestNames)
 		/// </summary>
 		/// <param name="viking">The viking's ZDO</param>
 		/// <returns>The names, or none when it belongs to no village</returns>
@@ -592,7 +593,37 @@ namespace VikingVillages
 					taken.Add(name.ToLowerInvariant());
 				}
 			}
+			QuestRecord record = VillageQuests.Read(village);
+			if (record != null)
+			{
+				AddQuestNames(taken, record.Members, record.Names, VikingIdentity.Get(viking));
+			}
 			return(taken);
+		}
+
+		/// <summary>
+		/// Adds the names of the vikings on a village's quest to the names its vikings go by, in lowercase, leaving out
+		/// the viking being named - so a leader out on a quest is still the village's leader, and one of a group coming
+		/// home ahead of its leader doesn't take up a leader's byname
+		/// </summary>
+		/// <param name="taken">The names the village's vikings go by, in lowercase, added to</param>
+		/// <param name="members">The quest's vikings, by their GUIDs (see VikingIdentity)</param>
+		/// <param name="names">Their names, by the same index as members</param>
+		/// <param name="self">The GUID of the viking being named</param>
+		internal static void AddQuestNames(HashSet<string> taken, List<string> members, List<string> names, string self)
+		{
+			for (int i = 0; i < members.Count && i < names.Count; i++)
+			{
+				if (members[i] == self)
+				{
+					continue;
+				}
+				string name = Plain(names[i]).Trim();
+				if (name.Length > 0)
+				{
+					taken.Add(name.ToLowerInvariant());
+				}
+			}
 		}
 
 		/// <summary>
