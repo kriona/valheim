@@ -627,7 +627,7 @@ namespace VikingVillages
 					if (under)
 					{
 						TestLog.Count("Troubles", "under the ground");
-						Plugin.Log.LogWarning("Under: " + LogName() + " is " + depth.ToString("F1") + "m under the ground - " + LogDoing());
+						Plugin.Log.LogWarning("Under: " + LogName() + " is " + depth.ToString("F1") + "m under the ground - " + LogDoing() + " - " + LogFooting());
 					}
 					else
 					{
@@ -835,6 +835,31 @@ namespace VikingVillages
 				text.Append(", at night");
 			}
 			return(text.ToString());
+		}
+
+		/// <summary>
+		/// Describes what keeps the viking on the floor and the ground, for the log - whether it's held on a bed or seat,
+		/// on none, or has had its bed or seat taken from under it with that one's colliders still ignored, whether the
+		/// game counts it as attached, its collider's layer, its gravity and velocity, and how long ago the game's motion
+		/// update last ran for it
+		/// </summary>
+		/// <returns>The description</returns>
+		private string LogFooting()
+		{
+			string seat = "on no bed or seat";
+			if (attachPoint != null)
+			{
+				seat = "held at " + attachPoint.position.ToString("F1");
+			}
+			else if (attachColliders != null)
+			{
+				seat = "its bed or seat gone with its colliders still ignored, last held at " + heldAt.ToString("F1");
+			}
+			Collider collider = humanoid.m_collider;
+			string layer = ((collider != null) ? LayerMask.LayerToName(collider.gameObject.layer) : "no");
+			Rigidbody physics = humanoid.m_body;
+			string moving = ((physics != null) ? "gravity " + (physics.useGravity ? "on" : "off") + ", velocity " + physics.linearVelocity.ToString("F1") : "no body");
+			return(seat + ", " + (humanoid.IsAttached() ? "attached" : "not attached") + " for the game, on the " + layer + " layer, " + moving + ", its motion last ran " + (Time.time - motionAt).ToString("F1") + "s ago");
 		}
 
 		/// <summary>
