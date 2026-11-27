@@ -1027,5 +1027,29 @@ namespace VikingVillages.Tests
 		{
 			Assert.Equal(expected, VillageLife.DescribeLeftFood(avoidedChests, heldChests, openChests, "(5284, 31, 1648)"));
 		}
+
+		/// <summary>
+		/// Checks that stacks of the same item are counted together in the order each kind first comes
+		/// </summary>
+		[Fact]
+		public void DescribesStacksByKind()
+		{
+			List<KeyValuePair<string, int>> stacks = new List<KeyValuePair<string, int>>
+			{
+				new KeyValuePair<string, int>("Wolf Meat", 3),
+				new KeyValuePair<string, int>("Leather Scraps", 2),
+				new KeyValuePair<string, int>("Wolf Meat", 1)
+			};
+			Assert.Equal("Wolf Meat x4, Leather Scraps x2", VillageLife.DescribeStacks(stacks));
+		}
+
+		/// <summary>
+		/// Checks that no stacks describe as an empty string
+		/// </summary>
+		[Fact]
+		public void DescribesNoStacksAsEmpty()
+		{
+			Assert.Equal("", VillageLife.DescribeStacks(new List<KeyValuePair<string, int>>()));
+		}
 	}
 }

@@ -695,7 +695,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Describes the viking's equipped gear, with how worn each piece is, and its arrows and inventory
+		/// Describes the viking's equipped gear, with how worn each piece is, its arrows and inventory, and the loot it
+		/// carries for a chest when it carries any
 		/// </summary>
 		/// <returns>The description</returns>
 		private string LogGear()
@@ -708,6 +709,7 @@ namespace VikingVillages
 				gear.Add(Localization.instance.Localize(item.m_shared.m_name) + " q" + item.m_quality + worn);
 			}
 			int arrows = 0;
+			List<KeyValuePair<string, int>> loot = new List<KeyValuePair<string, int>>();
 			foreach (ItemDrop.ItemData item in inventory.GetAllItems())
 			{
 				ItemDrop.ItemData.ItemType type = item.m_shared.m_itemType;
@@ -715,9 +717,36 @@ namespace VikingVillages
 				{
 					arrows += item.m_stack;
 				}
+				if (IsCarriedFor(item, CarryLoot))
+				{
+					loot.Add(new KeyValuePair<string, int>(TestLog.ItemName(item), item.m_stack));
+				}
 			}
 			string equipped = ((gear.Count > 0) ? string.Join(", ", gear) : "nothing equipped");
-			return(equipped + ", " + arrows + " ammo, " + inventory.GetAllItems().Count + "/" + (inventory.GetWidth() * inventory.GetHeight()) + " slots used");
+			string carried = ((loot.Count > 0) ? ", carrying for a chest: " + DescribeStacks(loot) : "");
+			return(equipped + ", " + arrows + " ammo, " + inventory.GetAllItems().Count + "/" + (inventory.GetWidth() * inventory.GetHeight()) + " slots used" + carried);
+		}
+
+		/// <summary>
+		/// Describes stacks of items for the log, each kind once with how many there are in all, in the order each kind
+		/// first comes - e.g. "Wolf Meat x4, Leather Scraps x2"
+		/// </summary>
+		/// <param name="stacks">Each stack's item name and size</param>
+		/// <returns>The description, or an empty string when there are none</returns>
+		internal static string DescribeStacks(List<KeyValuePair<string, int>> stacks)
+		{
+			List<string> names = new List<string>();
+			Dictionary<string, int> counts = new Dictionary<string, int>();
+			foreach (KeyValuePair<string, int> stack in stacks)
+			{
+				if (!counts.ContainsKey(stack.Key))
+				{
+					names.Add(stack.Key);
+					counts[stack.Key] = 0;
+				}
+				counts[stack.Key] += stack.Value;
+			}
+			return(string.Join(", ", names.ConvertAll((string name) => name + " x" + counts[name])));
 		}
 
 		/// <summary>
