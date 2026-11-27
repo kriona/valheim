@@ -222,6 +222,8 @@ namespace VikingVillages
 					return(ResourceBook.BlackForest);
 				case "ElderBark":
 					return(ResourceBook.Swamp);
+				case "YggdrasilWood":
+					return(ResourceBook.Mistlands);
 				default:
 					return(villageBiome);
 			}

@@ -433,7 +433,7 @@ namespace VikingVillages.Tests
 			{
 				Assert.Contains(book.SourcesOf(ore), (ResourceSource source) => source.Tool == ToolKind.Pickaxe && source.ToolTarget != null);
 			}
-			foreach (string wood in new[] { "FineWood", "RoundLog", "ElderBark" })
+			foreach (string wood in new[] { "FineWood", "RoundLog", "ElderBark", "YggdrasilWood" })
 			{
 				Assert.Contains(book.SourcesOf(wood), (ResourceSource source) => source.Tool == ToolKind.Axe && source.ToolTarget != null);
 			}
@@ -445,6 +445,39 @@ namespace VikingVillages.Tests
 			List<ResourceSource> sources = MakeBook().SourcesOf("Wood");
 			Assert.Equal(SourceKind.Gather, sources[0].Kind);
 			Assert.Contains(sources, (ResourceSource source) => source.Quest == QuestKind.ChopTrees);
+		}
+
+		[Fact]
+		public void YggdrasilWoodIsCutFromTheMistlandsOn()
+		{
+			ResourceBook book = MakeYggdrasilBook();
+			VillageHoldings holdings = MakeHoldings();
+			holdings.Biome = ResourceBook.Mistlands;
+			holdings.Put("AxeBronze", 1);
+			Assert.NotEqual(StepKind.Quest, ResourcePlanner.Next(book, holdings, "YggdrasilWood", 20).Kind);
+			holdings.Put("AxeJotunBane", 1);
+			PlanStep step = ResourcePlanner.Next(book, holdings, "YggdrasilWood", 20);
+			Assert.Equal(StepKind.Quest, step.Kind);
+			Assert.Equal(QuestKind.ChopTrees, step.Quest);
+			Assert.Equal("YggdrasilWood", step.Item);
+			holdings.Biome = ResourceBook.Plains;
+			Assert.Equal(StepKind.Impossible, ResourcePlanner.Next(book, holdings, "YggdrasilWood", 20).Kind);
+		}
+
+		/// <summary>
+		/// Makes a book whose axes are Jotun Bane, which cuts Yggdrasil shoots, and the bronze axe, which doesn't
+		/// </summary>
+		/// <returns>The book</returns>
+		private static ResourceBook MakeYggdrasilBook()
+		{
+			ResourceBook book = MakeBook();
+			book.AddTool("AxeBronze", ToolKind.Axe, 2);
+			book.AddTool("AxeJotunBane", ToolKind.Axe, 4);
+			foreach (ResourceSource source in book.SourcesOf("YggdrasilWood"))
+			{
+				source.ToolTier = 4;
+			}
+			return(book);
 		}
 	}
 }

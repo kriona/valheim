@@ -544,6 +544,7 @@ namespace VikingVillages.Tests
 			Assert.Equal(ResourceBook.Plains, QuestTargets.BiomeOf(QuestKind.Hunt, "", ResourceBook.Plains));
 			Assert.Equal(ResourceBook.BlackForest, QuestTargets.BiomeOf(QuestKind.ChopTrees, "RoundLog", ResourceBook.Swamp));
 			Assert.Equal(ResourceBook.Swamp, QuestTargets.BiomeOf(QuestKind.ChopTrees, "Wood", ResourceBook.Swamp));
+			Assert.Equal(ResourceBook.Mistlands, QuestTargets.BiomeOf(QuestKind.ChopTrees, "YggdrasilWood", ResourceBook.AshLands));
 		}
 
 		[Fact]

@@ -359,6 +359,7 @@ What a village of each biome is built and stocked with. Every village has a work
 - Starts with 10 cooked hare meat, 10 cooked bug meat and 2 black metal pickaxes
 - Iron cooking stations, a cauldron with 4 extensions, and a cart
 - Keeps 4 pickaxes and an axe that cuts fine wood
+- Cuts Yggdrasil shoots for the Yggdrasil wood its goal needs, with a black metal axe or Jotun Bane
 - Lit with wisp torches and a wisp fountain against the mist
 - A longship by the water
 
@@ -469,7 +470,7 @@ A village goes on a quest only from the quest's biome on, by the village's biome
 | Swamp | Raid sunken crypts |
 | Mountains | Mine silver, raid frost caves, buy wider pockets |
 | Plains | Hunt goblins |
-| Mistlands | Buy deeper pockets |
+| Mistlands | Cut Yggdrasil shoots for Yggdrasil wood, buy deeper pockets |
 
 ### Buying From Haldor
 

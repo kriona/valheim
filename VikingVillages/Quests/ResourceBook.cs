@@ -388,6 +388,7 @@ namespace VikingVillages
 			Chops("FineWood", Meadows, "Birch1");
 			Chops("RoundLog", BlackForest, "Pinetree_01");
 			Chops("ElderBark", Swamp, "SwampTree1");
+			Chops("YggdrasilWood", Mistlands, "YggaShoot1");
 			Mines("CopperOre", QuestKind.MineCopper, BlackForest, "rock4_copper");
 			Mines("TinOre", QuestKind.MineTin, BlackForest, "MineRock_Tin");
 			Mines("SilverOre", QuestKind.MineSilver, Mountain, "silvervein");
