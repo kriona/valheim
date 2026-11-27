@@ -1105,5 +1105,29 @@ namespace VikingVillages.Tests
 		{
 			Assert.Equal("", VillageLife.DescribeStacks(new List<KeyValuePair<string, int>>()));
 		}
+
+		/// <summary>
+		/// Checks what's counted as keeping a viking from a spot - off its navmesh before anything, no whole path to a
+		/// spot in its own room before having no way out to the open ground, which a shut door causes, and the rest in
+		/// their order
+		/// </summary>
+		/// <param name="offMesh">Whether the viking stands off its navmesh</param>
+		/// <param name="toOpen">Whether it has a whole path to the open ground</param>
+		/// <param name="outsideHouse">Whether the spot lies outside the thing's house</param>
+		/// <param name="toSpot">Whether it has a whole path to the spot</param>
+		/// <param name="oneRoom">Whether it and the spot share a room</param>
+		/// <param name="expected">What's counted</param>
+		[Theory]
+		[InlineData(true, false, true, false, true, "the viking off its navmesh")]
+		[InlineData(false, false, false, false, true, "no whole path to the spot")]
+		[InlineData(false, false, false, false, false, "the viking with no way to the open ground")]
+		[InlineData(false, false, false, true, true, "the viking with no way to the open ground")]
+		[InlineData(false, true, true, false, false, "the spot outside the house")]
+		[InlineData(false, true, false, false, false, "no whole path to the spot")]
+		[InlineData(false, true, false, true, true, "a whole path to the spot")]
+		public void RanksWhatKeptAVikingFromASpot(bool offMesh, bool toOpen, bool outsideHouse, bool toSpot, bool oneRoom, string expected)
+		{
+			Assert.Equal(expected, VillageLife.MissTrouble(offMesh, toOpen, outsideHouse, toSpot, oneRoom));
+		}
 	}
 }

@@ -998,9 +998,7 @@ namespace VikingVillages
 		/// </summary>
 		/// <param name="spot">The spot it walked to</param>
 		/// <param name="thing">Where the thing it was after stands</param>
-		/// <param name="trouble">Given what was wrong, the first of these that holds, for the totals: the viking off
-		/// its navmesh, with no way out to the open ground, the spot outside the thing's house, no whole path to the
-		/// spot, or else none of those</param>
+		/// <param name="trouble">Given what was wrong, for the totals (see MissTrouble)</param>
 		/// <returns>The description</returns>
 		private string DescribeMiss(Vector3 spot, Vector3 thing, out string trouble)
 		{
@@ -1014,27 +1012,46 @@ namespace VikingVillages
 			bool spotInside = (hasHouse && Village.InHouse(house, spot, 0f));
 			string where = (hasHouse ? (spotInside ? "within" : "outside") + " the bounds of the house at " + house.Center.ToString("F0") : "where no house is");
 			string door = VikingDoors.DebugLine(humanoid).Trim();
+			trouble = MissTrouble(offMesh, toOpen, hasHouse && !spotInside, toSpot, VikingDoors.InOneRoom(position, spot));
+			return(Utils.DistanceXZ(position, spot).ToString("F1") + "m from the viking, " + where + ", with " + (toSpot ? "a" : "no") + " whole path from the viking to it and " + (toOpen ? "a" : "no") + " whole path from the viking to the open ground, the viking " + (offMesh ? "off" : "on") + " its navmesh, moved by " + mover + ", " + ((door.Length > 0) ? door : "no door on its way") + ", the viking and the spot " + VikingDoors.DescribeRooms(position, spot));
+		}
+
+		/// <summary>
+		/// Works out what kept a viking from a spot, for the totals, the first of these that holds: the viking off its
+		/// navmesh, no whole path to a spot in its own room, no way out to the open ground, the spot outside the
+		/// thing's house, no whole path to the spot, or else none of those. A shut door cuts a room's navmesh off from
+		/// the open ground, so a viking with no way out of the room it shares with the spot is held up by the path to
+		/// the spot instead
+		/// </summary>
+		/// <param name="offMesh">Whether the viking stands off its navmesh</param>
+		/// <param name="toOpen">Whether it has a whole path to the village's open ground</param>
+		/// <param name="outsideHouse">Whether the spot lies outside the bounds of the house the thing stands in</param>
+		/// <param name="toSpot">Whether it has a whole path to the spot</param>
+		/// <param name="oneRoom">Whether it and the spot are in one of the same rooms</param>
+		/// <returns>What was wrong</returns>
+		internal static string MissTrouble(bool offMesh, bool toOpen, bool outsideHouse, bool toSpot, bool oneRoom)
+		{
 			if (offMesh)
 			{
-				trouble = "the viking off its navmesh";
+				return("the viking off its navmesh");
 			}
-			else if (!toOpen)
+			if (oneRoom && !toSpot)
 			{
-				trouble = "the viking with no way to the open ground";
+				return("no whole path to the spot");
 			}
-			else if (hasHouse && !spotInside)
+			if (!toOpen)
 			{
-				trouble = "the spot outside the house";
+				return("the viking with no way to the open ground");
 			}
-			else if (!toSpot)
+			if (outsideHouse)
 			{
-				trouble = "no whole path to the spot";
+				return("the spot outside the house");
 			}
-			else
+			if (!toSpot)
 			{
-				trouble = "a whole path to the spot";
+				return("no whole path to the spot");
 			}
-			return(Utils.DistanceXZ(position, spot).ToString("F1") + "m from the viking, " + where + ", with " + (toSpot ? "a" : "no") + " whole path from the viking to it and " + (toOpen ? "a" : "no") + " whole path from the viking to the open ground, the viking " + (offMesh ? "off" : "on") + " its navmesh, moved by " + mover + ", " + ((door.Length > 0) ? door : "no door on its way") + ", the viking and the spot " + VikingDoors.DescribeRooms(position, spot));
+			return("a whole path to the spot");
 		}
 	}
 }

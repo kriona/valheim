@@ -942,6 +942,21 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Checks whether two points are in one of the same rooms, the way FindRoute sees them
+		/// </summary>
+		/// <param name="from">One point, like where a viking stands</param>
+		/// <param name="to">The other, like the spot it walks to</param>
+		/// <returns>True when they are</returns>
+		internal static bool InOneRoom(Vector3 from, Vector3 to)
+		{
+			FindDoors(from, DoorRange);
+			FindRooms(from, vikingRooms);
+			FindDoors(to, DoorRange);
+			FindRooms(to, targetRooms);
+			return(SharesRoom());
+		}
+
+		/// <summary>
 		/// Finds the rooms a point is in among the doors found near it - each side of a door that's a room, that the
 		/// point is on and can see the point just inside the door from
 		/// </summary>

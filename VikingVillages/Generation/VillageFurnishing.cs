@@ -591,7 +591,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Puts the upgrades a crafting station is missing for a biome within reach of it - against a wall of the house it
 		/// stands in, as near it as fits, keeping the front of every station in the house clear, or else on the open
-		/// ground around it
+		/// ground around it - and with the test log on, draws the house's floor once they're all laid out
 		/// </summary>
 		/// <param name="village">The village</param>
 		/// <param name="station">The station</param>
@@ -645,10 +645,6 @@ namespace VikingVillages
 				else
 				{
 					Plugin.Log.LogWarning("Found no room for a " + extension + " within " + reach.ToString("F1") + "m of the " + stationName + " at " + position.ToString("F1") + " in the village at " + village.Farm.ToString("F0") + ((layout != null) ? " - " + layout.DescribeMisses() : ""));
-					if (layout != null && (TestLog.On || Player.m_debugMode))
-					{
-						Plugin.Log.LogInfo("Station room floor: " + layout.DescribeGrid());
-					}
 				}
 			}
 			if (layout != null)
@@ -657,6 +653,11 @@ namespace VikingVillages
 				Physics.SyncTransforms();
 			}
 			Plugin.Log.LogInfo("Upgraded the " + stationName + " at " + position.ToString("F1") + " in the village at " + village.Farm.ToString("F0") + " with " + placed + " of the " + missing.Count + " upgrades it was missing, for level " + StationUpgrades.Level(kind, biome));
+			// Drawn once every upgrade is laid out, so the grid shows where each one went as well as the room left
+			if (layout != null && (TestLog.On || Player.m_debugMode))
+			{
+				Plugin.Log.LogInfo("Station room floor: " + layout.DescribeGrid());
+			}
 		}
 
 		/// <summary>
