@@ -111,7 +111,7 @@ namespace Kriona.Vikings
 		}
 
 		/// <summary>
-		/// Rolls a new PC viking's look, health, skill, power and gear for its village's biome (see
+		/// Rolls a new PC viking's look, health, skill, power, gear and food (see VikingStartFood) for its village's biome (see
 		/// VillageCooking.BiomeAt), wherever around the village it appears - or out in the wild with no village, the
 		/// biome where it stands worked out the same way - as a woman or a man to suit a name it was given before it was rolled (see VikingNames.PresetFirst), and names
 		/// it, with the looks its name comes with (see StyleAfterName) - or an NPC viking's (see GenerateNPC), or a dvergr
@@ -169,6 +169,8 @@ namespace Kriona.Vikings
 			// It's named for whether it's a woman or a man - model 1 is a woman's - before its looks are saved, since some
 			// names come with looks of their own
 			ZDO zdo = nview.GetZDO();
+			// It has eaten before it comes, and carries more for later
+			VikingStartFood.Give(zdo, gear, index);
 			VikingNames.GiveName(zdo, rolled, false);
 			StyleAfterName(zdo, rolled);
 			SaveGenerated(rolled, gear);

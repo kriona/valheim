@@ -110,6 +110,7 @@ namespace VikingVillages
 			text.Append("Vikings loaded: " + vikings.Count + ((state.Length > 0) ? " (" + state + ")" : "") + "\n");
 			VillageRespawn.Describe(village, text);
 			text.Append(VillageRaids.Describe(village));
+			text.Append(VillageEvents.Describe(village));
 			VillageBeds.Describe(village, text);
 			string watch = VillageWatch.Describe(village);
 			bool evening = (EnvMan.IsNight() || (EnvMan.instance != null && EnvMan.instance.GetDayFraction() >= VillageLife.DuskStart));

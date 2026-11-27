@@ -67,8 +67,9 @@ namespace Kriona.Vikings
 		/// <summary>
 		/// Rolls a new dvergr viking's look, health, skill, power and gear for the Mistlands, where the dvergr hire them -
 		/// its gear all of the Mistlands and fully repaired like a PC viking's, maybe silver-lined with Zombie
-		/// Apocalypse (see VikingSilver.Arm), with a dverger circlet for light and a wisp light against the mist - and
-		/// names it, with the looks its name comes with (see StyleAfterName)
+		/// Apocalypse (see VikingSilver.Arm), with a dverger circlet for light, a wisp light against the mist and a
+		/// little of the Mistlands' food it never eats (see VikingStartFood) - and names it, with the looks its name
+		/// comes with (see StyleAfterName)
 		/// </summary>
 		private void GenerateDvergr()
 		{
@@ -79,6 +80,8 @@ namespace Kriona.Vikings
 			VikingSilver.Arm(gear, index);
 			gear.AddItem((VikingGear.PCCirclet(index, Random.value) ? VikingGear.CircletPrefab : TorchPrefab), 1, 1, 0, 0L, "", false);
 			VikingGear.AddWisp(gear);
+			// A little of the Mistlands' food, which it never eats
+			VikingStartFood.Pack(gear, index, VikingStartFood.DvergrMin, VikingStartFood.DvergrMax);
 			ZDO zdo = nview.GetZDO();
 			VikingNames.GiveName(zdo, rolled, false);
 			StyleAfterName(zdo, rolled);

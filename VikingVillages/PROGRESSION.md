@@ -23,6 +23,7 @@ What a PC Viking of each biome starts with, and what an NPC Viking of the biome 
 ### Meadows Viking
 
 - Skills of 1-12, and at least 50 max health - 115 fully fed on the Meadows' best food
+- Has just eaten cooked boar meat, raspberries and grilled neck tail, and carries 5-6 more of them
 - Melee weapons and fists hit as hard as yours
 - Knows Eikthyr's power
 - The village's archer carries a bow and a melee weapon, the rest one weapon of any kind
@@ -35,6 +36,7 @@ What a PC Viking of each biome starts with, and what an NPC Viking of the biome 
 ### Black Forest Viking
 
 - Skills of 13-25, and at least 115 max health - 155 fully fed
+- Has just eaten cooked deer meat, blueberries and carrot soup, and carries 5-6 more of them
 - Melee weapons and fists hit as hard as yours
 - Knows Eikthyr's and the Elder's powers
 - A third carry only a bow, a third only a melee weapon and a third both - the village's archer has only the bow half the time
@@ -47,6 +49,7 @@ What a PC Viking of each biome starts with, and what an NPC Viking of the biome 
 ### Swamp Viking
 
 - Skills of 26-37, and at least 155 max health - 175 fully fed
+- Has just eaten deer stew, cooked fish and turnip stew, and carries 5-6 more of them
 - Melee weapons and fists hit as hard as yours
 - Knows every power up to Bonemass's
 - A fifth carry only a bow, a fifth only a melee weapon and the rest both - the village's archer has only the bow a quarter of the time
@@ -59,6 +62,7 @@ What a PC Viking of each biome starts with, and what an NPC Viking of the biome 
 ### Mountains Viking
 
 - Skills of 38-50, and at least 175 max health - 195 fully fed
+- Has just eaten sausages, onion soup and wolf jerky, and carries 5-6 more of them
 - Melee weapons and fists hit as hard as yours
 - Knows every power up to Moder's
 - Always both a melee weapon and a bow, always their set's helmet and a cape that resists frost, and 40% a shield
@@ -72,6 +76,7 @@ What a PC Viking of each biome starts with, and what an NPC Viking of the biome 
 ### Plains Viking
 
 - Skills of 50-62, and at least 195 max health - 235 fully fed
+- Has just eaten cooked lox meat, bread and lox meat pie, and carries 5-6 more of them
 - Melee weapons and fists hit as hard as yours
 - Knows every power up to Yagluth's
 - Always both a melee weapon and a bow - the Mountains' Draugr Fang, since the Plains have none - always their set's helmet and a cape, and 40% a shield
@@ -85,6 +90,7 @@ What a PC Viking of each biome starts with, and what an NPC Viking of the biome 
 ### Mistlands Viking
 
 - Skills of 63-75, and at least 235 max health - 270 fully fed
+- Has just eaten cooked hare meat, cooked seeker meat and a meat platter, and carries 5-6 more of them
 - Melee weapons and fists hit as hard as yours
 - Knows every power up to the Queen's
 - Always both a melee weapon and a bow or crossbow, always their set's helmet and a cape, and 40% a shield
@@ -98,6 +104,7 @@ What a PC Viking of each biome starts with, and what an NPC Viking of the biome 
 ### Ashlands Viking
 
 - Skills of 76-87, and at least 270 max health - 325 fully fed
+- Has just eaten cooked asksvin tail, cooked volture meat and fiery svinstew, and carries 5-6 more of them
 - Melee weapons and fists hit as hard as yours
 - Knows every power, up to Fader's
 - Always both a melee weapon and a bow or crossbow, always their set's helmet and a cape, and 40% a shield
@@ -111,6 +118,7 @@ What a PC Viking of each biome starts with, and what an NPC Viking of the biome 
 ### Deep North Viking
 
 - Skills of 88-100, and at least 325 max health - 350 fully fed
+- Has just eaten cooked moose meat, cooked seal blubber and smoked moose meat, and carries 5-6 more of them
 - Melee weapons and fists hit as hard as yours
 - Knows every power, as in the Ashlands - the Deep North has no boss
 - Always both a melee weapon and a bow or crossbow - never Dyrnwyn - always their set's helmet and a cape that resists frost, and 40% a shield
@@ -132,7 +140,7 @@ One in every five of a village's Vikings is an NPC Viking - a peaceful villager,
 
 ### Dvergr Vikings
 
-Always rolled as Mistlands Vikings - the Mistlands' skills and gear, both weapons, always a Dverger circlet and a wisp light, and 75% silver-lined weapons with Zombie Apocalypse - but with a Mistlands zombie Viking's health of 650 times their stars, and no strength belt or pockets. Like a living Mistlands Viking, they know every power up to the Queen's.
+Always rolled as Mistlands Vikings - the Mistlands' skills and gear, both weapons, always a Dverger circlet and a wisp light, 0-2 of the Mistlands' starting food, which they never eat, and 75% silver-lined weapons with Zombie Apocalypse - but with a Mistlands zombie Viking's health of 650 times their stars, and no strength belt or pockets. Like a living Mistlands Viking, they know every power up to the Queen's.
 
 ## Viking Features
 
@@ -165,6 +173,21 @@ A PC or NPC Viking's max health is what their food gives them, the way yours is,
 | Mistlands | 235 | 270 |
 | Ashlands | 270 | 325 |
 | Deep North | 325 | 350 |
+
+### Starting Food
+
+A PC or NPC Viking starts out having just eaten their biome's three foods, each with 60-100% of its time left, and carrying 5-6 more, each one of the three at random. A Dvergr Viking carries 0-2 of the Mistlands', which they never eat. The first two are their village's starter food (see [Starter Food and Pickaxes](#starter-food-and-pickaxes)).
+
+| Biome | Foods |
+| --- | --- |
+| Meadows | Cooked boar meat, raspberries, grilled neck tail |
+| Black Forest | Cooked deer meat, blueberries, carrot soup |
+| Swamp | Deer stew, cooked fish, turnip stew |
+| Mountains | Sausages, onion soup, wolf jerky |
+| Plains | Cooked lox meat, bread, lox meat pie |
+| Mistlands | Cooked hare meat, cooked seeker meat, meat platter |
+| Ashlands | Cooked asksvin tail, cooked volture meat, fiery svinstew |
+| Deep North | Cooked moose meat, cooked seal blubber, smoked moose meat |
 
 ### Melee Damage
 
@@ -350,6 +373,7 @@ What a village of each biome is built and stocked with. Every village has a work
 - Wooden cooking stations, no cauldron and no cart
 - A raft by the water
 - Never goes mining
+- 10% chance a day of a traveling Viking (see [Events](#events))
 
 ### Black Forest Village
 
@@ -358,6 +382,7 @@ What a village of each biome is built and stocked with. Every village has a work
 - Wooden cooking stations, a cauldron with no extensions, and a cart
 - Keeps 4 pickaxes and an axe that cuts fine wood in storage
 - A karve by the water
+- 10% chance a day of a traveling Viking
 
 ### Swamp Village
 
@@ -367,6 +392,7 @@ What a village of each biome is built and stocked with. Every village has a work
 - Keeps 4 pickaxes and an axe that cuts fine wood
 - Its ground is raised out of the swamp water
 - A karve by the water
+- 10% chance a day of a traveling Viking
 
 ### Mountains Village
 
@@ -375,6 +401,7 @@ What a village of each biome is built and stocked with. Every village has a work
 - Iron cooking stations, a cauldron with 2 extensions, and a cart
 - Keeps 4 pickaxes and an axe that cuts fine wood
 - A longship by the water
+- 10% chance a day of a traveling Viking
 
 ### Plains Village
 
@@ -384,6 +411,7 @@ What a village of each biome is built and stocked with. Every village has a work
 - Keeps 4 pickaxes and an axe that cuts fine wood
 - Its ground is raised out of any water it stands in
 - A longship by the water
+- 10% chance a day of a traveling Viking
 
 ### Mistlands Village
 
@@ -394,6 +422,7 @@ What a village of each biome is built and stocked with. Every village has a work
 - Cuts Yggdrasil shoots for the Yggdrasil wood its goal needs, with a black metal axe or Jotun Bane
 - Lit with wisp torches and a wisp fountain against the mist
 - A longship by the water
+- No events
 
 ### Ashlands Village
 
@@ -404,6 +433,7 @@ What a village of each biome is built and stocked with. Every village has a work
 - Grausten bridges, its paths going around the lava and the boiling sea
 - A stone portal home to an easier village
 - A drakkar by the water
+- No events
 
 ### Deep North Village
 
@@ -415,6 +445,7 @@ What a village of each biome is built and stocked with. Every village has a work
 - A stone portal home to an easier village
 - Its Vikings clear the heavy snow off its pieces and the deep snow off its ground
 - A drakkar by the water
+- No events
 
 ## Village Features
 
@@ -490,6 +521,15 @@ The village's boat by the water is the best boat of its biome - a drakkar wherev
 | Black Forest and Swamp | Karve |
 | Mountains to the Mistlands | Longship |
 | Ashlands and Deep North | Drakkar |
+
+### Events
+
+The events a village can have by its biome (see [EVENTS.md](EVENTS.md)).
+
+| Biome | Events |
+| --- | --- |
+| Meadows to the Plains | Traveling Viking - 10% a day, then not again for 6 days |
+| Mistlands to the Deep North | None |
 
 ## Quests by Biome
 

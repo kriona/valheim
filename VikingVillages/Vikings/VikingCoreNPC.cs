@@ -39,7 +39,8 @@ namespace Kriona.Vikings
 		/// Generate) - but with none of the skills it would fight with, a little in its fists and knife and more in
 		/// Farming, Cooking, Crafting and Fishing (see NPCVikings.Skill) - dressed in its biome's clothes and cape (see NPCVikings.Outfit),
 		/// with its biome's knife (see NPCVikings.KnifeFor) and no other weapon or shield, and with a torch or dverger circlet, a wisp light in the Mistlands, a strength belt and
-		/// pockets by the same odds as a PC viking's, and names it, with the looks its name comes with
+		/// pockets by the same odds as a PC viking's, fed and carrying food like a PC viking (see VikingStartFood), and
+		/// names it, with the looks its name comes with
 		/// </summary>
 		private void GenerateNPC()
 		{
@@ -82,6 +83,7 @@ namespace Kriona.Vikings
 				}
 			}
 			ZDO zdo = nview.GetZDO();
+			VikingStartFood.Give(zdo, gear, index);
 			VikingNames.GiveName(zdo, rolled, false);
 			StyleAfterName(zdo, rolled);
 			SaveGenerated(rolled, gear);

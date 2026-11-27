@@ -320,6 +320,35 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Notes the foods a viking being rolled up starts out having eaten, each with a share of its burn time left
+		/// (see VikingStartFood), and that it was last seen now (see CatchUp)
+		/// </summary>
+		/// <param name="zdo">The viking's ZDO, owned by this client</param>
+		/// <param name="foods">Each food's prefab name and the share of its burn time it has left, from 0 to 1 - up to
+		/// MaxMeals of them, leaving out any that isn't food or comes twice</param>
+		internal static void StartFed(ZDO zdo, List<KeyValuePair<string, float>> foods)
+		{
+			if (zdo == null || ObjectDB.instance == null)
+			{
+				return;
+			}
+			long now = NetTime.Now();
+			List<Meal> meals = new List<Meal>();
+			foreach (KeyValuePair<string, float> eaten in foods)
+			{
+				ItemDrop.ItemData food = FoodOf(ObjectDB.instance.GetItemPrefab(eaten.Key));
+				int prefab = eaten.Key.GetStableHashCode();
+				if (meals.Count >= MaxMeals || food == null || food.m_shared.m_foodBurnTime <= 0f || meals.Exists((Meal meal) => meal.Prefab == prefab))
+				{
+					continue;
+				}
+				meals.Add(new Meal { Prefab = prefab, Until = now + NetTime.Ticks(BurnTime(food) * Mathf.Clamp01(eaten.Value)) });
+			}
+			Write(zdo, meals);
+			zdo.Set(SeenKey, now);
+		}
+
+		/// <summary>
 		/// Works out how much the viking's foods add to its max health, the way a player's do - each food's health,
 		/// fading as it wears off, slowly at first and quickly at the end
 		/// </summary>

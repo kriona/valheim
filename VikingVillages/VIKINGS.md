@@ -47,6 +47,8 @@ PC and NPC Vikings live in villages the way you live in the world. PC Vikings fi
 
 Only PC and NPC Vikings eat, and both eat the same way. Dvergr and zombie Vikings never eat - their health is set by their biome and stars and never changes.
 
+A new PC or NPC Viking arrives having just eaten their biome's three foods and carrying 5-6 more, and a Dvergr Viking carries 0-2 of the Mistlands' foods they never eat (see [Starting Food](PROGRESSION.md#starting-food)).
+
 ### What food does for them
 
 Food works for a PC or NPC Viking the way it works for you:
