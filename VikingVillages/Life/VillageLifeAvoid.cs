@@ -11,9 +11,9 @@ namespace VikingVillages
 	{
 		/// <summary>
 		/// Leaves a chest, loot or piece the viking couldn't get to alone for a while, and notes the failed try at
-		/// anything but a chest for the viking itself and for the village, whose vikings all leave it alone for longer
-		/// once enough of them have failed (see VillageGiveUps) - unless the viking stands off its navmesh (see
-		/// OffItsNavmesh)
+		/// anything but a chest or cooking station for the viking itself and for the village, whose vikings all leave it
+		/// alone for longer once enough of them have failed (see VillageGiveUps) - unless the viking stands off its
+		/// navmesh (see OffItsNavmesh)
 		/// </summary>
 		/// <param name="view">The chest, loot or piece</param>
 		/// <param name="seconds">How long it's left alone</param>
@@ -83,6 +83,12 @@ namespace VikingVillages
 					NoteChestMissed(store);
 				}
 				LogChestMiss(store);
+				return;
+			}
+			// Nor is a cooking station - the village's fire's stations are all it cooks at, so a few vikings that can't get
+			// to them don't stop the rest cooking
+			if (view.GetComponent<CookingStation>() != null)
+			{
 				return;
 			}
 			// A viking stranded where it can't walk from - up on a roof, or anywhere else off its navmesh - fails to get

@@ -98,7 +98,8 @@ namespace VikingVillages
 			/// what's done - done food first, before it burns
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
-			/// <returns>True once nothing is left to cook or take off, or it can't get to a station</returns>
+			/// <returns>True once nothing is left to cook or take off, or it can't get to a station, which it then leaves
+			/// alone for a while</returns>
 			public override bool Tick(float dt)
 			{
 				stations.RemoveAll((CookingStation cooker) => cooker == null || cooker.m_nview == null || !cooker.m_nview.IsValid());
@@ -163,7 +164,14 @@ namespace VikingVillages
 					life.Go(dt, spot, within, false);
 					if (life.moveFailed)
 					{
+						// The station is left alone for a while, so raw food the viking carries goes to a chest instead of it
+						// setting out for the same station again (see FindLootWork)
 						life.moveFailed = false;
+						if (TestLog.On || Player.m_debugMode)
+						{
+							Plugin.Log.LogInfo("Cook: " + TestLog.Name(life.humanoid, "F1") + " (" + Describe() + ") leaves " + Utils.GetPrefabName(target.gameObject) + " at " + target.transform.position.ToString("F1") + " alone for " + AvoidTime.ToString("F0") + "s - it got no nearer on its way there");
+						}
+						life.Avoid(target.m_nview);
 						return(true);
 					}
 					return(false);

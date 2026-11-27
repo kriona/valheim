@@ -24,10 +24,11 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the nearest cooking station the viking could cook at, with no other viking cooking there - unless only
-		/// what it carries counts, one with food on it to tend first, done food before food still cooking, so it's taken
-		/// off before it burns, whoever put it on; then one lit, with an empty slot, and raw food it cooks carried by the
-		/// viking or, unless only what it carries counts, in one of the village's chests
+		/// Finds the nearest cooking station the viking could cook at, with no other viking cooking there and not one it
+		/// couldn't get to lately (see Avoided) - unless only what it carries counts, one with food on it to tend first,
+		/// done food before food still cooking, so it's taken off before it burns, whoever put it on; then one lit, with
+		/// an empty slot, and raw food it cooks carried by the viking or, unless only what it carries counts, in one of
+		/// the village's chests
 		/// </summary>
 		/// <param name="carriedOnly">True to only count the raw food the viking carries</param>
 		/// <returns>The station, or null when there's none</returns>
@@ -45,7 +46,8 @@ namespace VikingVillages
 			List<Container> chests = null;
 			foreach (CookingStation station in stations)
 			{
-				if (!VillageCooking.IsLit(station) || VillageCooking.FreeSlots(station) == 0 || !IsFree(station.GetComponent<ZNetView>()))
+				ZNetView view = station.GetComponent<ZNetView>();
+				if (!VillageCooking.IsLit(station) || VillageCooking.FreeSlots(station) == 0 || !IsFree(view) || Avoided(view.GetZDO().m_uid))
 				{
 					continue;
 				}
@@ -70,8 +72,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the nearest cooking station with food on it to tend and no other viking at it - done food first, then
-		/// food still cooking over a lit fire
+		/// Finds the nearest cooking station with food on it to tend, no other viking at it and not one the viking
+		/// couldn't get to lately (see Avoided) - done food first, then food still cooking over a lit fire
 		/// </summary>
 		/// <param name="stations">The village's stations, nearest first</param>
 		/// <param name="doneOnly">True to only count done food, which burns next</param>
@@ -81,7 +83,8 @@ namespace VikingVillages
 			CookingStation cooking = null;
 			foreach (CookingStation station in stations)
 			{
-				if (!IsFree(station.GetComponent<ZNetView>()))
+				ZNetView view = station.GetComponent<ZNetView>();
+				if (!IsFree(view) || Avoided(view.GetZDO().m_uid))
 				{
 					continue;
 				}
