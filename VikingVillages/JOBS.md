@@ -381,7 +381,7 @@ Loot they carry goes to the chest that takes it best - one whose part-stacks tak
 
 Better gear among it is put on at once.
 
-Loot comes ahead of cooking, so it doesn't lie about while the cooks are busy. Done food is still taken off a cooking station before it burns, by a Viking at loot work too.
+Loot comes ahead of cooking, so it doesn't lie about while the cooks are busy. Done food is still taken off a cooking station before it burns, by a Viking at loot work too. By day, raw meat they carry goes to a lit cooking station with room first, and into a chest when no Viking can cook at one.
 
 ### Pick Up Loot
 

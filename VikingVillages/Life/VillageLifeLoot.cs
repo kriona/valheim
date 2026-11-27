@@ -11,8 +11,8 @@ namespace VikingVillages
 	internal partial class VillageLife
 	{
 		/// <summary>
-		/// Finds loot work for the viking - putting away the loot it carries, or else picking up the nearest loot lying
-		/// around the village that it wants
+		/// Finds loot work for the viking - putting away the loot it carries, by day cooking the raw food among it first
+		/// at a cooking station with room, or else picking up the nearest loot lying around the village that it wants
 		/// </summary>
 		/// <param name="fight">True for clearing up after a fight, which goes on through dusk and night</param>
 		/// <returns>The job, or null when there's no loot work</returns>
@@ -21,8 +21,17 @@ namespace VikingVillages
 			bool carrying = (CarriedLoot() != null);
 			if (carrying)
 			{
-				// A viking holding on to something it can't drop outside yet doesn't pick up more
-				return((Time.time >= dumpAgainAt) ? new LootJob(this, null, fight) : null);
+				if (!IsNight() && !IsDusk() && FindCookStation(true) != null)
+				{
+					Job cook = FindCookWork();
+					if (cook != null)
+					{
+						return(cook);
+					}
+				}
+				// The job puts the raw food away too rather than leaving it for a station, since no cooking work could be
+				// had for it. A viking holding on to something it can't drop outside yet doesn't pick up more
+				return((Time.time >= dumpAgainAt) ? new LootJob(this, null, fight, false, false) : null);
 			}
 			dumpNowhereSince = -1f;
 			ZNetView loot = FindLoot();
