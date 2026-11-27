@@ -446,7 +446,7 @@ namespace VikingVillages.Tests
 				Assert.True(names.Add(concern.Name), "Two concerns are called " + concern.Name);
 				Assert.NotNull(concern.Has);
 				Assert.NotEmpty(concern.Lines);
-				foreach (string line in concern.Lines)
+				foreach (string line in concern.EveryLine)
 				{
 					string known = VikingConcernSpeech.Said(line, "Bjorn", true);
 					Assert.False(known.Contains("{") || known.Contains("}"), concern.Name + " leaves a token in \"" + known + "\"");
@@ -492,7 +492,7 @@ namespace VikingVillages.Tests
 			}
 			foreach (VikingConcernSpeech.Concern concern in VikingConcernSpeech.Concerns)
 			{
-				said.AddRange(concern.Lines.Select((string line) => VikingConcernSpeech.Said(line, "Bjorn", false)));
+				said.AddRange(concern.EveryLine.Select((string line) => VikingConcernSpeech.Said(line, "Bjorn", false)));
 			}
 			foreach (string line in said)
 			{

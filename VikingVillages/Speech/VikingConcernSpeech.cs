@@ -7,8 +7,8 @@ namespace VikingVillages
 {
 	/// <summary>
 	/// Has a living viking call out to the local player when it sees them on fire, poisoned, freezing, badly hurt,
-	/// covered in tar, smoked, overloaded or back from the dead - only the first viking near them, once each time it
-	/// happens, so the whole village doesn't
+	/// covered in tar, smoked, overloaded, back from the dead or without clothes (see VikingClothesSpeech) - only the
+	/// first viking near them, once each time it happens, so the whole village doesn't
 	/// </summary>
 	/// <remarks>
 	/// A player's status effects are only known on their own client, so it's their client that sees it and has the
@@ -19,13 +19,30 @@ namespace VikingVillages
 	{
 		/// <summary>
 		/// Something about a player a viking calls out - its name, for keeping track of it, how it's told, and what the
-		/// viking says, with the player's name or "traveler"
+		/// viking says, with the player's name or "traveler" - anywhere, and for some, only outside the Ashlands or only
+		/// in them
 		/// </summary>
 		internal class Concern
 		{
 			public string Name;
 			public Func<Player, bool> Has;
 			public string[] Lines;
+			public string[] ColdLines = new string[0];
+			public string[] HotLines = new string[0];
+
+			/// <summary>
+			/// Every line the viking might call out about it, wherever the player is
+			/// </summary>
+			public IEnumerable<string> EveryLine
+			{
+				get
+				{
+					List<string> lines = new List<string>(Lines);
+					lines.AddRange(ColdLines);
+					lines.AddRange(HotLines);
+					return(lines);
+				}
+			}
 		}
 
 		/// <summary>
@@ -128,6 +145,14 @@ namespace VikingVillages
 					"{0}! We thought you were done for.",
 					"Back from the dead, {0}? Don't make a habit of it."
 				}
+			},
+			new Concern
+			{
+				Name = "unclothed",
+				Has = VikingClothesSpeech.Unclothed,
+				Lines = VikingClothesSpeech.CallLines,
+				ColdLines = VikingClothesSpeech.ColdCallLines,
+				HotLines = VikingClothesSpeech.HotCallLines
 			}
 		};
 
@@ -187,7 +212,8 @@ namespace VikingVillages
 				}
 				calledOut.Add(concern.Name);
 				nextAllowed[concern.Name] = Time.time + Cooldown;
-				string line = concern.Lines[UnityEngine.Random.Range(0, concern.Lines.Length)];
+				string[] lines = Pool(concern.Lines, concern.ColdLines, concern.HotLines, InAshlands(player));
+				string line = lines[UnityEngine.Random.Range(0, lines.Length)];
 				VikingSpeech.Say(speaker, Said(line, player.GetPlayerName(), VikingSpeech.Knows(speaker, player.GetPlayerID())), VikingSpeech.QuickTime, VikingSpeech.TalkCull);
 				return;
 			}
@@ -204,6 +230,32 @@ namespace VikingVillages
 		internal static string Said(string line, string name, bool known)
 		{
 			return(string.Format((known ? line : VikingSpeech.WithStranger(line, 0)), name));
+		}
+
+		/// <summary>
+		/// Gathers the lines that fit where a player is - those for anywhere, with those about the cold outside the
+		/// Ashlands or those about its heat and ash in them
+		/// </summary>
+		/// <param name="anywhere">The lines for anywhere</param>
+		/// <param name="cold">The lines for outside the Ashlands</param>
+		/// <param name="hot">The lines for the Ashlands</param>
+		/// <param name="ashlands">Whether the player is in the Ashlands</param>
+		/// <returns>The lines</returns>
+		internal static string[] Pool(string[] anywhere, string[] cold, string[] hot, bool ashlands)
+		{
+			List<string> lines = new List<string>(anywhere);
+			lines.AddRange(ashlands ? hot : cold);
+			return(lines.ToArray());
+		}
+
+		/// <summary>
+		/// Checks whether a player is in the Ashlands
+		/// </summary>
+		/// <param name="player">The player</param>
+		/// <returns>True when they are</returns>
+		internal static bool InAshlands(Player player)
+		{
+			return(player.GetCurrentBiome() == Heightmap.Biome.AshLands);
 		}
 
 		/// <summary>
