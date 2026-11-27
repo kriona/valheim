@@ -39,8 +39,12 @@ namespace Kriona.Vikings
 		/// TakeOver) - on the client that owns the viking, as the game's own update is - and puts the weapon's settings
 		/// and the paths back once it's done, whether or not it finished
 		/// </summary>
+		/// <remarks>
+		/// An exception is logged and stops here, since one thrown into the game's loop over every AI skips each AI after
+		/// this one (see MonoUpdaterAIClearPatch)
+		/// </remarks>
 		/// <param name="dt">Seconds since the last update</param>
-		/// <returns>Whether the AI handled the update, true while it's skipped</returns>
+		/// <returns>Whether the AI handled the update, true while it's skipped or when it threw</returns>
 		public override bool UpdateAI(float dt)
 		{
 			try
@@ -48,6 +52,11 @@ namespace Kriona.Vikings
 				bool handled = (RunsGameUpdate(dt) ? base.UpdateAI(dt) : SkipUpdate(dt));
 				AfterUpdate();
 				return(handled);
+			}
+			catch (System.Exception e)
+			{
+				UnityEngine.Debug.LogException(e);
+				return(true);
 			}
 			finally
 			{
