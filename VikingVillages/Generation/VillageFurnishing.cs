@@ -803,7 +803,7 @@ namespace VikingVillages
 				Plugin.Log.LogInfo("Put up a " + prefabName + " under a shelter at " + spot.ToString("F1") + " in the village at " + village.Farm.ToString("F0") + ", with no room for it in its houses");
 				return(true);
 			}
-			Plugin.Log.LogWarning("Shelter for a " + prefabName + " in the village at " + village.Farm.ToString("F0") + ": no flat open spot in " + OutsideTries + " tries - " + tries.Describe() + ". Trying again, flattening the ground and clearing what's in the way");
+			Plugin.Log.LogWarning("Shelter for a " + prefabName + " in the village at " + village.Farm.ToString("F0") + ": no flat open spot in " + OutsideTries + " tries - " + tries.Describe() + "; " + CoreNavmesh(village) + ". Trying again, flattening the ground and clearing what's in the way");
 			Vector3 bestSpot = Vector3.zero;
 			Quaternion bestRotation = Quaternion.identity;
 			Room best = null;
@@ -835,7 +835,7 @@ namespace VikingVillages
 			}
 			if (best == null)
 			{
-				Plugin.Log.LogWarning("Shelter for a " + prefabName + " in the village at " + village.Farm.ToString("F0") + ": no open spot outside its houses at all in " + OutsideTries + " more tries - " + relaxed.Describe());
+				Plugin.Log.LogWarning("Shelter for a " + prefabName + " in the village at " + village.Farm.ToString("F0") + ": no open spot outside its houses at all in " + OutsideTries + " more tries - " + relaxed.Describe() + "; " + CoreNavmesh(village));
 				return(false);
 			}
 			if (!PlaceRaised(village, prefabName, bestSpot, bestRotation, best, prefab, wall, roof, built, relaxed))
@@ -1028,6 +1028,19 @@ namespace VikingVillages
 				return(false);
 			}
 			return(true);
+		}
+
+		/// <summary>
+		/// Describes how far the navmesh over a village's core, where shelter spots are picked, has caught up with what
+		/// went up since its farm was generated, for the log - its pieces and paths go up as the farm is generated, and
+		/// the navmesh is only built again a tile at a time after, so spots found off it or with no way to the anchor may
+		/// come from tiles not built since (see NavmeshPoints.DescribeTiles)
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>The description</returns>
+		private static string CoreNavmesh(Village village)
+		{
+			return(NavmeshPoints.DescribeTiles(village.CoreMiddle, village.CoreRadius, VillagePaths.SinceGenerated(village.Farm), Pathfinding.AgentType.Humanoid));
 		}
 
 		/// <summary>
