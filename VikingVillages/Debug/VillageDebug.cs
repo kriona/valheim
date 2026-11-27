@@ -121,8 +121,9 @@ namespace VikingVillages
 			if (fire != null && fire.m_nview != null && fire.m_nview.IsValid())
 			{
 				float fuel = fire.m_nview.GetZDO().GetFloat(ZDOVars.s_fuel);
-				int stations = VillageCooking.Stations(village, fire.transform.position).Count;
-				text.Append("Fire: " + Utils.GetPrefabName(fire.gameObject) + ", fuel " + fuel.ToString("F1") + "/" + fire.m_maxFuel.ToString("F0") + ((stations > 0) ? ", " + stations + " cooking stations" : "") + (fire.IsBurning() ? "" : ", not burning") + "\n");
+				List<CookingStation> stations = VillageCooking.Stations(village, fire.transform.position);
+				string cooking = ((stations.Count > 0) ? ", " + stations.Count + " cooking stations - " + VillageCooking.DescribeStations(stations) : "");
+				text.Append("Fire: " + Utils.GetPrefabName(fire.gameObject) + ", fuel " + fuel.ToString("F1") + "/" + fire.m_maxFuel.ToString("F0") + (fire.IsBurning() ? "" : ", not burning") + cooking + "\n");
 			}
 			int records = VillageRecords.Count(village);
 			if (records < 0)

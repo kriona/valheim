@@ -70,5 +70,24 @@ namespace VikingVillages.Tests
 		{
 			Assert.Empty(VillageCooking.RingDistances(2.5f, 2f, 0.5f));
 		}
+
+		/// <summary>
+		/// Checks that the food on the stations is described by what's cooking, done and burnt, leaving out what there's
+		/// none of, and as empty when there's nothing on them
+		/// </summary>
+		/// <param name="cooking">How many pieces are cooking</param>
+		/// <param name="done">How many are done</param>
+		/// <param name="burnt">How many are burnt</param>
+		/// <param name="expected">The description</param>
+		[Theory]
+		[InlineData(0, 0, 0, "empty")]
+		[InlineData(3, 1, 2, "3 cooking, 1 done, 2 burnt")]
+		[InlineData(4, 0, 0, "4 cooking")]
+		[InlineData(0, 0, 5, "5 burnt")]
+		[InlineData(2, 0, 1, "2 cooking, 1 burnt")]
+		public void LoadLeavesOutWhatThereIsNoneOf(int cooking, int done, int burnt, string expected)
+		{
+			Assert.Equal(expected, VillageCooking.DescribeLoad(cooking, done, burnt));
+		}
 	}
 }

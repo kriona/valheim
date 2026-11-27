@@ -232,12 +232,18 @@ namespace VikingVillages
 		/// cooked food as often as a player of its skill does, the way a player's comes
 		/// </summary>
 		/// <param name="station">The station</param>
-		private void TakeCooked(CookingStation station)
+		/// <returns>How many burnt pieces came off</returns>
+		private int TakeCooked(CookingStation station)
 		{
 			Skills.SkillType skill = StationSkill(station.m_skill);
 			string burnt = ((station.m_overCookedItem != null) ? station.m_overCookedItem.gameObject.name : "");
+			int burntTaken = 0;
 			foreach (string name in VillageCooking.TakeDone(station))
 			{
+				if (name == burnt)
+				{
+					burntTaken++;
+				}
 				ItemDrop.ItemData item = ItemOf(name);
 				if (item == null)
 				{
@@ -258,6 +264,7 @@ namespace VikingVillages
 				}
 				TestLog.Count("Cooked", TestLog.ItemName(item) + ((name == burnt) ? " (burnt)" : ""), count);
 			}
+			return(burntTaken);
 		}
 
 		/// <summary>

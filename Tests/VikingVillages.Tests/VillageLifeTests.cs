@@ -951,6 +951,33 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a cook that never left its stations for a chest says so, with how long it has held them
+		/// </summary>
+		[Fact]
+		public void CookTripSaysWhenItNeverLeft()
+		{
+			Assert.Equal("it hasn't left its stations for a chest, holding them for 42s", VillageLife.DescribeCookTrip(42f, -1f, 0f, 0f, -1f));
+		}
+
+		/// <summary>
+		/// Checks that a cook's last trip to a chest gives how long ago it set off, how far it got and when it turned back
+		/// </summary>
+		[Fact]
+		public void CookTripGivesWhenAndHowFar()
+		{
+			Assert.Equal("it last left its stations for a chest 53.8m off 74s ago, getting 41.2m from them and turning back after 52s, holding them for 120s", VillageLife.DescribeCookTrip(120f, 74f, 53.8f, 41.2f, 52f));
+		}
+
+		/// <summary>
+		/// Checks that a cook still on its way to a chest says so
+		/// </summary>
+		[Fact]
+		public void CookTripSaysWhenStillOnItsWay()
+		{
+			Assert.EndsWith("getting 10.0m from them and still on its way, holding them for 30s", VillageLife.DescribeCookTrip(30f, 12f, 20f, 10f, -1f));
+		}
+
+		/// <summary>
 		/// Checks that a viking 4m from a piece and 2m from its spot isn't within reach - the case that left vikings
 		/// standing still until they gave up on a repair
 		/// </summary>

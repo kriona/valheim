@@ -975,6 +975,79 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Describes what's on a village's cooking stations and who holds them, for the village's summary - the food
+		/// still cooking, done and burnt on all of them together, and each viking holding one with what it's doing
+		/// </summary>
+		/// <param name="stations">The stations</param>
+		/// <returns>The description, like "3 cooking, 1 done, held by Asny at (749, 99, 25) (Cook, ...)"</returns>
+		public static string DescribeStations(List<CookingStation> stations)
+		{
+			int cooking = 0;
+			int done = 0;
+			int burnt = 0;
+			List<string> holders = new List<string>();
+			foreach (CookingStation station in stations)
+			{
+				if (station == null || station.m_nview == null || !station.m_nview.IsValid())
+				{
+					continue;
+				}
+				for (int i = 0; i < station.m_slots.Length; i++)
+				{
+					station.GetSlot(i, out string name, out float _, out CookingStation.Status status, out bool _);
+					if (name == "")
+					{
+						continue;
+					}
+					if (status == CookingStation.Status.Burnt || (station.m_overCookedItem != null && name == station.m_overCookedItem.gameObject.name))
+					{
+						burnt++;
+					}
+					else if (station.IsItemDone(name))
+					{
+						done++;
+					}
+					else
+					{
+						cooking++;
+					}
+				}
+				string holder = VillageLife.ClaimHolder(station.m_nview);
+				if (holder.Length > 0 && !holders.Contains(holder))
+				{
+					holders.Add(holder);
+				}
+			}
+			string load = DescribeLoad(cooking, done, burnt);
+			return((holders.Count > 0) ? load + ", held by " + string.Join(" and ", holders) : load);
+		}
+
+		/// <summary>
+		/// Describes how much food is on cooking stations, leaving out what there's none of
+		/// </summary>
+		/// <param name="cooking">How many pieces are still cooking</param>
+		/// <param name="done">How many are done</param>
+		/// <param name="burnt">How many have burnt</param>
+		/// <returns>The description, like "3 cooking, 1 done", or "empty" when there's nothing on them</returns>
+		internal static string DescribeLoad(int cooking, int done, int burnt)
+		{
+			List<string> parts = new List<string>();
+			if (cooking > 0)
+			{
+				parts.Add(cooking + " cooking");
+			}
+			if (done > 0)
+			{
+				parts.Add(done + " done");
+			}
+			if (burnt > 0)
+			{
+				parts.Add(burnt + " burnt");
+			}
+			return((parts.Count > 0) ? string.Join(", ", parts) : "empty");
+		}
+
+		/// <summary>
 		/// Puts raw food on a cooking station's next empty slot, the way a player does
 		/// </summary>
 		/// <param name="station">The station</param>

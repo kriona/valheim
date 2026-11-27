@@ -27,6 +27,29 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Describes what a cook did since it took its stations on, for the line written as it takes burnt food off them
+		/// - its last trip to a chest, how long ago it set off, how far from its stations it got and when it turned back,
+		/// or that it made none
+		/// </summary>
+		/// <param name="held">How long it has held its stations, in seconds</param>
+		/// <param name="sinceLeft">How long since it last set off for a chest, in seconds, or below 0 when it hasn't</param>
+		/// <param name="chestOff">How far the chest was from its stations, in meters</param>
+		/// <param name="farthest">How far from its stations it got, in meters</param>
+		/// <param name="turnedAfter">How long after setting off it turned back, in seconds, or below 0 while it's still on its
+		/// way</param>
+		/// <returns>The description</returns>
+		internal static string DescribeCookTrip(float held, float sinceLeft, float chestOff, float farthest, float turnedAfter)
+		{
+			string holding = "holding them for " + held.ToString("F0") + "s";
+			if (sinceLeft < 0f)
+			{
+				return("it hasn't left its stations for a chest, " + holding);
+			}
+			string back = ((turnedAfter < 0f) ? "still on its way" : "turning back after " + turnedAfter.ToString("F0") + "s");
+			return("it last left its stations for a chest " + chestOff.ToString("F1") + "m off " + sinceLeft.ToString("F0") + "s ago, getting " + farthest.ToString("F1") + "m from them and " + back + ", " + holding);
+		}
+
+		/// <summary>
 		/// Cooking at the village's cooking stations - at the one it set out for and the others at the same fire no other
 		/// viking is at, so it cooks all it can at once - putting the raw food it carries on, fetching more from the
 		/// village's chests while they have room once nothing on them is cooking, waiting by them while it cooks, and
@@ -42,6 +65,16 @@ namespace VikingVillages
 			private float actAt = -1f;
 			private float nextRenew;
 			private float nextHeldTake;
+
+			/// <summary>
+			/// Its last trip to a chest, for the log as it takes burnt food off (see DescribeCookTrip) - when it set off, in
+			/// Time.time seconds or below 0 before it has, how far the chest was from the station it fetched for and how far
+			/// from it the viking got, in meters, and when it turned back, below 0 while it's still on its way
+			/// </summary>
+			private float tripFrom = -1f;
+			private float tripChest;
+			private float tripFarthest;
+			private float tripTurned = -1f;
 
 			/// <summary>
 			/// What it's doing at its stations, for the debug hover text
@@ -149,6 +182,10 @@ namespace VikingVillages
 					{
 						fetchFor = roomy;
 						actAt = -1f;
+						tripFrom = Time.time;
+						tripChest = Utils.DistanceXZ(chest.transform.position, roomy.transform.position);
+						tripFarthest = 0f;
+						tripTurned = -1f;
 						return(false);
 					}
 				}
@@ -198,7 +235,7 @@ namespace VikingVillages
 				actAt = -1f;
 				if (done != null)
 				{
-					life.TakeCooked(done);
+					LogBurnt(done, life.TakeCooked(done));
 					chestTried = false;
 				}
 				else
@@ -257,10 +294,35 @@ namespace VikingVillages
 				{
 					nextHeldTake = Time.time + ReachTime;
 					VikingPoses.Interact(life.humanoid);
-					life.TakeCooked(done);
+					LogBurnt(done, life.TakeCooked(done));
 					chestTried = false;
 				}
 				return(false);
+			}
+
+			/// <summary>
+			/// Writes the burnt food it took off a station with its last trip to a chest (see DescribeCookTrip)
+			/// </summary>
+			/// <param name="cooker">The station</param>
+			/// <param name="burnt">How many burnt pieces came off</param>
+			private void LogBurnt(CookingStation cooker, int burnt)
+			{
+				if (burnt <= 0)
+				{
+					return;
+				}
+				float sinceLeft = ((tripFrom >= 0f) ? Time.time - tripFrom : -1f);
+				float turnedAfter = ((tripFrom >= 0f && tripTurned >= 0f) ? tripTurned - tripFrom : -1f);
+				life.LogBurnt(cooker, burnt, tripFrom >= 0f, DescribeCookTrip(Time.time - StartedAt, sinceLeft, tripChest, tripFarthest, turnedAfter));
+			}
+
+			/// <summary>
+			/// Lets go of the chest it was fetching from, noting when it turned back for the log (see DescribeCookTrip)
+			/// </summary>
+			private void EndTrip()
+			{
+				chest = null;
+				tripTurned = Time.time;
 			}
 
 			/// <summary>
@@ -271,14 +333,18 @@ namespace VikingVillages
 			/// <returns>False, so the job goes on</returns>
 			private bool Fetch(float dt)
 			{
+				if (fetchFor != null)
+				{
+					tripFarthest = Mathf.Max(tripFarthest, Utils.DistanceXZ(life.transform.position, fetchFor.transform.position));
+				}
 				if (!life.Usable(chest))
 				{
-					chest = null;
+					EndTrip();
 					return(false);
 				}
 				if (stations.Exists((CookingStation cooker) => cooker.HaveDoneItem()))
 				{
-					chest = null;
+					EndTrip();
 					actAt = -1f;
 					chestTried = false;
 					return(false);
@@ -290,7 +356,7 @@ namespace VikingVillages
 					{
 						life.moveFailed = false;
 						life.Avoid(chest.m_nview);
-						chest = null;
+						EndTrip();
 					}
 					return(false);
 				}
@@ -316,7 +382,7 @@ namespace VikingVillages
 				{
 					life.TakeRaw(chest, fetchFor, room);
 				}
-				chest = null;
+				EndTrip();
 				return(false);
 			}
 

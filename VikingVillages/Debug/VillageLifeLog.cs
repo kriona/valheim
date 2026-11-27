@@ -272,6 +272,55 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Names the viking holding a bed, chair, fire or cooking station, for the village's summary - with what it's
+		/// doing when this client runs it
+		/// </summary>
+		/// <param name="view">The object</param>
+		/// <returns>The viking, like "Asny at (749, 99, 25) (Cook, ...)", or "" when no viking holds it</returns>
+		internal static string ClaimHolder(ZNetView view)
+		{
+			if (view == null || !view.IsValid())
+			{
+				return("");
+			}
+			ZDO zdo = view.GetZDO();
+			ZDOID holder = zdo.GetZDOID(ClaimKey);
+			if (holder == ZDOID.None || zdo.GetLong(ClaimUntilKey) <= NetTime.Now() || !ClaimantAlive(holder))
+			{
+				return("");
+			}
+			foreach (VillageLife life in All)
+			{
+				if (life != null && life.nview != null && life.nview.IsValid() && life.nview.GetZDO().m_uid == holder)
+				{
+					return(life.LogName() + " (" + ((life.job != null) ? life.job.Describe() : "no job") + ")");
+				}
+			}
+			return(TestLog.Name((ZDOMan.instance != null) ? ZDOMan.instance.GetZDO(holder) : null) + " (not run here)");
+		}
+
+		/// <summary>
+		/// Writes the viking taking burnt food off a cooking station, with what it did since it took the station on -
+		/// its last trip to a chest, or none - and counts the pieces by that
+		/// </summary>
+		/// <param name="station">The station</param>
+		/// <param name="burnt">How many burnt pieces came off</param>
+		/// <param name="afterTrip">Whether it went to a chest since it took the station on</param>
+		/// <param name="trip">What it did since it took the station on, for the line</param>
+		private void LogBurnt(CookingStation station, int burnt, bool afterTrip, string trip)
+		{
+			if (burnt <= 0)
+			{
+				return;
+			}
+			TestLog.Count("Burnt taken off, by the cook's last trip", (afterTrip ? "after a trip to a chest" : "no trip to a chest"), burnt);
+			if (TestLog.On || Player.m_debugMode)
+			{
+				Plugin.Log.LogInfo("Burnt: " + TestLog.Name(humanoid, "F1") + " (" + LogJobName() + ") took " + burnt + ((burnt == 1) ? " burnt piece" : " burnt pieces") + " off " + Utils.GetPrefabName(station.gameObject) + " at " + station.transform.position.ToString("F1") + " - " + trip);
+			}
+		}
+
+		/// <summary>
 		/// Names a kind of job for the totals - its class without "Job" at the end
 		/// </summary>
 		/// <param name="kind">The job</param>
