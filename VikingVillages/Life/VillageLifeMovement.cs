@@ -504,6 +504,12 @@ namespace VikingVillages
 				return(poisonGaveUp);
 			}
 			run = (run || AwayFromHome() || RunsInRain() || (viking != null && viking.Climbing()));
+			// Something in a pen with no whole path to it is walked to by a side of its fence low enough to jump, rather
+			// than the nearest spot outside, which on a slope can stand at the foot of a bank below the fence
+			if (Utils.DistanceXZ(transform.position, target) > Mathf.Max(reach, ArriveReach) && PenWayIn(target, out Vector3 wayIn))
+			{
+				return(GoIntoPen(dt, target, wayIn, run));
+			}
 			bool viaDoor = VikingDoors.Steer(humanoid, target, out Vector3 waypoint, out bool direct);
 			mover = (direct ? "straight through a door" : (viaDoor ? "path to a door" : "path")) + " for " + ((job != null) ? job.GetType().Name : "village life");
 			if (direct)

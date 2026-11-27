@@ -352,6 +352,36 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that a fence is jumped from ground its top stands up to 1.3 meters above - the 1.4 a viking jumps less
+		/// the margin - and not from the foot of a bank below it, like a hillside pen's downhill side, 1.85 meters under
+		/// the top
+		/// </summary>
+		[Fact]
+		public void JumpsAFenceOnlyFromGroundNearItsTop()
+		{
+			Assert.True(VillageLife.HopFrom(103f, 104.25f));
+			Assert.True(VillageLife.HopFrom(102.97f, 104.25f));
+			Assert.False(VillageLife.HopFrom(102.9f, 104.25f));
+			Assert.False(VillageLife.HopFrom(102.4f, 104.25f));
+			// A fence sunk into the hillside, its top level with the ground outside, is jumped
+			Assert.True(VillageLife.HopFrom(104.6f, 104.53f));
+		}
+
+		/// <summary>
+		/// Checks that a viking backs up for a run-up over level or rising ground, and ground falling up to 0.3 meters,
+		/// but not down a slope falling away from the fence
+		/// </summary>
+		[Fact]
+		public void BacksUpOnlyWhereTheGroundDoesntFallAway()
+		{
+			Assert.True(VillageLife.RunUpLevel(103f, 103f));
+			Assert.True(VillageLife.RunUpLevel(103f, 104f));
+			Assert.True(VillageLife.RunUpLevel(103f, 102.75f));
+			Assert.False(VillageLife.RunUpLevel(103f, 102.6f));
+			Assert.False(VillageLife.RunUpLevel(103f, 100.1f));
+		}
+
+		/// <summary>
 		/// Checks that a viking shut in a pen climbs over its fence on its fourth jump out, however far apart they come,
 		/// and counts from none again after it
 		/// </summary>

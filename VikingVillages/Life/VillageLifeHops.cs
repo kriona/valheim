@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Kriona.Vikings;
 using UnityEngine;
 
@@ -323,6 +324,178 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Finds where the viking walks to for something in one of its village's pens it has no whole path to, when its
+		/// job takes it into pens - a spot outside the pen's fence it can jump in from (see FindPenWayIn) rather than the nearest it can
+		/// get to, which on a slope can stand at the foot of a bank below the fence, out of reach of its top. The answer
+		/// is kept for PenWayRemember seconds, and looked for again after each spot it walks to
+		/// </summary>
+		/// <param name="target">Where the viking is walking</param>
+		/// <param name="spot">Set to the spot outside the fence, when there's one</param>
+		/// <returns>True when it walks there first</returns>
+		private bool PenWayIn(Vector3 target, out Vector3 spot)
+		{
+			spot = target;
+			if (Pathfinding.instance == null || village == null || !GoesIntoPens())
+			{
+				return(false);
+			}
+			bool newTarget = (Vector3.Distance(target, penWayTarget) > 0.5f);
+			if (newTarget)
+			{
+				penWayTarget = target;
+				penWayTried.Clear();
+				penWayFound = false;
+				penWayUntil = 0f;
+			}
+			if (Time.time >= penWayUntil)
+			{
+				penWayUntil = Time.time + PenWayRemember;
+				bool wasFound = penWayFound;
+				Vector3 wasSpot = penWaySpot;
+				penWayFound = false;
+				if (!village.Contains(target) || !Village.FencedIn(target) || Pathfinding.instance.HavePath(transform.position, target, Pathfinding.AgentType.Humanoid))
+				{
+					return(false);
+				}
+				penWayFound = FindPenWayIn(target, out penWaySpot, out string why);
+				if (newTarget || penWayFound != wasFound || (penWayFound && Utils.DistanceXZ(penWaySpot, wasSpot) > 0.5f))
+				{
+					TestLog.Count("Ways into pens", (penWayFound ? "found" : "none found"));
+					if (TestLog.On || Player.m_debugMode)
+					{
+						Plugin.Log.LogInfo("Pen: " + TestLog.Name(humanoid, "F1") + " (" + ((job != null) ? job.Describe() : "no job") + ") has no whole path to " + target.ToString("F1") + " in a pen, so it " + why);
+					}
+				}
+			}
+			spot = penWaySpot;
+			return(penWayFound);
+		}
+
+		/// <summary>
+		/// Looks for a spot outside a pen's fence the viking can jump into the pen from, toward something in it - casting
+		/// PenWayRays level rays out from it to the fence, and keeping each spot on the navmesh just past a section it
+		/// jumps (see Hoppable) where its feet would be below the section's bottom at its knees and within reach of its top
+		/// (see HopFrom), it hasn't tried yet, and it has a whole path to - the nearest of them
+		/// </summary>
+		/// <param name="target">What it's after, in the pen</param>
+		/// <param name="spot">Set to the spot, when there's one</param>
+		/// <param name="why">What the viking does, for the log</param>
+		/// <returns>True when it found one</returns>
+		private bool FindPenWayIn(Vector3 target, out Vector3 spot, out string why)
+		{
+			spot = target;
+			EnsureHopMask();
+			Vector3 origin = target + Vector3.up * PenWayHeight;
+			List<KeyValuePair<float, Vector3>> spots = new List<KeyValuePair<float, Vector3>>();
+			Dictionary<Vector3, string> fences = new Dictionary<Vector3, string>();
+			int sections = 0;
+			int high = 0;
+			for (int i = 0; i < PenWayRays; i++)
+			{
+				Vector3 direction = Quaternion.Euler(0f, i * 360f / PenWayRays, 0f) * Vector3.forward;
+				if (!Physics.Raycast(origin, direction, out RaycastHit fence, PenWayReach, hopMask, QueryTriggerInteraction.Ignore) || !Hoppable(fence.collider))
+				{
+					continue;
+				}
+				sections++;
+				if (!NavmeshPoints.FindValidPoint(out Vector3 outside, fence.point + direction * PenWayOut, HopLanding, Pathfinding.AgentType.Humanoid))
+				{
+					continue;
+				}
+				Vector3 offset = outside - fence.point;
+				offset.y = 0f;
+				if (Vector3.Dot(offset, direction) <= 0f || offset.magnitude > HopReach - 0.1f || penWayTried.Exists((Vector3 tried) => Utils.DistanceXZ(tried, outside) < 0.5f))
+				{
+					continue;
+				}
+				// The fence's top, found from above just inside its face, and its bottom, which has to be at the viking's
+				// knees from the spot for it to jump it (see TryHop)
+				Vector3 probe = fence.point + direction * 0.1f;
+				probe.y = Mathf.Max(outside.y, fence.point.y) + HopHeight + 2f;
+				bool atKnees = (Physics.Raycast(outside + Vector3.up * 0.4f, -direction, out RaycastHit knee, HopReach, hopMask, QueryTriggerInteraction.Ignore) && Hoppable(knee.collider));
+				if (!atKnees || !Physics.Raycast(probe, Vector3.down, out RaycastHit top, probe.y - outside.y + 1f, hopMask, QueryTriggerInteraction.Ignore) || top.collider.GetComponentInParent<WearNTear>() == null || !HopFrom(outside.y, top.point.y))
+				{
+					high++;
+					continue;
+				}
+				spots.Add(new KeyValuePair<float, Vector3>(Utils.DistanceXZ(outside, transform.position), outside));
+				fences[outside] = Utils.GetPrefabName(fence.collider.GetComponentInParent<WearNTear>().gameObject) + " at " + fence.point.ToString("F1") + ", its top " + (top.point.y - outside.y).ToString("F2") + "m above the ground there";
+			}
+			spots.Sort((KeyValuePair<float, Vector3> a, KeyValuePair<float, Vector3> b) => a.Key.CompareTo(b.Key));
+			int noPath = 0;
+			foreach (KeyValuePair<float, Vector3> entry in spots)
+			{
+				if (!Pathfinding.instance.HavePath(transform.position, entry.Value, Pathfinding.AgentType.Humanoid))
+				{
+					noPath++;
+					continue;
+				}
+				spot = entry.Value;
+				why = "walks to " + spot.ToString("F1") + " to jump into it over the " + fences[spot] + ", " + entry.Key.ToString("F1") + "m from the viking";
+				return(true);
+			}
+			why = "finds no side of its fence to jump in from - " + sections + " fence sections around it, " + high + " too high from outside or not at the knees there, " + noPath + " with no whole path to the spot, " + penWayTried.Count + " spots tried already";
+			return(false);
+		}
+
+		/// <summary>
+		/// Walks the viking to a spot outside a pen's fence it can jump in from (see PenWayIn), then jumps toward what
+		/// it's after in the pen from there - noting the spot as tried either way, so one it can't get to or jump from
+		/// is left for the next, until there's none left and it walks at what it's after as usual
+		/// </summary>
+		/// <param name="dt">Seconds since the AI's last update</param>
+		/// <param name="target">What it's after, in the pen</param>
+		/// <param name="wayIn">The spot outside the fence</param>
+		/// <param name="run">True to run</param>
+		/// <returns>False, since it's never there until it's in the pen</returns>
+		private bool GoIntoPen(float dt, Vector3 target, Vector3 wayIn, bool run)
+		{
+			mover = "path to a way into a pen for " + ((job != null) ? job.GetType().Name : "village life");
+			walkedThisUpdate = true;
+			if (Utils.DistanceXZ(transform.position, wayIn) > PenWayArrive)
+			{
+				ai.MoveTo(dt, wayIn, 0.1f, run);
+				if (CheckStuck(wayIn))
+				{
+					moveFailed = false;
+					penWayTried.Add(wayIn);
+					penWayUntil = 0f;
+				}
+				return(false);
+			}
+			ai.StopMoving();
+			ResetStuck();
+			penWayTried.Add(wayIn);
+			penWayUntil = 0f;
+			TryHop(target, false);
+			return(false);
+		}
+
+		/// <summary>
+		/// Checks whether a fence's top stands low enough above the ground a viking stands on for it to jump it from
+		/// there, with PenWayMargin to spare
+		/// </summary>
+		/// <param name="ground">How high the ground is where it stands</param>
+		/// <param name="top">How high the fence's top stands</param>
+		/// <returns>True when it can</returns>
+		internal static bool HopFrom(float ground, float top)
+		{
+			return(top - ground <= HopHeight - PenWayMargin);
+		}
+
+		/// <summary>
+		/// Checks whether the ground behind a viking about to jump a fence, or where it has backed up to, lies level
+		/// enough for it to back up for a run-up - no more than RunUpDrop below where its feet were
+		/// </summary>
+		/// <param name="feet">How high its feet were</param>
+		/// <param name="behind">How high the ground behind it is, or where its feet are now</param>
+		/// <returns>True when it is</returns>
+		internal static bool RunUpLevel(float feet, float behind)
+		{
+			return(behind >= feet - RunUpDrop);
+		}
+
+		/// <summary>
 		/// Starts the viking's jump over something low right in front of it on its way to a spot, like a fence, when
 		/// there's no way around it - backing up and running at it, then jumping with its own jump (see UpdateHop) - or
 		/// climbs out of a pen it can't jump out of (see ClimbOutOfPen)
@@ -378,9 +551,12 @@ namespace VikingVillages
 			hopLeftGround = false;
 			hopPiece = Utils.GetPrefabName(obstacle.collider.GetComponentInParent<WearNTear>().gameObject);
 			hopFenceTop = feet.y + top;
-			// It only backs up for a run-up with no fire's flames within reach behind it, since it backs up without looking -
-			// beside a fire it jumps from where it stands
-			bool backUp = (Ahead() < RunUpDistance && !FireSafety.FlamesNear(feet, RunUpDistance + RunUpFireMargin, out Vector3 _, out float _));
+			hopFrom = feet.y;
+			// It only backs up for a run-up with no fire's flames within reach behind it, since it backs up without looking,
+			// and on ground that doesn't fall away behind it, which it would slide down - beside a fire or above a slope it
+			// jumps from where it stands
+			float behind = ZoneSystem.instance.GetSolidHeight(feet - direction * RunUpDistance);
+			bool backUp = (Ahead() < RunUpDistance && RunUpLevel(feet.y, behind) && !FireSafety.FlamesNear(feet, RunUpDistance + RunUpFireMargin, out Vector3 _, out float _));
 			hopPhase = (backUp ? HopPhase.BackUp : HopPhase.RunUp);
 			hopPhaseUntil = Time.time + (backUp ? BackUpTime : RunUpTime);
 			if (Player.m_debugMode)
@@ -411,7 +587,8 @@ namespace VikingVillages
 			if (hopPhase == HopPhase.BackUp)
 			{
 				mover = "backing up to jump a fence";
-				if (Ahead() >= RunUpDistance || Time.time >= hopPhaseUntil)
+				// It stops backing up once it's far enough back, or has slid down from where it started
+				if (Ahead() >= RunUpDistance || Time.time >= hopPhaseUntil || !RunUpLevel(hopFrom, transform.position.y))
 				{
 					hopPhase = HopPhase.RunUp;
 					hopPhaseUntil = Time.time + RunUpTime;

@@ -923,6 +923,27 @@ namespace VikingVillages
 		private const float RunUpFireMargin = 1f;
 
 		/// <summary>
+		/// The most the ground can fall away from the viking's feet, behind it or as it backs up, for it to back up for a
+		/// run-up to a jump, in meters - on a slope falling away from a fence it would slide down it, out of reach of the
+		/// fence's top
+		/// </summary>
+		private const float RunUpDrop = 0.3f;
+
+		/// <summary>
+		/// How a viking looks for a side of a pen's fence it can jump into the pen from (see PenWayIn) - how many level
+		/// rays it casts out from what it's after in the pen, at what height and how far, how far past the fence's face
+		/// the spot outside it stands at, how much lower than the viking can jump the fence's top has to stand above that
+		/// spot, how near the spot it has to get before it jumps, and how long an answer is kept, in meters and seconds
+		/// </summary>
+		private const int PenWayRays = 12;
+		private const float PenWayHeight = 0.5f;
+		private const float PenWayReach = 8f;
+		private const float PenWayOut = 1f;
+		private const float PenWayMargin = 0.1f;
+		private const float PenWayArrive = 0.6f;
+		private const float PenWayRemember = 10f;
+
+		/// <summary>
 		/// How a viking fighting hand to hand goes over a pen's fence between it and its enemy rather than swinging
 		/// through it - how often it looks for the fence, how far off the enemy can be, and how long it keeps trying
 		/// before it fights as it would, in seconds and meters
@@ -1608,6 +1629,22 @@ namespace VikingVillages
 		private float hopTop;
 		private float hopPhaseUntil;
 		private bool hopLeftGround;
+
+		/// <summary>
+		/// How high the viking's feet stood when it started its jump over a fence, which it stops backing up once it has
+		/// slid more than RunUpDrop below
+		/// </summary>
+		private float hopFrom;
+
+		/// <summary>
+		/// The way into a pen the viking is walking to (see PenWayIn) - what in the pen it's after, the spot outside the
+		/// fence it jumps from, whether it found one, until when that answer is kept, and the spots it has already tried
+		/// </summary>
+		private Vector3 penWayTarget = Vector3.positiveInfinity;
+		private Vector3 penWaySpot;
+		private bool penWayFound;
+		private float penWayUntil;
+		private readonly List<Vector3> penWayTried = new List<Vector3>();
 
 		/// <summary>
 		/// For the log of how the viking's jump over a fence ended (see LogHopEnd) - the piece it jumps, how high its top
