@@ -36,6 +36,20 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
+		/// Checks that the lox, asksvin and moose are ridden on the ground, and the wolf and the valkyrie, which is flown,
+		/// aren't
+		/// </summary>
+		[Fact]
+		public void GroundMountsAreRidden()
+		{
+			Assert.False(TravelerPets.Kinds[Heightmap.Biome.Mountain].Ridden);
+			Assert.True(TravelerPets.Kinds[Heightmap.Biome.Plains].Ridden);
+			Assert.False(TravelerPets.Kinds[Heightmap.Biome.Mistlands].Ridden);
+			Assert.True(TravelerPets.Kinds[Heightmap.Biome.AshLands].Ridden);
+			Assert.True(TravelerPets.Kinds[Heightmap.Biome.DeepNorth].Ridden);
+		}
+
+		/// <summary>
 		/// Checks that every kind has names, none of them twice
 		/// </summary>
 		[Fact]

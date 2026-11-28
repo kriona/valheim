@@ -475,6 +475,29 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// Sits the viking in a saddle's riding pose - the player's own for that saddle (see Sadle.m_attachAnimation), like
+		/// the lox's - or gets it out of it, out of every other seat's pose first. Its place in the saddle is the caller's
+		/// </summary>
+		/// <param name="viking">The PC viking, owned by this client</param>
+		/// <param name="animation">The saddle's animation</param>
+		/// <param name="riding">Whether it rides</param>
+		public static void SetRidePose(Character viking, string animation, bool riding)
+		{
+			VikingPoses poses = Owned(viking);
+			if (poses == null || string.IsNullOrEmpty(animation))
+			{
+				return;
+			}
+			if (riding)
+			{
+				poses.EndStretch();
+				poses.EndSitting();
+				poses.ClearAttachPoses();
+			}
+			poses.SetPoseBool(ZSyncAnimation.GetHash(animation), riding);
+		}
+
+		/// <summary>
 		/// Sits the viking in the player's chair pose, or gets it back up - its position on the chair is the caller's
 		/// </summary>
 		/// <param name="viking">The PC viking, owned by this client</param>

@@ -42,6 +42,117 @@ namespace VikingVillages
 		private bool travelerOut;
 
 		/// <summary>
+		/// How near its animal a traveler gets on it, how near an enemy has to come for a riding traveler to get off and
+		/// fight, and how far to the animal's side it gets off, in meters
+		/// </summary>
+		private const float MountReach = 4f;
+		private const float DismountThreat = 15f;
+		private const float DismountSide = 1.5f;
+
+		/// <summary>
+		/// The animal the traveler rides, and the saddle it sits in, while it does
+		/// </summary>
+		private Character ridden;
+		private Sadle riddenSaddle;
+
+		/// <summary>
+		/// Runs a traveler's ride on its saddled animal before its AI, on its owner - getting on it as the traveler
+		/// arrives outside the village, then sitting in the saddle while the animal carries it (see TravelerPet), getting
+		/// off once the animal is in the village as it arrives, or to fight when an enemy comes within DismountThreat. As it
+		/// leaves, it's taken away once no player is within VillageDeparted.GoneReach
+		/// </summary>
+		/// <remarks>
+		/// While it rides, its AI and life are left out, so it neither moves nor looks for enemies itself
+		/// </remarks>
+		/// <param name="dt">Seconds since the AI's last update</param>
+		/// <returns>True while it rides, so the rest of the update is skipped</returns>
+		private bool UpdateRiding(float dt)
+		{
+			ZDO zdo = nview.GetZDO();
+			// Loaded again after riding, it's no longer in the saddle
+			if (ridden == null && zdo.GetBool(TravelerPets.RidingKey))
+			{
+				zdo.Set(TravelerPets.RidingKey, false);
+			}
+			if (ridden == null && zdo.GetBool(TravelerPets.RideInKey))
+			{
+				zdo.Set(TravelerPets.RideInKey, false);
+				Character mount = TravelerPets.PetOf(zdo);
+				if (mount != null && !village.Contains(transform.position) && Vector3.Distance(mount.transform.position, transform.position) <= MountReach)
+				{
+					Mount(mount);
+				}
+			}
+			if (ridden == null)
+			{
+				return(false);
+			}
+			if (ridden.IsDead() || attachPoint == null || riddenSaddle == null)
+			{
+				Dismount();
+				return(false);
+			}
+			bool leaving = zdo.GetBool(TravelerPets.LeavingKey);
+			if (leaving && Player.GetClosestPlayer(transform.position, VillageDeparted.GoneReach) == null)
+			{
+				Plugin.Log.LogInfo(LogName() + " rode off from " + VillageNames.Get(village) + " for " + zdo.GetString(Traveler.ToKey));
+				nview.Destroy();
+				return(true);
+			}
+			if (Village.FindEnemyNear(transform.position, DismountThreat) != null || (!leaving && village.Contains(ridden.transform.position)))
+			{
+				Dismount();
+				return(false);
+			}
+			mover = "riding its " + Utils.GetPrefabName(ridden.gameObject);
+			ai.StopMoving();
+			return(true);
+		}
+
+		/// <summary>
+		/// Gets the traveler on its saddled animal, sitting in the saddle in the player's riding pose for it
+		/// </summary>
+		/// <param name="mount">The animal</param>
+		/// <returns>False when it has no saddle to sit in</returns>
+		private bool Mount(Character mount)
+		{
+			Sadle saddle = ((mount != null) ? mount.GetComponentInChildren<Sadle>() : null);
+			if (saddle == null || saddle.m_attachPoint == null || !saddle.gameObject.activeInHierarchy)
+			{
+				return(false);
+			}
+			Interrupt("getting on its " + Utils.GetPrefabName(mount.gameObject));
+			Attach(saddle.m_attachPoint, mount.gameObject);
+			VikingPoses.SetRidePose(humanoid, saddle.m_attachAnimation, true);
+			ridden = mount;
+			riddenSaddle = saddle;
+			nview.GetZDO().Set(TravelerPets.RidingKey, true);
+			return(true);
+		}
+
+		/// <summary>
+		/// Gets the traveler off its animal, standing beside it
+		/// </summary>
+		private void Dismount()
+		{
+			if (riddenSaddle != null)
+			{
+				VikingPoses.SetRidePose(humanoid, riddenSaddle.m_attachAnimation, false);
+			}
+			Vector3 beside = ((ridden != null) ? ridden.transform.position + ridden.transform.right * DismountSide : transform.position);
+			if (attachPoint != null)
+			{
+				DetachTo(beside + Vector3.up * 0.5f);
+			}
+			ridden = null;
+			riddenSaddle = null;
+			if (nview != null && nview.IsValid())
+			{
+				nview.GetZDO().Set(TravelerPets.RidingKey, false);
+			}
+		}
+
+		/// <summary>
 		/// When the traveler next notes it's loaded and next eats, in Time.time seconds
 		/// </summary>
 		private float nextTravelerSeen;
@@ -455,13 +566,15 @@ namespace VikingVillages
 		/// <summary>
 		/// A traveler setting off - saying goodbye, walking out past the village's edge and heading off out of every
 		/// player's sight, the way the game's night monsters leave at dawn, until no player is within
-		/// VillageDeparted.GoneReach and it's gone
+		/// VillageDeparted.GoneReach and it's gone. One with an animal it rides walks to it and gets on first, riding off
+		/// on it (see UpdateRiding), and walks when it can't get to it
 		/// </summary>
 		private class LeaveJob : Job
 		{
 			private Vector3 spot;
 			private bool hasSpot;
 			private bool outside;
+			private bool walking;
 
 			/// <summary>
 			/// Makes the job
@@ -488,8 +601,8 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Walks out of the village and away from the players, and is taken away once none is near (see
-			/// UpdateTraveler)
+			/// Walks to its animal and gets on, or else walks out of the village and away from the players, and is taken
+			/// away once none is near (see UpdateTraveler)
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
 			/// <returns>False - it goes on until the viking is gone</returns>
@@ -499,6 +612,26 @@ namespace VikingVillages
 				{
 					life.travelerOut = true;
 					life.ai.StopMoving();
+					return(false);
+				}
+				Character mount = (walking ? null : TravelerPets.PetOf(life.nview.GetZDO()));
+				TravelerPet pet = TravelerPet.Of(mount);
+				if (mount != null && pet != null && !pet.Orphaned() && !mount.IsDead() && TravelerPets.IsRidden(mount))
+				{
+					if (Vector3.Distance(mount.transform.position, life.transform.position) > MountReach - 1f)
+					{
+						life.Go(dt, mount.transform.position, MountReach - 1f, false);
+						if (life.moveFailed)
+						{
+							life.moveFailed = false;
+							walking = true;
+						}
+						return(false);
+					}
+					if (!life.Mount(mount))
+					{
+						walking = true;
+					}
 					return(false);
 				}
 				if (!outside && hasSpot)

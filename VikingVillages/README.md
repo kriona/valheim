@@ -85,7 +85,7 @@ A Viking with no village - one you spawn in the wild, or one leaving a village y
 
 ## Traveling Vikings
 
-Now and then a Viking from a far harder biome stops for the night at a village of the Meadows through the Plains. They gather at the fire, talk of their travels at sea and the villages they've been to, sit up by the fire all night and help defend the village, then trade some of their food for the village's and set off in the morning. Half of them bring a tamed animal of their biome - a wolf at their heels, or a saddled lox, valkyrie, asksvin or moose waiting at the village's edge - that fights beside them and that you can pet (see [EVENTS.md](EVENTS.md)).
+Now and then a Viking from a far harder biome stops for the night at a village of the Meadows through the Plains. They gather at the fire, talk of their travels at sea and the villages they've been to, sit up by the fire all night and help defend the village, then trade some of their food for the village's and set off in the morning. Half of them bring a tamed animal of their biome that fights beside them and that you can pet - a wolf at their heels, or a lox, asksvin or moose they ride in on, or a valkyrie, that waits at the village's edge (see [EVENTS.md](EVENTS.md)).
 
 ## News
 

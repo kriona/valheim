@@ -58,11 +58,14 @@ Half the travelers from a biome with an animal bring one along, tamed, with 0-2 
 | Deep North | Moose | Yes | At the village's edge |
 
 - It comes in beside its traveler, and is named once they have a name, with one of its kind's names (see [Animal Names](NAMES.md#animal-names)) that isn't its traveler's own
-- A wolf keeps by its traveler wherever they go outdoors, and waits at the door of a house they go into, never going inside. Any other animal walks in with its traveler, then waits at the spot outside the fence where they came in
+- A wolf keeps by its traveler wherever they go outdoors, and waits at the door of a house they go into, never going inside
+- A lox, asksvin or moose carries its traveler in, riding in its saddle, along its own path toward the middle of the village. They get off once it's inside the village, and it goes back to wait at the spot outside the fence where they came in. With an enemy within 15 meters, they get off to fight and walk the rest of the way, the animal keeping by them
+- A valkyrie walks in beside her traveler, then waits at that spot the same way
+- As they leave, a traveler with a lox, asksvin or moose walks out to it, gets on and rides off away from the village, gone once no player is within 40 meters of them. One who can't get to it walks
 - It fights off anything that threatens its traveler or the village, and whatever its traveler fights it takes up too, however far off - and its traveler takes up whatever it fights. A wolf goes back to its traveler after a fight, and any other animal to its spot
 - It's angry at you whenever its traveler is, and hurting it counts as hurting its traveler - it angers them, however far off, and every Viking within 20 meters of either of them, and they forgive you the same way. It's never at odds with the Vikings, angry or not
 - You can pet it, and so can the village's Vikings and its traveler, but you can't tell it to follow or stay, rename it or ride it
-- It goes with its traveler as they set off, and heads off out of your sight once they're gone, gone once no player is within 40 meters of it. A traveler who leaves while you're away takes it too
+- It goes with its traveler as they set off - a wolf or valkyrie at their side, and a lox, asksvin or moose carrying them - and heads off out of your sight once they're gone, gone once no player is within 40 meters of it. A traveler who leaves while you're away takes it too
 - When its traveler dies, it stays on with the village as an ordinary tamed animal, keeping its name and saddle, and you can tell it what to do, rename it and ride it like any of your own. The Vikings still pet it, and it's still never at odds with them
 
 **When you leave**

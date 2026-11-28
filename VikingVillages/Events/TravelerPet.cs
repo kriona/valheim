@@ -39,10 +39,24 @@ namespace VikingVillages
 		private float nextCheck;
 
 		/// <summary>
+		/// How near its traveler a saddled animal is for the traveler to be riding it, and how far ahead of it a point it
+		/// carries its traveler away toward is, in meters
+		/// </summary>
+		private const float CarryReach = 3f;
+		private const float CarryStep = 30f;
+
+		/// <summary>
 		/// The animal's traveler as last found, and whether the animal has headed off after it
 		/// </summary>
 		private Character owner;
 		private bool departing;
+
+		/// <summary>
+		/// Whether the animal carries its traveler, riding it, and where it carries them - into the village as they
+		/// arrive, and away from it as they leave
+		/// </summary>
+		private bool carrying;
+		private Vector3 carryTo;
 
 		/// <summary>
 		/// Finds the traveler's animal a character is
@@ -92,12 +106,24 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Checks whether the animal is heading off out of sight after its traveler, which the game's AI leaves to it (see
-		/// TravelerPetLeavePatch)
+		/// TravelerPetMovePatch)
 		/// </summary>
 		/// <returns>True when it is</returns>
 		public bool Departing()
 		{
 			return(departing);
+		}
+
+		/// <summary>
+		/// Checks whether the animal carries its traveler riding it, which the game's AI leaves to it (see
+		/// TravelerPetMovePatch)
+		/// </summary>
+		/// <param name="to">Set to where it carries them</param>
+		/// <returns>True when it does</returns>
+		public bool Carrying(out Vector3 to)
+		{
+			to = carryTo;
+			return(carrying && !departing);
 		}
 
 		/// <summary>
@@ -151,6 +177,15 @@ namespace VikingVillages
 			}
 			owner = FindOwner();
 			GiveName(zdo);
+			carrying = Carries(zdo);
+			if (carrying)
+			{
+				if (ai.GetFollowTarget() != null)
+				{
+					ai.SetFollowTarget(null);
+				}
+				return;
+			}
 			if (owner == null)
 			{
 				// Its traveler is gone once its time to leave has passed, whether it left in sight or out of reach
@@ -170,6 +205,36 @@ namespace VikingVillages
 				return;
 			}
 			Keep(zdo);
+		}
+
+		/// <summary>
+		/// Checks whether the animal's traveler rides it, working out where it carries them - to where the village's
+		/// vikings walk back to as they arrive (see Village.RallyPoint), and on away from the village's middle as they
+		/// leave, CarryStep ahead at a time
+		/// </summary>
+		/// <param name="zdo">The animal's ZDO</param>
+		/// <returns>True when its traveler rides it</returns>
+		private bool Carries(ZDO zdo)
+		{
+			if (owner == null || !owner.m_nview.GetZDO().GetBool(TravelerPets.RidingKey) || Vector3.Distance(owner.transform.position, transform.position) > CarryReach)
+			{
+				return(false);
+			}
+			Village village = Village.ForFarm(zdo.GetVec3(TravelerPets.HostKey, Vector3.zero));
+			if (village == null)
+			{
+				return(false);
+			}
+			if (!owner.m_nview.GetZDO().GetBool(TravelerPets.LeavingKey))
+			{
+				carryTo = village.RallyPoint();
+				return(true);
+			}
+			Vector3 away = transform.position - village.Middle;
+			away.y = 0f;
+			away = ((away.sqrMagnitude > 0.01f) ? away.normalized : transform.forward);
+			carryTo = transform.position + away * CarryStep;
+			return(true);
 		}
 
 		/// <summary>
@@ -230,9 +295,10 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Keeps the animal where it belongs while its traveler is in the village - with the traveler as they leave and
-		/// as they walk in, then a wolf keeping by them outdoors and waiting at the door of a house they go into, and any
-		/// other kind waiting at its spot at the village's edge
+		/// Keeps the animal where it belongs while its traveler is in the village and isn't riding it - with the traveler
+		/// as they leave, or for one they ride, waiting at its spot for them to get on, and with them as they walk in,
+		/// then a wolf keeping by them outdoors and waiting at the door of a house they go into, and any other kind
+		/// waiting at its spot at the village's edge
 		/// </summary>
 		/// <param name="zdo">The animal's ZDO, owned by this client</param>
 		private void Keep(ZDO zdo)
@@ -241,6 +307,11 @@ namespace VikingVillages
 			Village village = Village.ForFarm(zdo.GetVec3(TravelerPets.HostKey, Vector3.zero));
 			if (ownerZdo.GetBool(TravelerPets.LeavingKey) || village == null)
 			{
+				if (village != null && TravelerPets.IsRidden(animal))
+				{
+					Stay(zdo.GetVec3(TravelerPets.SpotKey, transform.position));
+					return;
+				}
 				Follow();
 				return;
 			}

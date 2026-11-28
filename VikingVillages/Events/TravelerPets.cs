@@ -22,6 +22,13 @@ namespace VikingVillages
 		public static readonly int LeavingKey = "kriona.VikingVillages.travelerLeaving".GetStableHashCode();
 
 		/// <summary>
+		/// On a traveler, that it comes in riding its saddled animal, until it's on it, and that it's riding it, so the
+		/// animal carries it
+		/// </summary>
+		public static readonly int RideInKey = "kriona.VikingVillages.travelerRideIn".GetStableHashCode();
+		public static readonly int RidingKey = "kriona.VikingVillages.travelerRiding".GetStableHashCode();
+
+		/// <summary>
 		/// On a traveler's animal, the traveler, the farm of the village they visit, the spot at the village's edge it
 		/// keeps to while there, when the traveler leaves in ZNet time ticks, whether it keeps by the traveler rather than
 		/// at its spot, whether the traveler has walked into the village, and whether the traveler died, leaving it to the
@@ -49,13 +56,15 @@ namespace VikingVillages
 		internal const float PetReach = 25f;
 
 		/// <summary>
-		/// A kind of animal a traveler brings - its prefab, whether it wears a saddle, whether it keeps by the traveler
-		/// rather than waiting at the village's edge, and the names it's given
+		/// A kind of animal a traveler brings - its prefab, whether it wears a saddle, whether its traveler rides it in and
+		/// out on the ground, whether it keeps by the traveler rather than waiting at the village's edge, and the names
+		/// it's given
 		/// </summary>
 		internal class Kind
 		{
 			public string Prefab;
 			public bool Saddled;
+			public bool Ridden;
 			public bool Follows;
 			public string[] Names;
 		}
@@ -104,16 +113,38 @@ namespace VikingVillages
 
 		/// <summary>
 		/// The animal a traveler from each biome may bring. The valkyrie is Viking Villages' own tamed valkyrie (see
-		/// ValkyriePrefab)
+		/// ValkyriePrefab), which walks in and out beside its traveler, since she's flown rather than ridden on the ground
 		/// </summary>
 		internal static readonly Dictionary<Heightmap.Biome, Kind> Kinds = new Dictionary<Heightmap.Biome, Kind>
 		{
-			{ Heightmap.Biome.Mountain, new Kind { Prefab = "Wolf", Saddled = false, Follows = true, Names = WolfNames } },
-			{ Heightmap.Biome.Plains, new Kind { Prefab = "Lox", Saddled = true, Follows = false, Names = LoxNames } },
-			{ Heightmap.Biome.Mistlands, new Kind { Prefab = "TameValkyrie", Saddled = true, Follows = false, Names = ValkyrieNames } },
-			{ Heightmap.Biome.AshLands, new Kind { Prefab = "Asksvin", Saddled = true, Follows = false, Names = AsksvinNames } },
-			{ Heightmap.Biome.DeepNorth, new Kind { Prefab = "Moose", Saddled = true, Follows = false, Names = MooseNames } }
+			{ Heightmap.Biome.Mountain, new Kind { Prefab = "Wolf", Saddled = false, Ridden = false, Follows = true, Names = WolfNames } },
+			{ Heightmap.Biome.Plains, new Kind { Prefab = "Lox", Saddled = true, Ridden = true, Follows = false, Names = LoxNames } },
+			{ Heightmap.Biome.Mistlands, new Kind { Prefab = "TameValkyrie", Saddled = true, Ridden = false, Follows = false, Names = ValkyrieNames } },
+			{ Heightmap.Biome.AshLands, new Kind { Prefab = "Asksvin", Saddled = true, Ridden = true, Follows = false, Names = AsksvinNames } },
+			{ Heightmap.Biome.DeepNorth, new Kind { Prefab = "Moose", Saddled = true, Ridden = true, Follows = false, Names = MooseNames } }
 		};
+
+		/// <summary>
+		/// Checks whether a traveler's animal is one it rides on the ground (see Kind.Ridden)
+		/// </summary>
+		/// <param name="animal">The animal</param>
+		/// <returns>True when it is</returns>
+		internal static bool IsRidden(Character animal)
+		{
+			if (animal == null)
+			{
+				return(false);
+			}
+			string prefab = Utils.GetPrefabName(animal.gameObject);
+			foreach (Kind kind in Kinds.Values)
+			{
+				if (kind.Prefab == prefab)
+				{
+					return(kind.Ridden);
+				}
+			}
+			return(false);
+		}
 
 		/// <summary>
 		/// Picks the name an animal is given - one of its kind's at random, leaving out its owner's first name
@@ -190,6 +221,11 @@ namespace VikingVillages
 			{
 				zdo.Set(ZDOVars.s_haveSaddleHash, true);
 				view.InvokeRPC(ZNetView.Everybody, "SetSaddle", true);
+				// A kind ridden on the ground carries its traveler in (see VillageLife.UpdateRiding)
+				if (kind.Ridden)
+				{
+					traveler.Set(RideInKey, true);
+				}
 			}
 			traveler.Set(PetKey, zdo.m_uid);
 			if (instance.GetComponent<TravelerPet>() == null)

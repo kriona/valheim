@@ -2074,7 +2074,7 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Runs before the viking's AI on its owner - has one leaving a disbanded village say goodbye and run off (see
-		/// UpdateLeaving), stops what it's doing when a fight starts, keeps it from chasing far
+		/// UpdateLeaving), keeps a traveler riding its animal in the saddle (see UpdateRiding), stops what it's doing when a fight starts, keeps it from chasing far
 		/// out of the village, brings it back when it has strayed, has the night watch raise the alarm, uses a forsaken
 		/// power for a fight worth one (see VikingPowers.UpdateFight), and dulls its senses while it rests
 		/// </summary>
@@ -2098,6 +2098,11 @@ namespace VikingVillages
 			if (road != Road.None)
 			{
 				ForgetRoad();
+			}
+			// A traveler riding its animal sits in the saddle while it carries them
+			if (IsTraveler() && UpdateRiding(dt))
+			{
+				return(true);
 			}
 			// Getting on a quest's boat, riding it or swimming in from it, its crossing takes the update over (see
 			// UpdateBoat)

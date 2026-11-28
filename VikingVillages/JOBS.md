@@ -692,7 +692,9 @@ A traveling Viking visiting the village (see [EVENTS.md](EVENTS.md#traveling-vik
 1. **Keep guard**, through a raid (see [Keep Guard](#keep-guard))
 2. **Gather at the fire** from dusk, sitting the whole night - on a free seat when there's one, at once once night falls, and through any storm - until it's day (see [Gather at the Fire](#gather-at-the-fire))
 3. **Trade their food**, once it's 1-2 game hours after the village wakes on the morning after they came: they walk to the nearest village chest with food in it - or else one with room - open it, take 3-4 of the food it holds most of and leave 3-4 of their own, foods they didn't just take first. With no chest, or none reached within a game hour, they go without trading
-4. **Leave**, once they've traded: they say goodbye, walk to a spot 8-16 meters outside the farm's fence and then away from you, and are gone once no player is within 40 meters
+4. **Leave**, once they've traded: they say goodbye, walk to a spot 8-16 meters outside the farm's fence and then away from you, and are gone once no player is within 40 meters. One with a lox, asksvin or moose walks out to it instead, gets on and rides off away from the village, walking when they can't get to it
+
+A traveler who came on a lox, asksvin or moose arrives riding it, sitting in its saddle while it carries them in, and gets off once it's inside the village - or to fight, with an enemy within 15 meters. While they ride, they do nothing else.
 5. By day, otherwise, one of these at random, in the same proportions as the village's Vikings - **talking** with one of them, **petting** one of its livestock or their own animal, **resting by the fire** until they're rested, **strolling** and **standing about**, all but standing about left out in the rain
 
 Whatever their job, with nothing to fight they take up whatever their animal is fighting, however far off.

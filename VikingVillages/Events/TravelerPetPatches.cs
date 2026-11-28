@@ -143,27 +143,42 @@ namespace VikingVillages
 	}
 
 	/// <summary>
-	/// Has a traveler's animal head off out of sight once its traveler has gone, the way the game's night monsters leave
-	/// at dawn, gone once no player is near (see TravelerPet)
+	/// Moves a traveler's animal where its AI wouldn't take it - carrying its traveler riding it, walking along a path
+	/// to where it takes them, and heading off out of sight once its traveler has gone, the way the game's night monsters
+	/// leave at dawn, gone once no player is near (see TravelerPet)
 	/// </summary>
 	[HarmonyPatch(typeof(MonsterAI), nameof(MonsterAI.UpdateAI))]
-	public static class TravelerPetLeavePatch
+	public static class TravelerPetMovePatch
 	{
 		/// <summary>
-		/// Moves a departing animal away from the players in place of its AI
+		/// Moves an animal carrying its traveler, or departing, in place of its AI
 		/// </summary>
 		/// <param name="__instance">The animal's AI</param>
 		/// <param name="dt">Seconds since the last update</param>
 		/// <param name="__result">Whether the AI's update ran, set to true</param>
-		/// <returns>False for a departing animal, to skip the AI's own update</returns>
+		/// <returns>False for an animal carrying its traveler or departing, to skip the AI's own update</returns>
 		private static bool Prefix(MonsterAI __instance, float dt, ref bool __result)
 		{
 			TravelerPet pet = TravelerPet.Of(__instance.m_character);
-			if (pet == null || !pet.Departing() || !__instance.m_nview.IsOwner())
+			if (pet == null || !__instance.m_nview.IsOwner())
 			{
 				return(true);
 			}
-			__instance.MoveAwayAndDespawn(dt, false);
+			if (pet.Departing())
+			{
+				__instance.MoveAwayAndDespawn(dt, false);
+			}
+			else if (pet.Carrying(out UnityEngine.Vector3 to))
+			{
+				if (__instance.MoveTo(dt, to, 1f, false))
+				{
+					__instance.StopMoving();
+				}
+			}
+			else
+			{
+				return(true);
+			}
 			__result = true;
 			return(false);
 		}
