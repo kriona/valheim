@@ -10,7 +10,8 @@ namespace VikingVillages
 	{
 		/// <summary>
 		/// Finds one of the village's boars to pet - in a pen or out of one, since petting is one of the few things a
-		/// viking goes into a pen for
+		/// viking goes into a pen for - or an animal a traveler brought, or left to the village, in it or waiting at its
+		/// edge (see TravelerPets.PettableIn)
 		/// </summary>
 		/// <returns>The boar, or null</returns>
 		private Character FindBoar()
@@ -18,7 +19,8 @@ namespace VikingVillages
 			List<Character> boars = new List<Character>();
 			foreach (Character character in Character.GetAllCharacters())
 			{
-				if (character == null || character.IsDead() || !character.IsTamed() || !FarmSpawns.IsLivestock(character) || !village.Contains(character.transform.position))
+				bool livestock = (character != null && !character.IsDead() && character.IsTamed() && FarmSpawns.IsLivestock(character) && village.Contains(character.transform.position));
+				if (!livestock && !TravelerPets.PettableIn(character, village))
 				{
 					continue;
 				}

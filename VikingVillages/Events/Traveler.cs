@@ -265,7 +265,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Has the village a traveler visits stop talking about it as it dies, on the client that owns the village
+		/// Has the village a traveler visits stop talking about it as it dies, on the client that owns the village, and
+		/// leaves its animal to the village (see TravelerPets.Orphan)
 		/// </summary>
 		/// <param name="character">The creature that died</param>
 		public static void OnDeath(Character character)
@@ -274,6 +275,7 @@ namespace VikingVillages
 			{
 				return;
 			}
+			TravelerPets.Orphan(character.m_nview.GetZDO());
 			Village village = Village.ForFarm(HostOf(character.m_nview.GetZDO()));
 			if (village != null && village.Zdo != null && village.IsOwner() && village.Zdo.GetZDOID(VisitorKey) == character.GetZDOID())
 			{

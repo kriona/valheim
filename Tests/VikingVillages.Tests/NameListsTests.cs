@@ -98,6 +98,26 @@ namespace VikingVillages.Tests
 			AssertSameNames(sections, "Female Names", VikingNames.FemaleNames);
 			AssertSameNames(sections, "Bynames", bynames);
 			AssertSameNames(sections, "Village Names", VillageNames.AutoNames);
+			List<string> animals = new List<string>();
+			foreach (TravelerPets.Kind kind in TravelerPets.Kinds.Values)
+			{
+				animals.AddRange(kind.Names);
+			}
+			AssertSameNames(sections, "Animal Names", animals);
+		}
+
+		/// <summary>
+		/// Checks that no viking goes by a valkyrie's name, nor another spelling of one
+		/// </summary>
+		[Fact]
+		public void NoVikingHasAValkyriesName()
+		{
+			List<string> valkyries = new List<string>(TravelerPets.ValkyrieNames) { "Sigrun", "Brünnhilde", "Brynhild" };
+			foreach (string name in valkyries)
+			{
+				Assert.DoesNotContain(name, VikingNames.FemaleNames);
+				Assert.DoesNotContain(name, VikingNames.MaleNames);
+			}
 		}
 
 		/// <summary>

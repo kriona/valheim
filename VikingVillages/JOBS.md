@@ -589,7 +589,7 @@ In the rain, they look for one standing under a roof first, or else take the oth
 
 ### Pet a Boar
 
-One of the village's livestock - the animals of its farm's pens, so a village you started has none - picked at random inside the village. They walk to it, jumping into its pen, reach out, and stand facing it for 2.5 seconds as the hearts show.
+One of the village's livestock - the animals of its farm's pens, so a village you started has none - picked at random inside the village, or an animal a traveling Viking brought, or left to the village, in it or within 25 meters past its edge (see [EVENTS.md](EVENTS.md#their-animals)). They walk to it, jumping into its pen, reach out, and stand facing it for 2.5 seconds as the hearts show.
 
 ### Stock the Chests With Wood
 
@@ -693,4 +693,6 @@ A traveling Viking visiting the village (see [EVENTS.md](EVENTS.md#traveling-vik
 2. **Gather at the fire** from dusk, sitting the whole night - on a free seat when there's one, at once once night falls, and through any storm - until it's day (see [Gather at the Fire](#gather-at-the-fire))
 3. **Trade their food**, once it's 1-2 game hours after the village wakes on the morning after they came: they walk to the nearest village chest with food in it - or else one with room - open it, take 3-4 of the food it holds most of and leave 3-4 of their own, foods they didn't just take first. With no chest, or none reached within a game hour, they go without trading
 4. **Leave**, once they've traded: they say goodbye, walk to a spot 8-16 meters outside the farm's fence and then away from you, and are gone once no player is within 40 meters
-5. By day, otherwise, one of these at random, in the same proportions as the village's Vikings - **talking** with one of them, **petting** one of its livestock, **resting by the fire** until they're rested, **strolling** and **standing about**, all but standing about left out in the rain
+5. By day, otherwise, one of these at random, in the same proportions as the village's Vikings - **talking** with one of them, **petting** one of its livestock or their own animal, **resting by the fire** until they're rested, **strolling** and **standing about**, all but standing about left out in the rain
+
+Whatever their job, with nothing to fight they take up whatever their animal is fighting, however far off.

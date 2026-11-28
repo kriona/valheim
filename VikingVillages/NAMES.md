@@ -1,6 +1,6 @@
 # Viking Villages - Names
 
-Every name the Vikings and villages of [Viking Villages](README.md) are given. A new Viking gets one of the female or male names, one no other Viking of their village goes by. The leader of each village has one of the leaders' bynames after their name, and other Vikings sometimes have one of the other bynames - see the [README](README.md). A village no player has named gets one of the village names, one no other village in the world goes by. The first four Vikings of Arendelle are Elsa, Anna, Kristoff and Olaf.
+Every name the Vikings and villages of [Viking Villages](README.md) are given. A new Viking gets one of the female or male names, one no other Viking of their village goes by. The leader of each village has one of the leaders' bynames after their name, and other Vikings sometimes have one of the other bynames - see the [README](README.md). A village no player has named gets one of the village names, one no other village in the world goes by. The first four Vikings of Arendelle are Elsa, Anna, Kristoff and Olaf. An animal a traveling Viking brings (see [EVENTS.md](EVENTS.md#traveling-viking)) is named once their Viking has a name, with one of the animal names of its kind that isn't their Viking's own, and no Viking goes by a valkyrie's name.
 
 ## Male Names
 
@@ -26,13 +26,13 @@ Vandrad, Vebjorn, Vermund, Vestein, Vigfus, Viggo, Vigleik
 
 Agda, Aldis, Alfdis, Alfhild, Alva, Anna, Arnbjorg, Arndis, Arnfrid, Arnora, Åsa, Asdis, Aslaug, Asleif, Asny, Asta,
 Astrid, Asvor, Aud, Audbjorg, Bera, Bergdis, Bergljot, Bergthora, Birna, Bjorg, Bodil, Borghild, Borgny,
-Brünnhilde, Brynja, Dagmar, Dagny, Dagrun, Dalla, Eldbjorg, Eldrid, Elsa, Embla, Erna, Estrid, Eydis, Eyja,
+Brynja, Dagmar, Dagny, Dagrun, Dalla, Eldbjorg, Eldrid, Elsa, Embla, Erna, Estrid, Eydis, Eyja,
 Freydis, Freygerd, Frida, Fridgerd, Geirlaug, Geirrid, Grima, Gro, Gudfinna, Gudlaug, Gudny, Gudrid,
 Gudrun, Gunhild, Gunnbjorg, Gunnvor, Gyda, Gyrid, Halla, Hallbera, Halldis, Hallfrid, Hallgerd, Hallveig,
 Helga, Herborg, Herdis, Hervor, Hilda, Hildigunn, Hjordis, Hlif, Hrafnhild, Hrefna, Iduna, Inga, Ingibjorg, Ingigerd,
 Ingileif, Ingrid, Ingunn, Jodis, Jofrid, Jorunn, Kara, Kata, Katla, Kolbrun, Kolfinna, Lagertha, Liv, Maeva,
 Maja, Oda, Oddbjorg, Oddny, Ormhild, Osk, Ragna, Ragnfrid, Ragnheid, Ragnhild, Rannveig, Revna, Runa,
-Saeunn, Signe, Sigrid, Sigrun, Siv, Snaefrid, Solbjorg, Solrun, Solveig, Solvor, Steinunn, Steinvor,
+Saeunn, Signe, Sigrid, Siv, Snaefrid, Solbjorg, Solrun, Solveig, Solvor, Steinunn, Steinvor,
 Svala, Svanhild, Svava, Thjodhild, Thorbjorg, Thordis, Thorgerd, Thorhild, Thorkatla, Thorlaug, Thyra, Torunn,
 Tove, Turid, Ulfhild, Ulfrun, Unn, Valborg, Valdis, Valgerd, Vigdis, Vilborg, Ylva, Yngvild, Yrsa
 
@@ -101,3 +101,27 @@ Steinkirk, Sudkirk, Vestkirk
 Aedarness, Arnarness, Bodaness, Brimness, Drangness, Flokaness, Graenaness, Hjalmarsness, Horgness, Hrimness,
 Isaness, Kirkness, Lundaness, Mavaness, Myrkness, Naustaness, Rifness, Skarfness, Skegness, Skerness,
 Skipaness, Thernaness, Vardaness
+
+## Animal Names
+
+### Wolves
+
+Sköll, Freki, Larentia, Moro, Nymeria, Grey Wind, White Fang, Akela, Gmork, Maugrim, Lupo, Kiba, Wendell, Hati, Mánagarmr,
+Varg, Kveldúlf, Gráfeldr
+
+### Lox
+
+Auðumbla, Hjortron, Krusbär, Jordgubbe, Smultron, Honung, Torstein, Bergdis, Järnben, Gråsten, Brynja, Torvald, Heidrun,
+Gjalp, Greip
+
+### Valkyries
+
+Brynhildr, Sigrún, Sigrdrífa, Göndul, Gunnr, Skuld
+
+### Asksvin
+
+Ikdnøkke, Ildnäkki, Ildmanden, Bäckahästen, Bålmanden, Flammegrimen, Kvernknurr, Ildnix, Glødemanden
+
+### Moose
+
+Kristoff, Sven

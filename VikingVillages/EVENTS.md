@@ -45,6 +45,26 @@ They come from one village and are on their way to another, picked at random fro
 - A traveler can't reach a chest in a game hour sets off without trading
 - The village talks about them while they're there and for 2 game days after they were due to leave, but stops once they die (see [Travelers](DIALOG.md#travelers))
 
+#### Their Animals
+
+Half the travelers from a biome with an animal bring one along, tamed, with 0-2 stars, each as likely:
+
+| Traveler's biome | Animal | Saddled | Where it keeps |
+| --- | --- | --- | --- |
+| Mountains | Wolf | No | By its traveler |
+| Plains | Lox | Yes | At the village's edge |
+| Mistlands | Valkyrie | Yes | At the village's edge |
+| Ashlands | Asksvin | Yes | At the village's edge |
+| Deep North | Moose | Yes | At the village's edge |
+
+- It comes in beside its traveler, and is named once they have a name, with one of its kind's names (see [Animal Names](NAMES.md#animal-names)) that isn't its traveler's own
+- A wolf keeps by its traveler wherever they go outdoors, and waits at the door of a house they go into, never going inside. Any other animal walks in with its traveler, then waits at the spot outside the fence where they came in
+- It fights off anything that threatens its traveler or the village, and whatever its traveler fights it takes up too, however far off - and its traveler takes up whatever it fights. A wolf goes back to its traveler after a fight, and any other animal to its spot
+- It's angry at you whenever its traveler is, and hurting it counts as hurting its traveler - it angers them, however far off, and every Viking within 20 meters of either of them, and they forgive you the same way. It's never at odds with the Vikings, angry or not
+- You can pet it, and so can the village's Vikings and its traveler, but you can't tell it to follow or stay, rename it or ride it
+- It goes with its traveler as they set off, and heads off out of your sight once they're gone, gone once no player is within 40 meters of it. A traveler who leaves while you're away takes it too
+- When its traveler dies, it stays on with the village as an ordinary tamed animal, keeping its name and saddle, and you can tell it what to do, rename it and ride it like any of your own. The Vikings still pet it, and it's still never at odds with them
+
 **When you leave**
 
 A traveler waits where they are while no player is near, like the village's own Vikings. Come back before they were due to leave and the visit goes on. Come back after it, and they've traded their food at a chest and gone, a few seconds after the village loads.

@@ -77,7 +77,7 @@ namespace VikingVillages
 		/// How far from the spot a viking notes as its village the village's generator can stand, in meters - a viking
 		/// spawned as its village is generated notes the farm's planned spot, which the generator stands near
 		/// </summary>
-		private const float FarmReach = 16f;
+		internal const float FarmReach = 16f;
 
 		/// <summary>
 		/// How far from a house's walls an open spot keeps, how far from a random point one can be found, and how far

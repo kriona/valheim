@@ -109,11 +109,11 @@ namespace VikingVillages
 		};
 		internal static readonly string[] FemaleNames =
 		{
-			"Alva", "Asta", "Astrid", "Bodil", "Borghild", "Brünnhilde", "Dagmar", "Dagny", "Embla", "Estrid",
+			"Alva", "Asta", "Astrid", "Bodil", "Borghild", "Dagmar", "Dagny", "Embla", "Estrid",
 			"Frida", "Gro", "Gudrun", "Gunhild", "Helga", "Hilda", "Inga", "Ingrid", "Jorunn", "Kara", "Liv", "Maeva",
 			"Maja", "Oda", "Ragna", "Ragnhild", "Revna", "Runa", "Sigrid", "Signe", "Siv", "Solveig",
 			"Thyra", "Tove", "Turid", "Ulfhild", "Unn", "Valdis", "Vigdis", "Aud", "Freydis", "Gudrid", "Hallgerd", "Aslaug",
-			"Hervor", "Lagertha", "Thordis", "Gyda", "Ingunn", "Bergljot", "Sigrun", "Svanhild", "Alfhild", "Ylva",
+			"Hervor", "Lagertha", "Thordis", "Gyda", "Ingunn", "Bergljot", "Svanhild", "Alfhild", "Ylva",
 			"Yrsa", "Torunn",
 			"Agda", "Aldis", "Alfdis", "Arnbjorg", "Arndis", "Arnfrid", "Arnora", "Åsa", "Asdis", "Asleif", "Asny", "Asvor",
 			"Audbjorg", "Bera", "Bergdis", "Bergthora", "Birna", "Bjorg", "Borgny", "Brynja", "Dagrun", "Dalla", "Eldbjorg",

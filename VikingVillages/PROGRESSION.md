@@ -531,6 +531,17 @@ The events a village can have by its biome (see [EVENTS.md](EVENTS.md)).
 | Meadows to the Plains | Traveling Viking - 10% a day, then not again for 6 days, from a biome 3 or more harder than the village's |
 | Mistlands to the Deep North | None |
 
+Half the travelers from a biome with an animal bring one, with 0-2 stars (see [Their Animals](EVENTS.md#their-animals)):
+
+| Traveler's biome | Animal |
+| --- | --- |
+| Meadows to the Swamp | None - no traveler comes from them |
+| Mountains | Wolf |
+| Plains | Saddled lox |
+| Mistlands | Saddled valkyrie |
+| Ashlands | Saddled asksvin |
+| Deep North | Saddled moose |
+
 ## Quests by Biome
 
 A village goes on a quest only from the quest's biome on, by the village's biome (see [QUESTS.md](QUESTS.md)). From the Plains on, more Vikings go on some quests. NPC Vikings only go foraging, finding bees, selling treasure and buying from Haldor, whatever the village's biome.

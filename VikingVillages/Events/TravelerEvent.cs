@@ -56,8 +56,8 @@ namespace VikingVillages
 		/// Sends a traveler to a village - spawning a PC viking marked as a traveler outside the farm's fence, out of every
 		/// player's sight, the way a newcomer comes (see VillageRespawn.ReadyToArrive), to walk in - from a biome at least
 		/// Traveler.BiomeGap harder than the village's, picked at random among them, or the one given. It comes from one
-		/// village and goes to another (see TravelerPlaces), and leaves the morning after it arrives, a while after
-		/// the vikings wake (see Traveler.LeaveAt)
+		/// village and goes to another (see TravelerPlaces), maybe bringing an animal of its biome (see TravelerPets), and
+		/// leaves the morning after it arrives, a while after the vikings wake (see Traveler.LeaveAt)
 		/// </summary>
 		/// <param name="village">The village, run by this client</param>
 		/// <param name="origin">The biome it comes from, by its index in VikingGear's tables, or -1 to pick one</param>
@@ -101,6 +101,7 @@ namespace VikingVillages
 			zdo.Set(Traveler.ToKey, to);
 			zdo.Set(VillageLife.ArrivingKey, outside);
 			TravelerPlaces.AskFolk(zdo);
+			TravelerPets.Bring(zdo, origin, spot, village);
 			TestLog.Count("Events", "Traveling Viking");
 			Plugin.Log.LogInfo("A traveler from " + Traveler.HomeName(origin) + " came to " + VillageNames.Get(village) + " at " + spot.ToString("F0") + ", from " + from + " on the way to " + to);
 			return(true);

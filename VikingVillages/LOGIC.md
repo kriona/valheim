@@ -620,6 +620,7 @@ A PC Viking who belongs to no village and isn't near one - spawned out in the wi
 Each day a village rolls for an event, which happens only while you're there - [EVENTS.md](EVENTS.md) has how one is picked and each event in full.
 
 - **Traveling Viking:** 10% of days, no more often than every 6 days, a PC Viking from a biome at least three harder than the village's stops by a village of the Meadows through the Plains in the afternoon. They gather at the fire, rest, talk of their travels and pet the village's animals, but do none of its chores and are never one of its own. They sit by the fire all night, help defend the village, and in the morning trade 3-4 of their food for 3-4 of the village's and set off. You can talk to them, but not rename them or open their inventory
+- **Their animals:** half the travelers from the Mountains bring a tamed wolf that keeps by them, and half from the Plains, Mistlands, Ashlands and Deep North a saddled lox, valkyrie, asksvin or moose that waits at the village's edge. It shares its traveler's fights and anger - hurting it angers them - and goes with them when they leave, or stays on with the village as an ordinary tamed animal when they die. You and the Vikings can pet it, but you can't command, rename or ride it
 
 ## News
 

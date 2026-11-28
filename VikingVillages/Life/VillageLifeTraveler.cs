@@ -59,7 +59,7 @@ namespace VikingVillages
 		/// <summary>
 		/// Runs a traveler's own part of its life each update - taking it away once it has left (see LeaveJob), or with its
 		/// trade done at once when it left while out of every player's reach, noting it's loaded, noting its visit on the
-		/// village once it has a name, and eating what it carries when it needs to
+		/// village once it has a name, eating what it carries when it needs to, and taking up its animal's fight
 		/// </summary>
 		/// <returns>True when it's been taken away</returns>
 		private bool UpdateTraveler()
@@ -110,7 +110,28 @@ namespace VikingVillages
 				nextTravelerEat = Time.time + TravelerEatInterval;
 				EatCarried("Eaten by travelers");
 			}
+			TakeUpPetFight(zdo);
 			return(false);
+		}
+
+		/// <summary>
+		/// Has a traveler with nothing to fight take up the enemy its animal fights, however far off - a monster or the
+		/// like, since one angry at a player is so already (see TravelerPet)
+		/// </summary>
+		/// <param name="zdo">The traveler's ZDO</param>
+		private void TakeUpPetFight(ZDO zdo)
+		{
+			if (ai.m_targetCreature != null)
+			{
+				return;
+			}
+			TravelerPet pet = TravelerPet.Of(TravelerPets.PetOf(zdo));
+			Character enemy = ((pet != null && !pet.Orphaned()) ? pet.Target() : null);
+			if (enemy != null && !enemy.IsPlayer() && BaseAI.IsEnemy(humanoid, enemy))
+			{
+				ai.m_targetCreature = enemy;
+				ai.SetAlerted(true);
+			}
 		}
 
 		/// <summary>
@@ -455,6 +476,8 @@ namespace VikingVillages
 			/// </summary>
 			public override void Begin()
 			{
+				// Its animal goes with it
+				life.nview.GetZDO().Set(TravelerPets.LeavingKey, true);
 				hasSpot = life.village.ArrivalSpot(out spot);
 				string line = TravelerSpeech.Pick(TravelerSpeech.FarewellLines, life.TravelerValues(""));
 				if (!string.IsNullOrEmpty(line))
