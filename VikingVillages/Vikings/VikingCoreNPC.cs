@@ -44,7 +44,8 @@ namespace Kriona.Vikings
 		/// </summary>
 		private void GenerateNPC()
 		{
-			int index = VillageCooking.BiomeAt(VillageFarm());
+			// One spawned with kri_vv_spawnviking is of the biome it was spawned for
+			int index = VikingSpawnCommand.BiomeFor(nview.GetZDO(), VillageCooking.BiomeAt(VillageFarm()));
 			VikingData rolled = VikingGear.RollData(index);
 			int model = VikingNames.PresetModel(nview.GetZDO());
 			if (model >= 0 && model != rolled.Model)

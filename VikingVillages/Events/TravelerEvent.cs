@@ -49,20 +49,22 @@ namespace VikingVillages
 		/// <returns>False when none could come yet</returns>
 		private static bool Start(Village village)
 		{
-			return(Send(village, -1));
+			return(Send(village, -1, false));
 		}
 
 		/// <summary>
 		/// Sends a traveler to a village - spawning a PC viking marked as a traveler outside the farm's fence, out of every
 		/// player's sight, the way a newcomer comes (see VillageRespawn.ReadyToArrive), to walk in - from a biome at least
 		/// Traveler.BiomeGap harder than the village's, picked at random among them, or the one given. It comes from one
-		/// village and goes to another (see TravelerPlaces), maybe bringing an animal of its biome (see TravelerPets), and
-		/// leaves the morning after it arrives, a while after the vikings wake (see Traveler.LeaveAt)
+		/// village and goes to another (see TravelerPlaces), maybe bringing an animal of its biome (see TravelerPets) - one
+		/// flown in on a valkyrie starting farther out (see TravelerPets.FlightPlan) - and leaves the morning after it
+		/// arrives, a while after the vikings wake (see Traveler.LeaveAt)
 		/// </summary>
 		/// <param name="village">The village, run by this client</param>
 		/// <param name="origin">The biome it comes from, by its index in VikingGear's tables, or -1 to pick one</param>
+		/// <param name="pet">Whether it always brings its biome's animal, when its biome has one (see TravelerPets.Pick)</param>
 		/// <returns>False when none could come yet - with an enemy near, no spot to come from, or no biome hard enough</returns>
-		internal static bool Send(Village village, int origin)
+		internal static bool Send(Village village, int origin, bool pet)
 		{
 			if (origin < 0)
 			{
@@ -85,7 +87,15 @@ namespace VikingVillages
 			{
 				return(false);
 			}
-			GameObject instance = Object.Instantiate(prefab, spot, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
+			// One flown in on a valkyrie starts farther out, and she lands them at the village's edge
+			TravelerPets.Kind animal = TravelerPets.Pick(origin, pet);
+			Vector3 from = spot;
+			Vector3 petSpot = spot;
+			if (animal != null && animal.Flies)
+			{
+				TravelerPets.FlightPlan(village, spot, out from, out petSpot);
+			}
+			GameObject instance = Object.Instantiate(prefab, from, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
 			BaseAI ai = instance.GetComponent<BaseAI>();
 			if (ai != null)
 			{
@@ -93,17 +103,17 @@ namespace VikingVillages
 			}
 			ZDO zdo = instance.GetComponent<ZNetView>().GetZDO();
 			double leaveAt = Traveler.LeaveAt(ZNet.instance.GetTimeSeconds(), EnvMan.instance.m_dayLengthSec, Random.Range(Traveler.StayMinHours, Traveler.StayMaxHours));
-			TravelerPlaces.PickPair(TravelerPlaces.Candidates(VillageNames.Typed(village)), Random.value, Random.value, out string from, out string to);
+			TravelerPlaces.PickPair(TravelerPlaces.Candidates(VillageNames.Typed(village)), Random.value, Random.value, out string fromName, out string toName);
 			zdo.Set(Traveler.HostKey, village.Farm);
 			zdo.Set(Traveler.OriginKey, origin);
 			zdo.Set(Traveler.LeaveAtKey, (long)(leaveAt * System.TimeSpan.TicksPerSecond));
-			zdo.Set(Traveler.FromKey, from);
-			zdo.Set(Traveler.ToKey, to);
+			zdo.Set(Traveler.FromKey, fromName);
+			zdo.Set(Traveler.ToKey, toName);
 			zdo.Set(VillageLife.ArrivingKey, outside);
 			TravelerPlaces.AskFolk(zdo);
-			TravelerPets.Bring(zdo, origin, spot, village);
+			TravelerPets.Bring(zdo, animal, from, petSpot, village);
 			TestLog.Count("Events", "Traveling Viking");
-			Plugin.Log.LogInfo("A traveler from " + Traveler.HomeName(origin) + " came to " + VillageNames.Get(village) + " at " + spot.ToString("F0") + ", from " + from + " on the way to " + to);
+			Plugin.Log.LogInfo("A traveler from " + Traveler.HomeName(origin) + " came to " + VillageNames.Get(village) + " at " + from.ToString("F0") + ", from " + fromName + " on the way to " + toName);
 			return(true);
 		}
 	}

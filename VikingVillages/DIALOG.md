@@ -1,6 +1,6 @@
 # Viking Villages - What Vikings Say
 
-Every line the PC and NPC Vikings of [Viking Villages](README.md) say, and when they say it - to you, to each other, and as they pass on the news of what you've done.
+Every line the PC and NPC Vikings of [Viking Villages](README.md) say, and when they say it - to you, to each other, and as they pass on the news of what you've done - and the few words of its valkyries (see [Valkyries](#valkyries)).
 
 ## Speech
 
@@ -134,6 +134,10 @@ What they say to you, and what they shout about danger, shows over their heads f
 | You name them after a biome or a place from the lore | 20 m, 6 s | "{name}? I'm a Viking, not a place on a map!"<br>"{name}? Then travelers would come looking for me."<br>"{name}? That's somewhere you go, not someone you are."<br>"Call me {name}? The others would never let me hear the end of it." | PC, NPC |
 | You name them after a player or another Viking of their village | 20 m, 6 s | "{name}? That'd be too confusing."<br>"There's already a {name} around here - pick another!"<br>"We can't have two of {name}. Who'd come when you called?"<br>"{name}? Then we'd both turn around every time someone shouts it." | PC, NPC |
 | You name them or their village with a text tag like `<color=red>` in it, {name} being what you typed, tag and all | 20 m, 6 s | "{name} doesn't sound like a name." | PC, NPC |
+| A valkyrie with no rider flies over them - 3-40 m above them and within 15 m to the side, one Viking at a time every 5 seconds, each at most every 2 minutes, and never her own traveler or one asleep or fighting (see [VALKYRIE.md](VALKYRIE.md#flying)) | 40 m, 8 s | "By Odin - a valkyrie!"<br>"Look up! A valkyrie!"<br>"A valkyrie, here? Is someone about to die?"<br>"Did you see that? A valkyrie!"<br>"A valkyrie! Is it my time already?" | PC, NPC |
+| You fly over them on a valkyrie, the same way, before they know you | 40 m, 8 s | "Someone's riding a valkyrie!"<br>"Look! There's a rider on that valkyrie!"<br>"Who in Midgard rides a valkyrie?"<br>"A rider on a valkyrie... I've seen everything now." | PC, NPC |
+| You fly over them on a valkyrie, knowing you | 40 m, 8 s | "Is that {player} up there? On a valkyrie?!"<br>"{player}! Riding a valkyrie! Nobody will believe this."<br>"Hey, {player}! Bring her down, I want a closer look!"<br>"{player} rides with the valkyries now? Show-off." | PC, NPC |
+| A traveler flies in on their valkyrie - once she's within 60 m of the village's edge and before she's in it, the Viking of the village nearest her who's awake and not fighting, once for each arrival, {direction} being the way she comes from: the north, the northeast, the east, the southeast, the south, the southwest, the west or the northwest, from the village's middle | 40 m, 8 s | "A valkyrie, coming in from {direction}!"<br>"Rider on a valkyrie - from {direction}!"<br>"Look to {direction} - someone's flying in on a valkyrie!"<br>"Wings in the sky, from {direction}! A visitor on a valkyrie!" | PC, NPC |
 
 ## Talks
 
@@ -426,6 +430,7 @@ A traveling Viking (see [EVENTS.md](EVENTS.md#traveling-viking)) has lines of th
 | You talk to them at night | 20 m, 6 s | "No bed for a traveler, {player}. I'll sit by this fire till morning."<br>"I'll be on my way to {to} at first light."<br>"Do you know the stars, {player}? They brought me here from {from}."<br>"Quiet nights like this are rare at sea, {player}."<br>"A warm fire and a long night. I've had far worse." | PC |
 | They trade their food at a village chest in the morning | 20 m, 6 s | "A little of yours for a little of mine. Fair trade."<br>"I'll leave you some food from {home}. Fair's fair."<br>"A bite for the road - and something better in its place." | PC |
 | They set off | 20 m, 6 s | "Thank you for the fire. On to {to}!"<br>"Farewell, {village}! Fair winds to you all."<br>"Time I was on my way. {to} won't wait."<br>"Safe travels to me, and safe homes to you." | PC |
+| They call their valkyrie down from her roof to leave, 3 seconds after setting off, {valkyrie} being her name - a call that has to be seen | 40 m, 8 s | "{valkyrie}! Time to go!"<br>"{valkyrie}! Come down, we're leaving!"<br>"{valkyrie}! To me!" | PC |
 | You talk to one of the village's Vikings while a traveler is there - 30% of the time | 20 m, 6 s | "We have a guest, {player} - {traveler}, from {from}."<br>"{traveler} is passing through on the way to {to}."<br>"Have you met {traveler}, {player}? They've come all the way from {home}." | PC, NPC |
 | You talk to one of the village's Vikings in the 2 game days after a traveler left - 30% of the time | 20 m, 6 s | "{traveler} left for {to}, {player}. Good company while it lasted."<br>"We still talk of {traveler}'s tales of the sea, {player}." | PC, NPC |
 
@@ -638,6 +643,9 @@ The Dvergr Vikings the Dvergr hire in the Mistlands (see [Dvergr Vikings](LOGIC.
 | They go after an enemy - at most every 15 seconds, and never a player | 40 m, 8 s | "{enemy}! Protect the Dvergr!"<br>"{enemy} coming - to arms!"<br>"Eyes up - {enemy}!"<br>"{enemy} in the mist!"<br>"Guard the outpost - {enemy}!" | Dvergr |
 | Below 30% of their health in a fight, at most every 30 seconds | 40 m, 8 s | "Help me!"<br>"To me - I'm hurt!"<br>"Dvergr, help!"<br>"I need a hand here!" | Dvergr |
 | They reach a new level of a skill - as often as a PC Viking does | 40 m, 5 s | "My {skill} gets better every day out here!"<br>"Level {level} in {skill}! The Dvergr should pay me more."<br>"Ha! All this guard duty is good for my {skill}."<br>"Even a Dvergr would nod at my {skill} now." | Dvergr |
+| A valkyrie with no rider flies over them - as often as over a PC Viking | 40 m, 8 s | "A valkyrie, out of the mist!"<br>"Wings in the fog - a valkyrie!"<br>"Wings over the outpost - a valkyrie!" | Dvergr |
+| You fly over them on a valkyrie, before they know you | 40 m, 8 s | "Someone's flying a valkyrie over the outpost!"<br>"A rider on a valkyrie? In this fog?" | Dvergr |
+| You fly over them on a valkyrie, knowing you | 40 m, 8 s | "{player}? On a valkyrie? No one will believe me."<br>"Ha! {player}, you show-off! Mind the lanterns!" | Dvergr |
 | They use a forsaken power | 40 m, 6 s | "{power}, guard us!"<br>"By {power}! For the Dvergr!"<br>"{power}, lend us your strength!"<br>"Feel {power}'s blessing, friends!" | Dvergr |
 | You share your forsaken power with them - as with the PC Vikings, {player} being traveler while they don't know you | 20 m, 6 s | "{power}'s gift! The Dvergr thank you too, {player}."<br>"I feel {power}'s power, {player}! Worth more than my wages."<br>"Thank you, {player}. With {power}'s blessing, nothing gets past me."<br>"{power}! Now that's a bonus the Dvergr never paid, {player}." | Dvergr |
 
@@ -668,3 +676,18 @@ They pass on your news the way the PC Vikings do, in place of their greeting or 
 | You died some other way | "Back on your feet, {player}? Good. Dying is bad for business."<br>"I heard you died, {player}. Welcome back."<br>"Dead and back again? The Dvergr would call that poor planning, {player}."<br>"You're looking well for someone who died, {player}." | Dvergr |
 | After a line about a boss beyond the Mistlands | "I'm glad they hired me for the mist and not for that."<br>"The Dvergr couldn't pay me enough to face that."<br>"Not even the Dvergr would take that job."<br>"And here I thought guarding the Dvergr was dangerous." | Dvergr |
 | After a line about a biome beyond the Mistlands | "Even the Dvergr don't go that far."<br>"That's beyond anything I've been paid to see."<br>"The Dvergr don't even have maps of that."<br>"I'll stay in the mist, thanks." | Dvergr |
+
+## Valkyries
+
+The valkyries you can befriend and ride (see [VALKYRIE.md](VALKYRIE.md)) say little, and never speak first - only when you talk to her, catch you or won't do as you ask. There's no talking to one angry with you. Wild, she's terse and neutral, and befriended, terse but friendly. She says it over her head the way the Vikings do. {name} is her name, which she keeps to herself until she tells you it - each player learns it for themselves. What the Vikings shout as a valkyrie flies over them is under [Speech](#speech) and [Dvergr Vikings](#dvergr-vikings).
+
+| When | Seen within | Lines | Who |
+|---|---|---|---|
+| You talk to her for the first time, wild - she tells you her name, and you know her by it from then on | 20 m, 6 s | "{name}."<br>"I am {name}."<br>"{name}. Remember it." | Valkyrie |
+| You talk to her for the first time, befriended | 20 m, 6 s | "I am {name}. Well met."<br>"{name}. Good to know you."<br>"Call me {name}." | Valkyrie |
+| You talk to her again, wild | 20 m, 6 s | "Yes?"<br>"Speak."<br>"What is it?"<br>"Hm."<br>"I am listening." | Valkyrie |
+| You talk to her again, befriended | 20 m, 6 s | "Yes, friend?"<br>"I'm here."<br>"Ready when you are."<br>"Good to see you."<br>"Shall we fly?" | Valkyrie |
+| You talk to her again, befriended and hungry - in place of the lines above | 20 m, 6 s | "I'm hungry, friend."<br>"Food, soon?" | Valkyrie |
+| She's befriended - shown to the player nearest her, within 30 m, in the middle of the screen in place of the game's "has been tamed", rather than said by her - and that player knows her name from then on | Middle of the screen | "{name} has been befriended" | - |
+| She catches you as you get off her in the air over a dangerous fall - a call that has to be seen, which nothing she says covers while it shows | 40 m, 8 s | "Got you."<br>"I have you."<br>"Hold still."<br>"Careful." | Valkyrie |
+| You have her spin where it would hit buildings, riding her, and she won't | 20 m, 3 s | "Not here."<br>"Too close."<br>"Not near the halls." | Valkyrie |

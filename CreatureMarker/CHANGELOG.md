@@ -10,6 +10,7 @@
 - A creature that leaves you alone until provoked, like the Dvergr, gets a red ! after its name once it's been provoked, or beside its arrow while its label shows nothing
 - A creature whose name runs to more than one line, like a Viking Villages Viking's with its job under it in debug mode, has its level and distance after the first line
 - A creature whose speech bubble already names it, like a talking Viking Villages Viking or a trader, has its label leave the name out, so it isn't shown twice
+- A Viking Villages traveling Viking's animal, like their wolf or valkyrie, is marked in Passive Color rather than Pet Color, since it's the Viking's rather than yours - or Hostile or Angry Color once its Viking turns on you. Once its Viking dies and it stays on with the village, it's yours, in Pet Color
 - With Items On Ground, items of the same kind lying within 3 meters of each other share one marker once they're farther away than the new Item Group Distance setting, default 15 meters, named like "Wood (x5)". 0 never groups them
 - Markers that overlap are drawn nearest on top, with a talking creature's marker over the rest, and the game's own names, health bars and alert icons and the hammer's build menu are drawn over the markers
 

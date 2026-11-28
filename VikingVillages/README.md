@@ -6,7 +6,7 @@ The Meadows' abandoned farms aren't abandoned anymore. Vikings move in, keep the
 
 Viking Villages works on its own, and with [Zombie Apocalypse](https://thunderstore.io/c/valheim/p/Kriona/ZombieApocalypse/) the two know about each other - see With Zombie Apocalypse below.
 
-This page gives a short tour of each feature. Every detail of how it works is in [LOGIC.md](LOGIC.md), and every job the Vikings do, in the order they pick them, is in [JOBS.md](JOBS.md). How PC Vikings (Player Character), NPC Vikings (Non-Player Character), Dvergr Vikings and Zombie Apocalypse's zombie Vikings compare is in [VIKINGS.md](VIKINGS.md).
+This page gives a short tour of each feature. Every detail of how it works is in [LOGIC.md](LOGIC.md), and every job the Vikings do, in the order they pick them, is in [JOBS.md](JOBS.md). How PC Vikings (Player Character), NPC Vikings (Non-Player Character), Dvergr Vikings and Zombie Apocalypse's zombie Vikings compare is in [VIKINGS.md](VIKINGS.md), and everything about the valkyries you can befriend and ride is in [VALKYRIE.md](VALKYRIE.md).
 
 ## Villages
 
@@ -85,7 +85,7 @@ A Viking with no village - one you spawn in the wild, or one leaving a village y
 
 ## Traveling Vikings
 
-Now and then a Viking from a far harder biome stops for the night at a village of the Meadows through the Plains. They gather at the fire, talk of their travels at sea and the villages they've been to, sit up by the fire all night and help defend the village, then trade some of their food for the village's and set off in the morning. Half of them bring a tamed animal of their biome that fights beside them and that you can pet - a wolf at their heels, or a lox, asksvin or moose they ride in on, or a valkyrie, that waits at the village's edge (see [EVENTS.md](EVENTS.md)).
+Now and then a Viking from a far harder biome stops for the night at a village of the Meadows through the Plains. They gather at the fire, talk of their travels at sea and the villages they've been to, sit up by the fire all night and help defend the village, then trade some of their food for the village's and set off in the morning. Half of them bring a tamed animal of their biome that fights beside them and that you can pet - a wolf at their heels, or a lox, asksvin or moose they ride in on, or a valkyrie who flies them in, that waits at the village's edge (see [EVENTS.md](EVENTS.md)).
 
 ## News
 

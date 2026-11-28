@@ -3,6 +3,7 @@ using BepInEx.Configuration;
 using HarmonyLib;
 using Kriona.Shared;
 using Kriona.Vikings;
+using UnityEngine;
 
 namespace VikingVillages
 {
@@ -84,6 +85,7 @@ namespace VikingVillages
 			VillageQuests.Update();
 			VillageEvents.Update();
 			VikingInventory.Update();
+			ValkyriePackWindow.Update();
 			VikingConcernSpeech.Update();
 			VillageArea.Update();
 			VillageChestUse.Update();

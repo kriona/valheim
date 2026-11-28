@@ -22,7 +22,7 @@ namespace VikingVillages.Tests
 			Dictionary<Heightmap.Biome, string> mounts = new Dictionary<Heightmap.Biome, string>
 			{
 				{ Heightmap.Biome.Plains, "Lox" },
-				{ Heightmap.Biome.Mistlands, "TameValkyrie" },
+				{ Heightmap.Biome.Mistlands, "VikingValkyrie" },
 				{ Heightmap.Biome.AshLands, "Asksvin" },
 				{ Heightmap.Biome.DeepNorth, "Moose" }
 			};
@@ -36,17 +36,20 @@ namespace VikingVillages.Tests
 		}
 
 		/// <summary>
-		/// Checks that the lox, asksvin and moose are ridden on the ground, and the wolf and the valkyrie, which is flown,
-		/// aren't
+		/// Checks that the lox, asksvin, moose and valkyrie are ridden and the wolf isn't, and that only the valkyrie flies
 		/// </summary>
 		[Fact]
-		public void GroundMountsAreRidden()
+		public void MountsAreRidden()
 		{
 			Assert.False(TravelerPets.Kinds[Heightmap.Biome.Mountain].Ridden);
 			Assert.True(TravelerPets.Kinds[Heightmap.Biome.Plains].Ridden);
-			Assert.False(TravelerPets.Kinds[Heightmap.Biome.Mistlands].Ridden);
+			Assert.True(TravelerPets.Kinds[Heightmap.Biome.Mistlands].Ridden);
 			Assert.True(TravelerPets.Kinds[Heightmap.Biome.AshLands].Ridden);
 			Assert.True(TravelerPets.Kinds[Heightmap.Biome.DeepNorth].Ridden);
+			foreach (KeyValuePair<Heightmap.Biome, TravelerPets.Kind> pair in TravelerPets.Kinds)
+			{
+				Assert.Equal(pair.Key == Heightmap.Biome.Mistlands, pair.Value.Flies);
+			}
 		}
 
 		/// <summary>

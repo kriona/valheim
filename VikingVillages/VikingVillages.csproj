@@ -13,6 +13,10 @@
 			<HintPath>$(ManagedPath)\UnityEngine.AudioModule.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
+		<Reference Include="UnityEngine.ClothModule">
+			<HintPath>$(ManagedPath)\UnityEngine.ClothModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
 		<Reference Include="UnityEngine.ParticleSystemModule">
 			<HintPath>$(ManagedPath)\UnityEngine.ParticleSystemModule.dll</HintPath>
 			<Private>false</Private>

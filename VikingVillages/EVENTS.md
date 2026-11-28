@@ -30,7 +30,7 @@ A PC Viking from a biome at least three harder than the village's stops by for t
 - They're only visiting, so they're never one of the village's own - they take no bed, keep no watch, go on no quests and don't count toward its Vikings. One who dies isn't mourned or brought back, and with Zombie Apocalypse rises as a zombie like any PC Viking
 - They never learn, use or teach a forsaken power
 - You can talk to them, and they greet you and pass on your news, but you can't rename them or open their inventory
-- With `debugmode` on, they have "(Traveler)" after their name in pink
+- Once they know you, they have "(Traveler)" after their name in pink, and with `debugmode` on, always
 
 **Where they come from and go**
 
@@ -38,7 +38,7 @@ They come from one village and are on their way to another, picked at random fro
 
 **Their visit**
 
-- By day they gather around the fire, rest by it, talk with the village's Vikings and pet the village's animals, but do none of its chores. They eat their own food when they're hurt or to keep their foods up
+- By day they mostly talk with the village's Vikings and sit by the fire a while, and now and then rest by it or pet the village's animals, but do none of its chores (see [JOBS.md](JOBS.md#travelers)). They eat their own food when they're hurt or to keep their foods up
 - They fight off anything that threatens the village, like its own PC Vikings, and keep guard through a raid
 - At dusk they gather at the fire with the rest, and sit by it the whole night - on a sitting log or other seat when there's one free - right through any storm
 - In the morning, 1-2 game hours after the village wakes, they go to the nearest village chest with food in it, take 3-4 of the food it holds most of and leave 3-4 of their own, then say goodbye, walk out past the village's edge and head off out of your sight. They're gone once no player is within 40 meters of them
@@ -53,19 +53,21 @@ Half the travelers from a biome with an animal bring one along, tamed, with 0-2 
 | --- | --- | --- | --- |
 | Mountains | Wolf | No | By its traveler |
 | Plains | Lox | Yes | At the village's edge |
-| Mistlands | Valkyrie | Yes | At the village's edge |
+| Mistlands | Valkyrie | Yes | On a roof |
 | Ashlands | Asksvin | Yes | At the village's edge |
 | Deep North | Moose | Yes | At the village's edge |
 
-- It comes in beside its traveler, and is named once they have a name, with one of its kind's names (see [Animal Names](NAMES.md#animal-names)) that isn't its traveler's own
+- It comes in beside its traveler, and is named once they have a name, with one of its kind's names (see [Animal Names](NAMES.md#animal-names)) that isn't its traveler's own - but a valkyrie, who has a name of her own from the start, which she tells you herself (see [Talking](VALKYRIE.md#talking) in VALKYRIE.md)
 - A wolf keeps by its traveler wherever they go outdoors, and waits at the door of a house they go into, never going inside
 - A lox, asksvin or moose carries its traveler in, riding in its saddle, along its own path toward the middle of the village. They get off once it's inside the village, and it goes back to wait at the spot outside the fence where they came in. With an enemy within 15 meters, they get off to fight and walk the rest of the way, the animal keeping by them
-- A valkyrie walks in beside her traveler, then waits at that spot the same way
-- As they leave, a traveler with a lox, asksvin or moose walks out to it, gets on and rides off away from the village, gone once no player is within 40 meters of them. One who can't get to it walks
-- It fights off anything that threatens its traveler or the village, and whatever its traveler fights it takes up too, however far off - and its traveler takes up whatever it fights. A wolf goes back to its traveler after a fight, and any other animal to its spot
+- A valkyrie flies her traveler in from 50 meters farther out, 15 meters above the ground, and lands with them on open ground near the village's middle - the nearest within 30 meters with nothing built, no tree and no rock within 4 meters of it, or her spot just past the village's edge when there's none - where they get off. She then flies up to the nearest roof she can stand on and roosts there while they stay (see [Roosting](VALKYRIE.md#roosting) in VALKYRIE.md), coming down to defend the village when it's attacked and going back up to a roof once it's safe. With an enemy within 15 meters of them as they fly in, she lands where she is and they get off to fight. When there's nowhere out of your sight that far out, they start from where they'd have walked in from
+- As a valkyrie flies her traveler in, once she's within 60 meters of the village's edge and before she's in it, the village's Viking nearest her who's awake and not fighting shouts that she's coming and from which way - like "A valkyrie, coming in from the north!" - once for each arrival (see [Speech](DIALOG.md#speech) in DIALOG.md)
+- As they leave, a traveler with a lox, asksvin or moose walks out to it, gets on and rides off away from the village, gone once no player is within 40 meters of them. A traveler with a valkyrie calls her by name from where they stand, 3 seconds after saying goodbye (see [Travelers](DIALOG.md#travelers) in DIALOG.md), and waits for her - she comes down from her roof to open ground near them, they walk over and get on, and she flies them off, gone once no player is within 80 meters, since she's seen far off in the sky. One whose valkyrie hasn't come within a minute, or who can't get to their animal, walks
+- It fights off anything that threatens its traveler or the village, and whatever its traveler fights it takes up too, however far off - and its traveler takes up whatever it fights. A wolf goes back to its traveler after a fight, a valkyrie up to a roof, and any other animal to its spot
 - It's angry at you whenever its traveler is, and hurting it counts as hurting its traveler - it angers them, however far off, and every Viking within 20 meters of either of them, and they forgive you the same way. It's never at odds with the Vikings, angry or not
-- You can pet it, and so can the village's Vikings and its traveler, but you can't tell it to follow or stay, rename it or ride it
-- It goes with its traveler as they set off - a wolf or valkyrie at their side, and a lox, asksvin or moose carrying them - and heads off out of your sight once they're gone, gone once no player is within 40 meters of it. A traveler who leaves while you're away takes it too
+- You can't hurt a valkyrie or her traveler without PVP turned on, the same as another player - her traveler even once she's dead, and she until she stays on with the village
+- You can pet it, and so can the village's Vikings and its traveler, but you can't tell it to follow or stay, rename it or ride it - looking at its back or saddle, you pet it the same way. A valkyrie you talk to rather than pet, her back too, and neither the village's Vikings nor her traveler pet her
+- It goes with its traveler as they set off - a wolf at their side, a lox, asksvin or moose carrying them and a valkyrie flying them - and heads off out of your sight once they're gone, gone once no player is within 40 meters of it, or for a valkyrie, flies off and is gone once no player is within 80 meters. A traveler who leaves while you're away takes it too
 - When its traveler dies, it stays on with the village as an ordinary tamed animal, keeping its name and saddle, and you can tell it what to do, rename it and ride it like any of your own. The Vikings still pet it, and it's still never at odds with them
 
 **When you leave**

@@ -31,5 +31,17 @@ namespace Kriona.Vikings
 			Func<Vector3, bool> claims = link.Get<Func<Vector3, bool>>("ClaimsHouse");
 			return(claims != null && claims(position));
 		}
+
+		/// <summary>
+		/// The prefab one of Viking Villages' creatures rises as when it comes back as a zombie, like a valkyrie as a
+		/// Fallen Valkyrie
+		/// </summary>
+		/// <param name="prefabName">The dying creature's prefab name</param>
+		/// <returns>The prefab name it rises as, or null when it rises as itself</returns>
+		public static string RisesAs(string prefabName)
+		{
+			Func<string, string> risesAs = link.Get<Func<string, string>>("RisesAs");
+			return(((risesAs != null) ? risesAs(prefabName) : null));
+		}
 	}
 }

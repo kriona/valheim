@@ -118,6 +118,7 @@ With [Viking Villages](https://thunderstore.io/c/valheim/p/Kriona/VikingVillages
 - The empty abandoned houses within 100 meters of a farm are its PC Vikings', so zombie Vikings never hold them
 - From the Mountains on, PC and Dvergr Vikings may start with silver-lined weapons and silver arrows, and their villages line more weapons at the forge, hunting ghosts for the ectoplasm
 - A PC Viking rising as a zombie drops their silver-lined weapons and silver arrows on the spot, since the undead can't bear them
+- A valkyrie who dies rises from her body as a Zombie Valkyrie, with a Fallen Valkyrie's body and fighting, by the same rules as any slain creature
 
 Any version of Zombie Apocalypse works with any version of Viking Villages - what one has that the other doesn't know about yet is left out.
 

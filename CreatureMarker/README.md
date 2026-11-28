@@ -57,7 +57,7 @@ Support for Portal Preview ([Nexus](https://www.nexusmods.com/valheim/mods/3977)
 | Angry Color | #FF801A | Marker color for hostile creatures that are targeting you - see [Multiplayer](#multiplayer) |
 | Boss Color | #FF3333 | Marker color for bosses |
 | Fish Color | #33CCFF | Marker color for fish |
-| Pet Color | #FFF | Marker color for creatures you have tamed |
+| Pet Color | #FFF | Marker color for creatures you have tamed - a Viking Villages traveling Viking's animal, like their wolf or valkyrie, is the Viking's, and has Passive Color, or Hostile or Angry Color once its Viking turns on you |
 | Trader Color | | Marker color for traders like Haldor, Hildir and the Bog Witch. Leave it blank to use Passive Color. Their pets, like Halstein, always use Passive Color |
 | Leviathan Color | #B366FF | Marker color for leviathans and lava leviathans |
 | Player Color | #FFF | Marker color for other players |

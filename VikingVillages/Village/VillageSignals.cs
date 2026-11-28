@@ -327,7 +327,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Hands a call for help to the PC vikings this client owns near where it came from
+		/// Hands a call for help to the PC vikings this client owns near where it came from, and the valkyries (see
+		/// ValkyrieHelp)
 		/// </summary>
 		/// <param name="sender">The client that sent it</param>
 		/// <param name="where">Where the victim was</param>
@@ -345,6 +346,7 @@ namespace VikingVillages
 			{
 				life.OnDistress(where, attacker);
 			}
+			ValkyrieHelp.Answer(where, attacker);
 		}
 
 		/// <summary>

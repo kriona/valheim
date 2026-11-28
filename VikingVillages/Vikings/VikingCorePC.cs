@@ -114,7 +114,8 @@ namespace Kriona.Vikings
 		/// Rolls a new PC viking's look, health, skill, power, gear and food (see VikingStartFood) for its village's biome (see
 		/// VillageCooking.BiomeAt), or a traveler's for the biome it comes from (see Traveler), with a name no viking of
 		/// the village it visits goes by, wherever around the village it appears - or out in the wild with no village, the
-		/// biome where it stands worked out the same way - as a woman or a man to suit a name it was given before it was rolled (see VikingNames.PresetFirst), and names
+		/// biome where it stands worked out the same way, or the biome kri_vv_spawnviking spawned it for (see
+		/// VikingSpawnCommand.BiomeFor) - as a woman or a man to suit a name it was given before it was rolled (see VikingNames.PresetFirst), and names
 		/// it, with the looks its name comes with (see StyleAfterName) - or an NPC viking's (see GenerateNPC), or a dvergr
 		/// viking's for the Mistlands (see GenerateDvergr)
 		/// </summary>
@@ -135,6 +136,8 @@ namespace Kriona.Vikings
 			// A traveler is of the biome it comes from rather than the village it visits
 			bool traveler = Traveler.Is(nview.GetZDO());
 			int index = (traveler ? Mathf.Clamp(nview.GetZDO().GetInt(Traveler.OriginKey, 0), 0, VikingGear.Biomes.Length - 1) : VillageCooking.BiomeAt(VillageFarm()));
+			// One spawned with kri_vv_spawnviking is of the biome it was spawned for
+			index = VikingSpawnCommand.BiomeFor(nview.GetZDO(), index);
 			VikingData rolled = VikingGear.RollData(index);
 			// One of its village's first vikings named before it's rolled is a woman or a man to suit the name
 			int model = VikingNames.PresetModel(nview.GetZDO());

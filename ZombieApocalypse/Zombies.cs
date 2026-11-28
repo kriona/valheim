@@ -119,13 +119,29 @@ namespace ZombieApocalypse
 		{
 			PendingRise rise = new PendingRise();
 			// A living viking - PC, NPC or dvergr - rises as a zombie viking
-			rise.PrefabHash = (VikingCore.IsLivingViking(character) ? VikingCore.ZombiePrefabHash : character.m_nview.GetZDO().GetPrefab());
+			rise.PrefabHash = (VikingCore.IsLivingViking(character) ? VikingCore.ZombiePrefabHash : RisesAs(character));
 			rise.Level = character.GetLevel();
 			Humanoid humanoid = character as Humanoid;
 			rise.Seed = ((humanoid != null) ? humanoid.m_seed : 0);
 			rise.RiseAt = NetTime.Now() + NetTime.Ticks(Plugin.RiseDelay.Value);
 			rise.LootCheated = character.m_nview.GetZDO().IsCheated();
 			return(rise);
+		}
+
+		/// <summary>
+		/// The prefab a dying creature that isn't a viking rises as - its own, unless Viking Villages names another for
+		/// one of its creatures, like a Fallen Valkyrie for its valkyrie
+		/// </summary>
+		/// <param name="character">The dying creature</param>
+		/// <returns>The prefab's hash</returns>
+		private static int RisesAs(Character character)
+		{
+			string other = VillageLink.RisesAs(Utils.GetPrefabName(character.gameObject));
+			if (!string.IsNullOrEmpty(other) && ZNetScene.instance != null && ZNetScene.instance.GetPrefab(other) != null)
+			{
+				return(other.GetStableHashCode());
+			}
+			return(character.m_nview.GetZDO().GetPrefab());
 		}
 
 		/// <summary>

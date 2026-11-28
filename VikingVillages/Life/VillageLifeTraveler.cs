@@ -28,6 +28,16 @@ namespace VikingVillages
 		private const float TravelerLeaveReach = 6f;
 
 		/// <summary>
+		/// How likely a traveler is to talk and to sit by the fire when it picks what to do by day - far more than the
+		/// village's vikings talk, since it has no work to do, so its own animal, always there to pet, doesn't take up
+		/// its day - and how long it sits by the fire, in seconds
+		/// </summary>
+		private const float TravelerTalkWeight = 100f;
+		private const float TravelerFireWeight = 60f;
+		private const float TravelerFireTimeMin = 60f;
+		private const float TravelerFireTimeMax = 150f;
+
+		/// <summary>
 		/// Whether the traveler has checked whether it left while out of every player's reach since it loaded, when it's
 		/// taken away for that, and whether it has noted its visit on the village
 		/// </summary>
@@ -43,23 +53,28 @@ namespace VikingVillages
 
 		/// <summary>
 		/// How near its animal a traveler gets on it, how near an enemy has to come for a riding traveler to get off and
-		/// fight, and how far to the animal's side it gets off, in meters
+		/// fight, and how far past the animal's side it gets off, in meters
 		/// </summary>
 		private const float MountReach = 4f;
-		private const float DismountThreat = 15f;
+		internal const float DismountThreat = 15f;
 		private const float DismountSide = 1.5f;
+		private const float DismountGap = 0.5f;
 
 		/// <summary>
-		/// The animal the traveler rides, and the saddle it sits in, while it does
+		/// The animal the traveler rides, and the saddle it sits in, while it does - and for a valkyrie, her flying and
+		/// whether she has flown with it on since it got on
 		/// </summary>
 		private Character ridden;
 		private Sadle riddenSaddle;
+		private ValkyrieFlight riddenFlight;
+		private bool riddenFlew;
 
 		/// <summary>
 		/// Runs a traveler's ride on its saddled animal before its AI, on its owner - getting on it as the traveler
 		/// arrives outside the village, then sitting in the saddle while the animal carries it (see TravelerPet), getting
-		/// off once the animal is in the village as it arrives, or to fight when an enemy comes within DismountThreat. As it
-		/// leaves, it's taken away once no player is within VillageDeparted.GoneReach
+		/// off once the animal is in the village as it arrives, or a valkyrie has landed with it at the village's edge, or
+		/// to fight when an enemy comes within DismountThreat - once she's landed, for a valkyrie. As it leaves, it's taken
+		/// away once no player is within VillageDeparted.GoneReach, or TravelerPets.FlownGoneReach flying
 		/// </summary>
 		/// <remarks>
 		/// While it rides, its AI and life are left out, so it neither moves nor looks for enemies itself
@@ -93,18 +108,21 @@ namespace VikingVillages
 				return(false);
 			}
 			bool leaving = zdo.GetBool(TravelerPets.LeavingKey);
-			if (leaving && Player.GetClosestPlayer(transform.position, VillageDeparted.GoneReach) == null)
+			if (leaving && Player.GetClosestPlayer(transform.position, ((riddenFlight != null) ? TravelerPets.FlownGoneReach : VillageDeparted.GoneReach)) == null)
 			{
-				Plugin.Log.LogInfo(LogName() + " rode off from " + VillageNames.Get(village) + " for " + zdo.GetString(Traveler.ToKey));
+				Plugin.Log.LogInfo(LogName() + ((riddenFlight != null) ? " flew off from " : " rode off from ") + VillageNames.Get(village) + " for " + zdo.GetString(Traveler.ToKey));
 				nview.Destroy();
 				return(true);
 			}
-			if (Village.FindEnemyNear(transform.position, DismountThreat) != null || (!leaving && village.Contains(ridden.transform.position)))
+			bool aloft = (riddenFlight != null && riddenFlight.IsFlying());
+			riddenFlew = (riddenFlew || aloft);
+			bool arrived = (!leaving && ((riddenFlight != null) ? (riddenFlew && !aloft) : village.Contains(ridden.transform.position)));
+			if (arrived || (!aloft && Village.FindEnemyNear(transform.position, DismountThreat) != null))
 			{
 				Dismount();
 				return(false);
 			}
-			mover = "riding its " + Utils.GetPrefabName(ridden.gameObject);
+			mover = (aloft ? "flying on its " : "riding its ") + Utils.GetPrefabName(ridden.gameObject);
 			ai.StopMoving();
 			return(true);
 		}
@@ -126,12 +144,15 @@ namespace VikingVillages
 			VikingPoses.SetRidePose(humanoid, saddle.m_attachAnimation, true);
 			ridden = mount;
 			riddenSaddle = saddle;
+			riddenFlight = mount.GetComponent<ValkyrieFlight>();
+			riddenFlew = false;
 			nview.GetZDO().Set(TravelerPets.RidingKey, true);
 			return(true);
 		}
 
 		/// <summary>
-		/// Gets the traveler off its animal, standing beside it
+		/// Gets the traveler off its animal, standing beside it - DismountSide from its middle, or DismountGap past its
+		/// side for one wider than that
 		/// </summary>
 		private void Dismount()
 		{
@@ -139,13 +160,15 @@ namespace VikingVillages
 			{
 				VikingPoses.SetRidePose(humanoid, riddenSaddle.m_attachAnimation, false);
 			}
-			Vector3 beside = ((ridden != null) ? ridden.transform.position + ridden.transform.right * DismountSide : transform.position);
+			Vector3 beside = ((ridden != null) ? ridden.transform.position + ridden.transform.right * Mathf.Max(DismountSide, ridden.GetRadius() + DismountGap) : transform.position);
 			if (attachPoint != null)
 			{
 				DetachTo(beside + Vector3.up * 0.5f);
 			}
 			ridden = null;
 			riddenSaddle = null;
+			riddenFlight = null;
+			riddenFlew = false;
 			if (nview != null && nview.IsValid())
 			{
 				nview.GetZDO().Set(TravelerPets.RidingKey, false);
@@ -247,9 +270,11 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Picks what a traveler does next - keeping guard through a raid, gathering at the fire from dusk and sitting by
-		/// it all night, and by day talking, petting the village's animals, resting by the fire until it's rested, strolling
-		/// or standing about - until its time to leave in the morning, when it trades some of its food at a village chest
-		/// and sets off
+		/// it all night, and by day talking - with a viking strolling or standing about, or, half the time when there's
+		/// one, going up to one sitting by the fire and talking with it there - sitting by the fire a while, petting the
+		/// village's animals, resting by the fire until it's rested, strolling or standing about, talking and sitting by
+		/// the fire most likely (see TravelerTalkWeight) - until its time to leave in the morning, when it trades some of
+		/// its food at a village chest and sets off
 		/// </summary>
 		/// <returns>The job</returns>
 		private Job ChooseTravelerJob()
@@ -276,20 +301,41 @@ namespace VikingVillages
 			}
 			bool raining = VikingWeather.KeepsIndoors(transform.position);
 			VillageLife partner = FindPartner();
+			VillageLife sittingPartner = (raining ? null : FindSeatedPartner());
+			bool seatedTalk = (sittingPartner != null && (partner == null || Random.value < 0.5f));
+			if (seatedTalk)
+			{
+				partner = sittingPartner;
+			}
 			Character animal = ((raining || OtherDoing(PettingKey)) ? null : FindBoar());
-			bool refresh = (!VikingWeather.RainsOn(transform.position) && !body.Rest.IsRested() && Time.time >= restAgainAt && village.GatherFires().Count > 0);
-			float talk = ((partner != null) ? TalkWeight : 0f);
+			bool dry = !VikingWeather.RainsOn(transform.position);
+			bool hasFire = village.GatherFires().Count > 0;
+			bool refresh = (dry && !body.Rest.IsRested() && Time.time >= restAgainAt && hasFire);
+			float talk = ((partner != null) ? TravelerTalkWeight : 0f);
+			float fireside = ((dry && hasFire && Time.time >= restAgainAt) ? TravelerFireWeight : 0f);
 			float pet = ((animal != null) ? PetWeight : 0f);
 			float rest = (refresh ? RefreshWeight : 0f);
 			float stroll = (raining ? 0f : StrollWeight);
-			float roll = Random.value * (talk + pet + rest + stroll + IdleWeight);
+			float roll = Random.value * (talk + fireside + pet + rest + stroll + IdleWeight);
 			if (roll < talk)
 			{
-				TalkSession session = new TalkSession(this, partner, Random.Range(TalkTimeMin, TalkTimeMax));
-				partner.JoinTalk(session);
+				TalkSession session = new TalkSession(this, partner, Random.Range(TalkTimeMin, TalkTimeMax), seatedTalk);
+				if (seatedTalk)
+				{
+					partner.seatedTalk = session;
+				}
+				else
+				{
+					partner.JoinTalk(session);
+				}
 				return(new TalkJob(this, session));
 			}
 			roll -= talk;
+			if (roll < fireside)
+			{
+				return(new GatherJob(this, false, false, Random.Range(TravelerFireTimeMin, TravelerFireTimeMax)));
+			}
+			roll -= fireside;
 			if (roll < pet)
 			{
 				return(new PetJob(this, animal));
@@ -566,8 +612,9 @@ namespace VikingVillages
 		/// <summary>
 		/// A traveler setting off - saying goodbye, walking out past the village's edge and heading off out of every
 		/// player's sight, the way the game's night monsters leave at dawn, until no player is within
-		/// VillageDeparted.GoneReach and it's gone. One with an animal it rides walks to it and gets on first, riding off
-		/// on it (see UpdateRiding), and walks when it can't get to it
+		/// VillageDeparted.GoneReach and it's gone. One with an animal it rides walks to it and gets on first, riding or
+		/// flying off on it (see UpdateRiding), and walks when it can't get to it. One with a valkyrie calls her down by
+		/// name from where she roosts and waits for her to land near it (see TravelerPet.Answer) - up to CallWait seconds
 		/// </summary>
 		private class LeaveJob : Job
 		{
@@ -575,6 +622,15 @@ namespace VikingVillages
 			private bool hasSpot;
 			private bool outside;
 			private bool walking;
+
+			/// <summary>
+			/// When it began, whether it has called its valkyrie down yet, how long after beginning it does, so its goodbye
+			/// is seen first, and how long it waits for her before walking off without her, in seconds
+			/// </summary>
+			private float begunAt;
+			private bool called;
+			private const float CallDelay = 3f;
+			private const float CallWait = 60f;
 
 			/// <summary>
 			/// Makes the job
@@ -592,6 +648,7 @@ namespace VikingVillages
 				// Its animal goes with it
 				life.nview.GetZDO().Set(TravelerPets.LeavingKey, true);
 				hasSpot = life.village.ArrivalSpot(out spot);
+				begunAt = Time.time;
 				string line = TravelerSpeech.Pick(TravelerSpeech.FarewellLines, life.TravelerValues(""));
 				if (!string.IsNullOrEmpty(line))
 				{
@@ -618,6 +675,29 @@ namespace VikingVillages
 				TravelerPet pet = TravelerPet.Of(mount);
 				if (mount != null && pet != null && !pet.Orphaned() && !mount.IsDead() && TravelerPets.IsRidden(mount))
 				{
+					// A valkyrie is called down by name from her roof, and waited for until she's landed near
+					ValkyrieFlight flight = mount.GetComponent<ValkyrieFlight>();
+					if (flight != null)
+					{
+						if (!called && Time.time - begunAt >= CallDelay)
+						{
+							called = true;
+							life.nview.GetZDO().Set(TravelerPet.CalledKey, true);
+							string name = (mount.TryGetComponent(out ValkyrieTalk talk) ? talk.Name() : "");
+							VikingSpeech.SayFirst(life.humanoid, ValkyrieSightSpeech.Call(((name.Length > 0) ? name : ValkyriePrefab.DisplayName), Random.value), VikingSpeech.CallTime, VikingSpeech.CallCull);
+						}
+						if (Time.time - begunAt > CallWait)
+						{
+							walking = true;
+							return(false);
+						}
+						if (!pet.Answered(life.humanoid))
+						{
+							life.mover = "waiting for its " + Utils.GetPrefabName(mount.gameObject) + " to come down";
+							life.Face(mount.transform.position);
+							return(false);
+						}
+					}
 					if (Vector3.Distance(mount.transform.position, life.transform.position) > MountReach - 1f)
 					{
 						life.Go(dt, mount.transform.position, MountReach - 1f, false);

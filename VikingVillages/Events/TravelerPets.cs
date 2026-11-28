@@ -32,7 +32,8 @@ namespace VikingVillages
 		/// On a traveler's animal, the traveler, the farm of the village they visit, the spot at the village's edge it
 		/// keeps to while there, when the traveler leaves in ZNet time ticks, whether it keeps by the traveler rather than
 		/// at its spot, whether the traveler has walked into the village, and whether the traveler died, leaving it to the
-		/// village
+		/// village. Creature Marker reads HostKey and OrphanKey to mark a traveler's animal as theirs rather than a
+		/// player's, so those two can never change
 		/// </summary>
 		public static readonly KeyValuePair<int, int> OwnerKey = ZDO.GetHashZDOID("kriona.VikingVillages.petOwner");
 		public static readonly int HostKey = "kriona.VikingVillages.petHost".GetStableHashCode();
@@ -56,15 +57,25 @@ namespace VikingVillages
 		internal const float PetReach = 25f;
 
 		/// <summary>
+		/// How far past the village's edge a valkyrie lands her traveler, how much farther out on the ground they start
+		/// from when they fly in, and how far a valkyrie flying off is from every player once she and her traveler are
+		/// gone, in meters - farther than a traveler on foot, since she's seen far off in the sky
+		/// </summary>
+		private const float LandOutside = 3f;
+		private const float FlyInReach = 50f;
+		internal const float FlownGoneReach = 80f;
+
+		/// <summary>
 		/// A kind of animal a traveler brings - its prefab, whether it wears a saddle, whether its traveler rides it in and
-		/// out on the ground, whether it keeps by the traveler rather than waiting at the village's edge, and the names
-		/// it's given
+		/// out, whether it flies them rather than carrying them on the ground, whether it keeps by the traveler rather than
+		/// waiting at the village's edge, and the names it's given
 		/// </summary>
 		internal class Kind
 		{
 			public string Prefab;
 			public bool Saddled;
 			public bool Ridden;
+			public bool Flies;
 			public bool Follows;
 			public string[] Names;
 		}
@@ -113,37 +124,115 @@ namespace VikingVillages
 
 		/// <summary>
 		/// The animal a traveler from each biome may bring. The valkyrie is Viking Villages' own tamed valkyrie (see
-		/// ValkyriePrefab), which walks in and out beside its traveler, since she's flown rather than ridden on the ground
+		/// ValkyriePrefab), who flies her traveler in and out (see ValkyrieFlight.Pilot)
 		/// </summary>
 		internal static readonly Dictionary<Heightmap.Biome, Kind> Kinds = new Dictionary<Heightmap.Biome, Kind>
 		{
-			{ Heightmap.Biome.Mountain, new Kind { Prefab = "Wolf", Saddled = false, Ridden = false, Follows = true, Names = WolfNames } },
-			{ Heightmap.Biome.Plains, new Kind { Prefab = "Lox", Saddled = true, Ridden = true, Follows = false, Names = LoxNames } },
-			{ Heightmap.Biome.Mistlands, new Kind { Prefab = "TameValkyrie", Saddled = true, Ridden = false, Follows = false, Names = ValkyrieNames } },
-			{ Heightmap.Biome.AshLands, new Kind { Prefab = "Asksvin", Saddled = true, Ridden = true, Follows = false, Names = AsksvinNames } },
-			{ Heightmap.Biome.DeepNorth, new Kind { Prefab = "Moose", Saddled = true, Ridden = true, Follows = false, Names = MooseNames } }
+			{ Heightmap.Biome.Mountain, new Kind { Prefab = "Wolf", Saddled = false, Ridden = false, Flies = false, Follows = true, Names = WolfNames } },
+			{ Heightmap.Biome.Plains, new Kind { Prefab = "Lox", Saddled = true, Ridden = true, Flies = false, Follows = false, Names = LoxNames } },
+			{ Heightmap.Biome.Mistlands, new Kind { Prefab = ValkyriePrefab.PrefabName, Saddled = true, Ridden = true, Flies = true, Follows = false, Names = ValkyrieNames } },
+			{ Heightmap.Biome.AshLands, new Kind { Prefab = "Asksvin", Saddled = true, Ridden = true, Flies = false, Follows = false, Names = AsksvinNames } },
+			{ Heightmap.Biome.DeepNorth, new Kind { Prefab = "Moose", Saddled = true, Ridden = true, Flies = false, Follows = false, Names = MooseNames } }
 		};
 
 		/// <summary>
-		/// Checks whether a traveler's animal is one it rides on the ground (see Kind.Ridden)
+		/// Finds the kind of animal a traveler brings that a creature is
 		/// </summary>
-		/// <param name="animal">The animal</param>
-		/// <returns>True when it is</returns>
-		internal static bool IsRidden(Character animal)
+		/// <param name="animal">The creature, or null</param>
+		/// <returns>The kind, or null when it's none of them</returns>
+		private static Kind KindOf(Character animal)
 		{
 			if (animal == null)
 			{
-				return(false);
+				return(null);
 			}
 			string prefab = Utils.GetPrefabName(animal.gameObject);
 			foreach (Kind kind in Kinds.Values)
 			{
 				if (kind.Prefab == prefab)
 				{
-					return(kind.Ridden);
+					return(kind);
 				}
 			}
-			return(false);
+			return(null);
+		}
+
+		/// <summary>
+		/// Checks whether a traveler's animal is one it rides in and out (see Kind.Ridden)
+		/// </summary>
+		/// <param name="animal">The animal</param>
+		/// <returns>True when it is</returns>
+		internal static bool IsRidden(Character animal)
+		{
+			Kind kind = KindOf(animal);
+			return(kind != null && kind.Ridden);
+		}
+
+		/// <summary>
+		/// Checks whether a creature is kept from players who haven't turned on PVP, the way a player is - a traveler's
+		/// valkyrie, until she's left to the village, and a traveler who brought one, even once she's gone
+		/// </summary>
+		/// <param name="character">The creature</param>
+		/// <returns>True when it is</returns>
+		internal static bool NeedsPVP(Character character)
+		{
+			if (character == null || character.m_nview == null || !character.m_nview.IsValid())
+			{
+				return(false);
+			}
+			ZDO zdo = character.m_nview.GetZDO();
+			if (Traveler.Is(zdo))
+			{
+				Kind kind = KindFor(zdo.GetInt(Traveler.OriginKey, -1));
+				return(kind != null && kind.Flies && !zdo.GetZDOID(PetKey).IsNone());
+			}
+			Kind own = KindOf(character);
+			return(own != null && own.Flies && IsPet(zdo) && !zdo.GetBool(OrphanKey));
+		}
+
+		/// <summary>
+		/// Picks the animal a traveler from a biome brings - half the time when its biome has one (see Kinds), or always
+		/// </summary>
+		/// <param name="origin">The biome, by its index in VikingGear's tables</param>
+		/// <param name="always">Whether it always brings one when its biome has one, as the console asks for</param>
+		/// <returns>The kind, or null when it brings none</returns>
+		internal static Kind Pick(int origin, bool always)
+		{
+			Kind kind = KindFor(origin);
+			return((kind != null && (always || Random.value < PetChance)) ? kind : null);
+		}
+
+		/// <summary>
+		/// Works out where a traveler flown in on a valkyrie starts and where she lands them - landing on open ground
+		/// LandOutside past the village's edge, on the side of the spot they'd have walked in from, and starting
+		/// FlyInReach farther out on the ground, out of every player's sight. They start from the spot they'd have walked
+		/// in from when that point isn't loaded, is in the water or can be seen
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <param name="arrival">The spot outside the village they'd have walked in from (see VillageRespawn.ReadyToArrive)</param>
+		/// <param name="from">Set to where they start</param>
+		/// <param name="landing">Set to where she lands them</param>
+		internal static void FlightPlan(Village village, Vector3 arrival, out Vector3 from, out Vector3 landing)
+		{
+			Vector3 outward = arrival - village.Middle;
+			outward.y = 0f;
+			outward = ((outward.sqrMagnitude > 0.01f) ? outward.normalized : Vector3.forward);
+			float pull = Mathf.Max(0f, village.DistanceOutside(arrival) - LandOutside);
+			if (!village.OpenSpotNear(arrival - outward * pull, out landing))
+			{
+				landing = arrival;
+			}
+			from = arrival;
+			Vector3 far = landing + outward * FlyInReach;
+			if (ZoneSystem.instance == null || !ZoneSystem.instance.IsZoneLoaded(far) || !ZoneSystem.instance.GetSolidHeight(far, out float height) || height <= ZoneSystem.instance.m_waterLevel)
+			{
+				return;
+			}
+			far.y = height;
+			if (VillageRespawn.Hidden(far))
+			{
+				from = far;
+			}
 		}
 
 		/// <summary>
@@ -179,18 +268,19 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Has a traveler just sent to a village bring an animal, half the time when its biome has one (see Kinds) - spawned
-		/// beside it, tamed, with 0-2 stars and a saddle for a kind that wears one, keeping by it as it walks in. Its name
-		/// is given once its owner has one (see TravelerPet)
+		/// Has a traveler just sent to a village bring an animal (see Pick) - spawned beside it, tamed, with 0-2 stars and a
+		/// saddle for a kind that wears one, keeping by it as it walks in, or carrying it in for one it rides. Its name is
+		/// given once its owner has one (see TravelerPet)
 		/// </summary>
 		/// <param name="traveler">The traveler's ZDO, owned by this client</param>
-		/// <param name="origin">The biome it comes from, by its index in VikingGear's tables</param>
-		/// <param name="spot">Where it arrives, outside the village - the spot at the village's edge its animal keeps to</param>
+		/// <param name="kind">The kind of animal, or null for none</param>
+		/// <param name="from">Where the traveler starts, outside the village</param>
+		/// <param name="spot">The spot at the village's edge its animal keeps to - where it starts from, or for a valkyrie,
+		/// where she lands it (see FlightPlan)</param>
 		/// <param name="village">The village it visits</param>
-		public static void Bring(ZDO traveler, int origin, Vector3 spot, Village village)
+		public static void Bring(ZDO traveler, Kind kind, Vector3 from, Vector3 spot, Village village)
 		{
-			Kind kind = KindFor(origin);
-			if (kind == null || Random.value >= PetChance || ZNetScene.instance == null)
+			if (kind == null || ZNetScene.instance == null)
 			{
 				return;
 			}
@@ -201,7 +291,7 @@ namespace VikingVillages
 				return;
 			}
 			Vector2 offset = Random.insideUnitCircle * SpawnSpread;
-			GameObject instance = Object.Instantiate(prefab, spot + new Vector3(offset.x, 0f, offset.y), Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
+			GameObject instance = Object.Instantiate(prefab, from + new Vector3(offset.x, 0f, offset.y), Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
 			Character animal = instance.GetComponent<Character>();
 			ZNetView view = instance.GetComponent<ZNetView>();
 			if (animal == null || view == null || !view.IsValid())
@@ -221,7 +311,7 @@ namespace VikingVillages
 			{
 				zdo.Set(ZDOVars.s_haveSaddleHash, true);
 				view.InvokeRPC(ZNetView.Everybody, "SetSaddle", true);
-				// A kind ridden on the ground carries its traveler in (see VillageLife.UpdateRiding)
+				// A kind ridden carries its traveler in, or flies them (see VillageLife.UpdateRiding)
 				if (kind.Ridden)
 				{
 					traveler.Set(RideInKey, true);
@@ -248,14 +338,15 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Checks whether a creature is an animal a traveler brought to a village, or left to it, that the village's
-		/// vikings and travelers pet - alive and tamed, in the village or within PetReach past its edge
+		/// vikings and travelers pet - alive and tamed, in the village or within PetReach past its edge. A valkyrie isn't
+		/// petted by anyone, being a creature of her own mind (see ValkyrieTalk)
 		/// </summary>
 		/// <param name="character">The creature</param>
 		/// <param name="village">The village</param>
 		/// <returns>True when it is</returns>
 		public static bool PettableIn(Character character, Village village)
 		{
-			if (character == null || character.IsDead() || !character.IsTamed() || character.m_nview == null || !character.m_nview.IsValid())
+			if (character == null || character.IsDead() || !character.IsTamed() || character.m_nview == null || !character.m_nview.IsValid() || character.GetComponent<ValkyrieFlight>() != null)
 			{
 				return(false);
 			}

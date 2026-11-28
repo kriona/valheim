@@ -56,6 +56,53 @@ namespace VikingVillages
 		}
 
 		/// <summary>
+		/// The talk a viking sitting by the fire is having with a traveler that came up to it, staying in its seat (see
+		/// TalkSession.Seated), or null
+		/// </summary>
+		private TalkSession seatedTalk;
+
+		/// <summary>
+		/// Finds another viking of the village this client owns sitting by the fire within TalkSearch, for a traveler to
+		/// go and talk to - one not talking with it already, nor fighting
+		/// </summary>
+		/// <returns>The viking, or null</returns>
+		private VillageLife FindSeatedPartner()
+		{
+			List<VillageLife> seated = new List<VillageLife>();
+			foreach (VillageLife other in All)
+			{
+				if (other == this || !other.active || other.village != village || other.ai.m_targetCreature != null || other.SeatedTalker() != null)
+				{
+					continue;
+				}
+				if (other.job is GatherJob gather && gather.Sitting() && Vector3.Distance(other.transform.position, transform.position) <= TalkSearch)
+				{
+					seated.Add(other);
+				}
+			}
+			return((seated.Count > 0) ? seated[Random.Range(0, seated.Count)] : null);
+		}
+
+		/// <summary>
+		/// Finds the traveler talking with this viking while it sits by the fire
+		/// </summary>
+		/// <returns>The traveler, or null when there's none</returns>
+		private VillageLife SeatedTalker()
+		{
+			return((seatedTalk != null && !seatedTalk.Over) ? seatedTalk.Leader : null);
+		}
+
+		/// <summary>
+		/// Checks whether the viking is still sitting by the fire for a seated talk
+		/// </summary>
+		/// <param name="session">The talk</param>
+		/// <returns>True while it's that talk's and it sits</returns>
+		private bool SitsFor(TalkSession session)
+		{
+			return(seatedTalk == session && job is GatherJob gather && gather.Sitting());
+		}
+
+		/// <summary>
 		/// Starts the viking talking with another that has come to talk to it
 		/// </summary>
 		/// <param name="session">The talk</param>
@@ -84,6 +131,12 @@ namespace VikingVillages
 			public readonly float Duration;
 
 			/// <summary>
+			/// Whether the partner stays sitting by the fire through the talk, keeping its own job, while the leader - a
+			/// traveler - comes up to it
+			/// </summary>
+			public readonly bool Seated;
+
+			/// <summary>
 			/// In the rain, when neither is under a roof, the spot inside the leader's house they talk at, whether there is
 			/// one, and whether the leader has got there - the partner follows the leader in
 			/// </summary>
@@ -104,18 +157,20 @@ namespace VikingVillages
 			/// VillageFallen.Remember), a newcomer, or a quest the one who started
 			/// it just came back from, that's out or that's waiting for the morning (see QuestTalk), or the village going
 			/// by the name of either of them (see VillageNamesakeSpeech). In the rain, when the partner isn't under
-			/// a roof, they talk inside the leader's house, clear of its doors (see FloorSpot), with TalkWalkTime more to get
-			/// there
+			/// a roof and isn't staying in its seat, they talk inside the leader's house, clear of its doors (see FloorSpot),
+			/// with TalkWalkTime more to get there
 			/// </summary>
 			/// <param name="leader">The viking that started it</param>
 			/// <param name="partner">The viking it talks to</param>
 			/// <param name="duration">How long they talk, in seconds</param>
-			public TalkSession(VillageLife leader, VillageLife partner, float duration)
+			/// <param name="seated">Whether the partner stays sitting by the fire through it</param>
+			public TalkSession(VillageLife leader, VillageLife partner, float duration, bool seated = false)
 			{
 				Leader = leader;
 				Partner = partner;
 				Duration = duration;
-				if (VikingWeather.KeepsIndoors(leader.transform.position) && !VikingWeather.UnderRoof(partner.humanoid.GetCenterPoint()) && leader.Home(out VillagePaths.House house))
+				Seated = seated;
+				if (!seated && VikingWeather.KeepsIndoors(leader.transform.position) && !VikingWeather.UnderRoof(partner.humanoid.GetCenterPoint()) && leader.Home(out VillagePaths.House house))
 				{
 					Place = FloorSpot(house);
 					HasPlace = true;
@@ -277,6 +332,11 @@ namespace VikingVillages
 			private bool met;
 
 			/// <summary>
+			/// How the head of a partner staying in its seat moves as it talks, which this job sets for it
+			/// </summary>
+			private VikingPoses.TalkMode partnerMode = VikingPoses.TalkMode.None;
+
+			/// <summary>
 			/// Finds the viking it's talking with
 			/// </summary>
 			/// <returns>The other viking, or null when it's gone</returns>
@@ -298,14 +358,19 @@ namespace VikingVillages
 
 			/// <summary>
 			/// Walks to the other viking, then faces it and speaks or listens in turn - in the rain, when they talk inside
-			/// (see TalkSession), the leader walks to the spot in its house and waits there, and the other follows it in
+			/// (see TalkSession), the leader walks to the spot in its house and waits there, and the other follows it in.
+			/// A partner staying in its seat speaks its turns from there, and the talk ends once it gets up
 			/// </summary>
 			/// <param name="dt">Seconds since the AI's last update</param>
 			/// <returns>True once the talk is over</returns>
 			public override bool Tick(float dt)
 			{
 				VillageLife other = session.Other(life);
-				if (session.Over || other == null || !other.active || other.job == null || !(other.job is TalkJob) || Time.time >= session.Until)
+				if (session.Over || other == null || !other.active || Time.time >= session.Until)
+				{
+					return(true);
+				}
+				if (session.Seated ? !other.SitsFor(session) : (other.job == null || !(other.job is TalkJob)))
 				{
 					return(true);
 				}
@@ -361,7 +426,7 @@ namespace VikingVillages
 					}
 				}
 				life.Face(other.transform.position);
-				if (!other.TalkMet())
+				if (!session.Seated && !other.TalkMet())
 				{
 					SetMode(VikingPoses.TalkMode.None);
 					return(false);
@@ -388,7 +453,25 @@ namespace VikingVillages
 					session.SpeakTurn();
 				}
 				SetMode((session.Speaker == life) ? VikingPoses.TalkMode.Speaking : VikingPoses.TalkMode.Listening);
+				if (session.Seated)
+				{
+					SetPartnerMode(other, (session.Speaker == other) ? VikingPoses.TalkMode.Speaking : VikingPoses.TalkMode.Listening);
+				}
 				return(false);
+			}
+
+			/// <summary>
+			/// Sets how the head of a partner staying in its seat moves as it talks, when it has changed
+			/// </summary>
+			/// <param name="other">The partner</param>
+			/// <param name="next">Speaking, listening or neither</param>
+			private void SetPartnerMode(VillageLife other, VikingPoses.TalkMode next)
+			{
+				if (next != partnerMode)
+				{
+					partnerMode = next;
+					VikingPoses.SetTalk(other.humanoid, partnerMode);
+				}
 			}
 
 			/// <summary>
@@ -414,12 +497,24 @@ namespace VikingVillages
 			}
 
 			/// <summary>
-			/// Ends the talk for both vikings
+			/// Ends the talk for both vikings - a partner staying in its seat stops talking there too
 			/// </summary>
 			public override void End()
 			{
 				session.Over = true;
 				VikingPoses.SetTalk(life.humanoid, VikingPoses.TalkMode.None);
+				VillageLife other = session.Other(life);
+				if (session.Seated && other != null)
+				{
+					if (partnerMode != VikingPoses.TalkMode.None && other.humanoid != null)
+					{
+						VikingPoses.SetTalk(other.humanoid, VikingPoses.TalkMode.None);
+					}
+					if (other.seatedTalk == session)
+					{
+						other.seatedTalk = null;
+					}
+				}
 			}
 		}
 

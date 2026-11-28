@@ -5,12 +5,14 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// A traveler's animal (see TravelerPets) - keeping by its traveler as they walk in, then waiting at its spot at the
-	/// village's edge, or for a wolf, keeping by them wherever they go outdoors and waiting at the door of a house they
-	/// go into. It fights what its traveler fights and its traveler fights what it fights, turns on a player its
-	/// traveler is angry at, and a player hurting it angers its traveler and the village. It goes with its traveler as
-	/// they leave, and once they're gone it heads off out of sight too, the way they do. Left to the village when its
-	/// traveler dies, it's an ordinary tamed animal from then on
+	/// A traveler's animal (see TravelerPets) - keeping by its traveler as they walk in, carrying them in, then waiting
+	/// at its spot at the village's edge, or for a wolf, keeping by them wherever they go outdoors and waiting at the
+	/// door of a house they go into. A valkyrie flies them in to open ground near the village's middle, then roosts on a
+	/// roof, and comes down to them when they call her as they leave. It fights what its traveler fights and its
+	/// traveler fights what it fights, turns on a player its traveler is angry at, and a player hurting it angers its
+	/// traveler and the village. It goes with its traveler as they leave, and once they're gone it heads off out of
+	/// sight too, the way they do, a valkyrie flying. Left to the village when its traveler dies, it's an ordinary tamed
+	/// animal from then on
 	/// </summary>
 	/// <remarks>
 	/// Added to the animal as it loads on any client (see TravelerPetLoadPatch), and run on the client that owns it
@@ -39,11 +41,12 @@ namespace VikingVillages
 		private float nextCheck;
 
 		/// <summary>
-		/// How near its traveler a saddled animal is for the traveler to be riding it, and how far ahead of it a point it
-		/// carries its traveler away toward is, in meters
+		/// How near its traveler a saddled animal is for the traveler to be riding it - a valkyrie's seat is high on her
+		/// back - and how far ahead of it a point it carries its traveler away toward is, walking and flying, in meters
 		/// </summary>
-		private const float CarryReach = 3f;
+		private const float CarryReach = 6f;
 		private const float CarryStep = 30f;
+		private const float FlyStep = 100f;
 
 		/// <summary>
 		/// The animal's traveler as last found, and whether the animal has headed off after it
@@ -52,11 +55,49 @@ namespace VikingVillages
 		private bool departing;
 
 		/// <summary>
-		/// Whether the animal carries its traveler, riding it, and where it carries them - into the village as they
-		/// arrive, and away from it as they leave
+		/// Whether the animal carries its traveler, riding it, where it carries them - into the village as they arrive, and
+		/// away from it as they leave - and for a valkyrie, whether she lands there
 		/// </summary>
 		private bool carrying;
 		private Vector3 carryTo;
+		private bool carryLands;
+
+		/// <summary>
+		/// A valkyrie's flying, which flies her traveler in and out, or null for an animal that walks
+		/// </summary>
+		private ValkyrieFlight flight;
+
+		/// <summary>
+		/// For a valkyrie - the open ground near the village's middle she lands her traveler on as they arrive, once it's
+		/// been found, and as they leave, whether she's coming down to them when they call her, where she lands, and
+		/// where they stood when that was found
+		/// </summary>
+		private bool hasLanding;
+		private Vector3 landing;
+		private bool answering;
+		private Vector3 answerTo;
+		private Vector3 answerFrom;
+
+		/// <summary>
+		/// How far a traveler can move from where they called their valkyrie before she finds open ground near them again,
+		/// and on a client that doesn't run her, how near them and how near their height she has to have landed to count
+		/// as come down, in meters
+		/// </summary>
+		private const float AnswerMove = 6f;
+		private const float AnswerNear = 15f;
+		private const float AnswerLevel = 2f;
+
+		/// <summary>
+		/// The ZDO key on a traveler noting they've called their valkyrie down as they leave (see VillageLife.LeaveJob)
+		/// </summary>
+		public static readonly int CalledKey = "kri_vv_valkyrie_called".GetStableHashCode();
+
+		/// <summary>
+		/// The ZDO key on a valkyrie noting a viking of the village she flies her traveler into has shouted that she's
+		/// coming (see Herald), and how near the village's edge she has to be for it, in meters
+		/// </summary>
+		private static readonly int HeraldedKey = "kri_vv_valkyrie_heralded".GetStableHashCode();
+		private const float HeraldReach = 60f;
 
 		/// <summary>
 		/// Finds the traveler's animal a character is
@@ -76,6 +117,7 @@ namespace VikingVillages
 			animal = GetComponent<Character>();
 			nview = GetComponent<ZNetView>();
 			ai = GetComponent<MonsterAI>();
+			flight = GetComponent<ValkyrieFlight>();
 			if (animal != null)
 			{
 				pets[animal] = this;
@@ -124,6 +166,106 @@ namespace VikingVillages
 		{
 			to = carryTo;
 			return(carrying && !departing);
+		}
+
+		/// <summary>
+		/// Flies a valkyrie carrying her traveler toward where she carries them, landing there as they arrive or to let
+		/// them fight (see Carries), on the client that owns her, each AI update
+		/// </summary>
+		/// <param name="to">Where she carries them</param>
+		/// <returns>False for an animal that walks</returns>
+		public bool FlyTo(Vector3 to)
+		{
+			if (flight == null)
+			{
+				return(false);
+			}
+			flight.Pilot(to, carryLands);
+			return(true);
+		}
+
+		/// <summary>
+		/// Checks whether a valkyrie is coming down to her traveler, who's called her as they leave (see Answer), and where
+		/// she lands - with nothing to fight, and only until they're on her
+		/// </summary>
+		/// <param name="to">Set to where she lands</param>
+		/// <returns>True when she is</returns>
+		public bool Answering(out Vector3 to)
+		{
+			to = answerTo;
+			return(answering && !carrying && !departing && flight != null && ai != null && ai.m_targetCreature == null);
+		}
+
+		/// <summary>
+		/// Flies a valkyrie down to where her traveler waits for her as they leave, landing there and staying until they
+		/// get on, on the client that owns her, each AI update
+		/// </summary>
+		/// <param name="to">Where she lands</param>
+		public void FlyDown(Vector3 to)
+		{
+			if (flight != null)
+			{
+				flight.Pilot(to, true);
+			}
+		}
+
+		/// <summary>
+		/// Checks whether a valkyrie has come down to where her traveler called her to, for them to get on - landed there,
+		/// on the client that runs her, or on another, landed near them on the ground rather than up on a roof
+		/// </summary>
+		/// <param name="traveler">Her traveler</param>
+		/// <returns>True when she has, or for an animal that walks</returns>
+		public bool Answered(Character traveler)
+		{
+			if (flight == null)
+			{
+				return(true);
+			}
+			if (flight.IsFlying())
+			{
+				return(false);
+			}
+			if (answering)
+			{
+				return(Utils.DistanceXZ(transform.position, answerTo) <= ValkyrieMotion.ArriveRadius + 1f);
+			}
+			return(traveler != null && Utils.DistanceXZ(transform.position, traveler.transform.position) <= AnswerNear && Mathf.Abs(transform.position.y - traveler.transform.position.y) <= AnswerLevel);
+		}
+
+		/// <summary>
+		/// Flies a valkyrie off away from the village once her traveler has gone, on the client that owns her, each AI
+		/// update - gone once no player is within TravelerPets.FlownGoneReach of her
+		/// </summary>
+		/// <returns>False for an animal that walks</returns>
+		public bool FlyOff()
+		{
+			if (flight == null)
+			{
+				return(false);
+			}
+			if (Player.GetClosestPlayer(transform.position, TravelerPets.FlownGoneReach) == null)
+			{
+				Plugin.Log.LogInfo("A traveler's " + Utils.GetPrefabName(gameObject) + " flew off after its traveler");
+				nview.Destroy();
+				return(true);
+			}
+			flight.Pilot(AwayPoint(FlyStep), false);
+			return(true);
+		}
+
+		/// <summary>
+		/// Finds a point ahead of the animal away from the middle of the village its traveler visits, or straight ahead
+		/// of it when that isn't loaded
+		/// </summary>
+		/// <param name="step">How far ahead, in meters</param>
+		/// <returns>The point</returns>
+		private Vector3 AwayPoint(float step)
+		{
+			Village village = Village.ForFarm(nview.GetZDO().GetVec3(TravelerPets.HostKey, Vector3.zero));
+			Vector3 away = ((village != null) ? transform.position - village.Middle : transform.forward);
+			away.y = 0f;
+			away = ((away.sqrMagnitude > 0.01f) ? away.normalized : transform.forward);
+			return(transform.position + away * step);
 		}
 
 		/// <summary>
@@ -184,6 +326,7 @@ namespace VikingVillages
 				{
 					ai.SetFollowTarget(null);
 				}
+				Herald(zdo);
 				return;
 			}
 			if (owner == null)
@@ -208,9 +351,11 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Checks whether the animal's traveler rides it, working out where it carries them - to where the village's
-		/// vikings walk back to as they arrive (see Village.RallyPoint), and on away from the village's middle as they
-		/// leave, CarryStep ahead at a time
+		/// Checks whether the animal's traveler rides it, working out where it carries them - as they arrive, to where the
+		/// village's vikings walk back to (see Village.RallyPoint), or for a valkyrie, landing at her spot at the village's
+		/// edge, and as they leave, on away from the village's middle, CarryStep ahead at a time, or FlyStep flying. A
+		/// valkyrie with an enemy within VillageLife.DismountThreat of her traveler lands where she is, so they can get
+		/// off and fight
 		/// </summary>
 		/// <param name="zdo">The animal's ZDO</param>
 		/// <returns>True when its traveler rides it</returns>
@@ -225,16 +370,137 @@ namespace VikingVillages
 			{
 				return(false);
 			}
-			if (!owner.m_nview.GetZDO().GetBool(TravelerPets.LeavingKey))
+			bool leaving = owner.m_nview.GetZDO().GetBool(TravelerPets.LeavingKey);
+			if (flight != null && Village.FindEnemyNear(owner.transform.position, VillageLife.DismountThreat) != null)
 			{
-				carryTo = village.RallyPoint();
-				return(true);
+				carryTo = transform.position;
+				carryLands = true;
 			}
-			Vector3 away = transform.position - village.Middle;
-			away.y = 0f;
-			away = ((away.sqrMagnitude > 0.01f) ? away.normalized : transform.forward);
-			carryTo = transform.position + away * CarryStep;
+			else if (flight != null)
+			{
+				carryTo = (leaving ? AwayPoint(FlyStep) : Landing(village, zdo));
+				carryLands = !leaving;
+			}
+			else
+			{
+				carryTo = (leaving ? AwayPoint(CarryStep) : village.RallyPoint());
+			}
 			return(true);
+		}
+
+		/// <summary>
+		/// Finds where a valkyrie lands her traveler as they arrive - open ground near the village's middle, clear of its
+		/// buildings, trees and rocks (see ValkyrieRoost.FindOpenGround) - or her spot at the village's edge when there's
+		/// none, found once
+		/// </summary>
+		/// <param name="village">The village they visit</param>
+		/// <param name="zdo">Her ZDO</param>
+		/// <returns>Where she lands</returns>
+		private Vector3 Landing(Village village, ZDO zdo)
+		{
+			if (!hasLanding)
+			{
+				hasLanding = true;
+				if (!ValkyrieRoost.FindOpenGround(village.Middle, out landing))
+				{
+					landing = zdo.GetVec3(TravelerPets.SpotKey, transform.position);
+				}
+			}
+			return(landing);
+		}
+
+		/// <summary>
+		/// Has a viking of the village a valkyrie flies her traveler into shout that she's coming, and from which way, once
+		/// she's within HeraldReach of its edge and before she's in it - the nearest to her who's awake, not fighting and in
+		/// the village. Only once, and not as she flies them away again
+		/// </summary>
+		/// <param name="zdo">Her ZDO, owned by this client</param>
+		private void Herald(ZDO zdo)
+		{
+			if (flight == null || zdo.GetBool(HeraldedKey) || !flight.IsFlying() || owner == null || owner.m_nview.GetZDO().GetBool(TravelerPets.LeavingKey))
+			{
+				return;
+			}
+			Village village = Village.ForFarm(zdo.GetVec3(TravelerPets.HostKey, Vector3.zero));
+			if (village == null)
+			{
+				return;
+			}
+			float outside = village.DistanceOutside(transform.position);
+			if (outside > HeraldReach)
+			{
+				return;
+			}
+			// Once she's in the village, it's too late to see her coming
+			if (outside <= 0f)
+			{
+				zdo.Set(HeraldedKey, true);
+				return;
+			}
+			Character crier = Crier(village);
+			if (crier == null)
+			{
+				return;
+			}
+			zdo.Set(HeraldedKey, true);
+			string line = ValkyrieSightSpeech.Herald(ValkyrieSightSpeech.Direction(village.Middle, transform.position), Random.value);
+			VikingSpeech.SayFirst(crier, line, VikingSpeech.CallTime, VikingSpeech.CallCull);
+		}
+
+		/// <summary>
+		/// Finds the viking of a village nearest a valkyrie flying in, to shout that she's coming - a PC or NPC viking in
+		/// the village, awake and not fighting, and not her own traveler
+		/// </summary>
+		/// <param name="village">The village</param>
+		/// <returns>The viking, or null when there's none</returns>
+		private Character Crier(Village village)
+		{
+			Character nearest = null;
+			float nearestDistance = float.MaxValue;
+			List<Character> near = new List<Character>();
+			Character.GetCharactersInRange(transform.position, HeraldReach + 80f, near);
+			foreach (Character viking in near)
+			{
+				if (viking == owner || viking.IsDead() || !VikingCore.IsPlayerLikeViking(viking) || !village.Contains(viking.transform.position) || VikingSpeech.Asleep(viking))
+				{
+					continue;
+				}
+				BaseAI vikingAI = viking.GetBaseAI();
+				if (vikingAI != null && vikingAI.GetTargetCreature() != null)
+				{
+					continue;
+				}
+				VillageLife life = viking.GetComponent<VillageLife>();
+				if (life != null && life.IsTraveler())
+				{
+					continue;
+				}
+				float distance = Vector3.Distance(viking.transform.position, transform.position);
+				if (distance < nearestDistance)
+				{
+					nearest = viking;
+					nearestDistance = distance;
+				}
+			}
+			return(nearest);
+		}
+
+		/// <summary>
+		/// Has a valkyrie come down to her traveler as they leave, once they've called her (see VillageLife.LeaveJob) - to
+		/// open ground near them, found again should they move off from where she was called to
+		/// </summary>
+		private void Answer()
+		{
+			if (answering && Utils.DistanceXZ(owner.transform.position, answerFrom) <= AnswerMove)
+			{
+				return;
+			}
+			answering = true;
+			answerFrom = owner.transform.position;
+			if (!ValkyrieRoost.FindOpenGround(answerFrom, out answerTo))
+			{
+				answerTo = answerFrom;
+			}
 		}
 
 		/// <summary>
@@ -244,7 +510,8 @@ namespace VikingVillages
 		/// <param name="zdo">The animal's ZDO, owned by this client</param>
 		private void GiveName(ZDO zdo)
 		{
-			if (zdo.GetString(ZDOVars.s_tamedName).Length > 0)
+			// A valkyrie has a name of her own from the start, which she tells players herself (see ValkyrieTalk)
+			if (zdo.GetString(ZDOVars.s_tamedName).Length > 0 || GetComponent<ValkyrieTalk>() != null)
 			{
 				return;
 			}
@@ -298,13 +565,41 @@ namespace VikingVillages
 		/// Keeps the animal where it belongs while its traveler is in the village and isn't riding it - with the traveler
 		/// as they leave, or for one they ride, waiting at its spot for them to get on, and with them as they walk in,
 		/// then a wolf keeping by them outdoors and waiting at the door of a house they go into, and any other kind
-		/// waiting at its spot at the village's edge
+		/// waiting at its spot at the village's edge. A valkyrie roosts on a roof instead (see ValkyrieFlight.RoostSoon),
+		/// flying down to defend the village and back up after, and comes down to her traveler when they call her as they
+		/// leave (see Answer)
 		/// </summary>
 		/// <param name="zdo">The animal's ZDO, owned by this client</param>
 		private void Keep(ZDO zdo)
 		{
 			ZDO ownerZdo = owner.m_nview.GetZDO();
 			Village village = Village.ForFarm(zdo.GetVec3(TravelerPets.HostKey, Vector3.zero));
+			if (flight != null && village != null)
+			{
+				zdo.Set(TravelerPets.SettledKey, true);
+				if (ai.GetFollowTarget() != null)
+				{
+					ai.SetFollowTarget(null);
+				}
+				if (zdo.GetBool(ZDOVars.s_patrol))
+				{
+					ai.ResetPatrolPoint();
+				}
+				if (ownerZdo.GetBool(TravelerPets.LeavingKey))
+				{
+					// She stays where she roosts until they've called her
+					if (ownerZdo.GetBool(CalledKey))
+					{
+						Answer();
+					}
+				}
+				else
+				{
+					answering = false;
+					flight.RoostSoon();
+				}
+				return;
+			}
 			if (ownerZdo.GetBool(TravelerPets.LeavingKey) || village == null)
 			{
 				if (village != null && TravelerPets.IsRidden(animal))
@@ -317,7 +612,8 @@ namespace VikingVillages
 			}
 			if (!zdo.GetBool(TravelerPets.SettledKey))
 			{
-				if (!village.Contains(owner.transform.position))
+				// A valkyrie goes straight to her spot rather than coming in beside her traveler
+				if (flight == null && !village.Contains(owner.transform.position))
 				{
 					Follow();
 					return;

@@ -181,6 +181,13 @@ namespace VikingVillages
 			private readonly bool warming;
 
 			/// <summary>
+			/// How long a traveler sits by the fire by day, in seconds, or 0 when it isn't sitting there a while, and until
+			/// when, by the game's time, once it's got there
+			/// </summary>
+			private readonly float lingerTime;
+			private float lingerUntil = -1f;
+
+			/// <summary>
 			/// Whether the viking sits by the fire the whole night rather than going to bed - a traveler, which has no bed in
 			/// the village
 			/// </summary>
@@ -226,11 +233,23 @@ namespace VikingVillages
 			/// <param name="rest">True for resting by the fire by day until it's rested, sitting at once in its warmth</param>
 			/// <param name="warm">True for keeping warm by day while the weather is freezing, sitting at once in a lit
 			/// fire's warmth</param>
-			public GatherJob(VillageLife owner, bool rest, bool warm = false) : base(owner)
+			/// <param name="linger">How long a traveler sits by the fire by day, sitting at once in its warmth, in seconds -
+			/// or 0 for any other gathering</param>
+			public GatherJob(VillageLife owner, bool rest, bool warm = false, float linger = 0f) : base(owner)
 			{
 				healing = rest;
 				warming = warm;
-				allNight = (!rest && !warm && owner.IsTraveler());
+				lingerTime = linger;
+				allNight = (!rest && !warm && linger <= 0f && owner.IsTraveler());
+			}
+
+			/// <summary>
+			/// Checks whether it's a traveler sitting by the fire a while by day
+			/// </summary>
+			/// <returns>True when it is</returns>
+			private bool Lingering()
+			{
+				return(lingerTime > 0f);
 			}
 
 			/// <summary>
@@ -248,7 +267,7 @@ namespace VikingVillages
 			/// <returns>True when it is</returns>
 			public bool Evening()
 			{
-				return(!healing && !warming);
+				return(!healing && !warming && !Lingering());
 			}
 
 			/// <summary>
@@ -271,12 +290,12 @@ namespace VikingVillages
 					return;
 				}
 				// A traveler has no house to go inside, so it sits out the storm by the fire
-				if (!healing && !warming && !allNight && VikingWeather.Storming() && VikingWeather.RainsOn(life.transform.position))
+				if (!healing && !warming && !allNight && !Lingering() && VikingWeather.Storming() && VikingWeather.RainsOn(life.transform.position))
 				{
 					GoInside();
 					return;
 				}
-				bool wounded = (healing || warming || life.Wounded());
+				bool wounded = (healing || warming || Lingering() || life.Wounded());
 				sits = (fire != null && (allNight || rolls.NextDouble() < GatherSitChance || wounded));
 				sitAt = (wounded ? 0f : Mathf.Lerp(GatherSitStart, GatherSitEnd, (float)rolls.NextDouble()));
 				if (fire != null)
@@ -503,7 +522,7 @@ namespace VikingVillages
 			/// <returns>What it's doing, and whether it's sitting yet</returns>
 			public override string Describe()
 			{
-				string name = (warming ? "Warm up" : (healing ? "Rest" : "Gather")) + (indoors ? " inside" : " by fire");
+				string name = (warming ? "Warm up" : (healing ? "Rest" : (Lingering() ? "Sit" : "Gather"))) + (indoors ? " inside" : " by fire");
 				return(name + (seated ? ", on a seat" : (sitting ? ", sitting" : (settled ? ", standing" : ", on the way"))));
 			}
 
@@ -517,13 +536,21 @@ namespace VikingVillages
 			/// <param name="dt">Seconds since the AI's last update</param>
 			/// <returns>True once it's the viking's bedtime (see Bedtime) or day - for a traveler, only once it's day - or for a wounded viking by day, once it's
 			/// rested or it's dusk - or resting inside, once it's no longer badly hurt or the rain stops - and for a cold
-			/// one, once the weather clears, it's dusk or its fire goes out. Out in the rain where it would be better off
-			/// inside (see GoInside), it's done too, so it's picked again for inside</returns>
+			/// one, once the weather clears, it's dusk or its fire goes out. A traveler sitting by the fire a while by day is
+			/// done once it's sat there that long, or it's dusk. Out in the rain where it would be better off inside (see
+			/// GoInside), or a traveler sitting a while out in the rain, it's done too, so it's picked again</returns>
 			public override bool Tick(float dt)
 			{
 				if (warming)
 				{
 					if (IsNight() || IsDusk() || !VikingWeather.FreezingFor(life.humanoid) || (fire != null && !fire.IsBurning()))
+					{
+						return(true);
+					}
+				}
+				else if (Lingering())
+				{
+					if (IsNight() || IsDusk() || (lingerUntil >= 0f && Time.time >= lingerUntil))
 					{
 						return(true);
 					}
@@ -535,7 +562,7 @@ namespace VikingVillages
 				if (settled && !indoors && !warming && Time.time >= nextRainCheck)
 				{
 					nextRainCheck = Time.time + RainCheckInterval;
-					if ((healing || VikingWeather.Storming()) && Exposed(life.humanoid.GetCenterPoint()))
+					if ((healing || Lingering() || VikingWeather.Storming()) && Exposed(life.humanoid.GetCenterPoint()))
 					{
 						return(true);
 					}
@@ -573,11 +600,15 @@ namespace VikingVillages
 					goingBack = false;
 					settledAt = life.transform.position;
 					settledTime = Time.time;
-					if (healing && !sits && !indoors)
+					if ((healing || Lingering()) && !sits && !indoors)
 					{
 						// It found no way to a seat by the fire
 						life.restAgainAt = Time.time + RestRetryTime;
 						return(true);
+					}
+					if (Lingering() && lingerUntil < 0f)
+					{
+						lingerUntil = Time.time + lingerTime;
 					}
 				}
 				if (warming && fire != null && Time.time - settledTime > WarmFireTimeout && VikingWeather.IsFreezing(life.humanoid))
@@ -654,8 +685,9 @@ namespace VikingVillages
 				{
 					return(false);
 				}
-				VillageLife neighbor = (sitting ? SittingNeighbor() : null);
-				life.Face((neighbor != null) ? neighbor.transform.position : fire.transform.position);
+				VillageLife talker = (sitting ? life.SeatedTalker() : null);
+				VillageLife neighbor = ((sitting && talker == null) ? SittingNeighbor() : null);
+				life.Face((talker != null) ? talker.transform.position : ((neighbor != null) ? neighbor.transform.position : fire.transform.position));
 				return(false);
 			}
 

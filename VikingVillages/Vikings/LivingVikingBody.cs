@@ -27,7 +27,7 @@ namespace VikingVillages
 		private const string NPCColor = "#33CCFF";
 
 		/// <summary>
-		/// What shows after a traveler's name in debug mode, and its color
+		/// What shows after a traveler's name once it knows the local player, or always in debug mode, and its color
 		/// </summary>
 		private const string TravelerMark = "(Traveler)";
 		private const string TravelerColor = "#FF66CC";
@@ -342,25 +342,28 @@ namespace VikingVillages
 
 		/// <summary>
 		/// Gets the viking's name as the local player knows it - the name a player gave it once it knows them, or else
-		/// plain Viking with "(?)" after it while it doesn't, until it greets them or they talk to it - with, in debug
-		/// mode, "(NPC)" after an NPC viking's name in NPCColor, "(Traveler)" after a traveler's in TravelerColor, and what it's doing on a line under it, wherever its name
-		/// shows: its hover text, the health bar over it (see VikingHudName), and other mods' markers that read its name
+		/// plain Viking with "(?)" after it while it doesn't, until it greets them or they talk to it - with "(Traveler)"
+		/// after a traveler's in TravelerColor once it knows them, and in debug mode, "(NPC)" after an NPC viking's name in
+		/// NPCColor, "(Traveler)" after a traveler's whether it knows them or not, and what it's doing on a line under it,
+		/// wherever its name shows: its hover text, the health bar over it (see VikingHudName), and other mods' markers
+		/// that read its name
 		/// </summary>
 		/// <returns>Its name</returns>
 		public override string GetHoverName()
 		{
 			string name = KnownName();
-			if (!Player.m_debugMode || viking == null)
-			{
-				return(name);
-			}
-			if (VikingCore.IsNPCViking(this))
+			bool debug = (Player.m_debugMode && viking != null);
+			if (debug && VikingCore.IsNPCViking(this))
 			{
 				name += " <color=" + NPCColor + ">" + NPCMark + "</color>";
 			}
-			if (Traveler.Is(this))
+			if (Traveler.Is(this) && (debug || !Stranger()))
 			{
 				name += " <color=" + TravelerColor + ">" + TravelerMark + "</color>";
+			}
+			if (!debug)
+			{
+				return(name);
 			}
 			string job = viking.DebugJob();
 			return(string.IsNullOrEmpty(job) ? name : name + "\n<color=" + JobColor + ">" + job + "</color>");

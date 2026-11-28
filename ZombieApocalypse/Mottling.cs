@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Kriona.Vikings;
 using UnityEngine;
 
 namespace ZombieApocalypse
@@ -91,30 +92,6 @@ namespace ZombieApocalypse
 		}
 
 		/// <summary>
-		/// Copies a texture through the GPU into one whose pixels can be read and changed, since the game's textures
-		/// can't be read directly
-		/// </summary>
-		/// <param name="source">The texture to copy</param>
-		/// <returns>The copy, with mipmaps for when it's applied</returns>
-		public static Texture2D ReadableCopy(Texture2D source)
-		{
-			int width = source.width;
-			int height = source.height;
-			RenderTexture target = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
-			Graphics.Blit(source, target);
-			RenderTexture previous = RenderTexture.active;
-			RenderTexture.active = target;
-			Texture2D copy = new Texture2D(width, height, TextureFormat.RGBA32, true, false);
-			copy.ReadPixels(new Rect(0f, 0f, width, height), 0, 0);
-			RenderTexture.active = previous;
-			RenderTexture.ReleaseTemporary(target);
-			copy.filterMode = source.filterMode;
-			copy.wrapMode = source.wrapMode;
-			copy.anisoLevel = source.anisoLevel;
-			return(copy);
-		}
-
-		/// <summary>
 		/// Copies a texture through the GPU, darkens it in Perlin noise patches and washes out its colors
 		/// </summary>
 		/// <param name="source">The texture to copy</param>
@@ -127,7 +104,7 @@ namespace ZombieApocalypse
 		{
 			int width = source.width;
 			int height = source.height;
-			Texture2D copy = ReadableCopy(source);
+			Texture2D copy = SpiritWhite.ReadableCopy(source);
 			Color32[] pixels = copy.GetPixels32();
 			// Offsets the noise by the texture's name so each creature gets its own patches
 			NoiseOffsets(source.name.GetStableHashCode(), out float offsetX, out float offsetY);

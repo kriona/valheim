@@ -51,22 +51,11 @@ namespace ZombieApocalypse
 		/// </summary>
 		private const float GlowBoost = 1.5f;
 
-		private static readonly int ColorId = Shader.PropertyToID("_Color");
-		private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
-		private static readonly int TintColorId = Shader.PropertyToID("_TintColor");
-		private static readonly int EmisColorId = Shader.PropertyToID("_EmisColor");
-		private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
-
 		/// <summary>
 		/// The spell items, and the projectiles and effects they use, which go in the world's prefabs
 		/// </summary>
 		private static readonly List<GameObject> spells = new List<GameObject>();
 		private static readonly List<GameObject> prefabs = new List<GameObject>();
-
-		/// <summary>
-		/// The gray copies of the effects' textures, by the texture they're copied from
-		/// </summary>
-		private static readonly Dictionary<Texture, Texture2D> grayTextures = new Dictionary<Texture, Texture2D>();
 
 		private static bool built;
 		private static GameObject prefabHolder;
@@ -336,7 +325,7 @@ namespace ZombieApocalypse
 		private static GameObject CopyEffect(GameObject source, string name)
 		{
 			GameObject copy = Copy(source, name);
-			Whiten(copy);
+			SpiritWhite.Whiten(copy, GlowBoost);
 			prefabs.Add(copy);
 			return(copy);
 		}
@@ -352,164 +341,6 @@ namespace ZombieApocalypse
 			GameObject copy = Object.Instantiate(source, prefabHolder.transform, false);
 			copy.name = name;
 			return(copy);
-		}
-
-		/// <summary>
-		/// Turns every particle, material, texture and light in an effect white at the same brightness, its glow and
-		/// lights a little brighter
-		/// </summary>
-		/// <param name="effect">The effect</param>
-		private static void Whiten(GameObject effect)
-		{
-			foreach (ParticleSystem particles in effect.GetComponentsInChildren<ParticleSystem>(true))
-			{
-				ParticleSystem.MainModule main = particles.main;
-				main.startColor = Whiten(main.startColor);
-				ParticleSystem.ColorOverLifetimeModule overLifetime = particles.colorOverLifetime;
-				overLifetime.color = Whiten(overLifetime.color);
-			}
-			Dictionary<Material, Material> copies = new Dictionary<Material, Material>();
-			foreach (Renderer renderer in effect.GetComponentsInChildren<Renderer>(true))
-			{
-				Material[] materials = renderer.sharedMaterials;
-				for (int i = 0; i < materials.Length; i++)
-				{
-					if (materials[i] == null)
-					{
-						continue;
-					}
-					if (!copies.TryGetValue(materials[i], out Material copy))
-					{
-						copy = WhiteMaterial(materials[i]);
-						copies[materials[i]] = copy;
-					}
-					materials[i] = copy;
-				}
-				renderer.sharedMaterials = materials;
-			}
-			foreach (Light light in effect.GetComponentsInChildren<Light>(true))
-			{
-				light.color = Color.white;
-				light.intensity *= GlowBoost;
-			}
-		}
-
-		/// <summary>
-		/// Copies a material with its colors turned white and its texture gray
-		/// </summary>
-		/// <param name="source">The material</param>
-		/// <returns>The copy</returns>
-		private static Material WhiteMaterial(Material source)
-		{
-			Material copy = new Material(source);
-			copy.name = source.name + " (spirit)";
-			WhitenProperty(copy, ColorId, 1f);
-			WhitenProperty(copy, TintColorId, 1f);
-			WhitenProperty(copy, EmissionColorId, GlowBoost);
-			WhitenProperty(copy, EmisColorId, GlowBoost);
-			Texture texture = (copy.HasProperty(MainTexId) ? copy.GetTexture(MainTexId) : null);
-			if (texture is Texture2D)
-			{
-				copy.SetTexture(MainTexId, GrayTexture((Texture2D)texture));
-			}
-			return(copy);
-		}
-
-		/// <summary>
-		/// Gets a copy of a texture with each pixel turned gray at the brightness of its brightest channel, making it the
-		/// first time
-		/// </summary>
-		/// <param name="source">The texture</param>
-		/// <returns>The gray copy</returns>
-		private static Texture2D GrayTexture(Texture2D source)
-		{
-			if (grayTextures.TryGetValue(source, out Texture2D gray))
-			{
-				return(gray);
-			}
-			gray = Mottling.ReadableCopy(source);
-			Color32[] pixels = gray.GetPixels32();
-			for (int i = 0; i < pixels.Length; i++)
-			{
-				Color32 pixel = pixels[i];
-				byte brightness = Math.Max(pixel.r, Math.Max(pixel.g, pixel.b));
-				pixels[i] = new Color32(brightness, brightness, brightness, pixel.a);
-			}
-			gray.SetPixels32(pixels);
-			gray.Apply(true, true);
-			gray.name = source.name + " (spirit)";
-			grayTextures[source] = gray;
-			return(gray);
-		}
-
-		/// <summary>
-		/// Turns a material's color property white at the same brightness, when it has one
-		/// </summary>
-		/// <param name="material">The material</param>
-		/// <param name="id">The property</param>
-		/// <param name="boost">How much brighter to make it</param>
-		private static void WhitenProperty(Material material, int id, float boost)
-		{
-			if (material.HasProperty(id))
-			{
-				material.SetColor(id, Whiten(material.GetColor(id), boost));
-			}
-		}
-
-		/// <summary>
-		/// Turns a color white at the brightness of its brightest channel, keeping its alpha
-		/// </summary>
-		/// <param name="color">The color</param>
-		/// <param name="boost">How much brighter to make it</param>
-		/// <returns>The white color</returns>
-		private static Color Whiten(Color color, float boost = 1f)
-		{
-			float brightness = color.maxColorComponent * boost;
-			return(new Color(brightness, brightness, brightness, color.a));
-		}
-
-		/// <summary>
-		/// Turns a particle color setting white, whether it's a color, a gradient or a pair of either
-		/// </summary>
-		/// <param name="value">The setting</param>
-		/// <returns>The white setting</returns>
-		private static ParticleSystem.MinMaxGradient Whiten(ParticleSystem.MinMaxGradient value)
-		{
-			switch (value.mode)
-			{
-				case ParticleSystemGradientMode.Color:
-					return(new ParticleSystem.MinMaxGradient(Whiten(value.color)));
-				case ParticleSystemGradientMode.TwoColors:
-					return(new ParticleSystem.MinMaxGradient(Whiten(value.colorMin), Whiten(value.colorMax)));
-				case ParticleSystemGradientMode.Gradient:
-					return(new ParticleSystem.MinMaxGradient(Whiten(value.gradient)));
-				case ParticleSystemGradientMode.TwoGradients:
-					return(new ParticleSystem.MinMaxGradient(Whiten(value.gradientMin), Whiten(value.gradientMax)));
-				default:
-					return(value);
-			}
-		}
-
-		/// <summary>
-		/// Copies a gradient with its colors turned white, keeping its alpha
-		/// </summary>
-		/// <param name="gradient">The gradient, or null</param>
-		/// <returns>The white gradient, or null</returns>
-		private static Gradient Whiten(Gradient gradient)
-		{
-			if (gradient == null)
-			{
-				return(null);
-			}
-			GradientColorKey[] keys = gradient.colorKeys;
-			for (int i = 0; i < keys.Length; i++)
-			{
-				keys[i].color = Whiten(keys[i].color);
-			}
-			Gradient white = new Gradient();
-			white.mode = gradient.mode;
-			white.SetKeys(keys, gradient.alphaKeys);
-			return(white);
 		}
 	}
 

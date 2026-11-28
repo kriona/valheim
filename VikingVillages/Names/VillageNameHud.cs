@@ -5,7 +5,8 @@ using UnityEngine;
 namespace VikingVillages
 {
 	/// <summary>
-	/// Shows the name of the village the player is in at the top of the screen, while they're inside its rings, styled
+	/// Shows the name of the village the player is in at the top of the screen, while they're inside its rings and not
+	/// high above it (see Look), styled
 	/// like the name over its fire (see VillageNameTags) - in the clock's spot when aedenthorn's Clock Mod is installed,
 	/// moving the clock down under it, or else where that clock would be - and behind the big map and the loading screen
 	/// while either shows (see VillageNameTags.Sort)
@@ -193,7 +194,8 @@ namespace VikingVillages
 		}
 
 		/// <summary>
-		/// Finds the name of the loaded village the local player is inside
+		/// Finds the name of the loaded village the local player is inside - within its rings, and within the sphere
+		/// around its middle that reaches as far as its rings do, so flying high over it doesn't count (see InSphere)
 		/// </summary>
 		/// <returns>The name, or "" when they're in none or it has no name</returns>
 		private static string Look()
@@ -206,12 +208,25 @@ namespace VikingVillages
 			Vector3 at = player.transform.position;
 			foreach (Village village in Village.Loaded())
 			{
-				if (village.Contains(at))
+				if (village.Contains(at) && InSphere(at, village.Middle, village.Radius))
 				{
 					return(VillageNames.Get(village));
 				}
 			}
 			return("");
+		}
+
+		/// <summary>
+		/// Checks whether a point is within a sphere - a village's rings seen from above reach Radius from its middle, so
+		/// the sphere holds the ground they cover and the air just over it, but not high above it
+		/// </summary>
+		/// <param name="point">The point</param>
+		/// <param name="middle">The sphere's middle</param>
+		/// <param name="radius">Its radius, in meters</param>
+		/// <returns>True when the point is within it</returns>
+		internal static bool InSphere(Vector3 point, Vector3 middle, float radius)
+		{
+			return((point - middle).sqrMagnitude <= radius * radius);
 		}
 	}
 }

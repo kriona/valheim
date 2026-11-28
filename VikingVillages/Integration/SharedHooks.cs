@@ -4,19 +4,20 @@ using VikingVillages;
 namespace Kriona.Vikings
 {
 	/// <summary>
-	/// What Viking Villages adds to each world once its PC viking's prefab is in - the NPC viking's and dvergr viking's
-	/// prefabs
+	/// What Viking Villages adds to each world once its PC viking's prefab is in - the NPC viking's, dvergr viking's and
+	/// valkyrie's prefabs
 	/// </summary>
 	internal static partial class VikingPrefabPatch
 	{
 		/// <summary>
-		/// Adds the NPC viking's and dvergr viking's prefabs once the PC viking's is in
+		/// Adds the NPC viking's, dvergr viking's and valkyrie's prefabs once the PC viking's is in
 		/// </summary>
 		/// <param name="scene">The world's ZNetScene</param>
 		static partial void AfterRegister(ZNetScene scene)
 		{
 			VikingCore.RegisterNPC(scene);
 			VikingCore.RegisterDvergr(scene);
+			ValkyriePrefab.Register(scene);
 		}
 	}
 
@@ -26,8 +27,8 @@ namespace Kriona.Vikings
 	internal static partial class CommandGuard
 	{
 		/// <summary>
-		/// Names its console commands, all starting "kri_vv_", the anchor of a village a player started and the NPC and
-		/// dvergr vikings - it has no raids of its own
+		/// Names its console commands, all starting "kri_vv_", the anchor of a village a player started, the NPC and
+		/// dvergr vikings and the valkyrie - it has no raids of its own
 		/// </summary>
 		/// <param name="commandPrefixes">The starts of its commands' names, added to</param>
 		/// <param name="prefabs">Its prefabs and items, added to</param>
@@ -38,6 +39,7 @@ namespace Kriona.Vikings
 			prefabs.Add(VillageFounding.PrefabName);
 			prefabs.Add(VikingCore.NPCPrefabName);
 			prefabs.Add(VikingCore.DvergrPrefabName);
+			prefabs.Add(ValkyriePrefab.PrefabName);
 		}
 	}
 

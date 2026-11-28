@@ -87,6 +87,13 @@ namespace CreatureMarker
 		/// The ZDO flag Zombie Apocalypse sets on the creatures it raises as zombies
 		/// </summary>
 		private static readonly int ZombieHash = "kriona.ZombieApocalypse.zombie".GetStableHashCode();
+
+		/// <summary>
+		/// The ZDO keys Viking Villages sets on an animal a traveling Viking brings - the farm of the village they visit,
+		/// and whether it has been left to the village, its Viking dead
+		/// </summary>
+		private static readonly int VikingPetHostHash = "kriona.VikingVillages.petHost".GetStableHashCode();
+		private static readonly int VikingPetOrphanHash = "kriona.VikingVillages.petOrphan".GetStableHashCode();
 		private const string DefaultPassiveColor = "#40D940";
 		private const string DefaultHostileColor = "#FFD91A";
 		private const string DefaultAngryColor = "#FF801A";
@@ -1176,8 +1183,9 @@ namespace CreatureMarker
 		}
 
 		/// <summary>
-		/// The marker color of a creature - Boss Color for bosses, Pet Color for tamed creatures, Angry Color for hostile
-		/// creatures that are after the player, then Hostile Color or Passive Color
+		/// The marker color of a creature - Boss Color for bosses, Pet Color for tamed creatures but a Viking Villages
+		/// Viking's (see IsVikingPet), Angry Color for hostile creatures that are after the player, then Hostile Color or
+		/// Passive Color
 		/// </summary>
 		/// <param name="character">The creature</param>
 		/// <param name="hostile">Whether the creature will attack the player</param>
@@ -1189,7 +1197,7 @@ namespace CreatureMarker
 			{
 				return(bossColor);
 			}
-			if (character.IsTamed())
+			if (character.IsTamed() && !IsVikingPet(character))
 			{
 				return(petColor);
 			}
@@ -1325,6 +1333,24 @@ namespace CreatureMarker
 		{
 			ZNetView nview = character.m_nview;
 			return(nview != null && nview.IsValid() && nview.GetZDO().GetBool(ZombieHash));
+		}
+
+		/// <summary>
+		/// Whether a tamed creature is a Viking Villages traveling Viking's animal rather than a player's - one it brought,
+		/// like a wolf or a valkyrie, until it's left to the village when its Viking dies - read from the keys Viking
+		/// Villages stores in the creature's ZDO so neither mod needs the other
+		/// </summary>
+		/// <param name="character">The creature</param>
+		/// <returns>True when it's a Viking's</returns>
+		private static bool IsVikingPet(Character character)
+		{
+			ZNetView nview = character.m_nview;
+			if (nview == null || !nview.IsValid())
+			{
+				return(false);
+			}
+			ZDO zdo = nview.GetZDO();
+			return(zdo.GetVec3(VikingPetHostHash, Vector3.zero) != Vector3.zero && !zdo.GetBool(VikingPetOrphanHash));
 		}
 
 		/// <summary>
